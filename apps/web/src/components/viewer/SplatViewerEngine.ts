@@ -7,6 +7,13 @@ import { CameraKeyControls } from "./CameraKeyControls";
 export type ViewerMode = "orbit" | "walk";
 export type ViewerTool = "navigate" | "measure" | "note";
 export type LoadStatus = "empty" | "loading" | "ready" | "error";
+/**
+ * How the camera tracks the phone on the Live tab.
+ * - `off`: free camera.
+ * - `chase`: over-the-shoulder — behind and above the phone, looking the way it looks.
+ * - `firstPerson`: the camera sits in the phone's pose, seeing what it saw.
+ */
+export type FollowMode = "off" | "chase" | "firstPerson";
 
 export type EngineEvent =
   | { type: "status"; status: LoadStatus; error?: string }
@@ -18,6 +25,8 @@ export type EngineEvent =
   | { type: "pick-node"; tool: ViewerTool; id: string }
   /** A click landed on a note pin. */
   | { type: "pick-note"; tool: ViewerTool; id: string }
+  /** The camera stopped following the phone because the viewer took manual control. */
+  | { type: "follow"; mode: FollowMode }
   /** A click hit nothing. */
   | { type: "pick-miss"; tool: ViewerTool };
 
@@ -75,6 +84,13 @@ const ORBIT_DIRECTION = new THREE.Vector3(0.65, 0.55, 0.85).normalize();
 const UP = new THREE.Vector3(0, 1, 0);
 /** Distance from the phone to the drawn image plane, and the size of the phone dot. */
 const FRUSTUM_DEPTH = 0.6;
+/** Chase camera: how far behind / above the phone it sits, and how far ahead of it it looks. */
+const CHASE_BACK = 2.6;
+const CHASE_BACK_RANGE: [number, number] = [0.9, 10];
+const CHASE_UP = 1.3;
+const CHASE_AHEAD = 1.2;
+/** Follow easing rate (1/s). Fixes land about once a second, so this glides between them. */
+const FOLLOW_EASE = 3.5;
 const PHONE_RADIUS = 0.06;
 const TRAIL_RADIUS = 0.035;
 /** Portrait phone: the three.js camera's +Y (up) must map to the device's −X (image up). */
@@ -168,7 +184,9 @@ export class SplatViewerEngine {
   private imageTexture: THREE.Texture | null = null;
   private imageTextureUrl: string | null = null;
   private marker: LocalizationMarker | null = null;
-  private followPhone = false;
+  private follow: FollowMode = "off";
+  /** Chase distance, adjustable with the wheel while following. */
+  private chaseBack = CHASE_BACK;
 
   private mesh: SplatMesh | null = null;
   private nodeMeshes = new Map<string, THREE.Mesh>();
@@ -274,6 +292,7 @@ export class SplatViewerEngine {
     this.listen(canvas, "pointerup", this.onPointerUp);
     this.listen(canvas, "pointermove", this.onPointerMove);
     this.listen(canvas, "pointerleave", () => this.setHover(null));
+    this.listen(canvas, "wheel", this.onWheel);
 
     if (opts.splatUrl) this.loadSplat(opts.splatUrl);
     else {
@@ -287,6 +306,11 @@ export class SplatViewerEngine {
   /* ---------------------------------------------------------------- public */
 
   setMode(mode: ViewerMode) {
+    this.releaseFollow(); // picking a camera mode by hand ends the ride-along
+    this.applyMode(mode);
+  }
+
+  private applyMode(mode: ViewerMode) {
     if (mode === this.mode) return;
     this.mode = mode;
     if (mode === "walk") {
@@ -503,7 +527,7 @@ export class SplatViewerEngine {
    */
   setLocalization(marker: LocalizationMarker | null) {
     this.marker = marker;
-    this.phoneGroup.visible = !!marker;
+    this.phoneGroup.visible = !!marker && this.follow !== "firstPerson";
     if (!marker) return;
 
     this.phoneGroup.position.set(...marker.position);
@@ -534,10 +558,7 @@ export class SplatViewerEngine {
     // PlaneGeometry spans local X/Y facing +Z; roll it so local +X → image-right and local +Y → image-up.
     this.imagePlane.quaternion.copy(portrait ? PORTRAIT_ROLL : new THREE.Quaternion());
 
-    const dim = marker.tone === "ok" ? 1 : 0.45;
-    this.frustumMaterial.opacity = 0.95 * dim;
-    (this.phoneDot.material as THREE.MeshBasicMaterial).opacity = 0.95 * dim;
-    this.imagePlane.material.opacity = 0.92 * dim;
+    this.applyMarkerOpacity();
     this.loadImage(marker.imageUrl);
   }
 
@@ -557,10 +578,32 @@ export class SplatViewerEngine {
     }
   }
 
-  /** Keep the orbit pivot glued to the phone as new fixes arrive. */
-  setFollowPhone(on: boolean) {
-    this.followPhone = on;
-    if (on && this.marker) this.focusPhone();
+  /**
+   * Ride along with the phone. `chase` flies the camera behind and above it,
+   * `firstPerson` puts the camera in its pose; both ease onto every new fix, so
+   * the viewer watches the walk instead of chasing it by hand. Dragging, the
+   * wheel or WASD hands control straight back (see `releaseFollow`).
+   */
+  setFollowMode(mode: FollowMode) {
+    if (mode === this.follow) return;
+    this.follow = mode;
+    if (mode !== "off") {
+      this.chaseBack = CHASE_BACK;
+      this.applyMode(mode === "firstPerson" ? "walk" : "orbit");
+    }
+    // OrbitControls and drag-look stay armed throughout: `tick` simply skips
+    // `orbit.update()` while following, so the drag that releases the camera is
+    // the same drag that moves it, with no dead gesture in between.
+    // The phone is drawn around the camera in first person; hide it rather than clip through it.
+    this.phoneGroup.visible = !!this.marker && mode !== "firstPerson";
+    this.applyMarkerOpacity();
+  }
+
+  /** Hand the camera back to the viewer and tell React, so the Live tab's toggle agrees. */
+  private releaseFollow() {
+    if (this.follow === "off") return;
+    this.setFollowMode("off");
+    this.opts.onEvent({ type: "follow", mode: "off" });
   }
 
   /** Fly the orbit camera to look at the phone from a few metres away. */
@@ -576,12 +619,17 @@ export class SplatViewerEngine {
    */
   viewFromPhone() {
     if (!this.marker) return;
-    this.followPhone = false;
-    this.setMode("walk");
-    this.camera.position.set(...this.marker.position);
-    this.camera.quaternion.set(...this.marker.rotation).normalize();
-    if (this.marker.orientation === "portrait") this.camera.quaternion.multiply(PORTRAIT_ROLL);
-    this.keys.syncFromCamera();
+    this.setFollowMode("firstPerson");
+  }
+
+  /** Marker opacity: dimmed for a poor fix, and ghosted in chase view so it never blocks the walk. */
+  private applyMarkerOpacity() {
+    if (!this.marker) return;
+    const dim = this.marker.tone === "ok" ? 1 : 0.45;
+    const ghost = this.follow === "chase" ? 0.4 : 1;
+    this.frustumMaterial.opacity = 0.95 * dim;
+    (this.phoneDot.material as THREE.MeshBasicMaterial).opacity = 0.95 * dim;
+    this.imagePlane.material.opacity = 0.92 * dim * ghost;
   }
 
   private loadImage(url: string | null) {
@@ -663,6 +711,15 @@ export class SplatViewerEngine {
 
   /* --------------------------------------------------------------- picking */
 
+  /** While following, the wheel dollies the chase seat instead of doing nothing. */
+  private onWheel = (e: WheelEvent) => {
+    if (this.follow === "off") return;
+    if (this.follow === "firstPerson") return this.releaseFollow();
+    e.preventDefault();
+    const [min, max] = CHASE_BACK_RANGE;
+    this.chaseBack = THREE.MathUtils.clamp(this.chaseBack * Math.exp(e.deltaY * 0.001), min, max);
+  };
+
   private onPointerDown = (e: PointerEvent) => {
     // Any click on the scene should make the keyboard controls live.
     this.opts.container.focus({ preventScroll: true });
@@ -680,6 +737,10 @@ export class SplatViewerEngine {
   };
 
   private onPointerMove = (e: PointerEvent) => {
+    const down = this.pointerDown;
+    // A drag means "I'll take it from here"; a click (under CLICK_MAX_PX) still picks.
+    if (down && this.follow !== "off" && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_MAX_PX)
+      this.releaseFollow();
     if (this.tool === "navigate" || this.pointerDown) return;
     const now = performance.now();
     if (now - this.lastHover < HOVER_THROTTLE_MS) return;
@@ -755,7 +816,9 @@ export class SplatViewerEngine {
       .then((m) => {
         if (this.disposed) return;
         this.localBounds = robustBounds(m);
-        this.resetView();
+        // Following owns the camera: take the scan's scale, but don't yank the view off the phone.
+        if (this.follow === "off") this.resetView();
+        else this.frameScales(this.worldBounds());
         onEvent({ type: "loaded", numSplats: m.numSplats });
         onEvent({ type: "status", status: "ready" });
       })
@@ -857,17 +920,22 @@ export class SplatViewerEngine {
     }
   }
 
-  private frameBox(bounds: THREE.Box3) {
-    const center = bounds.getCenter(new THREE.Vector3());
+  /** Scale-dependent bits of framing (clip planes, pin fade); returns the framing distance. */
+  private frameScales(bounds: THREE.Box3): number {
     const radius = Math.max(bounds.getSize(new THREE.Vector3()).length() / 2, 0.5);
     const distance = (radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2))) * 1.05;
     // Pins fade to the far colour by the time you're a scene-radius away.
     this.pinFarM = Math.max(8, radius * 1.5);
-
-    this.camera.position.copy(center).addScaledVector(ORBIT_DIRECTION, distance);
     this.camera.near = Math.max(0.02, distance / 1000);
     this.camera.far = Math.max(200, distance * 40);
     this.camera.updateProjectionMatrix();
+    return distance;
+  }
+
+  private frameBox(bounds: THREE.Box3) {
+    const center = bounds.getCenter(new THREE.Vector3());
+    const distance = this.frameScales(bounds);
+    this.camera.position.copy(center).addScaledVector(ORBIT_DIRECTION, distance);
     this.orbit.target.copy(center);
     this.orbit.update();
   }
@@ -899,22 +967,49 @@ export class SplatViewerEngine {
   private tick(time: number) {
     const dt = this.lastTime ? (time - this.lastTime) / 1000 : 0;
     this.lastTime = time;
-    if (this.keys.hasInput) this.applyMotion(dt);
-    if (this.followPhone && this.marker && this.mode === "orbit") this.glideToPhone(dt);
-    if (this.mode === "orbit") this.orbit.update();
+    if (this.keys.hasInput) {
+      this.releaseFollow(); // a key press is the viewer taking the camera back
+      this.applyMotion(dt);
+    }
+    if (this.follow !== "off" && this.marker) this.updateFollow(dt);
+    else if (this.mode === "orbit") this.orbit.update();
     this.renderer.render(this.scene, this.camera);
     this.updateLabels();
   }
 
-  /** Ease the orbit pivot (and camera, keeping its offset) onto the phone's latest position. */
-  private glideToPhone(dt: number) {
-    const target = this.phoneGroup.position;
-    const delta = target.clone().sub(this.orbit.target);
-    if (delta.lengthSq() < 1e-6) return;
-    const t = 1 - Math.exp(-Math.min(dt, 0.1) * 6);
-    delta.multiplyScalar(t);
-    this.orbit.target.add(delta);
-    this.camera.position.add(delta);
+  /**
+   * Ease the camera onto the pose the current follow mode wants. Exponential
+   * smoothing keeps it frame-rate independent, and because it eases from
+   * wherever the camera already is, switching modes reads as a glide rather
+   * than a cut — including the first one, from across the room.
+   */
+  private updateFollow(dt: number) {
+    const marker = this.marker;
+    if (!marker) return;
+    const t = 1 - Math.exp(-Math.min(dt, 0.1) * FOLLOW_EASE);
+    const phone = this.phoneGroup.position;
+
+    if (this.follow === "firstPerson") {
+      const q = this.phoneGroup.quaternion.clone();
+      if (marker.orientation === "portrait") q.multiply(PORTRAIT_ROLL);
+      this.camera.position.lerp(phone, t);
+      this.camera.quaternion.slerp(q, t);
+      this.keys.syncFromCamera();
+      return;
+    }
+
+    // Chase: sit behind and above, looking just past the phone. The heading is
+    // flattened so pointing the phone at the floor doesn't bury the camera.
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.phoneGroup.quaternion).setY(0);
+    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+    forward.normalize();
+    const seat = phone
+      .clone()
+      .addScaledVector(forward, -this.chaseBack)
+      .addScaledVector(UP, CHASE_UP);
+    this.camera.position.lerp(seat, t);
+    this.orbit.target.lerp(phone.clone().addScaledVector(forward, CHASE_AHEAD), t);
+    this.camera.lookAt(this.orbit.target);
   }
 
   /** Apply held keys: WASD moves, Q/E (R/F, Space/C) change height, arrows turn, Shift hurries. */

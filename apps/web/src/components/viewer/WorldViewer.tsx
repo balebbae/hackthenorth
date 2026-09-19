@@ -25,7 +25,7 @@ import {
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { InspectorPanel, type PanelTab } from "./InspectorPanel";
-import type { LocalizationMarker, ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
+import type { FollowMode, LocalizationMarker, ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
 import { PHONE_ONLINE_MS, useLocalizationFeed, useNow } from "./useLocalizationFeed";
 import { useSplatViewer, type PickHandler } from "./useSplatViewer";
 import { ViewerOverlay } from "./ViewerOverlays";
@@ -117,7 +117,8 @@ export function WorldViewer({
   const feed = useLocalizationFeed(worldId, initialLocalizations, !!manifest);
   /** null = pin to the newest query as it arrives; an id = the user is inspecting an older one. */
   const [selectedQueryId, setSelectedQueryId] = useState<string | null>(null);
-  const [followPhone, setFollowPhone] = useState(false);
+  /** null until someone picks a camera by hand (or the engine hands it back); see `followMode`. */
+  const [followChoice, setFollowChoice] = useState<FollowMode | null>(null);
   const latestQuery = feed.queries[0] ?? null;
   const selectedQuery = useMemo(
     () => (selectedQueryId ? feed.queries.find((q) => q.id === selectedQueryId) ?? latestQuery : latestQuery),
@@ -143,6 +144,18 @@ export function WorldViewer({
       tone: poseSource === selectedQuery ? outcome.tone : "bad",
     };
   }, [selectedQuery, feed.queries]);
+
+  /**
+   * Opening Live while a phone is actually walking drops the camera in behind
+   * it, so the tab lands on the walk in progress rather than on whatever corner
+   * the viewer was last parked in. The moment anyone touches the camera —
+   * a drag, the wheel, WASD, or these buttons — `followChoice` takes over for good.
+   * Freshness comes off the feed's own clock, so this needs no ticking timer.
+   */
+  const phoneOnline =
+    !!latestQuery && !!feed.fetchedAt && feed.fetchedAt - Date.parse(latestQuery.capturedAt) < PHONE_ONLINE_MS;
+  const followMode: FollowMode =
+    followChoice ?? (panelTab === "live" && phoneOnline && splatUrl ? "chase" : "off");
 
   const localizationTrail = useMemo<Vec3[]>(
     () =>
@@ -242,7 +255,8 @@ export function WorldViewer({
     pendingPoint,
     localization,
     localizationTrail,
-    followPhone,
+    followMode,
+    onFollowModeChange: setFollowChoice,
     onPick,
   });
 
@@ -250,6 +264,7 @@ export function WorldViewer({
     setPanelOpen(true);
     setPanelTab("live");
   }, []);
+
 
   const pickTool = useCallback(
     (tool: ViewerTool) => {
@@ -398,15 +413,14 @@ export function WorldViewer({
                 selected: selectedQuery,
                 pinnedToLatest: selectedQueryId === null,
                 onSelectQuery: setSelectedQueryId,
-                followPhone,
-                onFollowPhone: setFollowPhone,
-                onFocusPhone: () => {
-                  api.focusPhone();
+                followMode,
+                onFollowMode: (mode: FollowMode) => {
+                  setFollowChoice(mode);
                   focusViewer();
                 },
-                onViewFromPhone: () => {
-                  setFollowPhone(false);
-                  api.viewFromPhone();
+                onFocusPhone: () => {
+                  setFollowChoice("off");
+                  api.focusPhone();
                   focusViewer();
                 },
                 hasSplat: state.status === "ready",

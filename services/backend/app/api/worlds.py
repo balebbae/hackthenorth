@@ -145,6 +145,28 @@ async def put_measurements(world_id: str, request: Request):
     return data
 
 
+@router.get('/worlds/{world_id}/notes')
+async def notes(world_id: str, request: Request):
+    store = request.app.state.worlds
+    store.world(world_id)
+    if not store.path('worlds', world_id, 'notes.json').exists():
+        return {'schema': 'wander.notes/v1', 'worldId': world_id, 'notes': []}
+    return check(store.read('worlds', world_id, 'notes.json'), 'notes.schema.json')
+
+
+@router.put('/worlds/{world_id}/notes')
+async def put_notes(world_id: str, request: Request):
+    data = check(await body(request), 'notes.schema.json')
+    if data['worldId'] != world_id:
+        raise HTTPException(400, 'Notes worldId mismatch')
+    store = request.app.state.worlds
+    async with store.lock('world:' + world_id):
+        store.world(world_id)
+        data['updatedAt'] = now()
+        await store.write(data, 'worlds', world_id, 'notes.json')
+    return data
+
+
 @router.post('/worlds/{world_id}/route')
 async def route(world_id: str, request: Request):
     return compute_route(request.app.state.worlds.world(world_id), await body(request))

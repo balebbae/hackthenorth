@@ -20,7 +20,8 @@ from ..config import ROOT
 logger = logging.getLogger(__name__)
 BASE = 'https://wander.app/contracts/'
 SCHEMAS = {name: json.loads((ROOT / 'shared/contracts' / name).read_text(encoding='utf-8'))
-           for name in ('world.schema.json', 'navigation.schema.json', 'measurements.schema.json')}
+           for name in ('world.schema.json', 'navigation.schema.json', 'measurements.schema.json',
+                        'notes.schema.json')}
 REGISTRY = Registry().with_resources([(BASE + name, Resource.from_contents(schema))
                                       for name, schema in SCHEMAS.items()])
 

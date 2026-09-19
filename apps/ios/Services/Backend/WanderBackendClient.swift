@@ -46,6 +46,24 @@ struct LocalizationQueryResponse: Decodable, Equatable, Sendable {
     let offGraphMetres: Double?
 }
 
+/// A note pinned to a point on the scan in the web viewer, mirroring
+/// `notes.schema.json`. Positions are in the world frame, in metres — the same
+/// frame `SitePose` reports, so the two can be compared directly.
+struct WorldNote: Decodable, Identifiable, Equatable, Sendable {
+    let id: String
+    let title: String
+    /// Human-readable place, e.g. "2nd floor, outside room 204".
+    let location: String?
+    let description: String?
+    let position: [Float]
+    let author: String?
+    let createdAt: String
+
+    var point: SIMD3<Float> {
+        position.count == 3 ? SIMD3(position[0], position[1], position[2]) : .zero
+    }
+}
+
 struct WorldSummary: Decodable, Sendable {
     let id: String
     let name: String
@@ -177,6 +195,15 @@ struct WanderBackendClient: Sendable {
         ]
         let (data, response) = try await session.data(for: request("POST", "sessions/\(sessionId)/pose", body: body))
         try Self.check(response, data)
+    }
+
+    /// `GET /worlds/{id}/notes`. An empty list when the world has none; the
+    /// backend answers 404 only when the world itself is missing.
+    func notes(worldId: String) async throws -> [WorldNote] {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/notes"))
+        try Self.check(response, data)
+        struct File: Decodable { let notes: [WorldNote] }
+        return try JSONDecoder().decode(File.self, from: data).notes
     }
 
     func worlds() async throws -> [WorldSummary] {
