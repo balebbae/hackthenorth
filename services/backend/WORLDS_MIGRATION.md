@@ -5,6 +5,21 @@ The six contract files from that revision are copied unchanged into shared/contr
 
 ## Deployment changes
 
+Shortcut from the activated virtual environment at the repository root:
+`python -m services.backend.scripts.deploy`. This replaces the htn-backend secret
+from the local .env (excluding local path overrides), deploys both apps, and saves
+the detected web endpoint as WANDER_BACKEND_URL. It generates WANDER_API_KEY only
+when missing. Existing Modal authentication and installed dependencies are required.
+
+Import a scan with `python -m services.backend.scripts.scan_pipeline`.
+Default inputs are artifacts/test-building/v1/scene.spz and walkthrough.mp4
+in the same folder. Optional --world, --version, --splat and --video override these.
+This reads the URL/key from .env, uploads assets, runs annotation, downloads frames,
+and prepares review.json under artifacts/test-building/v1. After verified waypoint
+placement/review, rerun with `--world test-building --publish` to publish, index,
+and issue a sample agent query. A measured navigation graph remains required for
+publication; the video is not automatically registered to the splat.
+
 1. Set a team secret `WANDER_API_KEY` in services/backend/.env and in the existing
    Modal `htn-backend` secret. Use the same value in the web proxy and phone.
 2. Install updated dependencies: `python -m pip install -r services/backend/requirements.txt`.

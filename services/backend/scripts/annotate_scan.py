@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 import httpx
+from .backend_http import check_redirect_async
 from pathlib import Path
 
 from ..app.config import Settings
@@ -47,6 +48,8 @@ async def run(args):
             if args.api_url:
                 settings = Settings()
                 async with httpx.AsyncClient(base_url=args.api_url.rstrip('/'), timeout=120,
+                    follow_redirects=True, max_redirects=10,
+                    event_hooks={'response': [check_redirect_async]},
                     headers={'X-API-Key': settings.wander_api_key}) as client:
                     result = await client.put(f"/worlds/{raw['id']}/annotations", json={
                         'batch': batch.model_dump(), 'review': reviews.model_dump()})

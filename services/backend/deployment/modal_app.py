@@ -4,12 +4,12 @@ import modal
 ROOT = Path(__file__).resolve().parents[3]
 image = (modal.Image.debian_slim(python_version='3.12')
          .pip_install_from_requirements(str(ROOT / 'services/backend/requirements.txt'))
-         .workdir('/workspace')
+         .workdir('/root')
          .env({'WANDER_DATA_ROOT': '/data'})
-         .add_local_dir(str(ROOT / 'services/backend'), remote_path='/workspace/services/backend',
+         .add_local_dir(str(ROOT / 'services/backend'), remote_path='/root/services/backend',
                         ignore=['.env', '.env.*', '**/.env', '**/.env.*', '**/__pycache__/**', '**/.pytest_cache/**'])
-         .add_local_dir(str(ROOT / 'maps/navigation'), remote_path='/workspace/maps/navigation')
-         .add_local_dir(str(ROOT / 'shared/contracts'), remote_path='/workspace/shared/contracts'))
+         .add_local_dir(str(ROOT / 'maps/navigation'), remote_path='/root/maps/navigation')
+         .add_local_dir(str(ROOT / 'shared/contracts'), remote_path='/root/shared/contracts'))
 app = modal.App('htn-navigation-backend')
 volume = modal.Volume.from_name('wander-worlds', create_if_missing=True)
 
