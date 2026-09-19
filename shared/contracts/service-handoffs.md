@@ -125,7 +125,27 @@ Immediate obstacle/navigation warnings interrupt conversational playback. Re-eva
 
 For a real-device demo, provide reachable backend HTTPS/WSS URLs (Modal or an agreed local-network server), a shared session identifier, and service credentials through backend environment/Modal secrets. `127.0.0.1` on the phone means the phone itself, not the development PC. Deploy the current FastAPI app using `services/backend/deployment/modal_app.py`; configure the `htn-backend` secret. Current endpoints are not authenticated; add client/session authorization before a public deployment handling real users.
 
-The backend needs OpenAI and Elasticsearch credentials and the configured embedding endpoint ID. It does not currently need a Niantic API key: the localization owner configures client SDK access according to that SDK's requirements. A future server-to-server Niantic map-fetch integration would require a separate documented credential/permission contract; none exists today.
+The backend needs OpenAI and Elasticsearch credentials and the configured embedding endpoint ID. For internal demos, the localization owner can configure a Niantic developer token without a backend exchange. For production, the updated Niantic authorization docs require our backend to exchange a server-held service-account API key for short-lived access tokens after authenticating the app user. This token service is not implemented. See the branch review below; a map-fetch integration is not the only reason the backend may need Niantic credentials.
+
+## Review of Alan's documentation mirror
+
+Read from `origin/alan` at commit `21397e05c25c1689ba613f2385cec65c16d402b4` (mirror captured 2026-09-19). The documentation branch was inspected without merging or switching branches. Important corrections and specifics for teammates:
+
+- `niantic-docs/README.md` explains that HTML-derived `nsdk/` pages default to Unity. Prefer `llms-nsdk/` Swift platform sections and `llms-api-swift/` symbol references. The mirror also contains older 3.17.0 material; do not mix versions blindly.
+- `llms-api-swift/NSDK.VpsAnchorUpdate.struct-TrackingData.txt` documents `targetAnchorTransform` as the anchor transform in local ARKit space, not the device's graph-space position. It documents `timestampMs` as milliseconds since epoch; divide by 1000 for our pose timestamp. `confidence` is available on this tracking result in [0,1], but does not replace checking the anchor tracking state.
+- `llms-api-swift/NSDK.struct-VpsAnchorUpdate.txt` describes `anchorUpdate(anchorId:)` snapshots. `trackingData` can exist in both limited and tracked states; non-null data alone must not imply `localized=true`.
+- `llms-api-swift/NSDK.NSDKVps2Session.method-getPose.txt` converts a geolocation to an AR-space pose. It is not a ready-made getter for our map-relative device position.
+- `llms-api-swift/NSDK.class-NSDKSceneSegmentationSession.txt` describes acquiring/configuring a segmentation session, confidence results, packed channels and image parameters. However, its `.person` example conflicts with `NSDK.struct-SceneSegmentationChannels.txt`, which lists only sky, ground, naturalGround, artificialGround and grass. `NSDK.class-SceneSegmentationResult.txt` also uses method names differing from the session reference. Confirm against the installed Swift package; do not promise person/chair/door detection based on those examples.
+
+### Niantic authorization handoff (proposal, not a live backend route)
+
+Sources: `niantic-docs/llms-nsdk/auth_backend.txt` and `niantic-docs/nsdk/auth_developer_token.md` on the reviewed branch.
+
+For internal testing, Scaniverse developer tokens need the scopes used by the client: Scaniverse API for Site discovery and VPS API for VPS localization. They do not require our backend to exchange tokens. Do not use a developer token in a public release.
+
+For production, the operations owner supplies a Niantic service-account API key in backend secrets, and the app/auth owner supplies authenticated user identity and organization/Site authorization. The server calls `POST https://spatial-identity.nianticspatial.com/oauth/token` with `grantType: exchange_api_key_access_token` and the service-account `apiKey`. Niantic returns `accessToken` and `expiresAt` (Unix seconds). Only the short-lived token and expiry go to the client. The exchange payload itself does not contain an app user ID; our backend must enforce access control before issuing tokens.
+
+A proposed app-facing `POST /localization/access-token` would return `{access_token, expires_at}` with `Cache-Control: no-store`, require app authentication/authorization, and never return/log the service-account key. Clients request a replacement before expiry and pass tokens to NSDK. This endpoint and its credential setting are not implemented; agree on app authentication before adding it. Keep this flow separate from pose/semantic ingestion and never index tokens in Elasticsearch.
 
 ## Integration acceptance checklist
 
