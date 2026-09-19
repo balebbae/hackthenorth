@@ -1,4 +1,6 @@
-# HTN Navigation Assistant
+# hackthenorth
+
+HTN Navigation Assistant
 
 The web app is scaffolded with Next.js, TypeScript, Tailwind CSS, and ESLint. The remaining directories are placeholders; application features have not been implemented.
 
