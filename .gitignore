@@ -1,0 +1,32 @@
+# Local system files
+.DS_Store
+
+# Credentials and local environment
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Next.js / JavaScript
+node_modules/
+.next/
+out/
+dist/
+.vercel/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Xcode local output and user settings
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# Generated or exported map assets
+/maps/assets/*
+!/maps/assets/.gitkeep
