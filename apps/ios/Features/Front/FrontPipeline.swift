@@ -17,6 +17,10 @@ final class FrontPipeline: ObservableObject {
     let queryLoop: LocalizationQueryLoop
     let link = PeerLink(role: .front)
     let haptics = HapticController()
+    let localizer = NianticLocalizer()
+    let reporter = LocalizationReporter()
+    @Published private(set) var usingNSDK = false
+    private var lastReportedFix: LocalizationFix?
     private var lastSentHaptics: HapticCommand?
     private var lastHapticSend: TimeInterval = 0
     private var statusTask: Task<Void, Never>?
@@ -72,16 +76,26 @@ final class FrontPipeline: ObservableObject {
         for child in [arSession.objectWillChange.eraseToAnyPublisher(),
                       queryLoop.objectWillChange.eraseToAnyPublisher(),
                       speech.objectWillChange.eraseToAnyPublisher(),
-                      link.objectWillChange.eraseToAnyPublisher()] {
+                      link.objectWillChange.eraseToAnyPublisher(),
+                      localizer.objectWillChange.eraseToAnyPublisher(),
+                      reporter.objectWillChange.eraseToAnyPublisher()] {
             child.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &forwarding)
         }
     }
 
-    func start(settings: CameraSettings) {
+    func start(settings: CameraSettings, deviceId: String = "") {
         detector.maxRange = Float(settings.obstacleRangeMeters)
         arSession.start(settings: settings)
-        queryLoop.reconfigure(settings: settings)
-        queryLoop.start()
+        reporter.configure(settings: settings, deviceId: deviceId, role: .front)
+        usingNSDK = settings.canLocalizeWithNSDK && NianticLocalizer.isAvailable && arSession.state == .running
+        if usingNSDK {
+            // The SDK submits frames itself at the configured rate; the REST loop stays off.
+            localizer.start(token: settings.nianticToken, siteId: settings.nianticSiteId,
+                            anchorPayload: nil, arSession: arSession.session)
+        } else {
+            queryLoop.reconfigure(settings: settings)
+            queryLoop.start()
+        }
         link.start()
         isActive = true
         UIApplication.shared.isIdleTimerDisabled = true
@@ -103,6 +117,9 @@ final class FrontPipeline: ObservableObject {
         haptics.stopPulsing()
         link.send(.haptic(.none))
         queryLoop.stop()
+        localizer.stop()
+        reporter.reset()
+        usingNSDK = false
         arSession.stop()
         link.stop()
         speech.stop()
@@ -120,6 +137,17 @@ final class FrontPipeline: ObservableObject {
     }
 
     private func handle(_ frame: FrameSnapshot) {
+        if usingNSDK {
+            localizer.update(cameraTransform: frame.cameraTransform)
+            if let fix = localizer.latestFix {
+                if fix != lastReportedFix {
+                    lastReportedFix = fix
+                    reporter.report(fix: fix)
+                } else if fix.state != .lost {
+                    reporter.report(cameraTransform: frame.cameraTransform, using: fix)
+                }
+            }
+        }
         guard frame.timestamp - lastDetection >= detectionInterval, let depth = frame.depthMap else { return }
         lastDetection = frame.timestamp
         zones = detector.analyze(depthMap: depth)

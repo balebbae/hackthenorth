@@ -68,12 +68,35 @@ struct CameraSettingsView: View {
                         .accessibilityIdentifier("settings.endpoint")
                     SecureField("Developer token", text: $settingsStore.settings.nianticToken)
                         .accessibilityIdentifier("settings.token")
+                    TextField("Site ID", text: $settingsStore.settings.nianticSiteId)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("settings.siteId")
                 } header: {
-                    Text("Niantic credentials")
+                    Text("Niantic")
                 } footer: {
-                    Text(settingsStore.settings.hasNianticCredentials
-                         ? "Queries will be sent."
-                         : "No token set. Queries are captured and logged but not sent.")
+                    Text(settingsStore.settings.canLocalizeWithNSDK
+                         ? "The Niantic SDK will localize against this Site."
+                         : "Token and Site ID enable SDK localization. Without them the REST loop runs and is logged.")
+                }
+
+                Section {
+                    TextField("Backend URL", text: $settingsStore.settings.backendURL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .accessibilityIdentifier("settings.backendURL")
+                    SecureField("API key", text: $settingsStore.settings.backendAPIKey)
+                        .accessibilityIdentifier("settings.backendKey")
+                    TextField("World ID (blank = match site)", text: $settingsStore.settings.worldId)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("settings.worldId")
+                    LabeledContent("Device ID", value: String(settingsStore.deviceId.prefix(8)))
+                } header: {
+                    Text("Wander backend")
+                } footer: {
+                    Text(settingsStore.settings.hasBackend ? "Fixes are posted to the worlds API." : "Backend URL and key are needed to report position.")
                 }
 
                 if let error = settingsStore.settings.validationError {

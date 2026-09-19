@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Copy to LocalConfig.plist (ignored by git). Values seed Settings on first launch. -->
+    <key>BackendURL</key>
+    <string>https://YOUR-BACKEND.modal.run</string>
+    <key>BackendAPIKey</key>
+    <string></string>
+    <key>NianticToken</key>
+    <string></string>
+    <key>NianticSiteId</key>
+    <string></string>
+    <key>WorldId</key>
+    <string></string>
+</dict>
+</plist>

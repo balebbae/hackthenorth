@@ -47,10 +47,21 @@ xcodebuild test -project NavigationAssistant.xcodeproj -scheme NavigationAssista
 ARKit does not run on the simulator. There the front screen uses a flat placeholder
 frame so the query loop, settings, and UI can still be exercised.
 
-## Niantic
+## Niantic and backend
 
-Set the developer token and endpoint in Settings on the front phone. Without a token
-the loop still captures and encodes frames but reports them as skipped. The request
-body shape in `NianticRESTTransport` is a placeholder until the localization endpoint
-is confirmed; the supported path in Niantic's docs is the NSDK Swift package, which
-person 2 can plug in behind the same `LocalizationTransport` protocol.
+Localization uses the Niantic Spatial SDK (Swift package `nsdk-library-xcframework`).
+`NianticLocalizer` creates one NSDK session fed by our ARKit session, fetches the
+Site's VPS anchor payload through the Sites API, tracks that anchor, and turns each
+anchor update into the device pose in the site frame. The SDK submits camera frames
+itself at 5 requests a second until the first fix, then once a second.
+`LocalizationReporter` posts fixes to the Wander backend's `POST /worlds/{id}/localize`
+and in-between ARKit poses to `POST /sessions/{id}/pose`, at most five times a second.
+
+Secrets never go in git. Copy `Resources/LocalConfig.example.plist` to
+`Resources/LocalConfig.plist` and fill in the backend URL and key, the Niantic
+developer token, and the Site ID. Those values seed Settings on first launch and can
+be edited on the phone. Without a token and Site ID the front phone falls back to the
+placeholder REST loop, which captures and logs frames without sending them.
+
+The backend world must carry the same `nianticSiteId` and an `alignment.frame` of
+`niantic-vps` before `/localize` accepts fixes.
