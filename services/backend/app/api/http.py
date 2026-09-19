@@ -1,0 +1,82 @@
+import asyncio
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from ..models import SessionRequest, DestinationRequest, Query, Document
+from ..integrations.elastic.ingestion import extract_text
+from ..services.sessions import broadcast
+
+router = APIRouter()
+
+
+@router.get('/health')
+async def health():
+    return {'status': 'ok'}
+
+
+@router.post('/legacy/sessions', status_code=201)
+async def create_session(body: SessionRequest, request: Request):
+    return request.app.state.navigation.create(body.site_id).snapshot()
+
+
+@router.get('/legacy/sessions/{session_id}')
+async def session_state(session_id: str, request: Request):
+    return request.app.state.store.get(session_id).snapshot()
+
+
+@router.get('/destinations')
+async def destinations(request: Request):
+    graph = request.app.state.navigation.graph
+    return {'site_id': graph.site_id, 'destinations': [d.model_dump() for d in graph.destinations]}
+
+
+@router.post('/legacy/sessions/{session_id}/destination')
+async def destination(session_id: str, body: DestinationRequest, request: Request):
+    state = request.app.state
+    session = state.store.get(session_id)
+    result = state.navigation.set_destination(session, body.destination_id, body.accessible_only)
+    await broadcast(session, {'type': 'route_update', **result})
+    await broadcast(session, {'type': 'navigation_instruction', **result})
+    state.events.record(session, 'destination_set', body.model_dump())
+    state.events.record(session, 'route_generated', result)
+    if result['instruction'] == 'arrived':
+        state.events.record(session, 'arrived', {'destination_id': body.destination_id})
+    return result
+
+
+@router.post('/assistant/query')
+async def query(body: Query, request: Request):
+    return await request.app.state.agent.query(body.session_id, body.text)
+
+
+@router.post('/knowledge/documents', status_code=201)
+async def document(body: Document, request: Request):
+    if body.site_id != request.app.state.navigation.graph.site_id:
+        raise ValueError('Unknown site')
+    return {'source_ids': await request.app.state.ingestion.document(body)}
+
+
+@router.post('/knowledge/upload', status_code=201)
+async def upload(request: Request, site_id: str = Form(...), document_id: str = Form(...),
+                 file: UploadFile = File(...)):
+    data = await file.read(5 * 1024 * 1024 + 1)
+    if len(data) > 5 * 1024 * 1024:
+        raise HTTPException(413, 'Maximum upload size is 5 MiB')
+    try:
+        text = await asyncio.to_thread(extract_text, file.filename or '', data)
+    except Exception:
+        raise ValueError('Could not extract text; use valid UTF-8 text/Markdown or a text PDF')
+    return await document(Document(site_id=site_id, id=document_id, title=file.filename or document_id, text=text), request)
+
+
+@router.get('/elastic/status')
+async def elastic_status(request: Request):
+    elastic = request.app.state.elastic
+    available = False
+    if elastic.client:
+        try:
+            available = bool(await elastic.client.ping())
+        except Exception:
+            pass
+    return {'configured': elastic.client is not None, 'reachable': available,
+            'embedding_endpoint': elastic.settings.elastic_embedding_endpoint,
+            'rerank_endpoint': elastic.settings.elastic_rerank_endpoint,
+            'failed_event_writes': request.app.state.events.failed_writes}

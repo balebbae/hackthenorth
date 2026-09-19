@@ -1,0 +1,772 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Backend contract component schemas v0.1",
+  "$defs": {
+    "Localization": {
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "default": "unknown",
+          "title": "Provider",
+          "type": "string"
+        },
+        "map_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Map Id"
+        },
+        "coordinate_frame": {
+          "default": "site",
+          "title": "Coordinate Frame",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "tracking_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tracking Status"
+        },
+        "provider_metadata": {
+          "additionalProperties": true,
+          "title": "Provider Metadata",
+          "type": "object"
+        }
+      },
+      "title": "Localization",
+      "type": "object"
+    },
+    "AnnotationEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "map_revision": {
+          "title": "Map Revision",
+          "type": "string"
+        },
+        "frame": {
+          "title": "Frame",
+          "type": "string"
+        },
+        "frame_sha256": {
+          "title": "Frame Sha256",
+          "type": "string"
+        },
+        "verified_by": {
+          "title": "Verified By",
+          "type": "string"
+        },
+        "verified_at": {
+          "title": "Verified At",
+          "type": "string"
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "map_revision",
+        "frame",
+        "frame_sha256",
+        "verified_by",
+        "verified_at",
+        "notes"
+      ],
+      "title": "AnnotationEvidence",
+      "type": "object"
+    },
+    "Destination": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "entity_type": {
+          "title": "Entity Type",
+          "type": "string"
+        },
+        "waypoint_id": {
+          "title": "Waypoint Id",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "floor": {
+          "default": 0,
+          "title": "Floor",
+          "type": "integer"
+        },
+        "annotation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnnotationEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "entity_type",
+        "waypoint_id"
+      ],
+      "title": "Destination",
+      "type": "object"
+    },
+    "Edge": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "accessible": {
+          "default": true,
+          "title": "Accessible",
+          "type": "boolean"
+        },
+        "bidirectional": {
+          "default": true,
+          "title": "Bidirectional",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "target"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "Waypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "title": "Z",
+          "type": "number"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z",
+        "id"
+      ],
+      "title": "Waypoint",
+      "type": "object"
+    },
+    "Candidate": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "restroom",
+            "elevator",
+            "stairs",
+            "entrance",
+            "exit",
+            "drinking_fountain",
+            "bottle_filler",
+            "reception",
+            "room",
+            "other"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1200,
+          "title": "Description",
+          "type": "string"
+        },
+        "sign_text": {
+          "maxLength": 500,
+          "title": "Sign Text",
+          "type": "string"
+        },
+        "designation": {
+          "enum": [
+            "men",
+            "women",
+            "all_gender",
+            "unknown"
+          ],
+          "title": "Designation",
+          "type": "string"
+        },
+        "uncertainty": {
+          "maxLength": 500,
+          "title": "Uncertainty",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "frame": {
+          "title": "Frame",
+          "type": "string"
+        },
+        "frame_sha256": {
+          "title": "Frame Sha256",
+          "type": "string"
+        },
+        "timestamp_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp Seconds"
+        }
+      },
+      "required": [
+        "category",
+        "name",
+        "description",
+        "sign_text",
+        "designation",
+        "uncertainty",
+        "id",
+        "frame",
+        "frame_sha256"
+      ],
+      "title": "Candidate",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "restroom",
+            "elevator",
+            "stairs",
+            "entrance",
+            "exit",
+            "drinking_fountain",
+            "bottle_filler",
+            "reception",
+            "room",
+            "other"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1200,
+          "title": "Description",
+          "type": "string"
+        },
+        "sign_text": {
+          "maxLength": 500,
+          "title": "Sign Text",
+          "type": "string"
+        },
+        "designation": {
+          "enum": [
+            "men",
+            "women",
+            "all_gender",
+            "unknown"
+          ],
+          "title": "Designation",
+          "type": "string"
+        },
+        "uncertainty": {
+          "maxLength": 500,
+          "title": "Uncertainty",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "name",
+        "description",
+        "sign_text",
+        "designation",
+        "uncertainty"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Review": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "approve",
+            "reject",
+            "duplicate"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "waypoint_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Waypoint Id"
+        },
+        "duplicate_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duplicate Of"
+        },
+        "verified_by": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Verified By",
+          "type": "string"
+        },
+        "verified_at": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Verified At",
+          "type": "string"
+        },
+        "corrected": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Finding"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "notes": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "decision",
+        "verified_by",
+        "verified_at"
+      ],
+      "title": "Review",
+      "type": "object"
+    },
+    "Pose": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "title": "Z",
+          "type": "number"
+        },
+        "heading": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Heading",
+          "type": "number"
+        },
+        "localized": {
+          "title": "Localized",
+          "type": "boolean"
+        },
+        "timestamp": {
+          "minimum": 0,
+          "title": "Timestamp",
+          "type": "number"
+        },
+        "localization": {
+          "$ref": "#/$defs/Localization"
+        },
+        "pitch": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch"
+        },
+        "roll": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roll"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z",
+        "heading",
+        "localized",
+        "timestamp"
+      ],
+      "title": "Pose",
+      "type": "object"
+    },
+    "DestinationRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "destination_id": {
+          "title": "Destination Id",
+          "type": "string"
+        },
+        "accessible_only": {
+          "default": true,
+          "title": "Accessible Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "destination_id"
+      ],
+      "title": "DestinationRequest",
+      "type": "object"
+    },
+    "Obstacle": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "distance_m": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distance M"
+        },
+        "description": {
+          "maxLength": 1000,
+          "title": "Description",
+          "type": "string"
+        },
+        "timestamp": {
+          "minimum": 0,
+          "title": "Timestamp",
+          "type": "number"
+        }
+      },
+      "required": [
+        "direction",
+        "description",
+        "timestamp"
+      ],
+      "title": "Obstacle",
+      "type": "object"
+    },
+    "Query": {
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 8000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "text"
+      ],
+      "title": "Query",
+      "type": "object"
+    },
+    "Document": {
+      "additionalProperties": false,
+      "properties": {
+        "site_id": {
+          "title": "Site Id",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 200000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "site_id",
+        "id",
+        "title",
+        "text"
+      ],
+      "title": "Document",
+      "type": "object"
+    },
+    "Graph": {
+      "additionalProperties": false,
+      "properties": {
+        "site_id": {
+          "title": "Site Id",
+          "type": "string"
+        },
+        "coordinate_frame": {
+          "default": "site",
+          "title": "Coordinate Frame",
+          "type": "string"
+        },
+        "waypoints": {
+          "items": {
+            "$ref": "#/$defs/Waypoint"
+          },
+          "title": "Waypoints",
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/Edge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "destinations": {
+          "items": {
+            "$ref": "#/$defs/Destination"
+          },
+          "title": "Destinations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "site_id",
+        "waypoints",
+        "edges",
+        "destinations"
+      ],
+      "title": "Graph",
+      "type": "object"
+    },
+    "AnnotationBatch": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "site_id": {
+          "minLength": 1,
+          "title": "Site Id",
+          "type": "string"
+        },
+        "map_revision": {
+          "minLength": 1,
+          "title": "Map Revision",
+          "type": "string"
+        },
+        "floor": {
+          "title": "Floor",
+          "type": "integer"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/Candidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "site_id",
+        "map_revision",
+        "floor",
+        "model",
+        "candidates"
+      ],
+      "title": "AnnotationBatch",
+      "type": "object"
+    },
+    "ReviewFile": {
+      "additionalProperties": false,
+      "properties": {
+        "site_id": {
+          "title": "Site Id",
+          "type": "string"
+        },
+        "map_revision": {
+          "title": "Map Revision",
+          "type": "string"
+        },
+        "batch_sha256": {
+          "title": "Batch Sha256",
+          "type": "string"
+        },
+        "graph_sha256": {
+          "title": "Graph Sha256",
+          "type": "string"
+        },
+        "reviews": {
+          "items": {
+            "$ref": "#/$defs/Review"
+          },
+          "title": "Reviews",
+          "type": "array"
+        }
+      },
+      "required": [
+        "site_id",
+        "map_revision",
+        "batch_sha256",
+        "graph_sha256",
+        "reviews"
+      ],
+      "title": "ReviewFile",
+      "type": "object"
+    }
+  }
+}
