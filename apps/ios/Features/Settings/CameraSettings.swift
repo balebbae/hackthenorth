@@ -13,7 +13,9 @@ struct CameraSettings: Codable, Equatable, Sendable {
     /// Farthest obstacle distance the detector reports, in metres. LiDAR is reliable to about 5 m.
     var obstacleRangeMeters: Double = 5.0
     /// Left and right phones run LiDAR and report clearance to the front phone.
-    var sidePhonesSenseObstacles: Bool = true
+    /// Kept for stored-settings compatibility; side phones no longer sense. Their
+    /// buzzes come from the front phone's localisation against the world map.
+    var sidePhonesSenseObstacles: Bool = false
     /// How often the front phone snapshots a frame for Niantic, in milliseconds.
     var captureIntervalMs: Int = 200
     /// JPEG quality for uploaded frames, 0...1.
@@ -135,6 +137,10 @@ struct CameraSettings: Codable, Equatable, Sendable {
             config.videoFormat = match
         } else if let first = formats.first {
             config.videoFormat = first
+        }
+        if config.frameSemantics.isDisjoint(with: [.sceneDepth, .smoothedSceneDepth]) {
+            // No LiDAR: detected walls feed the structure-based obstacle estimate.
+            config.planeDetection = [.vertical]
         }
         return config
     }

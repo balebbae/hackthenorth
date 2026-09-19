@@ -25,10 +25,26 @@ final class PeerLink: NSObject, ObservableObject {
 
     init(role: DeviceRole) {
         self.role = role
-        peerID = MCPeerID(displayName: "\(role.rawValue)-\(UIDevice.current.name.prefix(20))")
+        // Reuse one peer identity per role across launches. A fresh MCPeerID with the
+        // same display name confuses peers that still remember the old one.
+        peerID = Self.persistentPeerID(displayName: "\(role.rawValue)-\(UIDevice.current.name.prefix(20))")
         session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .none)
         super.init()
         session.delegate = self
+    }
+
+    private static func persistentPeerID(displayName: String) -> MCPeerID {
+        let key = "peerID." + displayName
+        if let data = UserDefaults.standard.data(forKey: key),
+           let saved = try? NSKeyedUnarchiver.unarchivedObject(ofClass: MCPeerID.self, from: data),
+           saved.displayName == displayName {
+            return saved
+        }
+        let fresh = MCPeerID(displayName: displayName)
+        if let data = try? NSKeyedArchiver.archivedData(withRootObject: fresh, requiringSecureCoding: true) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+        return fresh
     }
 
     func start() {
@@ -39,11 +55,13 @@ final class PeerLink: NSObject, ObservableObject {
             browser.delegate = self
             browser.startBrowsingForPeers()
             self.browser = browser
+            print("[peer] \(peerID.displayName) browsing for \(Self.serviceType)")
         } else {
             let advertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: ["role": role.rawValue], serviceType: Self.serviceType)
             advertiser.delegate = self
             advertiser.startAdvertisingPeer()
             self.advertiser = advertiser
+            print("[peer] \(peerID.displayName) advertising \(Self.serviceType)")
         }
     }
 
@@ -75,6 +93,7 @@ final class PeerLink: NSObject, ObservableObject {
     }
 
     private func peerChanged(_ name: String, state: MCSessionState) {
+        print("[peer] \(name) -> \(state.rawValue) (0=notConnected 1=connecting 2=connected)")
         switch state {
         case .connected:
             if let raw = name.split(separator: "-").first, let role = DeviceRole(rawValue: String(raw)) {
@@ -116,21 +135,27 @@ extension PeerLink: MCSessionDelegate {
 
 extension PeerLink: MCNearbyServiceAdvertiserDelegate {
     nonisolated func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
+        print("[peer] invitation from \(peerID.displayName), accepting")
         invitationHandler(true, session)
     }
     nonisolated func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
         let message = error.localizedDescription
+        print("[peer] advertising failed: \(message)")
         Task { @MainActor in self.lastError = message }
     }
 }
 
 extension PeerLink: MCNearbyServiceBrowserDelegate {
     nonisolated func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String: String]?) {
+        print("[peer] found \(peerID.displayName) \(info ?? [:]), inviting")
         browser.invitePeer(peerID, to: session, withContext: nil, timeout: 15)
     }
-    nonisolated func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {}
+    nonisolated func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
+        print("[peer] lost \(peerID.displayName)")
+    }
     nonisolated func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
         let message = error.localizedDescription
+        print("[peer] browsing failed: \(message)")
         Task { @MainActor in self.lastError = message }
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import ARKit
 import Combine
 import UIKit
 
@@ -9,6 +10,8 @@ final class SidePipeline: ObservableObject {
     @Published private(set) var zones: ObstacleZones = .empty
     @Published private(set) var lastCommand: HapticCommand = .none
     @Published private(set) var reportsSent = 0
+    /// What the structure estimator saw on the last frame (non-LiDAR phones).
+    @Published private(set) var structureStats = StructureObstacleEstimator.Stats()
     private var wantsSensing = false
 
     /// True only while ARKit is actually delivering frames.
@@ -20,6 +23,7 @@ final class SidePipeline: ObservableObject {
     let arSession = ARSessionController()
 
     private var detector = ObstacleDetector()
+    private var estimator = StructureObstacleEstimator()
     private var lastDetection: TimeInterval = 0
     private let detectionInterval: TimeInterval = 1.0 / 10
     private var lastReport: TimeInterval = 0
@@ -27,7 +31,9 @@ final class SidePipeline: ObservableObject {
     private var forwarding = Set<AnyCancellable>()
     private var statusTask: Task<Void, Never>?
 
-    var canSense: Bool { (role == .left || role == .right) && ARSessionController.isSupported }
+    /// Side phones never run the camera. Their buzzes come from the front phone's
+    /// localisation against the world map (walls and annotated hazards beside the wearer).
+    var canSense: Bool { false }
 
     init(role: DeviceRole) {
         self.role = role
@@ -44,6 +50,7 @@ final class SidePipeline: ObservableObject {
     func start(settings: CameraSettings) {
         link.start()
         detector.maxRange = Float(settings.obstacleRangeMeters)
+        estimator.maxRange = Float(settings.obstacleRangeMeters)
         wantsSensing = canSense && settings.sidePhonesSenseObstacles
         if wantsSensing { arSession.start(settings: settings) }
         UIApplication.shared.isIdleTimerDisabled = true
@@ -54,7 +61,7 @@ final class SidePipeline: ObservableObject {
                 guard let self else { break }
                 let z = self.zones
                 let fmt: (Float?) -> String = { $0.map { String(format: "%.2f", $0) } ?? "-" }
-                print("[side \(self.role.rawValue)] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) depth=\(self.arSession.depthAvailable) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) touching=\(z.touching) link=\(self.link.connectedRoles.map(\.rawValue)) sent=\(self.link.messagesSent) recv=\(self.link.messagesReceived) cmd=\(self.lastCommand.shouldBuzz(self.role) ? "buzz" : "quiet") err=\(self.link.lastError ?? "-")")
+                print("[side \(self.role.rawValue)] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) depth=\(self.arSession.depthAvailable) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) touching=\(z.touching) pts=\(self.estimator.stats.rawPoints)/\(self.estimator.stats.inFan) planes=\(self.estimator.stats.planes) tilted=\(self.estimator.stats.tilted) link=\(self.link.connectedRoles.map(\.rawValue)) sent=\(self.link.messagesSent) recv=\(self.link.messagesReceived) cmd=\(self.lastCommand.shouldBuzz(self.role) ? "buzz" : "quiet") err=\(self.link.lastError ?? "-")")
             }
         }
     }
@@ -70,6 +77,7 @@ final class SidePipeline: ObservableObject {
 
     func applySettings(_ settings: CameraSettings) {
         detector.maxRange = Float(settings.obstacleRangeMeters)
+        estimator.maxRange = Float(settings.obstacleRangeMeters)
         let shouldSense = canSense && settings.sidePhonesSenseObstacles
         if shouldSense, !wantsSensing {
             wantsSensing = true
@@ -84,13 +92,19 @@ final class SidePipeline: ObservableObject {
     private func handle(_ message: PeerMessage) {
         guard case .haptic(let command) = message else { return }
         lastCommand = command
-        haptics.setProximity(command.shouldBuzz(role) ? (command.distance ?? 0.5) : nil)
+        haptics.setProximity(command.shouldBuzz(role) ? (command.distance(for: role) ?? 0.5) : nil)
     }
 
     private func handle(_ frame: FrameSnapshot) {
-        guard frame.timestamp - lastDetection >= detectionInterval, let depth = frame.depthMap else { return }
+        guard frame.timestamp - lastDetection >= detectionInterval else { return }
         lastDetection = frame.timestamp
-        zones = detector.analyze(depthMap: depth)
+        if let depth = frame.depthMap {
+            zones = detector.analyze(depthMap: depth)
+        } else {
+            zones = estimator.analyze(points: frame.featurePoints, identifiers: frame.featurePointIDs, planes: frame.verticalPlanes,
+                                      cameraTransform: frame.cameraTransform, timestamp: frame.timestamp)
+            if estimator.stats != structureStats { structureStats = estimator.stats }
+        }
         guard frame.timestamp - lastReport >= reportInterval else { return }
         lastReport = frame.timestamp
         let reading = SideClearance(role: role, nearest: zones.closest, timestamp: Date().timeIntervalSince1970)

@@ -95,7 +95,7 @@ struct FrontRoleView: View {
         switch pipeline.arSession.state {
         case .idle: "Idle"
         case .unsupported: "No ARKit"
-        case .running: pipeline.arSession.depthAvailable ? "Running · LiDAR" : "Running · no depth"
+        case .running: pipeline.arSession.depthAvailable ? "Running · LiDAR" : "Running · camera estimate"
         case .failed: "Failed"
         }
     }
@@ -227,6 +227,14 @@ struct FrontRoleView: View {
             StatRow(label: "Open side", value: pipeline.lastDecision.openSide?.rawValue ?? "–")
             StatRow(label: "Last cue", value: pipeline.speech.lastSpoken ?? "–")
             Divider()
+            StatRow(label: "Map", value: pipeline.mapStatus)
+            if let m = pipeline.mapReading {
+                let fmt: (Float?) -> String = { $0.map { String(format: "%.1f", $0) } ?? "–" }
+                StatRow(label: "Map around", value: "L \(fmt(m.left)) · ahead \(fmt(m.zones.center)) · R \(fmt(m.right)) · back \(fmt(m.back))")
+                if let hazard = m.nearestHazard, let d = m.nearestHazardDistance {
+                    StatRow(label: "Hazard", value: String(format: "%@ · %.1f m", hazard.name, d))
+                }
+            }
             StatRow(label: "Linked phones", value: pipeline.link.connectedRoles.isEmpty ? "none" : pipeline.link.connectedRoles.map(\.rawValue).joined(separator: ", "),
                     identifier: "front.link")
             StatRow(label: "Left phone sees", value: sideReading(.left))

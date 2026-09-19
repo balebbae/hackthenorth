@@ -1,3 +1,5 @@
+import logging
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from contextlib import asynccontextmanager, AsyncExitStack
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -46,6 +48,14 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
         app.state.worlds, app.state.world_navigation, app.state.store)
     app.state.store.refresh = agent_tools.refresh
     app.state.agent = BuildingAgentService(app.state.store, model, agent_tools)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def rejected(request: Request, error: StarletteHTTPException):
+        # Client errors are logged so a phone's rejected upload can be diagnosed from the server side.
+        if 400 <= error.status_code < 500:
+            logging.getLogger(__name__).warning('%s %s -> %s %s', request.method, request.url.path,
+                                                error.status_code, error.detail)
+        return JSONResponse(status_code=error.status_code, content={'detail': error.detail}, headers=error.headers)
 
     @app.exception_handler(KeyError)
     async def missing(request: Request, error):

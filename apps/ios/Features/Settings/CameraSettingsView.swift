@@ -46,7 +46,6 @@ struct CameraSettingsView: View {
                         Text(String(format: "%.1f m", settingsStore.settings.obstacleRangeMeters))
                             .font(.system(.body, design: .monospaced))
                     }
-                    Toggle("Side phones sense obstacles", isOn: $settingsStore.settings.sidePhonesSenseObstacles)
                         .accessibilityIdentifier("settings.sideSensing")
                 } header: {
                     Text("Obstacles")

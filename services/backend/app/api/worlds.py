@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import binascii
 import hashlib
@@ -335,6 +336,46 @@ async def localizations(world_id: str, request: Request, limit: int = 20):
     index = localizations_index(store, world_id)
     index['queries'] = index['queries'][:max(1, min(limit, LOCALIZATIONS_KEPT))]
     return index
+
+
+@router.get('/worlds/{world_id}/occupancy')
+async def occupancy(world_id: str, request: Request, rebuild: bool = False):
+    """Static obstacle grid voxelised from the world's splat, cached per asset version.
+    Phones ray-cast against it from their localised pose to find walls and furniture."""
+    from ..services.occupancy import build_occupancy
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    cached = store.path('worlds', world_id, world['version'], 'occupancy.json')
+    if cached.exists() and not rebuild:
+        return store.read('worlds', world_id, world['version'], 'occupancy.json')
+    splat = store.path(*world['assets']['splat'].split('/'))
+    if not splat.exists():
+        raise HTTPException(404, 'World has no splat asset')
+    try:
+        grid = await asyncio.to_thread(build_occupancy, splat.read_bytes(), world)
+    except ValueError as error:
+        raise HTTPException(422, f'Cannot build occupancy: {error}')
+    async with store.lock('world:' + world_id):
+        await store.write(grid, 'worlds', world_id, world['version'], 'occupancy.json')
+    return grid
+
+
+@router.get('/worlds/{world_id}/hazards')
+async def hazards(world_id: str, request: Request):
+    """Annotated obstacles and potential hazards with positions, for the phone's map sensor.
+    Elasticsearch first; the published files on the volume when it is unavailable."""
+    from ..services.hazards import hazards_from_elastic, hazards_from_files
+    store = request.app.state.worlds
+    store.world(world_id)
+    rows, source = [], 'files'
+    if request.app.state.elastic.client is not None:
+        try:
+            rows, source = await hazards_from_elastic(request.app.state.elastic, world_id), 'elastic'
+        except Exception as error:
+            logger.warning('Hazard lookup in Elasticsearch failed (%s); using files', type(error).__name__)
+    if not rows:
+        rows, source = hazards_from_files(store, world_id), 'files'
+    return {'worldId': world_id, 'source': source, 'hazards': rows}
 
 
 @router.get('/worlds/{world_id}/vps')

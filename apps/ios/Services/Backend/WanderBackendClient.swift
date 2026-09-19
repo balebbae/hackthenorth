@@ -179,6 +179,19 @@ struct WanderBackendClient: Sendable {
         try Self.check(response, data)
     }
 
+    /// Static map layers for the phone's map obstacle sensor.
+    func occupancy(worldId: String) async throws -> MapOccupancyPayload {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/occupancy"))
+        try Self.check(response, data)
+        return try JSONDecoder().decode(MapOccupancyPayload.self, from: data)
+    }
+
+    func hazards(worldId: String) async throws -> [MapHazard] {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/hazards"))
+        try Self.check(response, data)
+        return try JSONDecoder().decode(MapHazardsPayload.self, from: data).hazards
+    }
+
     func worlds() async throws -> [WorldSummary] {
         let (data, response) = try await session.data(for: request("GET", "worlds"))
         try Self.check(response, data)
