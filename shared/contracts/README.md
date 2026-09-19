@@ -8,6 +8,7 @@ Schemas shared by the Next.js web app, the iOS app (Niantic Lightship SDK + ARKi
 | [`world.schema.json`](world.schema.json) | `worlds/<id>/world.json` — a world's manifest: Niantic site id, asset version, splat path, navigation graph, alignment. |
 | [`measurements.schema.json`](measurements.schema.json) | `worlds/<id>/measurements.json` — distances measured in the web viewer. |
 | [`navigation.schema.json`](navigation.schema.json) | Messages between phone ⇄ backend ⇄ dashboard: `LocalizationUpdate`, `RouteRequest/Response`, `PoseUpdate`, `ProgressUpdate`, `SessionEvent`, `VpsSiteStatus`. |
+| [`vps.schema.json`](vps.schema.json) | Self-hosted visual positioning (`/worlds/{id}/vps/*`, implemented in `services/backend`): posed mapping frames, captures, maps, mapping jobs, and the image-query `localizeResponse` (6DoF pose + `mapFromSession`). |
 | [`examples/`](examples/) | Sample documents. |
 
 TypeScript mirrors live in `apps/web/src/lib/world-manifest.ts`. Generate Swift models for the iOS app from the JSON schemas (e.g. quicktype) rather than hand-writing them.
@@ -21,11 +22,15 @@ worlds/
 └── demo-building/
     ├── world.json           # manifest (schema above) — source of truth for the navigation graph
     ├── measurements.json    # web-viewer measurements (optional)
-    └── v1/
-        ├── scene.spz        # Gaussian splat exported from Scaniverse
-        ├── thumbnail.png    # optional 16:10 preview
-        ├── mesh.glb         # optional collision / occlusion mesh
-        └── vps-map.bin      # optional VPS map export for the phone
+    ├── v1/
+    │   ├── scene.spz        # Gaussian splat exported from Scaniverse
+    │   ├── thumbnail.png    # optional 16:10 preview
+    │   └── mesh.glb         # optional collision / occlusion mesh
+    └── vps/                 # self-hosted visual positioning (services/backend)
+        ├── captures/<captureId>/{capture.json, frames.jsonl, frames/<seq>.jpg}
+        ├── maps/<mapId>/{map.json, head.pt}   # trained ACE scene-coordinate head (a few MB)
+        ├── jobs/<jobId>.json
+        └── active.json      # { mapId } used by POST /worlds/{id}/vps/localize
 sessions/
 └── <sessionId>.json         # navigation session state (a Modal Dict works too)
 ```
@@ -44,7 +49,8 @@ sessions/
 2. **Auth.** Every request carries `X-API-Key` (below).
 3. **Niantic SDK bridge.** The SDK runs on the phone. The backend receives its localization results (`POST /worlds/{id}/localize`), checks the `nianticSiteId` matches the world, re-expresses poses in the world frame, and exposes site status (`GET /worlds/{id}/vps`). If a Lightship API key is configured, it also asks Niantic whether the location is activated.
 4. **Routing.** Dijkstra over the graph; turn instructions from leg headings; off-route / arrival detection on every `POST /sessions/{id}/pose`; live `SessionEvent`s over `/ws/sessions/{id}` for the dashboard.
-5. **CPU only.** Rendering happens in the browser.
+5. **Self-hosted VPS.** `services/backend` implements mapping + image-query localization (`/worlds/{id}/vps/*`, see `vps.schema.json`): posed frames from the phone train an ACE scene-coordinate head on a GPU worker; a single JPEG query returns a 6DoF pose in the map (ARKit capture) frame plus `mapFromSession` to re-anchor the phone's current ARKit session.
+6. **CPU for everything else.** Rendering happens in the browser; only VPS training (and optionally localization) needs a GPU.
 
 ## Authentication — API key
 

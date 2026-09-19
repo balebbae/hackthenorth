@@ -12,17 +12,27 @@ info:
     * **Navigation** — localization fixes from the Niantic Lightship SDK on the
       phone, routing over the graph, live session progress for the dashboard
       (see `navigation.schema.json`).
+    * **VPS** — self-hosted visual positioning (`services/backend`): posed
+      RGB captures are trained into an ACE scene-coordinate map on a Modal GPU
+      worker, then single images are localized to a 6DoF pose in the map frame
+      (see `vps.schema.json`).
 
-    Every request carries `X-API-Key`. The Next.js app proxies the `/worlds/…`
+    Every request carries `X-API-Key` (the phone may also send it as
+    `Authorization: Bearer <key>`). The Next.js app proxies the `/worlds/…`
     routes at `/api/worlds/…` so the key never reaches the browser; the phone
-    sends the key directly. Rendering happens in the browser, so this service
-    runs on a CPU container — no GPU.
+    sends the key directly. Rendering happens in the browser, so the web
+    service runs on a CPU container; only VPS map training (and optionally
+    localization) uses a GPU.
 
     Storage layout on the Volume:
 
         worlds/<id>/world.json           manifest (source of truth for the graph)
         worlds/<id>/measurements.json    measurements taken in the web viewer
         worlds/<id>/<version>/scene.spz  immutable versioned assets
+        worlds/<id>/vps/captures/<captureId>/{capture.json,frames.jsonl,frames/<seq>.jpg}
+        worlds/<id>/vps/maps/<mapId>/{map.json,head.pt}   trained scene-coordinate head
+        worlds/<id>/vps/jobs/<jobId>.json                 mapping job status
+        worlds/<id>/vps/active.json                       which map `POST …/vps/localize` uses
         sessions/<sessionId>.json        navigation session state (or a Modal Dict)
 
 servers:
@@ -37,6 +47,7 @@ tags:
   - name: worlds
   - name: assets
   - name: navigation
+  - name: vps
   - name: sessions
 
 paths:
@@ -216,6 +227,229 @@ paths:
               schema: { $ref: "navigation.schema.json#/$defs/vpsSiteStatus" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { description: The world has no `nianticSiteId` yet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/captures:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [vps]
+      summary: List mapping captures
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [captures]
+                properties:
+                  captures: { type: array, items: { $ref: "vps.schema.json#/$defs/capture" } }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [vps]
+      summary: Start a mapping capture
+      description: |
+        A capture is one walk-through of the space with the phone. Frames are
+        appended with `POST …/frames`; sensor size / rotation given here are
+        used as defaults for frames that omit them.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceId: { type: [string, "null"] }
+                sensorWidth: { type: [integer, "null"], minimum: 1 }
+                sensorHeight: { type: [integer, "null"], minimum: 1 }
+                rotation: { $ref: "vps.schema.json#/$defs/rotation" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "vps.schema.json#/$defs/capture" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/captures/{captureId}:
+    parameters:
+      - { $ref: "#/components/parameters/worldId" }
+      - { name: captureId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [vps]
+      summary: Read a capture
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "vps.schema.json#/$defs/capture" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/captures/{captureId}/frames:
+    parameters:
+      - { $ref: "#/components/parameters/worldId" }
+      - { name: captureId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [vps]
+      summary: Append a posed mapping frame
+      description: |
+        Same wire format the phone already uses for localization queries
+        (`imageBase64`, `imageWidth`, `imageHeight`, `intrinsics`,
+        `cameraTransform`, …). `cameraTransform` is mandatory here — the
+        ARKit pose is the supervision for the scene-coordinate head. The JPEG
+        is stored under `worlds/<id>/vps/captures/<captureId>/frames/`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "vps.schema.json#/$defs/frame" }
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [captureId, sequence, frameCount]
+                properties:
+                  captureId: { type: string }
+                  sequence: { type: integer }
+                  frameCount: { type: integer }
+        "400": { description: Missing `cameraTransform`, bad base64/JPEG, or size/intrinsics mismatch }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/maps:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [vps]
+      summary: List maps and the active one
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [maps, activeMapId]
+                properties:
+                  maps: { type: array, items: { $ref: "vps.schema.json#/$defs/map" } }
+                  activeMapId: { type: [string, "null"] }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [vps]
+      summary: Train a map from captures (async)
+      description: |
+        Creates `worlds/<id>/vps/maps/<mapId>/map.json` and a job, then spawns
+        the `train_map` Modal GPU function (ACE mapping: frozen encoder →
+        feature buffer → scene-coordinate head, a few minutes per scene). Poll
+        `GET …/vps/jobs/{jobId}`. The first map to finish becomes the active
+        map and is recorded in the manifest as `assets.vpsMap`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "vps.schema.json#/$defs/createMapRequest" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [map, job]
+                properties:
+                  map: { $ref: "vps.schema.json#/$defs/map" }
+                  job: { $ref: "vps.schema.json#/$defs/job" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The captures contain no frames }
+        "503": { description: Pretrained encoder weights are not available on the server }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/maps/{mapId}:
+    parameters:
+      - { $ref: "#/components/parameters/worldId" }
+      - { name: mapId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [vps]
+      summary: Read a map record
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "vps.schema.json#/$defs/map" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/maps/{mapId}/activate:
+    parameters:
+      - { $ref: "#/components/parameters/worldId" }
+      - { name: mapId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [vps]
+      summary: Make this the map used by `POST …/vps/localize`
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "vps.schema.json#/$defs/map" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The map is not `ready` }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/jobs/{jobId}:
+    parameters:
+      - { $ref: "#/components/parameters/worldId" }
+      - { name: jobId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [vps]
+      summary: Mapping job status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "vps.schema.json#/$defs/job" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps/localize:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    post:
+      tags: [vps]
+      summary: Localize a single image against the world's map (6DoF)
+      description: |
+        Image-query localization, the self-hosted counterpart of a Niantic VPS
+        fix. The server regresses a 3D map coordinate for every 8×8 feature
+        cell of the query and solves PnP-RANSAC (PoseLib) for the camera pose.
+
+        Always returns `200` with `localized: true|false` once a map exists;
+        the pose is only trusted when the inlier count / ratio clear the map's
+        thresholds. `cameraTransform` is optional — when present the response
+        also carries `mapFromSession`, the rigid transform that re-expresses
+        the phone's current ARKit session in the map frame so tracking can
+        continue locally between fixes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "vps.schema.json#/$defs/localizeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "vps.schema.json#/$defs/localizeResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The world has no ready map (or the requested map is not ready) }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
   /worlds/{id}/localize:
