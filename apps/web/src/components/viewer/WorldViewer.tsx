@@ -1,21 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/Icon";
 import { LogoMark } from "@/components/Logo";
+import { UploadSplatDialog } from "@/components/worlds/UploadSplatDialog";
 import {
   EMPTY_GRAPH,
   formatSplatCount,
   type Measurement,
   type NavigationGraph,
-  type NavNodeKind,
   type Vec3,
   type WorldManifest,
+  type WorldNote,
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { InspectorPanel, type PanelTab } from "./InspectorPanel";
-import type { ViewerMode, ViewerTool } from "./SplatViewerEngine";
+import type { ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
 import { useSplatViewer, type PickHandler } from "./useSplatViewer";
 import { ViewerOverlay } from "./ViewerOverlays";
 
@@ -26,6 +28,7 @@ type Props = {
   manifest: WorldManifest | null;
   /** Same-origin URL of the splat (via /api/worlds), or null when nothing is uploaded yet. */
   splatUrl: string | null;
+  initialNotes: WorldNote[];
   initialMeasurements: Measurement[];
   /** Where the server is reading worlds from; only changes the empty-state hint. */
   source: "api" | "local";
@@ -39,8 +42,12 @@ const MODES: { id: ViewerMode; label: string; icon: IconName }[] = [
 const TOOLS: { id: ViewerTool; label: string; icon: IconName; key: string }[] = [
   { id: "navigate", label: "Navigate", icon: "pointer", key: "1" },
   { id: "measure", label: "Measure", icon: "ruler", key: "2" },
-  { id: "stop", label: "Add stop", icon: "pin", key: "3" },
+  { id: "note", label: "Add note", icon: "pin", key: "3" },
 ];
+
+const AUTOSAVE_MS = 900;
+
+type SaveState = { status: "clean" | "dirty" | "saving" | "saved" | "error"; error?: string };
 
 const isEditing = () => {
   const el = document.activeElement;
@@ -49,78 +56,74 @@ const isEditing = () => {
 
 /**
  * Full-viewport world editor: the splat canvas fills the page; a floating
- * header, a bottom tool dock and a collapsible inspector sit on top. Graph and
- * measurement edits live here and are pushed into the engine via the hook.
+ * header, a bottom tool dock and a collapsible inspector sit on top. Notes and
+ * measurements live here, are pushed into the engine via the hook, and
+ * autosave to the world through /api/worlds.
  */
-export function WorldViewer({ worldId, name, status, manifest, splatUrl, initialMeasurements, source }: Props) {
+export function WorldViewer({
+  worldId,
+  name,
+  status,
+  manifest,
+  splatUrl,
+  initialNotes,
+  initialMeasurements,
+  source,
+}: Props) {
   /* ------------------------------------------------------------ edit state */
-  const initialGraph = useMemo<NavigationGraph>(
-    () => manifest?.navigationGraph ?? { ...EMPTY_GRAPH },
-    [manifest],
-  );
-  const [graph, setGraph] = useState<NavigationGraph>(initialGraph);
-  const [savedGraph, setSavedGraph] = useState(initialGraph);
+  const graph = useMemo<NavigationGraph>(() => manifest?.navigationGraph ?? EMPTY_GRAPH, [manifest]);
+  const [notes, setNotes] = useState(initialNotes);
   const [measurements, setMeasurements] = useState(initialMeasurements);
-  const [savedMeasurements, setSavedMeasurements] = useState(initialMeasurements);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selection, setSelection] = useState<ViewerSelection | null>(null);
   const [pendingPoint, setPendingPoint] = useState<Vec3 | null>(null);
-  const [autoLink, setAutoLink] = useState(true);
-  const [lastAdded, setLastAdded] = useState<string | null>(null);
-  const graphRef = useRef(graph);
-  useEffect(() => {
-    graphRef.current = graph;
-  }, [graph]);
 
   const [panelOpen, setPanelOpen] = useState(true);
-  const [panelTab, setPanelTab] = useState<PanelTab>("stops");
-  const [saving, setSaving] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>("notes");
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const router = useRouter();
 
-  const graphDirty = JSON.stringify(graph) !== JSON.stringify(savedGraph);
-  const measureDirty = JSON.stringify(measurements) !== JSON.stringify(savedMeasurements);
-  const dirty = graphDirty || measureDirty;
   const canSave = !!manifest;
 
-  /* ------------------------------------------------------------ mutations */
-  const updateGraph = useCallback((fn: (g: NavigationGraph) => NavigationGraph) => setGraph((g) => fn(g)), []);
-
-  const addStop = useCallback(
-    (position: Vec3) => {
-      const g = graphRef.current;
-      const id = nextId(g, "stop");
-      const linkFrom = autoLink ? (selectedNode ?? lastAdded) : null;
-      const from = linkFrom && g.nodes.some((n) => n.id === linkFrom) ? linkFrom : null;
-      setGraph({
-        ...g,
-        nodes: [...g.nodes, { id, name: `Stop ${g.nodes.length + 1}`, kind: "waypoint", position }],
-        edges: from ? [...g.edges, { from, to: id }] : g.edges,
-      });
-      setLastAdded(id);
-      setSelectedNode(id);
-      setPanelOpen(true);
-      setPanelTab("stops");
-    },
-    [autoLink, selectedNode, lastAdded],
+  /* -------------------------------------------------------------- autosave */
+  const notesSave = useAutosave(`/api/worlds/${encodeURIComponent(worldId)}/notes`, { notes }, notes, canSave);
+  const measureSave = useAutosave(
+    `/api/worlds/${encodeURIComponent(worldId)}/measurements`,
+    { measurements },
+    measurements,
+    canSave,
   );
+  const save = combineSave(notesSave.state, measureSave.state);
+  const dirty = save.status !== "clean" && save.status !== "saved";
 
-  const deleteNode = useCallback((id: string) => {
-    setGraph((g) => ({
-      ...g,
-      nodes: g.nodes.filter((n) => n.id !== id),
-      edges: g.edges.filter((e) => e.from !== id && e.to !== id),
-    }));
-    setSelectedNode((s) => (s === id ? null : s));
-    setLastAdded((s) => (s === id ? null : s));
+  /* ------------------------------------------------------------ mutations */
+  const addNote = useCallback((position: Vec3) => {
+    const id = `note-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    setNotes((list) => [
+      ...list,
+      { id, title: `Note ${list.length + 1}`, position, createdAt: new Date().toISOString() },
+    ]);
+    setSelection({ kind: "note", id });
+    setPanelOpen(true);
+    setPanelTab("notes");
   }, []);
 
-  const toggleEdge = useCallback((a: string, b: string) => {
-    setGraph((g) => {
-      const idx = g.edges.findIndex((e) => (e.from === a && e.to === b) || (e.from === b && e.to === a));
-      return {
-        ...g,
-        edges: idx >= 0 ? g.edges.filter((_, i) => i !== idx) : [...g.edges, { from: a, to: b }],
-      };
-    });
+  const updateNote = useCallback(
+    (id: string, patch: Partial<Pick<WorldNote, "title" | "location" | "description">>) =>
+      setNotes((list) =>
+        list.map((n) => {
+          if (n.id !== id) return n;
+          const next = { ...n, ...patch };
+          const changed = (["title", "location", "description"] as const).some((k) => next[k] !== n[k]);
+          return changed ? { ...next, updatedAt: new Date().toISOString() } : n;
+        }),
+      ),
+    [],
+  );
+
+  const deleteNote = useCallback((id: string) => {
+    setNotes((list) => list.filter((n) => n.id !== id));
+    setSelection((s) => (s?.kind === "note" && s.id === id ? null : s));
   }, []);
 
   const addMeasurement = useCallback((a: Vec3, b: Vec3) => {
@@ -134,17 +137,23 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
   /* --------------------------------------------------------------- viewer */
   const onPick = useCallback<PickHandler>(
     (e) => {
+      if (e.type === "pick-note") {
+        setSelection((s) => (s?.kind === "note" && s.id === e.id && e.tool === "navigate" ? null : { kind: "note", id: e.id }));
+        setPanelOpen(true);
+        setPanelTab("notes");
+        return;
+      }
       if (e.type === "pick-node") {
-        setSelectedNode((s) => (s === e.id && e.tool === "navigate" ? null : e.id));
-        if (e.tool !== "measure") setPanelTab("stops");
+        setSelection((s) => (s?.kind === "node" && s.id === e.id ? null : { kind: "node", id: e.id }));
+        setPanelTab("details");
         return;
       }
       if (e.type === "pick-miss") {
-        if (e.tool === "navigate") setSelectedNode(null);
+        if (e.tool === "navigate") setSelection(null);
         else setNotice({ tone: "error", text: "Click on the scan itself — that spot has no splats." });
         return;
       }
-      if (e.tool === "stop") addStop(e.graphPoint);
+      if (e.tool === "note") addNote(e.point);
       else if (e.tool === "measure") {
         if (pendingPoint) {
           addMeasurement(pendingPoint, e.point);
@@ -152,15 +161,16 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
         } else setPendingPoint(e.point);
       }
     },
-    [addStop, addMeasurement, pendingPoint],
+    [addNote, addMeasurement, pendingPoint],
   );
 
   const { containerRef, state, api, focusViewer } = useSplatViewer({
     splatUrl,
     alignment: manifest?.alignment,
     graph,
+    notes,
     measurements,
-    selectedNode,
+    selection,
     pendingPoint,
     onPick,
   });
@@ -169,7 +179,7 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
     (tool: ViewerTool) => {
       api.setTool(tool);
       if (tool !== "measure") setPendingPoint(null);
-      if (tool === "stop") setPanelTab("stops");
+      if (tool === "note") setPanelTab("notes");
       if (tool === "measure") setPanelTab("measure");
       focusViewer();
     },
@@ -182,13 +192,13 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
       if (e.metaKey || e.ctrlKey || e.altKey || isEditing()) return;
       if (e.key === "Escape") {
         if (pendingPoint) setPendingPoint(null);
-        else if (selectedNode) setSelectedNode(null);
+        else if (selection) setSelection(null);
         else if (state.tool !== "navigate") pickTool("navigate");
         return;
       }
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedNode) {
+      if ((e.key === "Delete" || e.key === "Backspace") && selection?.kind === "note") {
         e.preventDefault();
-        deleteNode(selectedNode);
+        deleteNote(selection.id);
         return;
       }
       const tool = TOOLS.find((t) => t.key === e.key);
@@ -196,7 +206,7 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pendingPoint, selectedNode, state.tool, pickTool, deleteNode]);
+  }, [pendingPoint, selection, state.tool, pickTool, deleteNote]);
 
   useEffect(() => {
     if (!notice) return;
@@ -204,7 +214,7 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
     return () => clearTimeout(t);
   }, [notice]);
 
-  // Warn before leaving with unsaved stops / measurements.
+  // Warn before leaving while a save is still pending.
   useEffect(() => {
     if (!dirty) return;
     const onLeave = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -212,42 +222,10 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
     return () => window.removeEventListener("beforeunload", onLeave);
   }, [dirty]);
 
-  /* ------------------------------------------------------------------ save */
-  async function save() {
-    if (!canSave || !dirty || saving) return;
-    setSaving(true);
-    try {
-      if (graphDirty) {
-        const res = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/graph`, {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(graph),
-        });
-        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? `Save failed (${res.status})`);
-        setSavedGraph(graph);
-      }
-      if (measureDirty) {
-        const res = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/measurements`, {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ measurements }),
-        });
-        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? `Save failed (${res.status})`);
-        setSavedMeasurements(measurements);
-      }
-      setNotice({ tone: "ok", text: "Saved to the world" });
-    } catch (err) {
-      setNotice({ tone: "error", text: err instanceof Error ? err.message : "Save failed" });
-    } finally {
-      setSaving(false);
-    }
-  }
-
   /* ---------------------------------------------------------------- render */
   const interactive = state.status === "ready" || state.status === "empty";
   const meta = STATUS_META[status];
-  const linkSource = graph.nodes.find((n) => n.id === (selectedNode ?? lastAdded));
-  const hint = hintFor(state.tool, state.mode, !!pendingPoint, autoLink ? linkSource?.name ?? linkSource?.id : undefined);
+  const hint = hintFor(state.tool, state.mode, !!pendingPoint);
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-wander-navy">
@@ -269,7 +247,14 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
           <LogoMark size={20} />
           <span className="max-w-[40vw] truncate text-body-sm font-semibold text-void-black">{name}</span>
           <span className={`pill-sm ml-1 ${meta.className}`}>{meta.label}</span>
-          {dirty && <span className="pill-sm bg-pink-tint text-wander-pink">Unsaved</span>}
+          <SaveBadge
+            save={save}
+            canSave={canSave}
+            onRetry={() => {
+              notesSave.retry();
+              measureSave.retry();
+            }}
+          />
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
@@ -300,14 +285,15 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
           </div>
           <div className="flex items-center gap-0.5 rounded-lg border border-hairline bg-pure-white p-0.5">
             <ToolButton icon="frame" label="Reset view" disabled={!interactive} onClick={api.resetView} />
-            <ToolButton icon="flip" label="Flip up axis" disabled={state.status !== "ready"} onClick={api.flipUp} />
-            <ToolButton
-              icon="route"
-              label={state.showGraph ? "Hide stops and links" : "Show stops and links"}
-              pressed={state.showGraph}
-              disabled={!interactive}
-              onClick={() => api.setShowGraph(!state.showGraph)}
-            />
+            {graph.nodes.length > 0 && (
+              <ToolButton
+                icon="route"
+                label={state.showGraph ? "Hide waypoints" : "Show waypoints"}
+                pressed={state.showGraph}
+                disabled={!interactive}
+                onClick={() => api.setShowGraph(!state.showGraph)}
+              />
+            )}
             <ToolButton
               icon="panelRight"
               label={panelOpen ? "Hide inspector" : "Show inspector"}
@@ -332,42 +318,40 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
               splatUrl={splatUrl}
               numSplats={state.numSplats}
               graph={graph}
+              notes={notes}
               measurements={measurements}
-              selectedNode={selectedNode}
-              autoLink={autoLink}
-              onAutoLink={setAutoLink}
-              onSelectNode={setSelectedNode}
+              selection={selection}
+              onSelect={setSelection}
               onFocusNode={(id) => {
                 api.focusNode(id);
                 focusViewer();
               }}
-              onRenameNode={(id, v) =>
-                updateGraph((g) => ({ ...g, nodes: g.nodes.map((n) => (n.id === id ? { ...n, name: v || undefined } : n)) }))
-              }
-              onKindNode={(id, kind: NavNodeKind) =>
-                updateGraph((g) => ({ ...g, nodes: g.nodes.map((n) => (n.id === id ? { ...n, kind } : n)) }))
-              }
-              onDeleteNode={deleteNode}
-              onToggleEdge={toggleEdge}
-              onStartStop={() => pickTool("stop")}
+              onFocusNote={(id) => {
+                api.focusNote(id);
+                focusViewer();
+              }}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onStartNote={() => pickTool("note")}
               onStartMeasure={() => pickTool("measure")}
               onLabelMeasurement={(id, label) =>
                 setMeasurements((list) => list.map((m) => (m.id === id ? { ...m, label: label || undefined } : m)))
               }
               onDeleteMeasurement={(id) => setMeasurements((list) => list.filter((m) => m.id !== id))}
               onClearMeasurements={() => setMeasurements([])}
+              onUploadSplat={manifest ? () => setUploadOpen(true) : undefined}
             />
           </div>
         </div>
       )}
 
-      {/* Bottom dock */}
+      {/* Bottom bar: hint pinned left, stats pinned right, tool dock truly centred regardless of their widths */}
       <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
-        <span className="hidden max-w-[28vw] rounded-lg border border-hairline bg-pure-white/90 px-2.5 py-1 text-caption text-void-black/70 md:block">
+        <span className="hidden max-w-[26vw] rounded-lg border border-hairline bg-pure-white/90 px-2.5 py-1 text-caption text-void-black/70 md:block">
           {interactive ? hint : "\u00a0"}
         </span>
 
-        <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-hairline bg-pure-white p-1">
+        <div className="pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-hairline bg-pure-white p-1">
           <div role="radiogroup" aria-label="Tool" className="flex items-center gap-0.5">
             {TOOLS.map((t) => (
               <button
@@ -388,17 +372,6 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
               </button>
             ))}
           </div>
-          <span aria-hidden="true" className="mx-1 h-8 w-px bg-hairline" />
-          <button
-            type="button"
-            className="btn-primary self-center"
-            disabled={!canSave || !dirty || saving}
-            title={canSave ? "Save stops and measurements to the world" : "Add world.json to this world to enable saving"}
-            onClick={save}
-          >
-            <Icon name="save" size={15} />
-            {saving ? "Saving…" : "Save"}
-          </button>
         </div>
 
         <span className="pill hidden bg-pure-white/90 text-void-black/80 md:inline-flex">
@@ -427,9 +400,60 @@ export function WorldViewer({ worldId, name, status, manifest, splatUrl, initial
         </div>
       )}
 
-      <ViewerOverlay state={state} api={api} name={name} worldId={worldId} manifest={manifest} source={source} />
+      <ViewerOverlay
+        state={state}
+        api={api}
+        name={name}
+        worldId={worldId}
+        manifest={manifest}
+        source={source}
+        onUpload={manifest ? () => setUploadOpen(true) : undefined}
+      />
+
+      {manifest && (
+        <UploadSplatDialog
+          open={uploadOpen}
+          mode={{ kind: "existing", manifest }}
+          onClose={() => setUploadOpen(false)}
+          onDone={() => {
+            setNotice({ tone: "ok", text: "Splat uploaded — reloading the scene" });
+            router.refresh(); // re-reads the manifest; the new splatUrl remounts the engine
+          }}
+        />
+      )}
     </div>
   );
+}
+
+/* ---------------------------------------------------------------- pieces */
+
+function SaveBadge({ save, canSave, onRetry }: { save: SaveState; canSave: boolean; onRetry: () => void }) {
+  if (!canSave)
+    return (
+      <span className="pill-sm bg-stellar-white text-void-black/60" title="Add world.json to this world to persist notes">
+        Not saved · no world.json
+      </span>
+    );
+  switch (save.status) {
+    case "dirty":
+    case "saving":
+      return <span className="pill-sm bg-pink-tint text-wander-pink">Saving…</span>;
+    case "saved":
+      return (
+        <span className="pill-sm bg-sky-tint text-wander-blue">
+          <Icon name="check" size={11} />
+          Saved
+        </span>
+      );
+    case "error":
+      return (
+        <button type="button" onClick={onRetry} className="pill-sm bg-wander-pink text-pure-white" title={save.error}>
+          Save failed · retry
+        </button>
+      );
+    default:
+      return null;
+  }
 }
 
 function ToolButton({
@@ -462,17 +486,63 @@ function ToolButton({
   );
 }
 
-function hintFor(tool: ViewerTool, mode: ViewerMode, pending: boolean, linkFrom?: string): string {
+const MOVE_HINT = "W A S D move · Q / E height · Arrows turn · Shift hurry";
+
+function hintFor(tool: ViewerTool, mode: ViewerMode, pending: boolean): string {
   if (tool === "measure") return pending ? "Click the second point · Esc cancels" : "Click a point on the scan to start measuring";
-  if (tool === "stop") return `Click the scan to drop a stop${linkFrom ? ` · links from “${linkFrom}”` : ""} · Esc to finish`;
-  return mode === "walk"
-    ? "Drag to look · W A S D to move · Q / E height · Shift to hurry"
-    : "Drag to orbit · Scroll to zoom · Right-drag to pan · Click a stop to select it";
+  if (tool === "note") return "Click the scan to pin a note · Esc to finish";
+  return mode === "walk" ? `Drag to look · ${MOVE_HINT}` : `Drag to orbit · Scroll to zoom · ${MOVE_HINT}`;
 }
 
-function nextId(g: NavigationGraph, prefix: string): string {
-  const taken = new Set(g.nodes.map((n) => n.id));
-  let i = g.nodes.length + 1;
-  while (taken.has(`${prefix}-${i}`)) i++;
-  return `${prefix}-${i}`;
+/* -------------------------------------------------------------- autosave */
+
+/**
+ * PUTs `body` to `url` shortly after `value` changes (debounced). Reports a
+ * small state machine for the header badge; `retry()` re-sends after an error.
+ */
+function useAutosave<T>(url: string, body: unknown, value: T, enabled: boolean) {
+  const [state, setState] = useState<SaveState>({ status: "clean" });
+  const saved = useRef(value);
+  const [attempt, setAttempt] = useState(0);
+  const bodyRef = useRef(body);
+  useEffect(() => {
+    bodyRef.current = body;
+  }, [body]);
+
+  useEffect(() => {
+    if (!enabled || value === saved.current) return;
+    setState({ status: "dirty" });
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      setState({ status: "saving" });
+      try {
+        const res = await fetch(url, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(bodyRef.current),
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? `Save failed (${res.status})`);
+        if (cancelled) return;
+        saved.current = value;
+        setState({ status: "saved" });
+      } catch (err) {
+        if (!cancelled) setState({ status: "error", error: err instanceof Error ? err.message : "Save failed" });
+      }
+    }, AUTOSAVE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [url, value, enabled, attempt]);
+
+  return { state, retry: () => setAttempt((n) => n + 1) };
+}
+
+function combineSave(a: SaveState, b: SaveState): SaveState {
+  const order: SaveState["status"][] = ["error", "saving", "dirty", "saved", "clean"];
+  for (const s of order) {
+    if (a.status === s) return a;
+    if (b.status === s) return b;
+  }
+  return a;
 }

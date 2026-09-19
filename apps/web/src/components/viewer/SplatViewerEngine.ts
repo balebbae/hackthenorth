@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
-import type { Alignment, Measurement, NavigationGraph, NavNodeKind, Vec3 } from "@/lib/world-manifest";
-import { WalkControls } from "./WalkControls";
+import type { Alignment, Measurement, NavigationGraph, NavNodeKind, Vec3, WorldNote } from "@/lib/world-manifest";
+import { CameraKeyControls } from "./CameraKeyControls";
 
 export type ViewerMode = "orbit" | "walk";
-export type ViewerTool = "navigate" | "measure" | "stop";
+export type ViewerTool = "navigate" | "measure" | "note";
 export type LoadStatus = "empty" | "loading" | "ready" | "error";
 
 export type EngineEvent =
@@ -14,10 +14,14 @@ export type EngineEvent =
   | { type: "loaded"; numSplats: number }
   /** A click landed on the splat. `point` is in world space, `graphPoint` in the graph's frame. */
   | { type: "pick"; tool: ViewerTool; point: Vec3; graphPoint: Vec3 }
-  /** A click landed on an existing stop. */
+  /** A click landed on a navigation-graph waypoint. */
   | { type: "pick-node"; tool: ViewerTool; id: string }
+  /** A click landed on a note pin. */
+  | { type: "pick-note"; tool: ViewerTool; id: string }
   /** A click hit nothing. */
   | { type: "pick-miss"; tool: ViewerTool };
+
+export type ViewerSelection = { kind: "node" | "note"; id: string };
 
 export type EngineOptions = {
   /** Fills this element with the canvas; it is also the keyboard focus target for walk mode. */
@@ -38,8 +42,15 @@ const SLATE = 0x475569;
 const NODE_RADIUS = 0.14;
 const EDGE_RADIUS = 0.035;
 const MEASURE_RADIUS = 0.05;
+/** Note pins are screen-space: fixed 28 px, coloured by distance instead of shrinking with it. */
+const PIN_SIZE = 28;
+const PIN_NEAR_COLOR = new THREE.Color(PINK);
+const PIN_FAR_COLOR = new THREE.Color(SKY);
+const PIN_NEAR_M = 1.5;
 const MEASURE_LINE_RADIUS = 0.012;
 const EYE_HEIGHT = 1.6;
+/** Walking pace in metres per second; orbit mode scales this with distance to the pivot. */
+const WALK_SPEED = 1.6;
 const CLICK_MAX_PX = 5;
 const CLICK_MAX_MS = 400;
 const HOVER_THROTTLE_MS = 70;
@@ -49,6 +60,15 @@ const UP = new THREE.Vector3(0, 1, 0);
 
 const LABEL_CLASS =
   "absolute left-0 top-0 whitespace-nowrap rounded-full border border-hairline bg-pure-white/95 px-2 py-0.5 text-caption font-medium text-void-black will-change-transform";
+const PIN_CLASS =
+  "absolute left-0 top-0 flex cursor-pointer select-none flex-col items-center gap-0.5 will-change-transform pointer-events-auto";
+const PIN_CHIP_CLASS =
+  "whitespace-nowrap rounded-full border px-2 py-0.5 text-caption font-medium transition-colors duration-200";
+const PIN_CHIP_IDLE = "border-hairline bg-pure-white/95 text-void-black";
+const PIN_CHIP_SELECTED = "border-wander-blue bg-sky-tint text-wander-blue";
+/** Map-pin silhouette with the tip exactly at the bottom of the 24×24 box; fill = currentColor. */
+const PIN_PATH =
+  "M12 24C12 24 4 15.6 4 9.6A8 8 0 0 1 20 9.6C20 15.6 12 24 12 24ZM12 12.6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z";
 
 export function supportsWebGL2(): boolean {
   try {
@@ -61,7 +81,14 @@ export function supportsWebGL2(): boolean {
   }
 }
 
-type Label = { el: HTMLDivElement; position: THREE.Vector3; offsetY: number; nodeId?: string };
+type Label = {
+  el: HTMLDivElement;
+  position: THREE.Vector3;
+  offsetY: number;
+  nodeId?: string;
+  /** Set for note pins: they are recoloured by camera distance every frame. */
+  noteId?: string;
+};
 
 /**
  * Owns the Three.js scene for one world: Spark splat rendering, orbit / walk
@@ -81,7 +108,7 @@ export class SplatViewerEngine {
   private readonly measureGroup = new THREE.Group();
   private readonly grid: THREE.GridHelper;
   private readonly orbit: OrbitControls;
-  private readonly walk: WalkControls;
+  private readonly keys: CameraKeyControls;
   private readonly raycaster = new THREE.Raycaster();
   private readonly resizeObserver: ResizeObserver;
   private readonly labelLayer: HTMLDivElement;
@@ -104,6 +131,10 @@ export class SplatViewerEngine {
   private mesh: SplatMesh | null = null;
   private nodeMeshes = new Map<string, THREE.Mesh>();
   private nodePositions = new Map<string, THREE.Vector3>();
+  private notePositions = new Map<string, THREE.Vector3>();
+  private selectedNoteId: string | null = null;
+  /** Distance (m) at which pins reach the "far" colour; derived from the scene size. */
+  private pinFarM = 15;
   private graphFrame: "world" | "splat" = "world";
   /** Robust (outlier-trimmed) bounds in splat-local space. */
   private localBounds: THREE.Box3 | null = null;
@@ -167,7 +198,7 @@ export class SplatViewerEngine {
     this.orbit.screenSpacePanning = true;
     this.orbit.maxPolarAngle = Math.PI; // splats can be viewed from below when the scan is flipped
 
-    this.walk = new WalkControls(this.camera, container);
+    this.keys = new CameraKeyControls(this.camera, container);
 
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
@@ -205,17 +236,18 @@ export class SplatViewerEngine {
         this.camera.lookAt(this.camera.position.clone().add(forward));
       }
       this.orbit.enabled = false;
-      this.walk.syncFromCamera();
-      this.walk.enabled = true;
-      this.opts.container.focus({ preventScroll: true });
+      this.keys.syncFromCamera();
+      this.keys.applyRotation();
+      this.keys.dragLook = true;
     } else {
-      this.walk.enabled = false;
+      this.keys.dragLook = false;
       // Put the orbit pivot a few metres ahead so the switch doesn't swing the camera.
       const ahead = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
       this.orbit.target.copy(this.camera.position).addScaledVector(ahead, 3);
       this.orbit.enabled = true;
       this.orbit.update();
     }
+    this.opts.container.focus({ preventScroll: true });
   }
 
   setTool(tool: ViewerTool) {
@@ -228,7 +260,6 @@ export class SplatViewerEngine {
   setShowGraph(visible: boolean) {
     this.graphGroup.visible = visible;
     for (const l of this.labels) if (l.el.dataset.kind === "node") l.el.hidden = !visible;
-    if (!visible) this.selectionRing.visible = false;
   }
 
   /** Replace the rendered navigation graph. Cheap: graphs are tens of nodes. */
@@ -266,15 +297,77 @@ export class SplatViewerEngine {
     }
   }
 
-  setSelectedNode(id: string | null) {
-    const p = id ? this.nodePositions.get(id) : undefined;
-    if (!p || !this.graphGroup.visible) {
-      this.selectionRing.visible = false;
-      return;
+  /** Highlight one waypoint or note pin (or nothing). */
+  setSelection(sel: ViewerSelection | null) {
+    let p: THREE.Vector3 | undefined;
+    if (sel?.kind === "node" && this.graphGroup.visible) {
+      const local = this.nodePositions.get(sel.id);
+      if (local) {
+        this.graphGroup.updateMatrixWorld(true);
+        p = this.graphGroup.localToWorld(local.clone());
+      }
     }
-    this.graphGroup.updateMatrixWorld(true);
-    this.selectionRing.position.copy(this.graphGroup.localToWorld(p.clone()));
-    this.selectionRing.visible = true;
+    // Notes are HTML pins; their selection is styled in the DOM instead of with the 3D ring.
+    this.selectionRing.visible = !!p;
+    if (p) this.selectionRing.position.copy(p);
+    this.selectedNoteId = sel?.kind === "note" ? sel.id : null;
+    for (const l of this.labels) if (l.noteId) this.stylePin(l.el, l.noteId === this.selectedNoteId);
+  }
+
+  /** Replace the note pins (world frame). Pins live in the label layer, not the 3D scene. */
+  setNotes(notes: WorldNote[]) {
+    this.removeLabels("note");
+    this.notePositions = new Map();
+    for (const note of notes) {
+      const p = new THREE.Vector3(...note.position);
+      this.notePositions.set(note.id, p);
+      this.addPin(note.id, note.title || "Untitled note", p);
+    }
+  }
+
+  private addPin(id: string, title: string, position: THREE.Vector3) {
+    const el = document.createElement("div");
+    el.className = PIN_CLASS;
+    el.dataset.kind = "note";
+    el.title = title;
+
+    const chip = document.createElement("span");
+    chip.className = `${PIN_CHIP_CLASS} ${PIN_CHIP_IDLE}`;
+    chip.textContent = title;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", String(PIN_SIZE));
+    svg.setAttribute("height", String(PIN_SIZE));
+    svg.setAttribute("aria-hidden", "true");
+    svg.classList.add("transition-transform", "duration-200", "drop-shadow-[0_1px_2px_rgba(15,23,42,0.35)]");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", PIN_PATH);
+    path.setAttribute("fill", "currentColor");
+    path.setAttribute("fill-rule", "evenodd");
+    path.setAttribute("stroke", "#ffffff");
+    path.setAttribute("stroke-width", "1.4");
+    path.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(path);
+
+    el.append(chip, svg);
+    // Pins sit above the canvas, so they are picked in the DOM rather than by raycast.
+    el.addEventListener("pointerdown", (e) => e.stopPropagation());
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.opts.onEvent({ type: "pick-note", tool: this.tool, id });
+    });
+    this.stylePin(el, id === this.selectedNoteId);
+    this.labelLayer.appendChild(el);
+    this.labels.push({ el, position: position.clone(), offsetY: 0, noteId: id });
+  }
+
+  private stylePin(el: HTMLDivElement, selected: boolean) {
+    const chip = el.firstElementChild as HTMLSpanElement | null;
+    const svg = el.lastElementChild as SVGElement | null;
+    if (chip) chip.className = `${PIN_CHIP_CLASS} ${selected ? PIN_CHIP_SELECTED : PIN_CHIP_IDLE}`;
+    if (svg) svg.style.transform = selected ? "scale(1.2)" : "";
+    el.style.zIndex = selected ? "2" : "1";
   }
 
   /** Replace the rendered measurements (world frame). */
@@ -327,9 +420,19 @@ export class SplatViewerEngine {
     this.graphGroup.updateMatrixWorld(true);
     const target = this.graphGroup.localToWorld(local.clone());
 
+    this.focusPoint(target);
+  }
+
+  /** Move the camera to look at a note pin. */
+  focusNote(id: string) {
+    const p = this.notePositions.get(id);
+    if (p) this.focusPoint(p.clone());
+  }
+
+  private focusPoint(target: THREE.Vector3) {
     if (this.mode === "walk") {
       this.camera.position.set(target.x, target.y + EYE_HEIGHT - 0.2, target.z);
-      this.walk.syncFromCamera();
+      this.keys.syncFromCamera();
       return;
     }
     const offset = this.camera.position.clone().sub(this.orbit.target);
@@ -340,7 +443,7 @@ export class SplatViewerEngine {
     this.orbit.update();
   }
 
-  /** Rotate the scan 180° about X for exports that arrive upside down. */
+  /** Rotate the scan 180° about X for exports that arrive upside down (kept for alignment tooling). */
   flipUp() {
     this.root.quaternion.premultiply(X_FLIP);
     this.root.updateMatrixWorld(true);
@@ -355,7 +458,7 @@ export class SplatViewerEngine {
     this.resizeObserver.disconnect();
     for (const off of this.disposers) off();
     this.orbit.dispose();
-    this.walk.dispose();
+    this.keys.dispose();
     this.mesh?.dispose();
     this.spark.dispose();
     this.clearGroup(this.graphGroup);
@@ -377,6 +480,8 @@ export class SplatViewerEngine {
   /* --------------------------------------------------------------- picking */
 
   private onPointerDown = (e: PointerEvent) => {
+    // Any click on the scene should make the keyboard controls live.
+    this.opts.container.focus({ preventScroll: true });
     if (e.pointerType === "mouse" && e.button !== 0) return;
     this.pointerDown = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
   };
@@ -402,7 +507,7 @@ export class SplatViewerEngine {
     const { onEvent } = this.opts;
     this.setRayFromEvent(e);
 
-    // Existing stops take priority so they can be selected in any tool.
+    // Note pins are DOM elements and handle their own clicks; waypoints are picked here.
     if (this.graphGroup.visible && this.nodeMeshes.size) {
       const hit = this.raycaster.intersectObjects([...this.nodeMeshes.values()], false)[0];
       if (hit) return onEvent({ type: "pick-node", tool: this.tool, id: hit.object.userData.nodeId as string });
@@ -508,7 +613,7 @@ export class SplatViewerEngine {
   }
 
   private addLabel(
-    kind: "node" | "measure" | "pending",
+    kind: "node" | "note" | "measure" | "pending",
     text: string,
     position: THREE.Vector3,
     offsetY: number,
@@ -546,6 +651,7 @@ export class SplatViewerEngine {
     const w = this.labelLayer.clientWidth;
     const h = this.labelLayer.clientHeight;
     const v = new THREE.Vector3();
+    const tint = new THREE.Color();
     for (const l of this.labels) {
       if (l.el.hidden) continue;
       v.copy(l.position).addScaledVector(UP, l.offsetY).project(this.camera);
@@ -555,6 +661,15 @@ export class SplatViewerEngine {
       const x = ((v.x + 1) / 2) * w;
       const y = ((1 - v.y) / 2) * h;
       l.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+
+      if (l.noteId) {
+        // Constant on-screen size, so depth is shown by colour: pink up close, sky when far away.
+        const d = this.camera.position.distanceTo(l.position);
+        const t = THREE.MathUtils.clamp((d - PIN_NEAR_M) / Math.max(1, this.pinFarM - PIN_NEAR_M), 0, 1);
+        tint.lerpColors(PIN_NEAR_COLOR, PIN_FAR_COLOR, t);
+        l.el.style.color = `#${tint.getHexString()}`;
+        l.el.style.opacity = String(1 - 0.25 * t);
+      }
     }
   }
 
@@ -562,6 +677,8 @@ export class SplatViewerEngine {
     const center = bounds.getCenter(new THREE.Vector3());
     const radius = Math.max(bounds.getSize(new THREE.Vector3()).length() / 2, 0.5);
     const distance = (radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2))) * 1.05;
+    // Pins fade to the far colour by the time you're a scene-radius away.
+    this.pinFarM = Math.max(8, radius * 1.5);
 
     this.camera.position.copy(center).addScaledVector(ORBIT_DIRECTION, distance);
     this.camera.near = Math.max(0.02, distance / 1000);
@@ -598,10 +715,53 @@ export class SplatViewerEngine {
   private tick(time: number) {
     const dt = this.lastTime ? (time - this.lastTime) / 1000 : 0;
     this.lastTime = time;
+    if (this.keys.hasInput) this.applyMotion(dt);
     if (this.mode === "orbit") this.orbit.update();
-    else this.walk.update(dt);
     this.renderer.render(this.scene, this.camera);
     this.updateLabels();
+  }
+
+  /** Apply held keys: WASD moves, Q/E (R/F, Space/C) change height, arrows turn, Shift hurries. */
+  private applyMotion(dt: number) {
+    const m = this.keys.consume(dt);
+    const sprint = m.sprint ? this.keys.sprintMultiplier : 1;
+
+    // Camera-relative axes on the horizontal plane so "forward" never flies into the floor.
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion).setY(0);
+    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+    forward.normalize();
+    const right = new THREE.Vector3().crossVectors(forward, UP).normalize();
+
+    if (this.mode === "walk") {
+      const step = WALK_SPEED * sprint * Math.min(dt, 0.1);
+      this.camera.position
+        .addScaledVector(forward, m.move.z * step)
+        .addScaledVector(right, m.move.x * step)
+        .addScaledVector(UP, m.move.y * step);
+      if (m.yaw || m.pitch) this.keys.turn(m.yaw, m.pitch);
+      return;
+    }
+
+    // Orbit: fly camera and pivot together; faster the further out you are.
+    const distance = this.camera.position.distanceTo(this.orbit.target);
+    const step = Math.max(WALK_SPEED, distance * 0.6) * sprint * Math.min(dt, 0.1);
+    const delta = new THREE.Vector3()
+      .addScaledVector(forward, m.move.z * step)
+      .addScaledVector(right, m.move.x * step)
+      .addScaledVector(UP, m.move.y * step);
+    this.camera.position.add(delta);
+    this.orbit.target.add(delta);
+
+    if (m.yaw || m.pitch) {
+      // Swing the camera around the pivot: yaw about world up, pitch about the camera's right axis.
+      const offset = this.camera.position.clone().sub(this.orbit.target);
+      offset.applyAxisAngle(UP, m.yaw);
+      const pitched = offset.clone().applyAxisAngle(right, -m.pitch);
+      const elevation = Math.asin(THREE.MathUtils.clamp(pitched.clone().normalize().y, -1, 1));
+      if (Math.abs(elevation) < Math.PI / 2 - 0.05) offset.copy(pitched);
+      this.camera.position.copy(this.orbit.target).add(offset);
+      this.camera.lookAt(this.orbit.target);
+    }
   }
 
   private listen<K extends keyof HTMLElementEventMap>(

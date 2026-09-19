@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Alignment, Measurement, NavigationGraph, Vec3 } from "@/lib/world-manifest";
+import type { Alignment, Measurement, NavigationGraph, Vec3, WorldNote } from "@/lib/world-manifest";
 import type {
   EngineEvent,
   LoadStatus,
   SplatViewerEngine,
   ViewerMode,
+  ViewerSelection,
   ViewerTool,
 } from "./SplatViewerEngine";
 
@@ -28,7 +29,7 @@ export type ViewerApi = {
   setShowGraph: (visible: boolean) => void;
   resetView: () => void;
   focusNode: (id: string) => void;
-  flipUp: () => void;
+  focusNote: (id: string) => void;
   retry: () => void;
 };
 
@@ -37,6 +38,7 @@ export type PickHandler = (
   e:
     | { type: "pick"; tool: ViewerTool; point: Vec3; graphPoint: Vec3 }
     | { type: "pick-node"; tool: ViewerTool; id: string }
+    | { type: "pick-note"; tool: ViewerTool; id: string }
     | { type: "pick-miss"; tool: ViewerTool },
 ) => void;
 
@@ -45,8 +47,9 @@ type Options = {
   alignment?: Alignment;
   /** Data the engine renders; owned by the caller. */
   graph: NavigationGraph;
+  notes: WorldNote[];
   measurements: Measurement[];
-  selectedNode: string | null;
+  selection: ViewerSelection | null;
   pendingPoint: Vec3 | null;
   onPick: PickHandler;
 };
@@ -63,16 +66,18 @@ const INITIAL: ViewerState = {
 
 /**
  * Mounts a `SplatViewerEngine` into the returned container ref and keeps it in
- * sync with the caller's graph / measurement / selection state. Three.js and
- * Spark are imported lazily inside the effect so the page still server-renders
- * and the ~3 MB renderer bundle only ships to browsers that open a world.
+ * sync with the caller's graph / notes / measurement / selection state.
+ * Three.js and Spark are imported lazily inside the effect so the page still
+ * server-renders and the ~3 MB renderer bundle only ships to browsers that
+ * open a world.
  */
 export function useSplatViewer({
   splatUrl,
   alignment,
   graph,
+  notes,
   measurements,
-  selectedNode,
+  selection,
   pendingPoint,
   onPick,
 }: Options) {
@@ -151,8 +156,13 @@ export function useSplatViewer({
   // Data → engine. Each is cheap to re-apply, so plain effects are enough.
   useEffect(() => {
     engineRef.current?.setGraph(graph);
-    engineRef.current?.setSelectedNode(selectedNode);
-  }, [graph, selectedNode, engineReady]);
+  }, [graph, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setNotes(notes);
+  }, [notes, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setSelection(selection);
+  }, [selection, graph, notes, engineReady]);
   useEffect(() => {
     engineRef.current?.setMeasurements(measurements);
   }, [measurements, engineReady]);
@@ -183,11 +193,7 @@ export function useSplatViewer({
         setState((s) => ({ ...s, mode: "orbit" }));
       },
       focusNode: (id) => engineRef.current?.focusNode(id),
-      flipUp: () => {
-        latest.current.mode = "orbit";
-        engineRef.current?.flipUp();
-        setState((s) => ({ ...s, mode: "orbit" }));
-      },
+      focusNote: (id) => engineRef.current?.focusNote(id),
       retry: () => setAttempt((n) => n + 1),
     }),
     [],

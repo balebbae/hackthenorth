@@ -3,20 +3,21 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { WorldViewer } from "@/components/viewer/WorldViewer";
 import { assetUrl } from "@/lib/world-manifest";
-import { WORLDS, type WorldStatus } from "@/lib/worlds";
-import { getMeasurements, getWorld, worldsSource } from "@/lib/worlds-api.server";
+import { displayName, WORLDS, type WorldStatus } from "@/lib/worlds";
+import { getMeasurements, getNotes, getWorld, worldsSource } from "@/lib/worlds-api.server";
 
 /** Always read the volume at request time — new exports and saved stops must show up without a rebuild. */
 export const dynamic = "force-dynamic";
 
-/** A world is viewable when it has a manifest on the volume; sample worlds still get a page. */
+/** A world is viewable when it has a manifest on the volume; sample worlds only exist in local mode. */
 const resolveWorld = cache(async (id: string) => {
   const manifest = await getWorld(id);
-  const sample = WORLDS.find((w) => w.id === id);
+  const sample = worldsSource === "local" ? WORLDS.find((w) => w.id === id) : undefined;
   if (!manifest && !sample) return null;
   const status: WorldStatus =
     manifest?.status ?? sample?.status ?? (manifest?.alignment ? "aligned" : "processing");
-  return { manifest, name: manifest?.name ?? sample?.name ?? id, status };
+  const name = manifest ? displayName(manifest) : (sample?.name ?? id);
+  return { manifest, name, status };
 });
 
 export async function generateMetadata({ params }: PageProps<"/worlds/[id]">): Promise<Metadata> {
@@ -30,7 +31,9 @@ export default async function WorldPage({ params }: PageProps<"/worlds/[id]">) {
   const { id } = await params;
   const world = await resolveWorld(id);
   if (!world) notFound();
-  const measurements = world.manifest ? await getMeasurements(id).catch(() => []) : [];
+  const [notes, measurements] = world.manifest
+    ? await Promise.all([getNotes(id).catch(() => []), getMeasurements(id).catch(() => [])])
+    : [[], []];
 
   return (
     <main className="flex flex-1 flex-col">
@@ -40,6 +43,7 @@ export default async function WorldPage({ params }: PageProps<"/worlds/[id]">) {
         status={world.status}
         manifest={world.manifest}
         splatUrl={world.manifest ? assetUrl(world.manifest.assets.splat) : null}
+        initialNotes={notes}
         initialMeasurements={measurements}
         source={worldsSource}
       />

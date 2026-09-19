@@ -1,17 +1,41 @@
 import "server-only";
-import { createReadStream } from "node:fs";
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { extname, join, resolve } from "node:path";
+import { createReadStream, createWriteStream, existsSync } from "node:fs";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { dirname, extname, join, resolve } from "node:path";
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import {
+  IDENTITY_ALIGNMENT,
   MEASUREMENTS_SCHEMA,
+  NOTES_SCHEMA,
   parseManifest,
   parseMeasurements,
+  parseNotes,
+  volumePath,
+  WORLD_SCHEMA,
   type Measurement,
   type MeasurementsFile,
   type NavigationGraph,
+  type NotesFile,
   type WorldManifest,
+  type WorldNote,
 } from "./world-manifest";
+
+/** Error with an HTTP status the route handler can pass through (404, 409, 413, 502…). */
+export class WorldsApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Splat formats the viewer can open; other uploads (mesh, thumbnail, vps map) are listed separately. */
+export const SPLAT_EXTENSIONS = new Set([".spz", ".ply", ".splat", ".ksplat", ".sog"]);
+const UPLOAD_EXTENSIONS = new Set([...SPLAT_EXTENSIONS, ".glb", ".png", ".jpg", ".jpeg", ".webp", ".bin"]);
+export const MAX_UPLOAD_BYTES = 2 * 1024 ** 3;
 
 /**
  * Data access for worlds stored on the Modal Volume.
@@ -65,7 +89,7 @@ function apiHeaders(): HeadersInit {
 export async function listWorlds(): Promise<WorldManifest[]> {
   if (API_URL) {
     const res = await fetch(`${API_URL}/worlds`, { headers: apiHeaders(), cache: "no-store" });
-    if (!res.ok) throw apiError(res.status);
+    if (!res.ok) throw await apiError(res);
     const body: unknown = await res.json();
     const list = Array.isArray(body)
       ? body
@@ -96,7 +120,7 @@ export async function getWorld(id: string): Promise<WorldManifest | null> {
       cache: "no-store",
     });
     if (res.status === 404) return null;
-    if (!res.ok) throw apiError(res.status);
+    if (!res.ok) throw await apiError(res);
     return parseManifest(await res.json());
   }
   return readLocalManifest(id);
@@ -114,7 +138,7 @@ export async function openAsset(segments: string[]): Promise<Response | null> {
     const url = `${API_URL}/worlds/${segments.map(encodeURIComponent).join("/")}`;
     const upstream = await fetch(url, { headers: apiHeaders(), cache: "no-store" });
     if (upstream.status === 404) return null;
-    if (!upstream.ok || !upstream.body) throw apiError(upstream.status);
+    if (!upstream.ok || !upstream.body) throw await apiError(upstream);
     const headers = new Headers();
     for (const h of ["content-type", "content-length", "etag", "last-modified", "accept-ranges"]) {
       const v = upstream.headers.get(h);
@@ -156,7 +180,7 @@ export async function saveGraph(id: string, graph: NavigationGraph): Promise<Wor
       cache: "no-store",
     });
     if (res.status === 404) return null;
-    if (!res.ok) throw apiError(res.status);
+    if (!res.ok) throw await apiError(res);
     return parseManifest(await res.json());
   }
   const manifest = await readLocalManifest(id);
@@ -174,7 +198,7 @@ export async function getMeasurements(id: string): Promise<Measurement[]> {
       cache: "no-store",
     });
     if (res.status === 404) return [];
-    if (!res.ok) throw apiError(res.status);
+    if (!res.ok) throw await apiError(res);
     return parseMeasurements(((await res.json()) as MeasurementsFile).measurements ?? []);
   }
   try {
@@ -201,7 +225,7 @@ export async function saveMeasurements(id: string, measurements: Measurement[]):
       cache: "no-store",
     });
     if (res.status === 404) return null;
-    if (!res.ok) throw apiError(res.status);
+    if (!res.ok) throw await apiError(res);
     return (await res.json()) as MeasurementsFile;
   }
   const dir = join(ASSETS_DIR, "worlds", id);
@@ -211,12 +235,220 @@ export async function saveMeasurements(id: string, measurements: Measurement[]):
   return file;
 }
 
-function apiError(status: number): Error {
-  return new Error(
-    status === 401 || status === 403
-      ? "Worlds API rejected the API key — check WANDER_API_KEY matches the backend"
-      : `Worlds API responded ${status}`,
-  );
+export async function getNotes(id: string): Promise<WorldNote[]> {
+  if (!isSafeSegment(id)) return [];
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/notes`, {
+      headers: apiHeaders(),
+      cache: "no-store",
+    });
+    if (res.status === 404) return [];
+    if (!res.ok) throw await apiError(res);
+    return parseNotes(((await res.json()) as NotesFile).notes ?? []);
+  }
+  try {
+    const raw = await readFile(join(ASSETS_DIR, "worlds", id, "notes.json"), "utf8");
+    return parseNotes((JSON.parse(raw) as NotesFile).notes ?? []);
+  } catch {
+    return [];
+  }
+}
+
+export async function saveNotes(id: string, notes: WorldNote[]): Promise<NotesFile | null> {
+  if (!isSafeSegment(id)) return null;
+  const file: NotesFile = { schema: NOTES_SCHEMA, worldId: id, notes, updatedAt: new Date().toISOString() };
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/notes`, {
+      method: "PUT",
+      headers: { ...apiHeaders(), "content-type": "application/json" },
+      body: JSON.stringify(file),
+      cache: "no-store",
+    });
+    if (res.status === 404 || res.status === 405) {
+      // Distinguish "world missing" from "backend hasn't implemented notes yet".
+      const world = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}`, { headers: apiHeaders(), cache: "no-store" });
+      if (world.status === 404) return null;
+      throw new WorldsApiError(
+        501,
+        "The worlds API has no notes endpoint yet — add GET/PUT /worlds/{id}/notes (shared/contracts/worlds-api.openapi.yaml)",
+      );
+    }
+    if (!res.ok) throw await apiError(res);
+    return (await res.json()) as NotesFile;
+  }
+  const dir = join(ASSETS_DIR, "worlds", id);
+  if (!(await readLocalManifest(id))) return null;
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "notes.json"), `${JSON.stringify(file, null, 2)}\n`);
+  return file;
+}
+
+/* ------------------------------------------------------------ create / upload */
+
+export type CreateWorldInput = {
+  id: string;
+  name: string;
+  space?: string;
+  description?: string;
+  nianticSiteId?: string | null;
+  /** Filename the manifest should point at under v1 (default scene.spz). */
+  splatFilename?: string;
+};
+
+/**
+ * The deployed FastAPI stores every world's splat as `<version>/scene.spz` and
+ * derives `assets.splat` itself (it rejects `splatFilename` on POST and
+ * `assets` on PATCH), so through the API only `.spz` can be attached.
+ */
+const API_SPLAT_FILENAME = "scene.spz";
+const API_SPZ_ONLY =
+  "The worlds API stores splats as scene.spz — export the scan from Scaniverse as .spz (other formats work in local mode).";
+
+/** Create `worlds/<id>/world.json` as a draft pointing at `v1/<splatFilename>`. 409 if the id is taken. */
+export async function createWorld(input: CreateWorldInput): Promise<WorldManifest> {
+  const splatFilename = input.splatFilename ?? "scene.spz";
+  if (!isSafeSegment(input.id) || !isSafeSegment(splatFilename))
+    throw new WorldsApiError(400, "Invalid world id or filename");
+  if (!SPLAT_EXTENSIONS.has(extname(splatFilename).toLowerCase()))
+    throw new WorldsApiError(400, `Unsupported splat format "${extname(splatFilename)}"`);
+
+  if (API_URL) {
+    if (splatFilename !== API_SPLAT_FILENAME) throw new WorldsApiError(400, API_SPZ_ONLY);
+    const body: Record<string, unknown> = { id: input.id, name: input.name };
+    if (input.space) body.space = input.space;
+    if (input.description) body.description = input.description;
+    if (input.nianticSiteId) body.nianticSiteId = input.nianticSiteId;
+    const res = await fetch(`${API_URL}/worlds`, {
+      method: "POST",
+      headers: { ...apiHeaders(), "content-type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (res.status === 409) throw new WorldsApiError(409, "A world with this id already exists");
+    if (!res.ok) throw await apiError(res);
+    return parseManifest(await res.json());
+  }
+
+  const dir = join(ASSETS_DIR, "worlds", input.id);
+  if (existsSync(join(dir, "world.json"))) throw new WorldsApiError(409, "A world with this id already exists");
+  const manifest: WorldManifest = {
+    schema: WORLD_SCHEMA,
+    id: input.id,
+    name: input.name.trim() || input.id,
+    space: input.space?.trim() || undefined,
+    description: input.description?.trim() || undefined,
+    nianticSiteId: input.nianticSiteId?.trim() || null,
+    version: "v1",
+    assets: { splat: volumePath(input.id, "v1", splatFilename) },
+    alignment: IDENTITY_ALIGNMENT,
+    stats: { captureApp: "Scaniverse" },
+    status: "draft",
+    updatedAt: new Date().toISOString(),
+  };
+  await mkdir(join(dir, "v1"), { recursive: true });
+  await writeFile(join(dir, "world.json"), `${JSON.stringify(parseManifest(manifest), null, 2)}\n`);
+  return manifest;
+}
+
+export type WorldPatch = Partial<
+  Pick<WorldManifest, "name" | "space" | "description" | "nianticSiteId" | "version" | "alignment" | "status" | "stats" | "assets">
+>;
+
+/** Partial manifest update (name, site id, version/assets switch, status…). */
+export async function patchWorld(id: string, patch: WorldPatch): Promise<WorldManifest | null> {
+  if (!isSafeSegment(id)) return null;
+  if (API_URL) {
+    // The API derives assets from `version`; sending `assets` is a 400 there.
+    const { assets, ...rest } = patch;
+    if (assets?.splat && assets.splat.split("/").pop() !== API_SPLAT_FILENAME)
+      throw new WorldsApiError(400, API_SPZ_ONLY);
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { ...apiHeaders(), "content-type": "application/json" },
+      body: JSON.stringify(rest),
+      cache: "no-store",
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw await apiError(res);
+    return parseManifest(await res.json());
+  }
+  const current = await readLocalManifest(id);
+  if (!current) return null;
+  const next = parseManifest({
+    ...current,
+    ...patch,
+    assets: { ...current.assets, ...patch.assets },
+    updatedAt: new Date().toISOString(),
+  });
+  await writeFile(join(ASSETS_DIR, "worlds", id, "world.json"), `${JSON.stringify(next, null, 2)}\n`);
+  return next;
+}
+
+/**
+ * Store an uploaded asset at `worlds/<id>/<version>/<file>` from a streaming
+ * body — nothing is buffered in memory. Versions are immutable, so an
+ * existing file is a 409; the caller bumps the version instead.
+ */
+export async function uploadAsset(
+  segments: string[],
+  body: ReadableStream<Uint8Array>,
+  contentLength: number | null,
+): Promise<{ path: string; bytes: number }> {
+  if (segments.length !== 3 || !segments.every(isSafeSegment)) throw new WorldsApiError(400, "Invalid asset path");
+  const [id, , file] = segments;
+  if (!UPLOAD_EXTENSIONS.has(extname(file).toLowerCase()))
+    throw new WorldsApiError(400, `Unsupported file type "${extname(file)}"`);
+  if (contentLength !== null && contentLength > MAX_UPLOAD_BYTES)
+    throw new WorldsApiError(413, "File is larger than the 2 GiB upload limit");
+
+  if (API_URL) {
+    if (SPLAT_EXTENSIONS.has(extname(file).toLowerCase()) && file !== API_SPLAT_FILENAME)
+      throw new WorldsApiError(400, API_SPZ_ONLY);
+    const res = await fetch(`${API_URL}/worlds/${segments.map(encodeURIComponent).join("/")}`, {
+      method: "PUT",
+      headers: {
+        ...apiHeaders(),
+        "content-type": "application/octet-stream",
+        ...(contentLength !== null ? { "content-length": String(contentLength) } : {}),
+      },
+      body,
+      // Required by undici to stream a request body without knowing it up front.
+      duplex: "half",
+      cache: "no-store",
+    } as RequestInit & { duplex: "half" });
+    if (res.status === 409) throw new WorldsApiError(409, "That version already has this file — upload a new version");
+    if (res.status === 413) throw new WorldsApiError(413, "The backend rejected the file as too large");
+    if (!res.ok) throw await apiError(res);
+    return (await res.json()) as { path: string; bytes: number };
+  }
+
+  if (!(await readLocalManifest(id))) throw new WorldsApiError(404, "World not found");
+  const path = join(ASSETS_DIR, "worlds", ...segments);
+  if (existsSync(path)) throw new WorldsApiError(409, "That version already has this file — upload a new version");
+  await mkdir(dirname(path), { recursive: true });
+  try {
+    await pipeline(Readable.fromWeb(body as unknown as NodeReadableStream), createWriteStream(path, { flags: "wx" }));
+  } catch (err) {
+    await rm(path, { force: true });
+    throw err;
+  }
+  const { size } = await stat(path);
+  return { path: `worlds/${segments.join("/")}`, bytes: size };
+}
+
+/** Turn a failed backend response into an error the UI can show, keeping FastAPI's `detail` text. */
+async function apiError(res: Response): Promise<WorldsApiError> {
+  const { status } = res;
+  if (status === 401 || status === 403)
+    return new WorldsApiError(502, "Worlds API rejected the API key — check WANDER_API_KEY matches the backend");
+  const body = (await res.json().catch(() => null)) as { detail?: unknown } | null;
+  const detail =
+    typeof body?.detail === "string"
+      ? body.detail
+      : Array.isArray(body?.detail)
+        ? (body.detail as { msg?: string }[]).map((d) => d.msg ?? JSON.stringify(d)).join("; ")
+        : null;
+  return new WorldsApiError(status >= 500 ? 502 : status, detail ? `Worlds API: ${detail}` : `Worlds API responded ${status}`);
 }
 
 function mimeFor(file: string): string {

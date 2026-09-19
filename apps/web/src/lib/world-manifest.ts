@@ -113,6 +113,49 @@ export function measurementLength(m: Measurement): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
+/** A note pinned to a point on the scan (world frame, metres). */
+export type WorldNote = {
+  id: string;
+  title: string;
+  /** Human-readable place, e.g. "2nd floor, outside room 204". */
+  location?: string;
+  description?: string;
+  position: Vec3;
+  author?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export const NOTES_SCHEMA = "wander.notes/v1";
+
+/** `worlds/<id>/notes.json` on the volume. */
+export type NotesFile = {
+  schema: typeof NOTES_SCHEMA;
+  worldId: string;
+  notes: WorldNote[];
+  updatedAt?: string;
+};
+
+/** Splat formats the viewer can open (Spark decodes all of these). */
+export const SPLAT_FILE_EXTENSIONS = [".spz", ".ply", ".splat", ".ksplat", ".sog"] as const;
+
+/** "E7 Atrium — ground floor" → "e7-atrium-ground-floor"; a valid world id or "". */
+export function slugifyWorldId(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
+
+/** "v1" → "v2"; anything else gets a timestamp so versions never collide. */
+export function nextVersion(current: string): string {
+  const m = /^v(\d+)$/.exec(current);
+  return m ? `v${Number(m[1]) + 1}` : `v${Date.now().toString(36)}`;
+}
+
 /** Volume-relative path → URL served by the Next.js proxy (`/api/worlds/...`). */
 export function assetUrl(path: string): string {
   const rel = path.replace(/^\/?worlds\//, "").replace(/^\/+/, "");
@@ -204,6 +247,29 @@ export function validateMeasurements(input: unknown): string[] {
     else if (m.label !== undefined && !isStr(m.label)) errs.push(`measurements[${i}].label must be a string`);
   });
   return errs;
+}
+
+export function validateNotes(input: unknown): string[] {
+  if (!Array.isArray(input)) return ["notes must be an array"];
+  const errs: string[] = [];
+  const ids = new Set<string>();
+  input.forEach((n, i) => {
+    if (!isObj(n) || !isStr(n.id) || !isStr(n.title) || !isVec(n.position, 3) || !isStr(n.createdAt)) {
+      errs.push(`notes[${i}] needs id, title, position[3] and createdAt`);
+      return;
+    }
+    if (ids.has(n.id)) errs.push(`notes[${i}] duplicate id "${n.id}"`);
+    ids.add(n.id);
+    for (const k of ["location", "description", "author", "updatedAt"] as const)
+      if (n[k] !== undefined && !isStr(n[k])) errs.push(`notes[${i}].${k} must be a string`);
+  });
+  return errs;
+}
+
+export function parseNotes(input: unknown): WorldNote[] {
+  const errs = validateNotes(input);
+  if (errs.length) throw new Error(`Invalid notes: ${errs.join("; ")}`);
+  return input as WorldNote[];
 }
 
 export function parseManifest(input: unknown): WorldManifest {

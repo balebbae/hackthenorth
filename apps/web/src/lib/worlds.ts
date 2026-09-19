@@ -30,12 +30,27 @@ export function worldHref(id: string): string {
   return `/worlds/${encodeURIComponent(id)}`;
 }
 
+/**
+ * Hardcoded presentation overrides for worlds on the volume, keyed by world id.
+ * Used when the manifest can't be edited quickly (demo day): a display name
+ * and/or a thumbnail shipped from /public instead of `assets.thumbnail`.
+ */
+export const WORLD_OVERRIDES: Record<string, { name?: string; thumbnailUrl?: string }> = {
+  "test-building": { name: "Test chairs", thumbnailUrl: "/images/worlds/test-chairs.jpg" },
+};
+
+/** Manifest name with any hardcoded override applied. */
+export function displayName(m: WorldManifest): string {
+  return WORLD_OVERRIDES[m.id]?.name ?? m.name;
+}
+
 /** Shape a manifest from the volume into the dashboard's `World` row. */
 export function worldFromManifest(m: WorldManifest, owner: Owner): World {
   const graph = m.navigationGraph;
+  const override = WORLD_OVERRIDES[m.id];
   return {
     id: m.id,
-    name: m.name,
+    name: displayName(m),
     space: m.space ?? "Modal volume",
     status: m.status ?? (m.alignment ? "aligned" : "processing"),
     splats: formatSplatCount(m.stats?.splatCount),
@@ -44,7 +59,7 @@ export function worldFromManifest(m: WorldManifest, owner: Owner): World {
     editedAt: m.updatedAt ? relativeTime(m.updatedAt) : "—",
     owner,
     collaborators: [],
-    thumbnailUrl: m.assets.thumbnail ? assetUrl(m.assets.thumbnail) : undefined,
+    thumbnailUrl: override?.thumbnailUrl ?? (m.assets.thumbnail ? assetUrl(m.assets.thumbnail) : undefined),
     live: true,
   };
 }
