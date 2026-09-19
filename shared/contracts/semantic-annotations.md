@@ -36,23 +36,29 @@ contains candidate IDs, descriptions, visible sign text, uncertainty, image
 filenames and SHA256 hashes. Sample timestamps are approximate, not pose timestamps.
 Empty findings are valid. Candidates have no usable navigation position.
 
-An operator prepares a review file and explicitly decides approve/reject/duplicate
+An operator prepares a review file and explicitly decides approve/reject/duplicate/note
 for every candidate. Fill verified_by and verified_at (ISO 8601 recommended),
-assign an existing waypoint_id for approvals, optionally supply a complete
+assign an existing waypoint_id for approvals and notes, optionally supply a complete
 corrected Finding, and record notes. Duplicate decisions reference an approved
 candidate in the same batch. The review binds the exact batch and graph hashes.
 These are operator assertions, not cryptographic identity verification.
 
 Publication validates the review and exports a new Graph. Approved records become
-destinations with `annotation` evidence metadata. Rejected/duplicate candidates
-are excluded. Neither model uncertainty nor designation implies accessibility.
-Routes continue to use the manually surveyed edge accessibility flags.
+destinations with `annotation` evidence metadata (now including category, permanence,
+navigation_role, visual_location and uncertainty as filterable fields, not only free
+text). `note` decisions are kept as searchable, non-navigable context/hazard evidence
+(see Context-only retrieval below) rather than being discarded. Rejected/duplicate
+candidates are excluded. Neither model uncertainty nor designation implies
+accessibility. Routes continue to use the manually surveyed edge accessibility flags.
 
-Index the exported graph and restart the backend with GRAPH_PATH set to it.
-Publication does not hot-reload an active session. Old Elastic records may remain
-but search_places intersects retrieval with the active graph, so removed IDs
-cannot become destinations. Deploy and index the same graph before a demo; stale
-index hits may otherwise reduce recall. Preserve batch/review files for auditing.
+For the world-manifest publish path (`PUT /worlds/{id}/annotations`), the backend
+reindexes Elasticsearch inline as part of the same request (best-effort: a
+temporarily unavailable Elasticsearch logs a warning but does not fail publication).
+`POST /worlds/{id}/index` remains available as a manual repair/backfill tool, but is
+no longer a required step after publishing. For the legacy flat-graph CLI path
+(`annotate_scan.py` without `--api-url`), indexing is still a separate `--index` step;
+index the exported graph and restart the backend with GRAPH_PATH set to it, and
+preserve batch/review files for auditing.
 
 ## Review client requirements
 
@@ -73,6 +79,19 @@ candidate files to load; existing reviews must be regenerated if their digest ch
 These are recorded observations, not live obstacle detections or accessibility proof.
 Context, potential_hazard and temporary findings remain review evidence; publishing
 them as routing destinations is rejected. Permanent/movable landmarks still require
-reviewed approach waypoints. Context-only retrieval is not yet implemented.
+reviewed approach waypoints.
+
+## Context-only retrieval
+
+A `note` review decision indexes a finding as searchable evidence (`map_entities`,
+`is_destination: false`) without ever making it a routing destination. The
+`search_context` assistant tool runs the same hybrid (BM25 + kNN, optionally
+reranked) retrieval as `search_places`, filtered to non-destination evidence and
+optionally by floor, and returns terms aggregations by `category` and
+`navigation_role` alongside the matches. `get_obstacle_hotspots` separately runs an
+ES|QL `STATS ... BY nearest_waypoint_id, floor` aggregation over `live_events` to
+surface recurring obstacle reports across sessions. Both are historical/reviewed
+evidence, never a live sensor claim, and the assistant prompt is written accordingly.
+
 Use scan_pipeline --reannotate to preserve prior output and rerun with the expanded
 prompt. This invokes paid annotation again; cached pipeline output is otherwise reused.

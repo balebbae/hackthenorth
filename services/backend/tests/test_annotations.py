@@ -21,11 +21,44 @@ def sample(graph):
 
 def test_publish_requires_review_and_preserves_provenance(graph):
     batch, review = sample(graph)
-    result = publish(batch, review, graph, 'v1')
+    result, notes = publish(batch, review, graph, 'v1')
+    assert notes == []
     assert len(result.destinations) == len(graph.destinations) + 1
-    assert result.destination('annotation-example').annotation.frame == 'frame.jpg'
-    assert result.destination('annotation-example').waypoint_id == graph.waypoints[0].id
-    assert 'women' in result.destination('annotation-example').tags
+    destination = result.destination('annotation-example')
+    assert destination.annotation.frame == 'frame.jpg'
+    assert destination.waypoint_id == graph.waypoints[0].id
+    assert 'women' in destination.tags
+    assert destination.annotation.category == 'restroom'
+    assert destination.annotation.navigation_role == 'landmark'
+
+
+@pytest.mark.parametrize('role,permanence', [('potential_hazard', 'movable'), ('context', 'fixed')])
+def test_note_decision_captures_evidence_without_a_destination(graph, role, permanence):
+    batch, review = sample(graph)
+    batch.candidates[0].navigation_role = role
+    batch.candidates[0].permanence = permanence
+    batch.candidates[0].visual_location = 'left foreground'
+    batch.candidates[0].uncertainty = 'Partially occluded'
+    review.batch_sha256 = batch_digest(batch)
+    review.reviews[0].decision = 'note'
+    result, notes = publish(batch, review, graph, 'v1')
+    assert result.destinations == graph.destinations
+    assert len(notes) == 1
+    note = notes[0]
+    assert note['id'] == 'annotation-example'
+    assert note['navigation_role'] == role
+    assert note['permanence'] == permanence
+    assert note['visual_location'] == 'left foreground'
+    assert note['uncertainty'] == 'Partially occluded'
+    assert note['waypoint_id'] == graph.waypoints[0].id
+
+
+def test_note_decision_still_requires_a_verified_waypoint(graph):
+    batch, review = sample(graph)
+    review.reviews[0].decision = 'note'
+    review.reviews[0].waypoint_id = 'missing'
+    with pytest.raises(ValueError, match='verified approach waypoint'):
+        publish(batch, review, graph, 'v1')
 
 
 @pytest.mark.parametrize('mutation', ['batch', 'graph', 'revision', 'waypoint', 'missing', 'duplicate'])
@@ -50,7 +83,9 @@ def test_rejects_invalid_publication(graph, mutation):
 def test_rejected_candidate_never_becomes_destination(graph):
     batch, review = sample(graph)
     review.reviews[0].decision = 'reject'
-    assert publish(batch, review, graph, 'v1').destinations == graph.destinations
+    result, notes = publish(batch, review, graph, 'v1')
+    assert result.destinations == graph.destinations
+    assert notes == []
 
 
 @pytest.mark.parametrize('role,permanence', [('potential_hazard', 'movable'), ('context', 'fixed'), ('landmark', 'temporary')])
@@ -71,7 +106,7 @@ def test_landmark_preserves_uncertainty_and_image_frame(graph):
     candidate.visual_location = 'left foreground'
     candidate.uncertainty = 'May have moved since capture'
     review.batch_sha256 = batch_digest(batch)
-    result = publish(batch, review, graph, 'v1').destination(candidate.id)
+    result = publish(batch, review, graph, 'v1')[0].destination(candidate.id)
     assert 'not user-relative' in result.description
     assert candidate.uncertainty in result.description
     assert 'not live state' in result.description
@@ -86,9 +121,10 @@ def test_duplicate_review_preserves_only_corrected_object(graph):
     review.reviews[0].corrected = Finding(category='restroom', name='All-gender restroom',
         description='Corrected from visible sign', sign_text='All gender',
         designation='all_gender', uncertainty='')
-    result = publish(batch, review, graph, 'v1')
+    result, notes = publish(batch, review, graph, 'v1')
     assert result.destination('annotation-example').name == 'All-gender restroom'
     assert all(d.id != 'duplicate' for d in result.destinations)
+    assert notes == []
 
 
 def test_failed_extraction_does_not_leave_partial_frames(tmp_path, monkeypatch):

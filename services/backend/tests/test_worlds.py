@@ -1,5 +1,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 import json
 
 import pytest
@@ -7,6 +9,7 @@ from fastapi.testclient import TestClient
 from ..app.main import create_app
 from ..app.services.worlds import check, compute_route, world_graph
 from ..app.config import ROOT
+from ..app.integrations.elastic.client import ElasticClient
 from ..scripts.fixtures import ScriptedModel, FixtureEvents, FixtureSearch
 
 
@@ -178,6 +181,39 @@ def test_annotation_publication_uses_current_world_hash(client, world):
     assert result.json()['navigationGraph']['nodes'][-1]['id'] == 'water'
     assert client.post('/worlds/demo-building/route', json={'from': 'entrance', 'to': 'water'}).status_code == 200
     assert client.put('/worlds/demo-building/annotations', json={'batch': batch.model_dump(), 'review': review}).status_code == 422
+
+
+def test_publish_reindexes_and_notes_hazards_without_a_separate_index_call(settings, world):
+    from ..app.services.annotations import AnnotationBatch, Candidate, batch_digest, world_digest
+    path = settings.wander_data_root / 'worlds' / world['id'] / 'world.json'
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(world), encoding='utf-8')
+    stub = SimpleNamespace(
+        inference=SimpleNamespace(inference=AsyncMock(return_value={'text_embedding': [{'embedding': [1, 0, 0]}]})),
+        index=AsyncMock(), close=AsyncMock(),
+        indices=SimpleNamespace(exists=AsyncMock(return_value=True), create=AsyncMock(), put_mapping=AsyncMock()))
+    elastic = ElasticClient(settings, stub)
+    with TestClient(create_app(settings, model=ScriptedModel([]), events=FixtureEvents(), search=FixtureSearch(),
+                              elastic=elastic), headers={'X-API-Key': settings.wander_api_key}) as client:
+        batch = AnnotationBatch(site_id=world['id'], map_revision='v1', floor=0, model='fake', candidates=[
+            Candidate(id='hazard-1', frame='a.jpg', frame_sha256='abc', category='obstacle',
+                      name='Loose cable', description='Cable across corridor', sign_text='',
+                      designation='unknown', uncertainty='Uncertain extent', navigation_role='potential_hazard')])
+        review = {'site_id': world['id'], 'map_revision': 'v1', 'batch_sha256': batch_digest(batch),
+            'graph_sha256': world_digest(world), 'reviews': [{'candidate_id': 'hazard-1', 'decision': 'note',
+            'waypoint_id': 'lobby', 'verified_by': 'Surveyor', 'verified_at': '2026-09-19'}]}
+        result = client.put(f"/worlds/{world['id']}/annotations",
+                            json={'batch': batch.model_dump(), 'review': review})
+        assert result.status_code == 200, result.text
+    notes_path = settings.wander_data_root / 'worlds' / world['id'] / 'context-notes.json'
+    assert notes_path.exists()
+    notes = json.loads(notes_path.read_text())
+    assert notes[0]['id'] == 'hazard-1'
+    assert notes[0]['navigation_role'] == 'potential_hazard'
+    # Reindex happened inline as part of publish; no separate POST /index call was made.
+    assert stub.index.await_count >= 1
+    indexed_ids = {call.kwargs['document']['id'] for call in stub.index.await_args_list}
+    assert 'hazard-1' in indexed_ids
 
 
 def test_agent_can_read_persisted_world_session(client):

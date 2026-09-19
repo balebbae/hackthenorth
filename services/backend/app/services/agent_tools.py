@@ -36,7 +36,10 @@ class AgentTools:
             sources = [{'type': 'building_knowledge', 'id': row['id']} for row in data]
             data = {'evidence_class': 'retrieved_building_knowledge', 'results': data}
         elif name == 'search_places':
-            hits = await self.search.search('map_entities', session.site_id, args.query)
+            near = None
+            if session.snapshot()['localization']['localized']:
+                near = {'x': session.pose.x, 'y': session.pose.y, 'z': session.pose.z}
+            hits = await self.search.search('map_entities', session.site_id, args.query, near=near)
             ids = {row['id'] for row in hits}
             # Map file is authoritative; stale or fabricated index IDs cannot become destinations.
             data = [self.mapped(session, d) for d in self.navigation.graph.destinations if d.id in ids]
@@ -66,7 +69,13 @@ class AgentTools:
             self.events.record(session, 'assistant_action', actions[0])
             if data['instruction'] == 'arrived':
                 self.events.record(session, 'arrived', {'destination_id': args.destination_id})
-        else:
+        elif name == 'get_recent_events':
             data = await self.events.recent(session.site_id, session.session_id, args.event_type, args.minutes)
             sources = [{'type': 'live_event', 'id': row['id']} for row in data]
+        elif name == 'search_context':
+            data = await self.search.context(session.site_id, args.query, args.floor)
+            sources = [{'type': 'map_entity', 'id': row['id']} for row in data['results']]
+        else:
+            data = await self.events.hazard_density(session.site_id, args.hours)
+            sources = [{'type': 'live_event', 'id': f"hotspot:{row['nearest_waypoint_id']}"} for row in data]
         return {'data': data, 'sources': sources, 'actions': actions}

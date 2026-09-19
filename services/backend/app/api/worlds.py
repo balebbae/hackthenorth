@@ -155,25 +155,43 @@ async def annotations(world_id: str, request: Request):
     review = ReviewFile.model_validate(data['review'])
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
-        manifest, records = publish_world(batch, review, store.world(world_id))
+        manifest, records, notes = publish_world(batch, review, store.world(world_id))
+        ids = {c.id for c in batch.candidates}
         path = store.path('worlds', world_id, 'annotations.json')
         previous = store.read('worlds', world_id, 'annotations.json') if path.exists() else []
-        ids = {c.id for c in batch.candidates}
         records = [r for r in previous if r['id'] not in ids] + records
+        notes_path = store.path('worlds', world_id, 'context-notes.json')
+        previous_notes = store.read('worlds', world_id, 'context-notes.json') if notes_path.exists() else []
+        notes = [n for n in previous_notes if n['id'] not in ids] + notes
         await store.write(records, 'worlds', world_id, 'annotations.json')
+        await store.write(notes, 'worlds', world_id, 'context-notes.json')
         await store.write(manifest, 'worlds', world_id, 'world.json')
+        # Reindex inline so publishing and search availability never drift apart
+        # (a human previously had to remember a separate POST /index call). Best
+        # effort: a temporarily unavailable Elasticsearch must not block publishing,
+        # matching how live event indexing already degrades (events.py record()).
+        try:
+            await request.app.state.elastic.setup()
+            await request.app.state.ingestion.world(manifest, records)
+            await request.app.state.ingestion.context_notes(world_id, notes)
+        except Exception as error:
+            logger.warning('Reindex after publish failed (%s); retry with POST /worlds/%s/index',
+                          type(error).__name__, world_id)
     return manifest
 
 
 @router.post('/worlds/{world_id}/index')
 async def index_world(world_id: str, request: Request):
+    """Manual repair/backfill only; PUT /annotations already reindexes on publish."""
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
         manifest = store.world(world_id)
         records = store.read('worlds', world_id, 'annotations.json') if store.path('worlds', world_id, 'annotations.json').exists() else []
+        notes = store.read('worlds', world_id, 'context-notes.json') if store.path('worlds', world_id, 'context-notes.json').exists() else []
         await request.app.state.elastic.setup()
         await request.app.state.ingestion.world(manifest, records)
-    return {'indexed': len(world_graph(manifest)['nodes'])}
+        await request.app.state.ingestion.context_notes(world_id, notes)
+    return {'indexed': len(world_graph(manifest)['nodes']), 'context_notes': len(notes)}
 
 
 @router.post('/sessions', status_code=201)

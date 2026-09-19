@@ -18,7 +18,7 @@ class EventService:
         self.pending = set()
         self.failed_writes = 0
 
-    def record(self, session, event_type, data):
+    def record(self, session, event_type, data, location=None):
         # Historical indexing must never block immediate obstacle/navigation delivery.
         if len(self.pending) >= 256:
             self.failed_writes += 1
@@ -26,7 +26,8 @@ class EventService:
             return
         event = {'id': str(uuid4()), 'session_id': session.session_id, 'site_id': session.site_id,
                  'event_type': event_type, 'timestamp': datetime.now(timezone.utc).isoformat(),
-                 'summary': json.dumps(data, ensure_ascii=False), 'data': data}
+                 'summary': json.dumps(data, ensure_ascii=False), 'data': data,
+                 **(location or {})}
         task = asyncio.create_task(self._write(event))
         self.pending.add(task)
         task.add_done_callback(self.pending.discard)
@@ -47,6 +48,18 @@ class EventService:
             query += ' AND event_type == ?kind'
             params.append({'kind': event_type})
         query += ' | KEEP id, event_type, timestamp, summary | SORT timestamp DESC | LIMIT 50'
+        result = await self.elastic.require().esql.query(query=query, params=params)
+        return parse_rows(result)
+
+    async def hazard_density(self, site_id, hours=24):
+        """Recurring obstacle reports by location: a historical pattern, never a
+        live sensor claim. Real ES|QL STATS aggregation, not a point lookup."""
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        query = ('FROM live_events | WHERE site_id == ?site AND event_type == "obstacle" '
+                 'AND timestamp >= TO_DATETIME(?cutoff) '
+                 '| STATS reports = COUNT(*), sessions = COUNT_DISTINCT(session_id) '
+                 'BY nearest_waypoint_id, floor | SORT reports DESC | LIMIT 20')
+        params = [{'site': site_id}, {'cutoff': cutoff}]
         result = await self.elastic.require().esql.query(query=query, params=params)
         return parse_rows(result)
 

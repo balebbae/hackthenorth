@@ -28,24 +28,31 @@ class ScriptedModel(AgentModel):
 
 
 class FixtureSearch:
-    async def search(self, index, site_id, query):
+    async def search(self, index, site_id, query, near=None):
         if index == 'map_entities':
             return [{'id': 'east_elevator', 'site_id': site_id}]
         return [{'id': 'accessibility-guide:fixture', 'site_id': site_id,
                  'text': 'The East Elevator provides step-free access upstairs.'}]
+
+    async def context(self, site_id, query, floor=None):
+        return {'results': [], 'counts_by_category': {}, 'counts_by_role': {}}
 
 
 class FixtureEvents:
     def __init__(self):
         self.rows = []
 
-    def record(self, session, event_type, data):
+    def record(self, session, event_type, data, location=None):
         self.rows.append({'id': str(len(self.rows)), 'site_id': session.site_id,
-                          'session_id': session.session_id, 'event_type': event_type, 'data': data})
+                          'session_id': session.session_id, 'event_type': event_type, 'data': data,
+                          **(location or {})})
 
     async def recent(self, site_id, session_id, event_type=None, minutes=5):
         return [row for row in self.rows if row['site_id'] == site_id and row['session_id'] == session_id
                 and (event_type is None or row['event_type'] == event_type)]
+
+    async def hazard_density(self, site_id, hours=24):
+        return []
 
     async def close(self):
         pass
