@@ -32,6 +32,7 @@ import {
   type WorldManifest,
   type WorldNote,
 } from "./world-manifest";
+import type { GraphValidation, NavmeshProposal } from "./navmesh";
 
 /** Error with an HTTP status the route handler can pass through (404, 409, 413, 502…). */
 export class WorldsApiError extends Error {
@@ -47,6 +48,13 @@ export class WorldsApiError extends Error {
 export const SPLAT_EXTENSIONS = new Set([".spz", ".ply", ".splat", ".ksplat", ".sog"]);
 const UPLOAD_EXTENSIONS = new Set([...SPLAT_EXTENSIONS, ".glb", ".png", ".jpg", ".jpeg", ".webp", ".bin"]);
 export const MAX_UPLOAD_BYTES = 2 * 1024 ** 3;
+/** Filenames the backend registers under `assets` when uploaded into the current version. */
+export const MESH_FILENAME = "mesh.glb";
+const CONVENTIONAL_ASSETS: Record<string, "mesh" | "vpsMap" | "thumbnail" | undefined> = {
+  [MESH_FILENAME]: "mesh",
+  "vps-map.bin": "vpsMap",
+  "thumbnail.png": "thumbnail",
+};
 
 /**
  * Data access for worlds stored on the Modal Volume.
@@ -206,6 +214,57 @@ export async function saveGraph(id: string, graph: NavigationGraph): Promise<Wor
   const next: WorldManifest = { ...manifest, navigationGraph: graph, updatedAt: new Date().toISOString() };
   await writeFile(join(ASSETS_DIR, "worlds", id, "world.json"), `${JSON.stringify(next, null, 2)}\n`);
   return next;
+}
+
+/* ------------------------------------------------------------------ navmesh */
+
+const MESH_TOOLS_NEED_API = "Mesh tools run in the worlds backend — set WANDER_API_URL to build or validate graphs";
+
+/** The last mesh-derived graph proposal (`worlds/<id>/navmesh.json`), or null when none was built. */
+export async function getNavmesh(id: string): Promise<NavmeshProposal | null> {
+  if (!isSafeSegment(id)) return null;
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/navmesh`, { headers: apiHeaders(), cache: "no-store" });
+    if (res.status === 404) return null;
+    if (!res.ok) throw await apiError(res);
+    return (await res.json()) as NavmeshProposal;
+  }
+  try {
+    return JSON.parse(await readFile(join(ASSETS_DIR, "worlds", id, "navmesh.json"), "utf8")) as NavmeshProposal;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
+  }
+}
+
+/** Grid the world's mesh and write a *proposed* graph for review; `navigationGraph` is untouched. */
+export async function buildNavmesh(id: string, body: unknown): Promise<NavmeshProposal | null> {
+  if (!isSafeSegment(id)) return null;
+  if (!API_URL) throw new WorldsApiError(501, MESH_TOOLS_NEED_API);
+  const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/navmesh`, {
+    method: "POST",
+    headers: { ...apiHeaders(), "content-type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await apiError(res);
+  return (await res.json()) as NavmeshProposal;
+}
+
+/** Edge-through-wall / floor checks (and floor snapping) of a graph against the mesh; read-only. */
+export async function validateGraphAgainstMesh(id: string, body: unknown): Promise<GraphValidation | null> {
+  if (!isSafeSegment(id)) return null;
+  if (!API_URL) throw new WorldsApiError(501, MESH_TOOLS_NEED_API);
+  const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/graph/validate`, {
+    method: "POST",
+    headers: { ...apiHeaders(), "content-type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await apiError(res);
+  return (await res.json()) as GraphValidation;
 }
 
 export async function getMeasurements(id: string): Promise<Measurement[]> {
@@ -461,7 +520,7 @@ export async function createWorld(input: CreateWorldInput): Promise<WorldManifes
 }
 
 export type WorldPatch = Partial<
-  Pick<WorldManifest, "name" | "space" | "description" | "nianticSiteId" | "version" | "alignment" | "status" | "stats" | "assets">
+  Pick<WorldManifest, "name" | "space" | "description" | "nianticSiteId" | "version" | "alignment" | "status" | "stats" | "assets" | "meshFrame">
 >;
 
 /** Partial manifest update (name, site id, version/assets switch, status…). */
@@ -532,7 +591,8 @@ export async function uploadAsset(
     return (await res.json()) as { path: string; bytes: number };
   }
 
-  if (!(await readLocalManifest(id))) throw new WorldsApiError(404, "World not found");
+  const manifest = await readLocalManifest(id);
+  if (!manifest) throw new WorldsApiError(404, "World not found");
   const path = join(ASSETS_DIR, "worlds", ...segments);
   if (existsSync(path)) throw new WorldsApiError(409, "That version already has this file — upload a new version");
   await mkdir(dirname(path), { recursive: true });
@@ -543,7 +603,14 @@ export async function uploadAsset(
     throw err;
   }
   const { size } = await stat(path);
-  return { path: `worlds/${segments.join("/")}`, bytes: size };
+  const volume = `worlds/${segments.join("/")}`;
+  // Conventional filenames register themselves, like the backend does on upload.
+  const key = CONVENTIONAL_ASSETS[file];
+  if (key && segments[1] === manifest.version && manifest.assets[key] !== volume) {
+    const next = { ...manifest, assets: { ...manifest.assets, [key]: volume }, updatedAt: new Date().toISOString() };
+    await writeFile(join(ASSETS_DIR, "worlds", id, "world.json"), `${JSON.stringify(next, null, 2)}\n`);
+  }
+  return { path: volume, bytes: size };
 }
 
 /** Turn a failed backend response into an error the UI can show, keeping FastAPI's `detail` text. */

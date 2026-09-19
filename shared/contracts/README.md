@@ -23,6 +23,7 @@ worlds/
     ├── world.json           # manifest (schema above) — source of truth for the navigation graph
     ├── notes.json           # notes pinned in the web viewer (optional)
     ├── measurements.json    # web-viewer measurements (optional)
+    ├── navmesh.json         # graph proposal generated from mesh.glb, awaiting review (optional)
     ├── vps-status.json      # last successful phone localization against the site
     ├── localizations/       # VPS image queries mirrored by the phone (newest 50)
     │   ├── index.json       # LocalizationQuery records, newest first
@@ -30,13 +31,13 @@ worlds/
     └── v1/
         ├── scene.spz        # Gaussian splat exported from Scaniverse
         ├── thumbnail.png    # optional 16:10 preview
-        ├── mesh.glb         # optional collision / occlusion mesh
+        ├── mesh.glb         # optional aligned Scaniverse mesh (see `meshFrame`): raycast target, graph checks, graph generation
         └── vps-map.bin      # optional VPS map export for the phone
 sessions/
 └── <sessionId>.json         # navigation session state (a Modal Dict works too)
 ```
 
-`world.json` records the Niantic VPS site id, the active asset `version`, the splat path, the `navigationGraph` used for routing, and the `alignment` that maps splat coordinates into the shared world frame. The web viewer applies `alignment` to the splat and draws the graph on top, so the displayed world is the one the phone localises against. Notes and measurements made in the viewer autosave with `PUT /worlds/{id}/notes` and `PUT /worlds/{id}/measurements`; the graph itself is edited through `PUT /worlds/{id}/graph`.
+`world.json` records the Niantic VPS site id, the active asset `version`, the splat path, the `navigationGraph` used for routing, and the `alignment` that maps splat coordinates into the shared world frame. The web viewer applies `alignment` to the splat and draws the graph on top, so the displayed world is the one the phone localises against. Notes and measurements made in the viewer autosave with `PUT /worlds/{id}/notes` and `PUT /worlds/{id}/measurements`; the graph itself is edited through `PUT /worlds/{id}/graph`. When a world has `assets.mesh`, `POST /worlds/{id}/graph/validate` flags edges through walls and off-floor waypoints and returns a floor-snapped copy, and `POST /worlds/{id}/navmesh` grids the mesh into a proposed graph (`navmesh.json`); neither changes `navigationGraph` — the reviewer accepts with `PUT /graph`.
 
 ## Upload flow (web → backend)
 

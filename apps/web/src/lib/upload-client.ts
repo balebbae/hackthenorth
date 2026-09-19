@@ -135,6 +135,29 @@ export async function uploadSplatForWorld(
   );
 }
 
+export const MESH_FILENAME = "mesh.glb";
+
+/**
+ * Upload the aligned collision mesh (Scaniverse .glb) into the world's current
+ * version as `mesh.glb`. The server registers it under `assets.mesh` itself, so
+ * no manifest patch is needed; versions are immutable, so an existing mesh is a 409.
+ */
+export async function uploadMeshForWorld(
+  manifest: WorldManifest,
+  rawFile: File,
+  onProgress: (p: UploadProgress) => void,
+  signal?: AbortSignal,
+): Promise<{ path: string; bytes: number }> {
+  if (!rawFile.name.toLowerCase().endsWith(".glb")) throw new UploadError(400, "The mesh must be a .glb file");
+  try {
+    return await uploadSplatFile(manifest.id, manifest.version, renameFile(rawFile, MESH_FILENAME), onProgress, signal);
+  } catch (err) {
+    if (err instanceof UploadError && err.status === 409)
+      throw new UploadError(409, `${manifest.version} already has a mesh — upload a new splat version first, then add the mesh to it`);
+    throw err;
+  }
+}
+
 async function patchWorld(id: string, patch: unknown, signal?: AbortSignal): Promise<WorldManifest> {
   const res = await fetch(`/api/worlds/${encodeURIComponent(id)}`, {
     method: "PATCH",

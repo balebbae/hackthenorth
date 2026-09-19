@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import binascii
 import hashlib
@@ -9,6 +10,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
+from ..routing import navmesh
 from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, compute_route, horizontal
 
 router = APIRouter()
@@ -74,7 +76,7 @@ async def get_world(world_id: str, request: Request):
 @router.patch('/worlds/{world_id}')
 async def patch_world(world_id: str, request: Request):
     data = await body(request)
-    if data.keys()-{'name', 'space', 'description', 'nianticSiteId', 'version', 'alignment', 'status', 'stats'}:
+    if data.keys()-{'name', 'space', 'description', 'nianticSiteId', 'version', 'alignment', 'status', 'stats', 'meshFrame'}:
         raise HTTPException(400, 'Unsupported manifest field')
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
@@ -120,6 +122,75 @@ async def graph(world_id: str, request: Request):
         world.update(navigationGraph=data, updatedAt=now())
         await store.write(world, 'worlds', world_id, 'world.json')
     return world
+
+
+def mesh_path(store, world):
+    asset = world['assets'].get('mesh')
+    if not asset:
+        raise HTTPException(409, 'World has no mesh; upload mesh.glb under assets.mesh first')
+    path = store.path(*asset.split('/'))
+    if not path.is_file():
+        raise HTTPException(409, 'Mesh asset is missing from the volume')
+    return path
+
+
+def occupancy_for(store, world, data):
+    """Grid the world's mesh with the request's parameters (blocking; run in a thread)."""
+    try:
+        params = navmesh.Params.parse(data.get('params', {}))
+        frame = data.get('frame', world.get('meshFrame', 'world'))
+        if frame not in ('world', 'splat'):
+            raise ValueError('frame must be world or splat')
+        mesh = navmesh.load_mesh(mesh_path(store, world), world.get('alignment'), frame)
+        return params, navmesh.Occupancy(mesh, params)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+
+
+@router.post('/worlds/{world_id}/navmesh', status_code=201)
+async def build_navmesh(world_id: str, request: Request):
+    """Occupancy grid → walkable skeleton → *proposed* graph, written to navmesh.json for review.
+    Nothing touches `navigationGraph`: a human accepts the proposal with PUT /graph."""
+    data = await body(request)
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    params, occupancy = await asyncio.to_thread(occupancy_for, store, world, data)
+    graph = await asyncio.to_thread(navmesh.build_graph, occupancy)
+    if not graph['nodes']:
+        raise HTTPException(422, 'No walkable floor found; check the mesh frame and cell size')
+    issues, _ = navmesh.validate(occupancy, world_graph(world), snap=False)
+    proposal = {'schema': 'wander.navmesh/v1', 'worldId': world_id, 'mesh': world['assets']['mesh'],
+                'status': 'proposed', 'params': {**params.__dict__, 'frame': data.get('frame', world.get('meshFrame', 'world'))},
+                'grid': occupancy.summary(), 'graph': graph,
+                'currentGraphIssues': issues, 'createdAt': now()}
+    async with store.lock('world:' + world_id):
+        store.world(world_id)
+        await store.write(proposal, 'worlds', world_id, 'navmesh.json')
+    return proposal
+
+
+@router.get('/worlds/{world_id}/navmesh')
+async def get_navmesh(world_id: str, request: Request):
+    store = request.app.state.worlds
+    store.world(world_id)
+    return store.read('worlds', world_id, 'navmesh.json')
+
+
+@router.post('/worlds/{world_id}/graph/validate')
+async def validate_against_mesh(world_id: str, request: Request):
+    """Edge-through-wall / off-floor checks and floor snapping for a world-frame graph (default: the
+    current one). Read-only: returns the snapped copy for the editor to save with PUT /graph."""
+    data = await body(request)
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    if 'graph' in data:
+        validate_graph(data['graph'])
+        graph = world_graph({**world, 'navigationGraph': data['graph']})
+    else:
+        graph = world_graph(world)
+    _, occupancy = await asyncio.to_thread(occupancy_for, store, world, data)
+    issues, snapped = navmesh.validate(occupancy, graph, snap=data.get('snap', True) is not False)
+    return {'issues': issues, 'graph': snapped, 'floorY': occupancy.floor_y, 'checkedAt': now()}
 
 
 @router.get('/worlds/{world_id}/measurements')
@@ -388,6 +459,12 @@ async def upload(world_id: str, version: str, filename: str, request: Request):
                     digest.update(chunk)
                     file.write(chunk)
             temporary.replace(path)
+            world = store.world(world_id)
+            key = {'mesh.glb': 'mesh', 'vps-map.bin': 'vpsMap', 'thumbnail.png': 'thumbnail'}.get(filename)
+            if key and version == world['version'] and world['assets'].get(key) != f'worlds/{world_id}/{version}/{filename}':
+                world['assets'][key] = f'worlds/{world_id}/{version}/{filename}'
+                world['updatedAt'] = now()
+                await store.write(world, 'worlds', world_id, 'world.json')
             await store.flush()
         finally:
             temporary.unlink(missing_ok=True)
