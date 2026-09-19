@@ -43,3 +43,20 @@ class Ingestion:
                       'text': text, 'x': point.x, 'y': point.y, 'z': point.z, 'embedding': vector}
             await self.elastic.require().index(index='map_entities', id=f'{graph.site_id}:{destination.id}',
                                                document=source, refresh='wait_for')
+
+    async def world(self, manifest, annotations=()):
+        from ...services.worlds import world_graph
+        metadata = {a['id']: a for a in annotations}
+        for node in world_graph(manifest)['nodes']:
+            annotation = metadata.get(node['id'], {})
+            name = node.get('name', node['id'])
+            text = ' '.join([name, annotation.get('description', ''), *annotation.get('tags', [])])
+            vector = (await self.elastic.embed([text], 'ingest'))[0]
+            point = node['position']
+            source = {'id': node['id'], 'site_id': manifest['id'], 'name': name, 'title': name,
+                      'text': text, 'description': annotation.get('description', ''),
+                      'entity_type': annotation.get('entity_type', node.get('kind', 'waypoint')),
+                      'tags': annotation.get('tags', []), 'x': point[0], 'y': point[1], 'z': point[2],
+                      'embedding': vector, 'annotation': annotation.get('annotation')}
+            await self.elastic.require().index(index='map_entities', id=f"{manifest['id']}:{node['id']}",
+                                               document=source, refresh='wait_for')

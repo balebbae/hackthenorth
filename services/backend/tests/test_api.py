@@ -7,27 +7,27 @@ from ..scripts.simulate_navigation import pose_message
 
 def make_client(settings, model=None):
     return TestClient(create_app(settings, model=model or ScriptedModel([]),
-        events=FixtureEvents(), search=FixtureSearch()))
+        events=FixtureEvents(), search=FixtureSearch()), headers={'X-API-Key': settings.wander_api_key})
 
 
 def test_http_sessions_and_errors(settings):
     with make_client(settings) as client:
         assert client.get('/health').json() == {'status': 'ok'}
-        session = client.post('/sessions', json={})
+        session = client.post('/legacy/sessions', json={})
         assert session.status_code == 201
         sid = session.json()['session_id']
-        assert client.get(f'/sessions/{sid}').status_code == 200
-        assert client.get('/sessions/unknown').status_code == 404
-        assert client.post('/sessions', json={'site_id': 'unknown'}).status_code == 422
+        assert client.get(f'/legacy/sessions/{sid}').status_code == 200
+        assert client.get('/legacy/sessions/unknown').status_code == 404
+        assert client.post('/legacy/sessions', json={'site_id': 'unknown'}).status_code == 422
         assert len(client.get('/destinations').json()['destinations']) == 8
-        assert client.post(f'/sessions/{sid}/destination', json={'destination_id': 'east_elevator'}).status_code == 422
+        assert client.post(f'/legacy/sessions/{sid}/destination', json={'destination_id': 'east_elevator'}).status_code == 422
         assert client.post('/assistant/query', json={'session_id': sid, 'text': ''}).status_code == 422
 
 
 def test_navigation_websocket_malformed_recovery_and_broadcast(settings):
     with make_client(settings) as client:
-        sid = client.post('/sessions', json={}).json()['session_id']
-        with client.websocket_connect(f'/ws/sessions/{sid}') as one, client.websocket_connect(f'/ws/sessions/{sid}') as two:
+        sid = client.post('/legacy/sessions', json={}).json()['session_id']
+        with client.websocket_connect(f'/ws/legacy/sessions/{sid}') as one, client.websocket_connect(f'/ws/legacy/sessions/{sid}') as two:
             assert one.receive_json()['type'] == two.receive_json()['type'] == 'session_state'
             for malformed in ('not json', '[]', '{"type":"unknown"}', '{"type":"pose_update","pose":{}}'):
                 one.send_text(malformed)
@@ -36,7 +36,7 @@ def test_navigation_websocket_malformed_recovery_and_broadcast(settings):
             for socket in (one, two):
                 assert socket.receive_json()['type'] == 'pose_update'
                 assert socket.receive_json()['type'] == 'navigation_instruction'
-            response = client.post(f'/sessions/{sid}/destination', json={'destination_id': 'east_elevator'})
+            response = client.post(f'/legacy/sessions/{sid}/destination', json={'destination_id': 'east_elevator'})
             assert response.status_code == 200 and response.json()['distance_remaining_m'] == 12
             for socket in (one, two):
                 assert socket.receive_json()['type'] == 'route_update'
@@ -48,7 +48,7 @@ def test_navigation_websocket_malformed_recovery_and_broadcast(settings):
 def test_assistant_websocket(settings):
     model = ScriptedModel([('get_current_location', {}), 'Your location is unavailable.'])
     with make_client(settings, model) as client:
-        sid = client.post('/sessions', json={}).json()['session_id']
+        sid = client.post('/legacy/sessions', json={}).json()['session_id']
         with client.websocket_connect(f'/ws/sessions/{sid}/assistant') as socket:
             socket.send_json({'type': 'bad'})
             assert socket.receive_json()['type'] == 'error'
@@ -61,7 +61,7 @@ def test_assistant_websocket(settings):
 
 def test_unknown_ws_session(settings):
     with make_client(settings) as client:
-        with client.websocket_connect('/ws/sessions/unknown') as socket:
+        with client.websocket_connect('/ws/legacy/sessions/unknown') as socket:
             assert socket.receive_json()['type'] == 'error'
 
 

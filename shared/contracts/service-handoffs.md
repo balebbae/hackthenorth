@@ -1,3 +1,5 @@
+> Migration notice: main's worlds-api.openapi.yaml and world/navigation schemas now define the primary API. The older session wire format below is available under /legacy. Every request requires X-API-Key. See services/backend/WORLDS_MIGRATION.md for current integration details.
+
 # Service handoffs: localization, semantics, knowledge and voice
 
 Status: current backend contracts plus explicitly marked proposals. This document does not implement Niantic, native clients, audio streaming, or scene segmentation ingestion. Existing wire formats are in [backend.md](backend.md); component schemas are in [backend.schema.json](backend.schema.json).

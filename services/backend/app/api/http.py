@@ -12,12 +12,12 @@ async def health():
     return {'status': 'ok'}
 
 
-@router.post('/sessions', status_code=201)
+@router.post('/legacy/sessions', status_code=201)
 async def create_session(body: SessionRequest, request: Request):
     return request.app.state.navigation.create(body.site_id).snapshot()
 
 
-@router.get('/sessions/{session_id}')
+@router.get('/legacy/sessions/{session_id}')
 async def session_state(session_id: str, request: Request):
     return request.app.state.store.get(session_id).snapshot()
 
@@ -28,7 +28,7 @@ async def destinations(request: Request):
     return {'site_id': graph.site_id, 'destinations': [d.model_dump() for d in graph.destinations]}
 
 
-@router.post('/sessions/{session_id}/destination')
+@router.post('/legacy/sessions/{session_id}/destination')
 async def destination(session_id: str, body: DestinationRequest, request: Request):
     state = request.app.state
     session = state.store.get(session_id)

@@ -7,7 +7,7 @@ from ..services.sessions import broadcast
 router = APIRouter()
 
 
-@router.websocket('/ws/sessions/{session_id}')
+@router.websocket('/ws/legacy/sessions/{session_id}')
 async def navigation_socket(socket: WebSocket, session_id: str):
     state = socket.app.state
     await socket.accept()

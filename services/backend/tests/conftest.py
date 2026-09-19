@@ -7,8 +7,8 @@ from ..app.services.sessions import MemorySessionStore, NavigationService
 
 
 @pytest.fixture
-def settings():
-    return Settings(_env_file=None, openai_api_key='', openai_model='', elasticsearch_url='',
+def settings(tmp_path):
+    return Settings(_env_file=None, wander_api_key='test-key', wander_data_root=tmp_path, openai_api_key='', openai_model='', elasticsearch_url='',
                     elasticsearch_api_key='', elastic_embedding_endpoint='test-jina', elastic_embedding_dims=3)
 
 

@@ -1,3 +1,5 @@
+> Migration notice: main's worlds-api.openapi.yaml and world/navigation schemas now define the primary API. The older session wire format below is available under /legacy. Every request requires X-API-Key. See services/backend/WORLDS_MIGRATION.md for current integration details.
+
 # Backend contracts v0.1
 
 Ownership: clients provide observations and localization; backend computes routes and instructions. No Niantic, ARKit, speech, computer-vision or frontend implementation is included. Python models live in `services/backend/app/models.py`. Machine-readable component schemas are in `backend.schema.json`; HTTP OpenAPI is served at `/openapi.json` (`/docs` for interactive documentation).

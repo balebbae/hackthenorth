@@ -12,10 +12,13 @@ from .integrations.elastic.search import ElasticSearch
 from .integrations.elastic.events import EventService
 from .integrations.elastic.ingestion import Ingestion
 from .integrations.openai.agent import OpenAIAgentModel
-from .api import http, navigation_ws, assistant_ws
+from .api import http, navigation_ws, assistant_ws, voice_ws, worlds
+from .api.auth import APIKeyMiddleware
+from .services.worlds import WorldStore, WorldNavigation
+from .services.world_agent import WorldAgentTools
 
 
-def create_app(settings=None, model=None, elastic=None, search=None, events=None):
+def create_app(settings=None, model=None, elastic=None, search=None, events=None, volume_commit=None):
     settings = settings or Settings()
     elastic = elastic or ElasticClient(settings)
     events = events or EventService(elastic)
@@ -30,12 +33,19 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
             yield
 
     app = FastAPI(title='Indoor Navigation Backend', version='0.1.0', lifespan=lifespan)
+    app.state.settings = settings
+    app.add_middleware(APIKeyMiddleware, key=settings.wander_api_key)
+    app.state.worlds = WorldStore(settings.wander_data_root, volume_commit)
+    app.state.world_navigation = WorldNavigation(app.state.worlds)
     app.state.store = MemorySessionStore()
     app.state.navigation = NavigationService(Graph.load(settings.graph_path), app.state.store)
     app.state.elastic, app.state.events = elastic, events
     app.state.ingestion = Ingestion(elastic)
-    app.state.agent = BuildingAgentService(app.state.store, model,
-        AgentTools(app.state.navigation, search or ElasticSearch(elastic), events))
+    agent_tools = WorldAgentTools(
+        AgentTools(app.state.navigation, search or ElasticSearch(elastic), events),
+        app.state.worlds, app.state.world_navigation, app.state.store)
+    app.state.store.refresh = agent_tools.refresh
+    app.state.agent = BuildingAgentService(app.state.store, model, agent_tools)
 
     @app.exception_handler(KeyError)
     async def missing(request: Request, error):
@@ -51,8 +61,10 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
     for error_type in (IntegrationUnavailable, ApiError, TransportError):
         app.add_exception_handler(error_type, unavailable)
     app.include_router(http.router)
+    app.include_router(worlds.router)
     app.include_router(navigation_ws.router)
     app.include_router(assistant_ws.router)
+    app.include_router(voice_ws.router)
     return app
 
 

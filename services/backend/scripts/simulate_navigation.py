@@ -5,6 +5,7 @@ import json
 import time
 import httpx
 import websockets
+from ..app.config import Settings
 
 MOVES = [(0, 0, 0), (0, 8, 0), (0, 8, 90), (4, 8, 90)]
 
@@ -19,9 +20,9 @@ def offline():
     from ..app.main import create_app
     from ..app.config import Settings
     from .fixtures import FixtureEvents
-    with TestClient(create_app(Settings(_env_file=None, openai_api_key='', elasticsearch_url=''), events=FixtureEvents())) as client:
-        sid = client.post('/sessions', json={}).json()['session_id']
-        with client.websocket_connect(f'/ws/sessions/{sid}') as ws:
+    with TestClient(create_app(Settings(_env_file=None, wander_api_key='offline', openai_api_key='', elasticsearch_url=''), events=FixtureEvents()), headers={'X-API-Key': 'offline'}) as client:
+        sid = client.post('/legacy/sessions', json={}).json()['session_id']
+        with client.websocket_connect(f'/ws/legacy/sessions/{sid}') as ws:
             ws.receive_json()
             ws.send_json(pose_message(0, 0, 0))
             ws.receive_json()
@@ -40,12 +41,12 @@ def offline():
 
 
 async def live(base):
-    async with httpx.AsyncClient(base_url=base) as client:
-        response = await client.post('/sessions', json={})
+    async with httpx.AsyncClient(base_url=base, headers={'X-API-Key': Settings().wander_api_key}) as client:
+        response = await client.post('/legacy/sessions', json={})
         response.raise_for_status()
         sid = response.json()['session_id']
     ws_base = base.replace('http://', 'ws://').replace('https://', 'wss://')
-    async with websockets.connect(f'{ws_base}/ws/sessions/{sid}') as ws:
+    async with websockets.connect(f'{ws_base}/ws/legacy/sessions/{sid}', additional_headers={'X-API-Key': Settings().wander_api_key}) as ws:
         await ws.recv()
         await ws.send(json.dumps(pose_message(0, 0, 0)))
         await ws.recv()

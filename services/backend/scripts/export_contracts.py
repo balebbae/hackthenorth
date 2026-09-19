@@ -3,11 +3,13 @@ import json
 from ..app.config import ROOT
 from ..app.models import Pose, Localization, Destination, DestinationRequest, Obstacle, Query, Document
 from ..app.routing.graph import Graph
+from ..app.services.annotations import AnnotationBatch, ReviewFile
 
 
 def main():
     schemas = {model.__name__: model.model_json_schema(ref_template='#/$defs/{model}')
-               for model in (Pose, Localization, Destination, DestinationRequest, Obstacle, Query, Document, Graph)}
+               for model in (Pose, Localization, Destination, DestinationRequest, Obstacle, Query, Document,
+                             Graph, AnnotationBatch, ReviewFile)}
     definitions = {}
     for schema in schemas.values():
         definitions.update(schema.pop('$defs', {}))

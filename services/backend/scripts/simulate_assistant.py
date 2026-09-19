@@ -4,6 +4,7 @@ import json
 from contextlib import suppress
 import httpx
 import websockets
+from ..app.config import Settings
 from .simulate_navigation import pose_message
 
 QUESTIONS = ['Where can I go upstairs without using stairs?', 'Where is it?', 'Take me there.']
@@ -15,11 +16,11 @@ def offline():
     from ..app.config import Settings
     from .fixtures import FixtureSearch, FixtureEvents, demo_model
     print('OFFLINE SCRIPTED FIXTURE: verifies tool orchestration, not live model reasoning or Elastic retrieval.')
-    app = create_app(Settings(_env_file=None, openai_api_key='', elasticsearch_url=''), model=demo_model(),
+    app = create_app(Settings(_env_file=None, wander_api_key='offline', openai_api_key='', elasticsearch_url=''), model=demo_model(),
                      search=FixtureSearch(), events=FixtureEvents())
-    with TestClient(app) as client:
-        sid = client.post('/sessions', json={}).json()['session_id']
-        with client.websocket_connect(f'/ws/sessions/{sid}') as nav:
+    with TestClient(app, headers={'X-API-Key': 'offline'}) as client:
+        sid = client.post('/legacy/sessions', json={}).json()['session_id']
+        with client.websocket_connect(f'/ws/legacy/sessions/{sid}') as nav:
             nav.receive_json()
             nav.send_json(pose_message(0, 0, 0))
             nav.receive_json()
@@ -34,18 +35,18 @@ def offline():
                     print('Sources:', response['sources'])
                 assert response['actions'][0]['destination_id'] == 'east_elevator'
                 assert nav.receive_json()['type'] == 'route_update'
-                state = client.get(f'/sessions/{sid}').json()
+                state = client.get(f'/legacy/sessions/{sid}').json()
                 assert state['navigation']['route'] == ['entrance', 'hall_corner', 'east_elevator']
                 print('Verified real A* route:', state['navigation']['route'])
 
 
 async def live(base, interactive):
-    async with httpx.AsyncClient(base_url=base, timeout=300) as client:
-        created = await client.post('/sessions', json={})
+    async with httpx.AsyncClient(base_url=base, timeout=300, headers={'X-API-Key': Settings().wander_api_key}) as client:
+        created = await client.post('/legacy/sessions', json={})
         created.raise_for_status()
         sid = created.json()['session_id']
         ws_base = base.replace('http://', 'ws://').replace('https://', 'wss://')
-        async with websockets.connect(f'{ws_base}/ws/sessions/{sid}') as nav:
+        async with websockets.connect(f'{ws_base}/ws/legacy/sessions/{sid}', additional_headers={'X-API-Key': Settings().wander_api_key}) as nav:
             await nav.recv()
             async def heartbeat():
                 while True:

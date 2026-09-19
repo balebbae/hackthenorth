@@ -52,6 +52,7 @@ class SessionStore(Protocol):
 class MemorySessionStore:
     def __init__(self):
         self.sessions: dict[str, Session] = {}
+        self.refresh = None
 
     def create(self, site_id):
         session = Session(str(uuid4()), site_id)
@@ -59,6 +60,8 @@ class MemorySessionStore:
         return session
 
     def get(self, session_id):
+        if self.refresh:
+            self.refresh(session_id)
         if session_id not in self.sessions:
             raise KeyError('Session not found')
         return self.sessions[session_id]

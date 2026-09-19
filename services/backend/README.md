@@ -1,3 +1,12 @@
+# Current API contract
+
+The primary API now follows `shared/contracts/worlds-api.openapi.yaml` from main.
+Read [WORLDS_MIGRATION.md](WORLDS_MIGRATION.md) first: WANDER_API_KEY is required,
+worlds/sessions persist on a Modal Volume, and old demo session routes moved under
+/legacy. Earlier examples below describe that legacy backend.
+
+---
+
 # Indoor navigation backend
 
 The original backend, navigation-data and shared-contract directories contained only `.gitkeep` placeholders. This implementation adds FastAPI, deterministic routing, in-memory sessions, Elastic retrieval and a Responses API agent. Frontend/iOS files and the shared frontend style guide are untouched.
@@ -173,3 +182,9 @@ Teammates should implement the localization/heading/timestamp contract, navigati
 - [Elastic inference API](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-inference-inference)
 - [ES|QL REST parameters](https://www.elastic.co/docs/reference/query-languages/esql/esql-rest)
 - [Modal ASGI and WebSockets](https://modal.com/docs/guide/webhooks)
+# New annotation and Live voice workflows
+
+See [ANNOTATION_AND_VOICE.md](ANNOTATION_AND_VOICE.md) for the semantic annotation
+CLI, review/publication workflow, Modal batch and backend deployment commands,
+and experimental Live audio bridge. Client contracts are in
+`shared/contracts/semantic-annotations.md` and `shared/contracts/voice.md`.

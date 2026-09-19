@@ -42,6 +42,15 @@ class Edge(Model):
     bidirectional: bool = True
 
 
+class AnnotationEvidence(Model):
+    map_revision: str
+    frame: str
+    frame_sha256: str
+    verified_by: str
+    verified_at: str
+    notes: str
+
+
 class Destination(Model):
     id: str
     name: str
@@ -51,6 +60,7 @@ class Destination(Model):
     aliases: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     floor: int = 0
+    annotation: AnnotationEvidence | None = None
 
 
 class DestinationRequest(Model):

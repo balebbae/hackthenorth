@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wander.app/contracts/world.schema.json",
+  "title": "Wander world manifest",
+  "description": "Metadata file stored at worlds/<id>/world.json on the Modal Volume. Links a world's Niantic VPS site, asset version, splat path, navigation graph, and coordinate alignment so the web viewer, the phone, and the routing backend all agree on the same world.",
+  "type": "object",
+  "required": ["schema", "id", "name", "nianticSiteId", "version", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "wander.world/v1" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+      "description": "Directory name under worlds/. Also the URL slug."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "space": { "type": "string", "description": "Project / space label shown in the dashboard." },
+    "description": { "type": "string" },
+    "nianticSiteId": {
+      "type": ["string", "null"],
+      "description": "Niantic Lightship VPS location id. null until the scan is published."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+      "description": "Asset version directory, e.g. v1. Bump when re-exporting; never overwrite a version in place."
+    },
+    "assets": {
+      "type": "object",
+      "required": ["splat"],
+      "additionalProperties": false,
+      "properties": {
+        "splat": {
+          "type": "string",
+          "description": "Volume-relative path, e.g. worlds/demo-building/v1/scene.spz (.spz, .ply, .splat, .ksplat, .sog)."
+        },
+        "mesh": { "type": "string", "description": "Optional collision/occlusion mesh (.glb)." },
+        "vpsMap": { "type": "string", "description": "Optional VPS map export for on-device localization." },
+        "thumbnail": { "type": "string", "description": "Optional 16:10 preview image." }
+      }
+    },
+    "navigationGraph": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "type": "string",
+          "enum": ["world", "splat"],
+          "default": "world",
+          "description": "Frame node positions are expressed in. 'world' = after alignment (VPS frame); 'splat' = raw splat coordinates."
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "position"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "kind": { "type": "string", "enum": ["waypoint", "entrance", "destination"], "default": "waypoint" },
+              "position": { "$ref": "#/$defs/vec3", "description": "Metres." },
+              "floor": { "type": "string" }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "bidirectional": { "type": "boolean", "default": true },
+              "distance": { "type": "number", "minimum": 0, "description": "Metres; derived from positions when omitted." }
+            }
+          }
+        }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "description": "Rigid transform + uniform scale mapping splat-local coordinates into the world frame: p_world = rotation * (scale * p_splat) + position.",
+      "required": ["frame", "position", "rotation", "scale"],
+      "additionalProperties": false,
+      "properties": {
+        "frame": { "type": "string", "description": "Target frame name, e.g. niantic-vps." },
+        "position": { "$ref": "#/$defs/vec3" },
+        "rotation": { "$ref": "#/$defs/quat" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "splatCount": { "type": "integer", "minimum": 0 },
+        "captureApp": { "type": "string", "description": "e.g. Scaniverse 4.2" },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "status": { "type": "string", "enum": ["aligned", "processing", "draft", "review"] },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "quat": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "Unit quaternion as [x, y, z, w]."
+    }
+  }
+}
