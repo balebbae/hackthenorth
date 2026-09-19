@@ -1,0 +1,409 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Backend contract component schemas v0.1",
+  "$defs": {
+    "Localization": {
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "default": "unknown",
+          "title": "Provider",
+          "type": "string"
+        },
+        "map_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Map Id"
+        },
+        "coordinate_frame": {
+          "default": "site",
+          "title": "Coordinate Frame",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "tracking_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tracking Status"
+        },
+        "provider_metadata": {
+          "additionalProperties": true,
+          "title": "Provider Metadata",
+          "type": "object"
+        }
+      },
+      "title": "Localization",
+      "type": "object"
+    },
+    "Destination": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "entity_type": {
+          "title": "Entity Type",
+          "type": "string"
+        },
+        "waypoint_id": {
+          "title": "Waypoint Id",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "floor": {
+          "default": 0,
+          "title": "Floor",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "entity_type",
+        "waypoint_id"
+      ],
+      "title": "Destination",
+      "type": "object"
+    },
+    "Edge": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "accessible": {
+          "default": true,
+          "title": "Accessible",
+          "type": "boolean"
+        },
+        "bidirectional": {
+          "default": true,
+          "title": "Bidirectional",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "target"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "Waypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "title": "Z",
+          "type": "number"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z",
+        "id"
+      ],
+      "title": "Waypoint",
+      "type": "object"
+    },
+    "Pose": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "title": "Z",
+          "type": "number"
+        },
+        "heading": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Heading",
+          "type": "number"
+        },
+        "localized": {
+          "title": "Localized",
+          "type": "boolean"
+        },
+        "timestamp": {
+          "minimum": 0,
+          "title": "Timestamp",
+          "type": "number"
+        },
+        "localization": {
+          "$ref": "#/$defs/Localization"
+        },
+        "pitch": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch"
+        },
+        "roll": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roll"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z",
+        "heading",
+        "localized",
+        "timestamp"
+      ],
+      "title": "Pose",
+      "type": "object"
+    },
+    "DestinationRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "destination_id": {
+          "title": "Destination Id",
+          "type": "string"
+        },
+        "accessible_only": {
+          "default": true,
+          "title": "Accessible Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "destination_id"
+      ],
+      "title": "DestinationRequest",
+      "type": "object"
+    },
+    "Obstacle": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "distance_m": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distance M"
+        },
+        "description": {
+          "maxLength": 1000,
+          "title": "Description",
+          "type": "string"
+        },
+        "timestamp": {
+          "minimum": 0,
+          "title": "Timestamp",
+          "type": "number"
+        }
+      },
+      "required": [
+        "direction",
+        "description",
+        "timestamp"
+      ],
+      "title": "Obstacle",
+      "type": "object"
+    },
+    "Query": {
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 8000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "text"
+      ],
+      "title": "Query",
+      "type": "object"
+    },
+    "Document": {
+      "additionalProperties": false,
+      "properties": {
+        "site_id": {
+          "title": "Site Id",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 200000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "site_id",
+        "id",
+        "title",
+        "text"
+      ],
+      "title": "Document",
+      "type": "object"
+    },
+    "Graph": {
+      "additionalProperties": false,
+      "properties": {
+        "site_id": {
+          "title": "Site Id",
+          "type": "string"
+        },
+        "coordinate_frame": {
+          "default": "site",
+          "title": "Coordinate Frame",
+          "type": "string"
+        },
+        "waypoints": {
+          "items": {
+            "$ref": "#/$defs/Waypoint"
+          },
+          "title": "Waypoints",
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/Edge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "destinations": {
+          "items": {
+            "$ref": "#/$defs/Destination"
+          },
+          "title": "Destinations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "site_id",
+        "waypoints",
+        "edges",
+        "destinations"
+      ],
+      "title": "Graph",
+      "type": "object"
+    }
+  }
+}

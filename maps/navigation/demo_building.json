@@ -1,0 +1,33 @@
+{
+  "site_id": "demo_building",
+  "coordinate_frame": "site",
+  "waypoints": [
+    {"id":"entrance","x":0,"y":0,"z":0},
+    {"id":"hall_corner","x":0,"y":0,"z":8},
+    {"id":"east_elevator","x":4,"y":0,"z":8},
+    {"id":"meeting_room","x":-4,"y":0,"z":8},
+    {"id":"stairs","x":4,"y":0,"z":12},
+    {"id":"restroom","x":0,"y":0,"z":12},
+    {"id":"lab","x":-4,"y":0,"z":12},
+    {"id":"front_desk","x":-2,"y":0,"z":0}
+  ],
+  "edges": [
+    {"source":"entrance","target":"hall_corner"},
+    {"source":"entrance","target":"front_desk"},
+    {"source":"hall_corner","target":"east_elevator"},
+    {"source":"hall_corner","target":"meeting_room"},
+    {"source":"hall_corner","target":"restroom"},
+    {"source":"restroom","target":"lab"},
+    {"source":"east_elevator","target":"stairs","accessible":false}
+  ],
+  "destinations": [
+    {"id":"entrance","name":"Entrance","entity_type":"entrance","waypoint_id":"entrance"},
+    {"id":"hallway","name":"Hallway","entity_type":"hallway","waypoint_id":"hall_corner"},
+    {"id":"meeting_room","name":"Meeting Room","entity_type":"room","waypoint_id":"meeting_room"},
+    {"id":"east_elevator","name":"East Elevator","entity_type":"elevator","waypoint_id":"east_elevator","aliases":["accessible elevator","east elevators"],"tags":["accessible"],"description":"Elevator at the east end of the ground-floor hallway."},
+    {"id":"stairs","name":"Stairs","entity_type":"stairs","waypoint_id":"stairs"},
+    {"id":"restroom","name":"Restroom","entity_type":"restroom","waypoint_id":"restroom","aliases":["bathroom","toilet"],"tags":["accessible"]},
+    {"id":"lab","name":"Lab","entity_type":"room","waypoint_id":"lab"},
+    {"id":"front_desk","name":"Front Desk","entity_type":"desk","waypoint_id":"front_desk"}
+  ]
+}
