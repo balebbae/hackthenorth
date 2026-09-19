@@ -392,6 +392,7 @@ export function WorldViewer({
               tab={panelTab}
               onTab={setPanelTab}
               onClose={() => setPanelOpen(false)}
+              worldId={worldId}
               live={{
                 feed,
                 selected: selectedQuery,
