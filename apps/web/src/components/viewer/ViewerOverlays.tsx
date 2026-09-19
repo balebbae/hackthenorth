@@ -13,6 +13,7 @@ export function ViewerOverlay({
   worldId,
   manifest,
   source,
+  onUpload,
 }: {
   state: ViewerState;
   api: ViewerApi;
@@ -20,11 +21,14 @@ export function ViewerOverlay({
   worldId: string;
   manifest: WorldManifest | null;
   source: "api" | "local";
+  /** Opens the upload dialog; only offered when the world has a manifest to attach the file to. */
+  onUpload?: () => void;
 }) {
   if (state.status === "ready") return null;
 
   const version = manifest?.version ?? "v1";
   const expectedPath = manifest?.assets.splat ?? `worlds/${worldId}/${version}/scene.spz`;
+  const canUpload = !!manifest && !!onUpload;
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
@@ -50,22 +54,34 @@ export function ViewerOverlay({
           <>
             <Ring icon="cube" tone="border-wander-sky text-wander-blue" />
             <p className="mt-4 text-body font-medium text-void-black">No splat uploaded yet</p>
-            <p className="mt-1 text-body-sm text-graphite">
-              {source === "api"
-                ? "Export the scan from Scaniverse and upload it to the Modal Volume at"
-                : "Export the scan from Scaniverse and copy it to maps/assets at"}
-            </p>
-            <code className="mt-2 block rounded-sm bg-stellar-white px-2 py-1 text-caption break-all text-void-black/70">
-              {expectedPath}
-            </code>
-            {!manifest && (
-              <p className="mt-2 text-caption text-void-black/50">
-                Then add <code>worlds/{worldId}/world.json</code> — see shared/contracts.
-              </p>
+            {canUpload ? (
+              <>
+                <p className="mt-1 text-body-sm text-graphite">
+                  Export the scan from Scaniverse as .spz and upload it here. It lands at
+                </p>
+                <code className="mt-2 block rounded-sm bg-stellar-white px-2 py-1 text-caption break-all text-void-black/70">
+                  {expectedPath}
+                </code>
+                <button type="button" className="btn-primary mt-4" onClick={onUpload}>
+                  <Icon name="upload" size={15} />
+                  Upload splat
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-body-sm text-graphite">
+                  {source === "api"
+                    ? "Export the scan from Scaniverse and upload it to the Modal Volume at"
+                    : "Export the scan from Scaniverse and copy it to maps/assets at"}
+                </p>
+                <code className="mt-2 block rounded-sm bg-stellar-white px-2 py-1 text-caption break-all text-void-black/70">
+                  {expectedPath}
+                </code>
+                <p className="mt-2 text-caption text-void-black/50">
+                  Then add <code>worlds/{worldId}/world.json</code> — see shared/contracts.
+                </p>
+              </>
             )}
-            <p className="mt-3 text-caption text-void-black/50">
-              You can still tag stops on the grid; they save once the manifest exists.
-            </p>
           </>
         )}
 
@@ -74,10 +90,18 @@ export function ViewerOverlay({
             <Ring icon="x" tone="border-wander-pink text-wander-pink" />
             <p className="mt-4 text-body font-medium text-void-black">Couldn&apos;t load this world</p>
             <p className="mt-1 text-body-sm text-graphite">{state.error}</p>
-            <button type="button" className="btn-ghost mt-4" onClick={api.retry}>
-              <Icon name="refresh" size={15} />
-              Try again
-            </button>
+            <div className="mt-4 flex justify-center gap-2">
+              <button type="button" className="btn-ghost" onClick={api.retry}>
+                <Icon name="refresh" size={15} />
+                Try again
+              </button>
+              {canUpload && (
+                <button type="button" className="btn-primary" onClick={onUpload}>
+                  <Icon name="upload" size={15} />
+                  Upload splat
+                </button>
+              )}
+            </div>
           </>
         )}
 

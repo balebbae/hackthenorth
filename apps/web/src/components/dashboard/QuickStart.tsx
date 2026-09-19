@@ -1,22 +1,30 @@
+"use client";
+
+import { useState } from "react";
 import { Icon, type IconName } from "@/components/Icon";
+import { UploadSplatDialog } from "@/components/worlds/UploadSplatDialog";
 
 const TEMPLATES: {
   icon: IconName;
   title: string;
   sub: string;
   tone: string;
+  /** Opens the upload dialog; the others are placeholders for later capture flows. */
+  action?: "upload";
 }[] = [
   {
     icon: "plus",
     title: "Blank world",
-    sub: "Start from an empty scene",
+    sub: "Create now, add the splat later",
     tone: "bg-sky-tint text-wander-blue",
+    action: "upload",
   },
   {
     icon: "upload",
-    title: "Import .ply / .splat",
-    sub: "Bring an existing scan",
+    title: "Import .spz / .ply",
+    sub: "Bring a Scaniverse export",
     tone: "bg-pink-tint text-wander-pink",
+    action: "upload",
   },
   {
     icon: "phone",
@@ -34,6 +42,7 @@ const TEMPLATES: {
 
 /** Figma-style "start a new file" template row. */
 export function QuickStart() {
+  const [open, setOpen] = useState(false);
   return (
     <section aria-labelledby="quickstart-heading">
       <h2
@@ -47,7 +56,10 @@ export function QuickStart() {
           <li key={t.title}>
             <button
               type="button"
-              className="card flex w-full items-center gap-3 p-3 text-left transition-colors duration-200 hover:border-void-black/20 hover:bg-void-black/[0.02]"
+              disabled={!t.action}
+              title={t.action ? undefined : "Coming with the iOS app"}
+              onClick={() => t.action && setOpen(true)}
+              className="card flex w-full items-center gap-3 p-3 text-left transition-colors duration-200 hover:border-void-black/20 hover:bg-void-black/[0.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-hairline disabled:hover:bg-pure-white"
             >
               <span
                 className={`inline-flex size-10 shrink-0 items-center justify-center rounded-lg ${t.tone}`}
@@ -66,6 +78,7 @@ export function QuickStart() {
           </li>
         ))}
       </ul>
+      <UploadSplatDialog open={open} mode={{ kind: "new" }} onClose={() => setOpen(false)} />
     </section>
   );
 }

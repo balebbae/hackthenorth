@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wander.app/contracts/notes.schema.json",
+  "title": "Wander world notes",
+  "description": "Notes pinned to points on a scan in the web viewer, stored at worlds/<id>/notes.json. Positions are in the world frame (after alignment), in metres. The phone may read these to speak location-specific hints.",
+  "type": "object",
+  "required": ["schema", "worldId", "notes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "wander.notes/v1" },
+    "worldId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+    "notes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/note" }
+    },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "note": {
+      "type": "object",
+      "required": ["id", "title", "position", "createdAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "minLength": 1, "examples": ["Broken handrail"] },
+        "location": {
+          "type": "string",
+          "description": "Human-readable place, e.g. '2nd floor, outside room 204'."
+        },
+        "description": { "type": "string" },
+        "position": { "$ref": "world.schema.json#/$defs/vec3" },
+        "author": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

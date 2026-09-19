@@ -9,6 +9,8 @@ struct ObstacleZones: Equatable, Sendable {
     var right: Float?
     /// -1 means the clearest path is to the left, +1 to the right.
     var gapDirection: Float = 0
+    /// True when the sensor is so close to a surface it can barely measure it.
+    var touching = false
     var closest: Float? { [left, center, right].compactMap { $0 }.min() }
 
     static let empty = ObstacleZones()
@@ -17,18 +19,25 @@ struct ObstacleZones: Equatable, Sendable {
 /// Samples a LiDAR depth map on a coarse grid, splits it into left, center, and
 /// right zones, filters floor pixels, and finds the clearest column.
 ///
-/// The approach follows the Shepherd smart-cane detector
-/// (github.com/tonywangs/shepherd): three zones, 16-column gap profiling, a
-/// [0.25, 0.5, 0.25] smoothing kernel, and a running average on the gap direction.
-/// The depth map arrives in landscape sensor orientation; the phone is mounted in
-/// portrait, so raw x runs top-to-bottom on screen and raw y runs right-to-left.
+/// The gap-profiling approach follows the Shepherd smart-cane detector
+/// (github.com/tonywangs/shepherd). Orientation is handled for a portrait mount:
+/// ARKit delivers depth in landscape sensor orientation, so the sensor's long axis
+/// (raw x) runs top to bottom on the screen and the short axis (raw y) runs right
+/// to left. Left and right zones therefore come from raw y, and the height band
+/// and floor filter work along raw x.
 struct ObstacleDetector {
+    /// Below this LiDAR cannot measure; such pixels are treated as touching.
     var minRange: Float = 0.2
-    var maxRange: Float = 4.0
-    /// Band of the frame to examine, as a fraction of the sensor's vertical axis.
-    var verticalBand: ClosedRange<Float> = 0.35...0.65
+    var maxRange: Float = 5.0
+    /// Band of the view to examine, as a fraction of the screen's vertical axis
+    /// (0 is the top of the view, 1 the bottom).
+    var heightBand: ClosedRange<Float> = 0.35...0.65
     var sampleStep = 8
     var gapColumns = 16
+    /// When most samples are unmeasurable and some are sub-minimum, the sensor is
+    /// pressed against something.
+    var touchingInvalidFraction: Float = 0.6
+    var touchingCloseFraction: Float = 0.05
     private var gapHistory: [Float] = []
     private let gapHistorySize = 5
 
@@ -37,8 +46,8 @@ struct ObstacleDetector {
         defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
         guard let base = CVPixelBufferGetBaseAddress(depthMap) else { return .empty }
 
-        let width = CVPixelBufferGetWidth(depthMap)
-        let height = CVPixelBufferGetHeight(depthMap)
+        let width = CVPixelBufferGetWidth(depthMap)    // long axis: screen vertical
+        let height = CVPixelBufferGetHeight(depthMap)  // short axis: screen horizontal
         let rowStride = CVPixelBufferGetBytesPerRow(depthMap) / MemoryLayout<Float32>.stride
         let buffer = base.assumingMemoryBound(to: Float32.self)
 
@@ -47,19 +56,37 @@ struct ObstacleDetector {
         var rightMin = Float.infinity
         var columnSum = [Float](repeating: 0, count: gapColumns)
         var columnCount = [Int](repeating: 0, count: gapColumns)
+        var total = 0, invalid = 0, tooClose = 0
 
-        let yStart = Int(Float(height) * verticalBand.lowerBound)
-        let yEnd = Int(Float(height) * verticalBand.upperBound)
+        let xStart = Int(Float(width) * heightBand.lowerBound)
+        let xEnd = Int(Float(width) * heightBand.upperBound)
 
-        for y in stride(from: yStart, to: yEnd, by: sampleStep) {
-            for x in stride(from: 0, to: width, by: sampleStep) {
-                let depth = buffer[y * rowStride + x]
-                if depth.isNaN || depth.isInfinite || depth < minRange || depth > maxRange { continue }
-                if isLikelyFloor(buffer, x: x, y: y, height: height, rowStride: rowStride) { continue }
-
-                // Portrait mount: raw x increasing means display-right decreasing.
-                let displayX = 1 - Float(x) / Float(width)
+        for x in stride(from: xStart, to: xEnd, by: sampleStep) {
+            for y in stride(from: 0, to: height, by: sampleStep) {
+                total += 1
+                let raw = buffer[y * rowStride + x]
+                if raw.isNaN || raw.isInfinite || raw <= 0 {
+                    invalid += 1
+                    continue
+                }
+                // Raw top (y = 0) is the wearer's right after the portrait rotation.
+                let displayX = 1 - Float(y) / Float(height)
                 let column = min(gapColumns - 1, max(0, Int(displayX * Float(gapColumns))))
+
+                if raw > maxRange {
+                    // Beyond range is open space: full clearance for the gap profile,
+                    // but not an obstacle for the zones.
+                    columnSum[column] += maxRange
+                    columnCount[column] += 1
+                    continue
+                }
+                var depth = raw
+                if depth < minRange {
+                    tooClose += 1
+                    depth = minRange
+                } else if isLikelyFloor(buffer, x: x, y: y, width: width, rowStride: rowStride) {
+                    continue
+                }
                 columnSum[column] += depth
                 columnCount[column] += 1
 
@@ -73,14 +100,22 @@ struct ObstacleDetector {
             }
         }
 
+        let touching = total > 0
+            && Float(invalid) / Float(total) >= touchingInvalidFraction
+            && Float(tooClose) / Float(total) >= touchingCloseFraction
+        if touching {
+            leftMin = min(leftMin, minRange)
+            centerMin = min(centerMin, minRange)
+            rightMin = min(rightMin, minRange)
+        }
+
         var averages = (0..<gapColumns).map { columnCount[$0] > 0 ? columnSum[$0] / Float(columnCount[$0]) : 0 }
         averages = (0..<gapColumns).map { i in
             let l = averages[max(0, i - 1)], c = averages[i], r = averages[min(gapColumns - 1, i + 1)]
             return 0.25 * l + 0.5 * c + 0.25 * r
         }
         // Direction of clearance is the centroid of every column within 10% of the
-        // deepest one, so a wide open region pulls the direction toward its middle
-        // and ties do not collapse to the leftmost column.
+        // deepest one, so a wide open region pulls the direction toward its middle.
         let bestDepth = averages.max() ?? 0
         var rawGap: Float = 0
         if bestDepth > 0 {
@@ -102,18 +137,20 @@ struct ObstacleDetector {
             left: leftMin.isFinite ? leftMin : nil,
             center: centerMin.isFinite ? centerMin : nil,
             right: rightMin.isFinite ? rightMin : nil,
-            gapDirection: gap
+            gapDirection: gap,
+            touching: touching
         )
     }
 
-    /// Floor slopes away smoothly as the sample moves down the frame.
-    private func isLikelyFloor(_ buffer: UnsafePointer<Float32>, x: Int, y: Int, height: Int, rowStride: Int) -> Bool {
-        guard y + 8 < height else { return false }
+    /// Floor slopes away smoothly as the sample moves down the screen, which is
+    /// increasing raw x in the portrait mount.
+    private func isLikelyFloor(_ buffer: UnsafePointer<Float32>, x: Int, y: Int, width: Int, rowStride: Int) -> Bool {
+        guard x + 8 < width else { return false }
         let current = buffer[y * rowStride + x]
-        let below = buffer[(y + 8) * rowStride + x]
+        let below = buffer[y * rowStride + x + 8]
         let diff = below - current
         if diff > 0.5 && current > 1.0 { return true }
-        if abs(diff) < 0.1 && Float(y) / Float(height) > 0.6 { return true }
+        if abs(diff) < 0.1 && Float(x) / Float(width) > 0.6 { return true }
         return false
     }
 }

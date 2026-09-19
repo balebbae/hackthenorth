@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Alignment, Measurement, NavigationGraph, Vec3 } from "@/lib/world-manifest";
+import type { Alignment, Measurement, NavigationGraph, Vec3, WorldNote } from "@/lib/world-manifest";
 import type {
   EngineEvent,
   LoadStatus,
+  LocalizationMarker,
   SplatViewerEngine,
   ViewerMode,
+  ViewerSelection,
   ViewerTool,
 } from "./SplatViewerEngine";
 
@@ -28,7 +30,11 @@ export type ViewerApi = {
   setShowGraph: (visible: boolean) => void;
   resetView: () => void;
   focusNode: (id: string) => void;
-  flipUp: () => void;
+  focusNote: (id: string) => void;
+  /** Orbit the camera around the phone marker. */
+  focusPhone: () => void;
+  /** Walk mode with the camera placed exactly at the phone's pose. */
+  viewFromPhone: () => void;
   retry: () => void;
 };
 
@@ -37,6 +43,7 @@ export type PickHandler = (
   e:
     | { type: "pick"; tool: ViewerTool; point: Vec3; graphPoint: Vec3 }
     | { type: "pick-node"; tool: ViewerTool; id: string }
+    | { type: "pick-note"; tool: ViewerTool; id: string }
     | { type: "pick-miss"; tool: ViewerTool },
 ) => void;
 
@@ -45,9 +52,15 @@ type Options = {
   alignment?: Alignment;
   /** Data the engine renders; owned by the caller. */
   graph: NavigationGraph;
+  notes: WorldNote[];
   measurements: Measurement[];
-  selectedNode: string | null;
+  selection: ViewerSelection | null;
   pendingPoint: Vec3 | null;
+  /** Phone marker for the selected VPS image query; null hides it. */
+  localization: LocalizationMarker | null;
+  /** Recent localized positions, newest first. */
+  localizationTrail: Vec3[];
+  followPhone: boolean;
   onPick: PickHandler;
 };
 
@@ -63,17 +76,22 @@ const INITIAL: ViewerState = {
 
 /**
  * Mounts a `SplatViewerEngine` into the returned container ref and keeps it in
- * sync with the caller's graph / measurement / selection state. Three.js and
- * Spark are imported lazily inside the effect so the page still server-renders
- * and the ~3 MB renderer bundle only ships to browsers that open a world.
+ * sync with the caller's graph / notes / measurement / selection state.
+ * Three.js and Spark are imported lazily inside the effect so the page still
+ * server-renders and the ~3 MB renderer bundle only ships to browsers that
+ * open a world.
  */
 export function useSplatViewer({
   splatUrl,
   alignment,
   graph,
+  notes,
   measurements,
-  selectedNode,
+  selection,
   pendingPoint,
+  localization,
+  localizationTrail,
+  followPhone,
   onPick,
 }: Options) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -151,14 +169,28 @@ export function useSplatViewer({
   // Data → engine. Each is cheap to re-apply, so plain effects are enough.
   useEffect(() => {
     engineRef.current?.setGraph(graph);
-    engineRef.current?.setSelectedNode(selectedNode);
-  }, [graph, selectedNode, engineReady]);
+  }, [graph, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setNotes(notes);
+  }, [notes, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setSelection(selection);
+  }, [selection, graph, notes, engineReady]);
   useEffect(() => {
     engineRef.current?.setMeasurements(measurements);
   }, [measurements, engineReady]);
   useEffect(() => {
     engineRef.current?.setPendingPoint(pendingPoint);
   }, [pendingPoint, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setLocalization(localization);
+  }, [localization, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setLocalizationTrail(localizationTrail);
+  }, [localizationTrail, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setFollowPhone(followPhone);
+  }, [followPhone, engineReady]);
 
   const api = useMemo<ViewerApi>(
     () => ({
@@ -183,10 +215,16 @@ export function useSplatViewer({
         setState((s) => ({ ...s, mode: "orbit" }));
       },
       focusNode: (id) => engineRef.current?.focusNode(id),
-      flipUp: () => {
+      focusNote: (id) => engineRef.current?.focusNote(id),
+      focusPhone: () => {
         latest.current.mode = "orbit";
-        engineRef.current?.flipUp();
+        engineRef.current?.focusPhone();
         setState((s) => ({ ...s, mode: "orbit" }));
+      },
+      viewFromPhone: () => {
+        latest.current.mode = "walk";
+        engineRef.current?.viewFromPhone();
+        setState((s) => ({ ...s, mode: "walk" }));
       },
       retry: () => setAttempt((n) => n + 1),
     }),

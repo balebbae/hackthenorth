@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E7FE6A6D1A2BDF13058BABF /* SidePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD18387F5398887762E92DFA /* SidePipeline.swift */; };
 		1473ACE16209A06612A58C5D /* HapticController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643868D493D450DB94B2C834 /* HapticController.swift */; };
 		1E16261BF60F3C660C763485 /* ObstacleCuePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */; };
 		282E424B5E073A890218C693 /* DeviceRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B80D61B973ADDB8AA016DD /* DeviceRole.swift */; };
@@ -18,19 +19,29 @@
 		4AC83AFE2BC36C46A10EE34D /* LocalizationQueryLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */; };
 		4CEF0C858E11D397B516D8E3 /* FrameEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */; };
 		4D51FDD4A783570BDF469EC8 /* FrontRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */; };
+		607EDDCA336D837FE6B76BD7 /* WanderBackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D87002D9631557521D63F0 /* WanderBackendClient.swift */; };
 		62A8D7AC7B86C3105211C7AD /* CameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */; };
+		64D8924B3F665C41D8922537 /* NSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E0ECD5DD7FA77A2E964C7AF7 /* NSDK */; };
+		665B394B19A699D68D3023AD /* PeerMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F07320DE3388D081660E2C3 /* PeerMessages.swift */; };
 		7268326D4637C3047B658226 /* RolePickerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F147AA26272D381D984C0 /* RolePickerUITests.swift */; };
+		7A447A2FE2C2B096B5F10056 /* NSDK in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E0ECD5DD7FA77A2E964C7AF7 /* NSDK */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7EACE619A6DD903864ECD99F /* HapticRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */; };
+		804402BDCFE628889A056F83 /* LocalizationReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4606211F130075940BD3BE2D /* LocalizationReporter.swift */; };
+		8B32FB82EBB1FEFD4EE4B8CF /* NianticLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC5B9010AED820AFDE4E03A0 /* NianticLocalizer.swift */; };
 		909A791B211A73D9540814EF /* RoleAndSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */; };
 		92CCD23E678D26DB4005490D /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CCC321CAAAB401E7A91EFF /* AppTheme.swift */; };
 		9FAC1287F54162BC906449C6 /* CameraSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D255F0947FE83215675621C /* CameraSettings.swift */; };
+		AA63353F19109B0EBF18A8C7 /* LocalConfig.example.plist in Resources */ = {isa = PBXBuildFile; fileRef = EF1A55667C24141837B748EF /* LocalConfig.example.plist */; };
 		AB00AEB7C13277269E469307 /* ObstacleDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */; };
+		B178CB8364E56EB2900F3123 /* PeerLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5092E4209F07998A1CE54A /* PeerLink.swift */; };
 		BAF315B91597804E7CCD951C /* FrontPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73228F8110F3A379A989BA31 /* FrontPipeline.swift */; };
 		BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */; };
 		CDBDE6DA591478F0C50C23F3 /* ARSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031568815C5D0030A5C5CE41 /* ARSessionController.swift */; };
 		DE398D0DF725BEB920A9B924 /* LocalizationQueryLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */; };
 		EA90A2B85FE65160F53F6834 /* ProximityHapticProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D81B2EE76F1BACE86F7C9B /* ProximityHapticProfile.swift */; };
 		EF21256AFF4120B855E27FE2 /* SpeechCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161465C2356D2C43BB567B41 /* SpeechCoordinator.swift */; };
+		EFE6F045D47C8C8BABE15CB9 /* LocalConfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = DDA7AF84926877DCF648BE7F /* LocalConfig.plist */; };
+		F645137000B3DFCD632D54BD /* BackendAndPoseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E004B85A395D42F538C673 /* BackendAndPoseTests.swift */; };
 		F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +62,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		7D6C24FE39CEE1E94937553D /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				7A447A2FE2C2B096B5F10056 /* NSDK in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		031568815C5D0030A5C5CE41 /* ARSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionController.swift; sourceTree = "<group>"; };
 		0D255F0947FE83215675621C /* CameraSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettings.swift; sourceTree = "<group>"; };
@@ -59,6 +84,10 @@
 		18397743DAD7ABE3449ABFDD /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		33CCC321CAAAB401E7A91EFF /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		3435D7F7527E238C2815A7D3 /* NavigationAssistantTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NavigationAssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E5092E4209F07998A1CE54A /* PeerLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeerLink.swift; sourceTree = "<group>"; };
+		40E004B85A395D42F538C673 /* BackendAndPoseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendAndPoseTests.swift; sourceTree = "<group>"; };
+		4606211F130075940BD3BE2D /* LocalizationReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationReporter.swift; sourceTree = "<group>"; };
+		4F07320DE3388D081660E2C3 /* PeerMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeerMessages.swift; sourceTree = "<group>"; };
 		51B80D61B973ADDB8AA016DD /* DeviceRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRole.swift; sourceTree = "<group>"; };
 		5429B17D898EB77DE97049B0 /* NavigationAssistantUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NavigationAssistantUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationQueryLoop.swift; sourceTree = "<group>"; };
@@ -67,6 +96,7 @@
 		6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameEncoder.swift; sourceTree = "<group>"; };
 		73228F8110F3A379A989BA31 /* FrontPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontPipeline.swift; sourceTree = "<group>"; };
 		781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleAndSettingsTests.swift; sourceTree = "<group>"; };
+		89D87002D9631557521D63F0 /* WanderBackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WanderBackendClient.swift; sourceTree = "<group>"; };
 		8F986D58B840F2AEC8BA69CC /* ObstacleCuePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleCuePolicy.swift; sourceTree = "<group>"; };
 		97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticRoleView.swift; sourceTree = "<group>"; };
 		9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationAssistantApp.swift; sourceTree = "<group>"; };
@@ -74,15 +104,30 @@
 		A08F147AA26272D381D984C0 /* RolePickerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerUITests.swift; sourceTree = "<group>"; };
 		A854FFF77E8D2679C64D8F4F /* NavigationAssistant.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NavigationAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABAF78406066150A1A10AB72 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AD18387F5398887762E92DFA /* SidePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidePipeline.swift; sourceTree = "<group>"; };
 		B15A27278F3DD2A7D562BD0C /* LocalizationTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTransport.swift; sourceTree = "<group>"; };
 		C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationQueryLoopTests.swift; sourceTree = "<group>"; };
 		CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetector.swift; sourceTree = "<group>"; };
 		CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettingsView.swift; sourceTree = "<group>"; };
+		DC5B9010AED820AFDE4E03A0 /* NianticLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NianticLocalizer.swift; sourceTree = "<group>"; };
+		DDA7AF84926877DCF648BE7F /* LocalConfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = LocalConfig.plist; sourceTree = "<group>"; };
 		DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetectorTests.swift; sourceTree = "<group>"; };
 		ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontRoleView.swift; sourceTree = "<group>"; };
+		EF1A55667C24141837B748EF /* LocalConfig.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = LocalConfig.example.plist; sourceTree = "<group>"; };
 		F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NianticRESTTransportTests.swift; sourceTree = "<group>"; };
 		FF6B07030EF6C1772C97EECA /* ProximityHapticProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityHapticProfileTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7CF93F8D711E2E9E3947C07B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				64D8924B3F665C41D8922537 /* NSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		20FF7B5C55F16A1990020D02 /* Front */ = {
@@ -107,6 +152,8 @@
 			isa = PBXGroup;
 			children = (
 				18397743DAD7ABE3449ABFDD /* .gitkeep */,
+				EF1A55667C24141837B748EF /* LocalConfig.example.plist */,
+				DDA7AF84926877DCF648BE7F /* LocalConfig.plist */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -119,13 +166,25 @@
 			path = AR;
 			sourceTree = "<group>";
 		};
+		60D7EA442F3063D65A7471AC /* Peer */ = {
+			isa = PBXGroup;
+			children = (
+				3E5092E4209F07998A1CE54A /* PeerLink.swift */,
+				4F07320DE3388D081660E2C3 /* PeerMessages.swift */,
+			);
+			path = Peer;
+			sourceTree = "<group>";
+		};
 		65EE34A70C04C93E75829164 /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				57CC2BE286A1B62E9BC1306E /* AR */,
+				819C4E8B9596D5F022DAD70C /* Backend */,
 				85E9F22A5622CD793DAADCD0 /* Haptics */,
 				92975AFF5D892656DA40650A /* Localization */,
+				F7AC092FD566B3F5649B64D7 /* Niantic */,
 				870182FA636203AD5534476E /* Obstacles */,
+				60D7EA442F3063D65A7471AC /* Peer */,
 				C2ABE50378D51529DC343C44 /* Speech */,
 			);
 			path = Services;
@@ -135,6 +194,7 @@
 			isa = PBXGroup;
 			children = (
 				97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */,
+				AD18387F5398887762E92DFA /* SidePipeline.swift */,
 			);
 			path = Haptic;
 			sourceTree = "<group>";
@@ -149,6 +209,15 @@
 				E1E6FDA66B503431A4EF4352 /* Tests */,
 				B75317661DBD7F5B9A283BCE /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		819C4E8B9596D5F022DAD70C /* Backend */ = {
+			isa = PBXGroup;
+			children = (
+				4606211F130075940BD3BE2D /* LocalizationReporter.swift */,
+				89D87002D9631557521D63F0 /* WanderBackendClient.swift */,
+			);
+			path = Backend;
 			sourceTree = "<group>";
 		};
 		85E9F22A5622CD793DAADCD0 /* Haptics */ = {
@@ -244,9 +313,18 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
+		F7AC092FD566B3F5649B64D7 /* Niantic */ = {
+			isa = PBXGroup;
+			children = (
+				DC5B9010AED820AFDE4E03A0 /* NianticLocalizer.swift */,
+			);
+			path = Niantic;
+			sourceTree = "<group>";
+		};
 		F8EEC548F72661ACDBF0692C /* Unit */ = {
 			isa = PBXGroup;
 			children = (
+				40E004B85A395D42F538C673 /* BackendAndPoseTests.swift */,
 				C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */,
 				F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */,
 				11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */,
@@ -301,6 +379,9 @@
 			buildConfigurationList = 8F2A58FCA9AE0CB0B867D758 /* Build configuration list for PBXNativeTarget "NavigationAssistant" */;
 			buildPhases = (
 				649E92B52CD0C010F7C373B2 /* Sources */,
+				F98A3D9A50C4D33F9E71C346 /* Resources */,
+				7CF93F8D711E2E9E3947C07B /* Frameworks */,
+				7D6C24FE39CEE1E94937553D /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -308,6 +389,7 @@
 			);
 			name = NavigationAssistant;
 			packageProductDependencies = (
+				E0ECD5DD7FA77A2E964C7AF7 /* NSDK */,
 			);
 			productName = NavigationAssistant;
 			productReference = A854FFF77E8D2679C64D8F4F /* NavigationAssistant.app */;
@@ -346,6 +428,9 @@
 			);
 			mainGroup = 7BB5FAADCA91C0107435B741;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9342D27BB24251045A0D337C /* XCRemoteSwiftPackageReference "nsdk-library-xcframework" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B75317661DBD7F5B9A283BCE /* Products */;
 			projectDirPath = "";
@@ -358,11 +443,24 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		F98A3D9A50C4D33F9E71C346 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA63353F19109B0EBF18A8C7 /* LocalConfig.example.plist in Resources */,
+				EFE6F045D47C8C8BABE15CB9 /* LocalConfig.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		12E96CAFD97F2F15ECB51C93 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F645137000B3DFCD632D54BD /* BackendAndPoseTests.swift in Sources */,
 				4AC83AFE2BC36C46A10EE34D /* LocalizationQueryLoopTests.swift in Sources */,
 				49E668DB9AB2D3657ED00985 /* NianticRESTTransportTests.swift in Sources */,
 				1E16261BF60F3C660C763485 /* ObstacleCuePolicyTests.swift in Sources */,
@@ -387,13 +485,19 @@
 				1473ACE16209A06612A58C5D /* HapticController.swift in Sources */,
 				7EACE619A6DD903864ECD99F /* HapticRoleView.swift in Sources */,
 				DE398D0DF725BEB920A9B924 /* LocalizationQueryLoop.swift in Sources */,
+				804402BDCFE628889A056F83 /* LocalizationReporter.swift in Sources */,
 				3E44CA0C91BEDB122D3C7491 /* LocalizationTransport.swift in Sources */,
 				F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */,
+				8B32FB82EBB1FEFD4EE4B8CF /* NianticLocalizer.swift in Sources */,
 				2FC324B2B98E44A37AC5977C /* ObstacleCuePolicy.swift in Sources */,
 				BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */,
+				B178CB8364E56EB2900F3123 /* PeerLink.swift in Sources */,
+				665B394B19A699D68D3023AD /* PeerMessages.swift in Sources */,
 				EA90A2B85FE65160F53F6834 /* ProximityHapticProfile.swift in Sources */,
 				4053713D51A6AA505C5F8D89 /* RolePickerView.swift in Sources */,
+				0E7FE6A6D1A2BDF13058BABF /* SidePipeline.swift in Sources */,
 				EF21256AFF4120B855E27FE2 /* SpeechCoordinator.swift in Sources */,
+				607EDDCA336D837FE6B76BD7 /* WanderBackendClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -692,6 +796,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9342D27BB24251045A0D337C /* XCRemoteSwiftPackageReference "nsdk-library-xcframework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nianticspatial/nsdk-library-xcframework";
+			requirement = {
+				kind = exactVersion;
+				version = "4.1.0-26051913";
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E0ECD5DD7FA77A2E964C7AF7 /* NSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9342D27BB24251045A0D337C /* XCRemoteSwiftPackageReference "nsdk-library-xcframework" */;
+			productName = NSDK;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 58ADAACAE7E06BA870BDB444 /* Project object */;
 }

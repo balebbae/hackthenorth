@@ -24,11 +24,11 @@ final class RoleAndSettingsTests: XCTestCase {
     }
 
     func testSettingsRoundTrip() {
-        let store = CameraSettingsStore(defaults: defaults)
+        let store = CameraSettingsStore(defaults: defaults, localConfig: [:])
         XCTAssertEqual(store.settings, .default)
         store.settings.captureIntervalMs = 350
         store.settings.nianticToken = "abc"
-        let reloaded = CameraSettingsStore(defaults: defaults)
+        let reloaded = CameraSettingsStore(defaults: defaults, localConfig: [:])
         XCTAssertEqual(reloaded.settings.captureIntervalMs, 350)
         XCTAssertEqual(reloaded.settings.captureInterval, 0.35, accuracy: 0.0001)
         XCTAssertTrue(reloaded.settings.hasNianticCredentials)
@@ -37,6 +37,7 @@ final class RoleAndSettingsTests: XCTestCase {
     func testDefaultsAreTwoHundredMillisecondsAndNoCredentials() {
         let s = CameraSettings.default
         XCTAssertEqual(s.captureIntervalMs, 200)
+        XCTAssertEqual(s.obstacleRangeMeters, 5.0)
         XCTAssertFalse(s.hasNianticCredentials)
         XCTAssertNil(s.validationError)
     }

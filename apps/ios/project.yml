@@ -13,6 +13,10 @@ settings:
     DEVELOPMENT_TEAM: DVX8YZ9GG9
     TARGETED_DEVICE_FAMILY: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+packages:
+  NSDK:
+    url: https://github.com/nianticspatial/nsdk-library-xcframework
+    exactVersion: 4.1.0-26051913
 targets:
   NavigationAssistant:
     type: application
@@ -21,7 +25,13 @@ targets:
       - App
       - Features
       - Services
-      - Resources
+      - path: Resources
+        excludes: [LocalConfig.plist]
+      - path: Resources/LocalConfig.plist
+        optional: true
+    dependencies:
+      - package: NSDK
+        embed: true
     info:
       path: App/Info.plist
       properties:
@@ -30,7 +40,13 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSCameraUsageDescription: The chest phone uses the camera and LiDAR to detect obstacles and localize against the mapped building.
         NSLocationWhenInUseUsageDescription: Location helps Niantic localization pick the correct mapped site.
+        NSLocalNetworkUsageDescription: The four phones on the wearer talk to each other directly to share obstacle readings and buzz commands.
+        NSBonjourServices: [_htn-navaid._tcp, _htn-navaid._udp]
         ITSAppUsesNonExemptEncryption: false
+        # wander://connect?… links from the web viewer's QR code configure the phone for a world.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.hackthenorth.navassist.connect
+            CFBundleURLSchemes: [wander]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hackthenorth.navassist

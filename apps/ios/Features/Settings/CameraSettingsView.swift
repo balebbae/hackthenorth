@@ -5,10 +5,27 @@ struct CameraSettingsView: View {
     @EnvironmentObject private var settingsStore: CameraSettingsStore
     @EnvironmentObject private var roleStore: RoleStore
     @Environment(\.dismiss) private var dismiss
+    @State private var showScanner = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button {
+                        showScanner = true
+                    } label: {
+                        Label("Scan world QR code", systemImage: "qrcode.viewfinder")
+                    }
+                    .accessibilityIdentifier("settings.scanWorld")
+                    if !settingsStore.settings.worldId.isEmpty {
+                        LabeledContent("World", value: settingsStore.settings.worldId)
+                    }
+                } header: {
+                    Text("Connect to a world")
+                } footer: {
+                    Text("The world viewer shows a QR code per world (Live tab › Connect a phone). Scanning fills in the world, Niantic Site ID and backend URL below; tokens and keys stay on this phone.")
+                }
+
                 Section("ARKit session") {
                     Picker("Frame rate", selection: $settingsStore.settings.preferredFrameRate) {
                         Text("30 fps").tag(30)
@@ -19,6 +36,22 @@ struct CameraSettingsView: View {
                         .accessibilityIdentifier("settings.sceneDepth")
                     Toggle("Smoothed depth", isOn: $settingsStore.settings.smoothedDepth)
                         .disabled(!settingsStore.settings.sceneDepthEnabled)
+                }
+
+                Section {
+                    HStack {
+                        Text("Detection range")
+                        Slider(value: $settingsStore.settings.obstacleRangeMeters, in: 1.0...5.0, step: 0.5)
+                            .accessibilityIdentifier("settings.obstacleRange")
+                        Text(String(format: "%.1f m", settingsStore.settings.obstacleRangeMeters))
+                            .font(.system(.body, design: .monospaced))
+                    }
+                    Toggle("Side phones sense obstacles", isOn: $settingsStore.settings.sidePhonesSenseObstacles)
+                        .accessibilityIdentifier("settings.sideSensing")
+                } header: {
+                    Text("Obstacles")
+                } footer: {
+                    Text("Obstacles beyond this distance are ignored. iPhone LiDAR is reliable to about 5 m. With side sensing on, the left and right phones report what they see so the front can pick the open side.")
                 }
 
                 Section {
@@ -52,12 +85,47 @@ struct CameraSettingsView: View {
                         .accessibilityIdentifier("settings.endpoint")
                     SecureField("Developer token", text: $settingsStore.settings.nianticToken)
                         .accessibilityIdentifier("settings.token")
+                    TextField("Site ID", text: $settingsStore.settings.nianticSiteId)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("settings.siteId")
                 } header: {
-                    Text("Niantic credentials")
+                    Text("Niantic")
                 } footer: {
-                    Text(settingsStore.settings.hasNianticCredentials
-                         ? "Queries will be sent."
-                         : "No token set. Queries are captured and logged but not sent.")
+                    Text(settingsStore.settings.canLocalizeWithNSDK
+                         ? "The Niantic SDK will localize against this Site."
+                         : "Token and Site ID enable SDK localization. Without them the REST loop runs and is logged.")
+                }
+
+                Section {
+                    TextField("Backend URL", text: $settingsStore.settings.backendURL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .accessibilityIdentifier("settings.backendURL")
+                    SecureField("API key", text: $settingsStore.settings.backendAPIKey)
+                        .accessibilityIdentifier("settings.backendKey")
+                    TextField("World ID (blank = match site)", text: $settingsStore.settings.worldId)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("settings.worldId")
+                    LabeledContent("Device ID", value: String(settingsStore.deviceId.prefix(8)))
+                } header: {
+                    Text("Wander backend")
+                } footer: {
+                    Text(settingsStore.settings.hasBackend ? "Fixes are posted to the worlds API." : "Backend URL and key are needed to report position.")
+                }
+
+                Section {
+                    Toggle("Upload query images", isOn: $settingsStore.settings.uploadQueryImages)
+                        .accessibilityIdentifier("settings.uploadQueries")
+                    Toggle("Include failed queries", isOn: $settingsStore.settings.uploadFailedQueries)
+                        .disabled(!settingsStore.settings.uploadQueryImages)
+                        .accessibilityIdentifier("settings.uploadFailedQueries")
+                } header: {
+                    Text("Image queries")
+                } footer: {
+                    Text("Every camera frame the Niantic SDK sends to VPS is mirrored to the backend with the pose it produced, so the web viewer can show the image next to where the phone was localized on the splat. Uses the max image side and JPEG quality above.")
                 }
 
                 if let error = settingsStore.settings.validationError {
@@ -85,6 +153,7 @@ struct CameraSettingsView: View {
             .background(AppTheme.canvas)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showScanner) { ConnectWorldSheet() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

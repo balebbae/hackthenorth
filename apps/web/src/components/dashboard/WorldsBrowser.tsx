@@ -22,7 +22,14 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "drafts", label: "Drafts" },
 ];
 
-export function WorldsBrowser({ worlds }: { worlds: WorldView[] }) {
+export function WorldsBrowser({
+  worlds,
+  emptyMessage,
+}: {
+  worlds: WorldView[];
+  /** Copy for the "All worlds" empty state; depends on where the server reads worlds from. */
+  emptyMessage?: string;
+}) {
   const [view, setView] = useState<View>("grid");
   const [tab, setTab] = useState<Tab>("all");
   const [starred, setStarred] = useState<Set<string>>(
@@ -96,7 +103,7 @@ export function WorldsBrowser({ worlds }: { worlds: WorldView[] }) {
       </div>
 
       {visible.length === 0 ? (
-        <EmptyState tab={tab} />
+        <EmptyState tab={tab} allMessage={emptyMessage} />
       ) : view === "grid" ? (
         <ul className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {visible.map((w) => (
@@ -312,9 +319,9 @@ function WorldTable({
   );
 }
 
-function EmptyState({ tab }: { tab: Tab }) {
+function EmptyState({ tab, allMessage }: { tab: Tab; allMessage?: string }) {
   const copy: Record<Tab, string> = {
-    all: "No worlds yet. Start one above.",
+    all: allMessage ?? "No worlds yet. Start one above.",
     starred: "Star a world to keep it within reach.",
     shared: "Nothing has been shared with you yet.",
     drafts: "No drafts. Every world here is ready to walk.",

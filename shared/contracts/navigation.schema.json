@@ -182,6 +182,127 @@
       }
     },
 
+    "localizationQueryRequest": {
+      "title": "LocalizationQueryRequest",
+      "description": "The Niantic SDK's own record of one VPS network request (`Vps2LocalizationRequestRecord`), mirrored so the dashboard can show what happened to the frame.",
+      "type": "object",
+      "required": ["identifier", "type", "status", "startedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "identifier": { "type": "string", "description": "SDK request id (32-char ARDK identifier)." },
+        "frameId": { "type": "integer", "minimum": 0, "description": "`NSDKFrameData.frameId` of the camera frame that was submitted." },
+        "type": { "type": "string", "enum": ["vpsLocalize", "universalLocalize", "getGraph", "getReplacedNodes", "registerNode", "unknown"] },
+        "status": { "type": "string", "enum": ["completed", "failed", "frameRejected", "pending", "unknown"] },
+        "error": { "type": "string", "description": "`Vps2LocalizationError` case name; \"none\" when the request succeeded." },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" },
+        "latencyMs": { "type": "integer", "minimum": 0 },
+        "frameMatch": {
+          "type": "string",
+          "enum": ["exact", "nearest", "fallback"],
+          "description": "How the phone paired the request with a camera frame: by frameId, by timestamp, or the newest frame it still held."
+        }
+      }
+    },
+
+    "localizationQueryResult": {
+      "title": "LocalizationQueryResult",
+      "description": "What the query produced. `pose` is the camera pose at the moment the query frame was captured, in the VPS site frame (anchor⁻¹ · camera), so it can be drawn on the splat.",
+      "type": "object",
+      "required": ["trackingState"],
+      "additionalProperties": false,
+      "properties": {
+        "trackingState": { "type": "string", "enum": ["localized", "limited", "lost"] },
+        "anchorState": { "type": "string", "enum": ["tracked", "limited", "notTracked"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "pose": { "$ref": "#/$defs/pose" },
+        "currentPose": { "allOf": [{ "$ref": "#/$defs/pose" }], "description": "Where the phone is now (site frame), if it has moved since the frame was captured." }
+      }
+    },
+
+    "localizationQueryImage": {
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "description": "Volume path of the stored JPEG, e.g. worlds/<id>/localizations/<queryId>.jpg (set by the backend)." },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "orientation": {
+          "type": "string",
+          "enum": ["portrait", "landscape"],
+          "description": "portrait: image up = camera −X, image right = camera +Y (ARKit landscape-right sensor rotated 90° CW). landscape: image axes = camera axes."
+        },
+        "fovDeg": {
+          "type": "object",
+          "required": ["horizontal", "vertical"],
+          "additionalProperties": false,
+          "properties": {
+            "horizontal": { "type": "number", "exclusiveMinimum": 0, "maximum": 179 },
+            "vertical": { "type": "number", "exclusiveMinimum": 0, "maximum": 179 }
+          },
+          "description": "Field of view of the uploaded image (after any rotation / downscale), for drawing the frustum."
+        }
+      }
+    },
+
+    "localizationQueryUpload": {
+      "title": "LocalizationQueryUpload",
+      "description": "Sent by the phone for every VPS image query the Niantic SDK issued: the camera frame it submitted (JPEG), the SDK's request record, and the resulting pose. `POST /worlds/{id}/localize/query`.",
+      "type": "object",
+      "required": ["deviceId", "nianticSiteId", "capturedAt", "imageBase64", "image", "request", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "sessionId": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "role": { "type": "string", "enum": ["chest", "left", "right", "back"], "default": "chest" },
+        "nianticSiteId": { "type": "string" },
+        "capturedAt": { "type": "string", "format": "date-time", "description": "Wall-clock time the camera frame was captured." },
+        "imageBase64": { "type": "string", "contentEncoding": "base64", "contentMediaType": "image/jpeg", "maxLength": 4000000 },
+        "image": { "$ref": "#/$defs/localizationQueryImage" },
+        "request": { "$ref": "#/$defs/localizationQueryRequest" },
+        "result": { "$ref": "#/$defs/localizationQueryResult" }
+      }
+    },
+
+    "localizationQuery": {
+      "title": "LocalizationQuery",
+      "description": "Stored record of one image query (`worlds/<id>/localizations/index.json`, newest first). Same as the upload without the image bytes, plus ids, the stored image path, and the nearest graph node.",
+      "type": "object",
+      "required": ["schema", "id", "worldId", "deviceId", "nianticSiteId", "capturedAt", "receivedAt", "image", "request", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "wander.localization-query/v1" },
+        "id": { "type": "string" },
+        "worldId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "role": { "type": "string", "enum": ["chest", "left", "right", "back"] },
+        "nianticSiteId": { "type": "string" },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "receivedAt": { "type": "string", "format": "date-time" },
+        "image": { "$ref": "#/$defs/localizationQueryImage" },
+        "request": { "$ref": "#/$defs/localizationQueryRequest" },
+        "result": { "$ref": "#/$defs/localizationQueryResult" },
+        "nearestNode": { "$ref": "#/$defs/nodeRef" },
+        "offGraphMetres": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "localizationQueries": {
+      "title": "LocalizationQueries",
+      "description": "`GET /worlds/{id}/localizations` — recent image queries, newest first.",
+      "type": "object",
+      "required": ["schema", "worldId", "queries"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "wander.localizations/v1" },
+        "worldId": { "type": "string" },
+        "queries": { "type": "array", "items": { "$ref": "#/$defs/localizationQuery" } },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+
     "vpsSiteStatus": {
       "title": "VpsSiteStatus",
       "description": "What the backend knows about the Niantic Lightship VPS location behind a world.",

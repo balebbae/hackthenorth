@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { Logo } from "@/components/Logo";
+import { UploadSplatButton } from "@/components/worlds/UploadSplatButton";
 import { Avatar } from "./Avatar";
 import { CURRENT_USER } from "@/lib/worlds";
 
@@ -23,14 +23,14 @@ export function TopBar({ title, crumbs = [] }: Props) {
 
       <div className="flex-1" />
 
-      <button type="button" className="btn-ghost hidden sm:inline-flex">
+      <UploadSplatButton className="btn-ghost hidden sm:inline-flex">
         <Icon name="upload" size={15} />
         Import splat
-      </button>
-      <Link href="/dashboard" className="btn-primary">
+      </UploadSplatButton>
+      <UploadSplatButton className="btn-primary">
         <Icon name="plus" size={15} />
         New world
-      </Link>
+      </UploadSplatButton>
       <button type="button" className="btn-icon" aria-label="Notifications">
         <Icon name="bell" size={17} />
       </button>
