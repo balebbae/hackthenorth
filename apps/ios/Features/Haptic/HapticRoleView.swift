@@ -6,8 +6,11 @@ struct HapticRoleView: View {
     @EnvironmentObject private var roleStore: RoleStore
     @StateObject private var haptics = HapticController()
     @State private var showSettings = false
+    @State private var simulatedDistance: Float = 1.6
+    @State private var simulating = false
 
     var body: some View {
+        ScrollView {
         VStack(spacing: AppTheme.s16) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: AppTheme.s4) {
@@ -52,6 +55,42 @@ struct HapticRoleView: View {
             }
             .card(background: AppTheme.skyWash.opacity(0.35), bordered: false)
 
+            VStack(alignment: .leading, spacing: AppTheme.s12) {
+                HStack {
+                    Text("Proximity pulse")
+                        .font(.system(size: 22, weight: .bold))
+                        .tracking(-0.24)
+                    Spacer()
+                    PillTag(text: haptics.isPulsing ? "Pulsing" : "Quiet",
+                            fill: haptics.isPulsing ? AppTheme.coral : AppTheme.skyTint,
+                            foreground: haptics.isPulsing ? .white : AppTheme.ink,
+                            identifier: "haptic.pulseState")
+                }
+                Text("Drag to simulate an obstacle. Closer is faster, stronger, and sharper.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.graphite)
+                HStack {
+                    Text("0.3 m").font(.system(size: 12)).foregroundStyle(AppTheme.inkTertiary)
+                    Slider(value: $simulatedDistance, in: 0.3...2.0, step: 0.05)
+                        .tint(AppTheme.primary)
+                        .accessibilityIdentifier("haptic.distanceSlider")
+                        .onChange(of: simulatedDistance) { _, new in
+                            if simulating { haptics.setProximity(new) }
+                        }
+                    Text("2.0 m").font(.system(size: 12)).foregroundStyle(AppTheme.inkTertiary)
+                }
+                StatRow(label: "Distance", value: String(format: "%.2f m", simulatedDistance), identifier: "haptic.distance")
+                StatRow(label: "Pulse every", value: haptics.currentPulse.map { String(format: "%.0f ms", $0.interval * 1000) } ?? "–")
+                StatRow(label: "Intensity / sharpness", value: haptics.currentPulse.map { String(format: "%.2f / %.2f", $0.intensity, $0.sharpness) } ?? "–")
+                Button(simulating ? "Stop simulation" : "Simulate obstacle") {
+                    simulating.toggle()
+                    if simulating { haptics.setProximity(simulatedDistance) } else { haptics.stopPulsing() }
+                }
+                .buttonStyle(GhostButtonStyle())
+                .accessibilityIdentifier("haptic.simulate")
+            }
+            .card()
+
             Spacer()
 
             Button("Test buzz") { haptics.buzz() }
@@ -60,10 +99,14 @@ struct HapticRoleView: View {
         }
         .padding(.horizontal, AppTheme.s16)
         .padding(.bottom, AppTheme.s32)
+        }
         .background(AppTheme.canvas.ignoresSafeArea())
         .sheet(isPresented: $showSettings) { CameraSettingsView() }
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+            haptics.stopPulsing()
+        }
     }
 
     private static let time: DateFormatter = {

@@ -2,15 +2,21 @@ import Foundation
 import CoreHaptics
 import UIKit
 
-/// Plays a buzz on the side and back phones. Falls back to UIKit feedback where
-/// Core Haptics is unavailable, and reports what it did so the UI can show it.
+/// Plays haptics on the side and back phones. Supports a one-off buzz and a
+/// proximity pulse whose speed, intensity, and sharpness follow the obstacle distance.
 @MainActor
 final class HapticController: ObservableObject {
     @Published private(set) var isAvailable = false
     @Published private(set) var lastBuzz: Date?
     @Published private(set) var buzzCount = 0
+    @Published private(set) var isPulsing = false
+    @Published private(set) var currentPulse: ProximityHapticProfile.Pulse?
+    @Published private(set) var currentDistance: Float?
+
+    var profile = ProximityHapticProfile()
 
     private var engine: CHHapticEngine?
+    private var pulseTask: Task<Void, Never>?
 
     init() {
         isAvailable = CHHapticEngine.capabilitiesForHardware().supportsHaptics
@@ -28,23 +34,55 @@ final class HapticController: ObservableObject {
     }
 
     /// A continuous buzz for `duration` seconds at `intensity` 0...1.
-    func buzz(duration: TimeInterval = 0.4, intensity: Float = 0.9) {
+    func buzz(duration: TimeInterval = 0.4, intensity: Float = 0.9, sharpness: Float = 0.5) {
         buzzCount += 1
         lastBuzz = Date()
+        play(eventType: .hapticContinuous, intensity: intensity, sharpness: sharpness, duration: duration)
+    }
+
+    /// Update the obstacle distance. Starts, retunes, or stops the pulse accordingly.
+    func setProximity(_ distance: Float?) {
+        currentDistance = distance
+        let pulse = profile.pulse(for: distance)
+        currentPulse = pulse
+        guard pulse != nil else {
+            stopPulsing()
+            return
+        }
+        guard !isPulsing else { return } // the running loop reads currentPulse each beat
+        isPulsing = true
+        pulseTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self, let pulse = self.currentPulse else { break }
+                self.buzzCount += 1
+                self.lastBuzz = Date()
+                self.play(eventType: .hapticTransient, intensity: pulse.intensity, sharpness: pulse.sharpness, duration: 0)
+                try? await Task.sleep(for: .seconds(pulse.interval))
+            }
+            self?.isPulsing = false
+        }
+    }
+
+    func stopPulsing() {
+        pulseTask?.cancel()
+        pulseTask = nil
+        isPulsing = false
+        currentPulse = nil
+    }
+
+    private func play(eventType: CHHapticEvent.EventType, intensity: Float, sharpness: Float, duration: TimeInterval) {
         guard let engine, isAvailable else {
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            UIImpactFeedbackGenerator(style: intensity > 0.6 ? .heavy : .medium).impactOccurred()
             return
         }
         do {
-            let event = CHHapticEvent(
-                eventType: .hapticContinuous,
-                parameters: [
-                    CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity),
-                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.5)
-                ],
-                relativeTime: 0,
-                duration: duration
-            )
+            let parameters = [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: sharpness)
+            ]
+            let event = eventType == .hapticContinuous
+                ? CHHapticEvent(eventType: eventType, parameters: parameters, relativeTime: 0, duration: duration)
+                : CHHapticEvent(eventType: eventType, parameters: parameters, relativeTime: 0)
             let pattern = try CHHapticPattern(events: [event], parameters: [])
             let player = try engine.makePlayer(with: pattern)
             try player.start(atTime: CHHapticTimeImmediate)
