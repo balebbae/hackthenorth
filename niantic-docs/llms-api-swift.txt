@@ -1,0 +1,428 @@
+# Swift API Reference -- Niantic Spatial SDK (NSDK)
+
+> Index of the Swift API reference. Each entry links to a small per-page file with the full declaration and members. Fetch only the page you need -- the per-page files are small and return faithfully (the previous single bundle truncated on large fetches).
+
+- [NSDK](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.txt)
+- [AssetResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-AssetResult.txt) -- Contains all the ``AssetInfo`` objects returned by a query to the Sites Manager service.
+- [AwarenessImageResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-AwarenessImageResult.txt) -- Image-based awareness result containing an NSDKImage.
+- [AwarenessImageResult.calculateReprojection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AwarenessImageResult.method-calculateReprojection.txt)
+- [AwarenessResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-AwarenessResult.txt)
+- [BundlePlaybackDatasetLoader](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-BundlePlaybackDatasetLoader.txt)
+- [BundlePlaybackDatasetLoader.info](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.BundlePlaybackDatasetLoader.method-info.txt) -- Returns details about the loader configuration.
+- [BundlePlaybackDatasetLoader.loadCaptureJSON](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.BundlePlaybackDatasetLoader.method-loadCaptureJSON.txt)
+- [BundlePlaybackDatasetLoader.loadDepthConfidence](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.BundlePlaybackDatasetLoader.method-loadDepthConfidence.txt)
+- [BundlePlaybackDatasetLoader.loadDepthData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.BundlePlaybackDatasetLoader.method-loadDepthData.txt)
+- [BundlePlaybackDatasetLoader.loadImage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.BundlePlaybackDatasetLoader.method-loadImage.txt)
+- [DataResourceOwner](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-DataResourceOwner.txt)
+- [DefaultSessionDataSource](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-DefaultSessionDataSource.txt)
+- [DefaultSessionDataSource.latestCameraSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-latestCameraSample.txt) -- Returns the most recent camera sample, if available.
+- [DefaultSessionDataSource.latestCompassSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-latestCompassSample.txt) -- Returns the most recent compass (heading) sample, if available.
+- [DefaultSessionDataSource.latestDepthMapSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-latestDepthMapSample.txt) -- Returns the most recent platform depth sample, if available.
+- [DefaultSessionDataSource.latestGpsSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-latestGpsSample.txt) -- Returns the most recent GPS sample, if available.
+- [DefaultSessionDataSource.latestTrackingStateSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-latestTrackingStateSample.txt) -- Returns the most recent VIO tracking state report.
+- [DefaultSessionDataSource.locationManager](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-locationManager.txt)
+- [DefaultSessionDataSource.locationManagerDidChangeAuthorization](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.DefaultSessionDataSource.method-locationManagerDidChangeAuthorization.txt)
+- [DepthResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-DepthResult.txt) -- Contains depth estimation results from the NSDK depth processing system.
+- [MeshData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-MeshData.txt)
+- [MeshData.toSCNGeometry](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.MeshData.method-toSCNGeometry.txt) -- Creates a SceneKit geometry from this mesh chunk's vertex positions, normals and triangle indices.
+- [MeshDownloaderResults](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-MeshDownloaderResults.txt)
+- [MeshDownloaderResults.Error](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.MeshDownloaderResults.enum-Error.txt) -- Possible errors from Mesh Downloader network operations.
+- [MeshDownloaderResults.Error.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.MeshDownloaderResults.Error.operator-op_Inequality.txt)
+- [NSDKCamera](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKCamera.txt)
+- [NSDKCamera.Backing](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKCamera.enum-Backing.txt)
+- [NSDKCamera.displayOrientedTransform](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKCamera.method-displayOrientedTransform.txt)
+- [NSDKCamera.projectionMatrix](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKCamera.method-projectionMatrix.txt)
+- [NSDKCamera.projectPoint](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKCamera.method-projectPoint.txt)
+- [NSDKCamera.viewMatrix](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKCamera.method-viewMatrix.txt)
+- [NSDKCamera.viewportRect](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKCamera.method-viewportRect.txt)
+- [NSDKDepthSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKDepthSession.txt)
+- [NSDKDepthSession.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.struct-Configuration.txt) -- The type of configuration used by this session.
+- [NSDKDepthSession.DepthMode](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.enum-DepthMode.txt)
+- [NSDKDepthSession.DepthMode.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.DepthMode.method-hash.txt)
+- [NSDKDepthSession.DepthMode.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.DepthMode.operator-op_Inequality.txt)
+- [NSDKDepthSession.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.method-configure.txt)
+- [NSDKDepthSession.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.method-featureStatus.txt) -- The current feature status of the depth session.
+- [NSDKDepthSession.latestDepth](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.method-latestDepth.txt) -- Retrieves the latest depth result from the depth session.
+- [NSDKDepthSession.latestImageParams](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.method-latestImageParams.txt) -- Retrieves the latest image parameters associated with the depth data.
+- [NSDKDepthSession.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.method-start.txt) -- Starts the depth session, enabling depth data processing with the current configuration.
+- [NSDKDepthSession.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDepthSession.method-stop.txt) -- Stops the depth session, halting depth data processing.
+- [NSDKDeviceMappingSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKDeviceMappingSession.txt)
+- [NSDKDeviceMappingSession.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.struct-Configuration.txt)
+- [NSDKDeviceMappingSession.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.method-configure.txt)
+- [NSDKDeviceMappingSession.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.method-featureStatus.txt)
+- [NSDKDeviceMappingSession.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.method-start.txt)
+- [NSDKDeviceMappingSession.startMapping](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.method-startMapping.txt)
+- [NSDKDeviceMappingSession.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.method-stop.txt) -- Stop all mapping processes.
+- [NSDKDeviceMappingSession.stopMapping](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKDeviceMappingSession.method-stopMapping.txt)
+- [NSDKMapStorage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKMapStorage.txt)
+- [NSDKMapStorage.addMap](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-addMap.txt) -- Adds previously serialized map data to the map storage.
+- [NSDKMapStorage.clear](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-clear.txt)
+- [NSDKMapStorage.createRootAnchor](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-createRootAnchor.txt)
+- [NSDKMapStorage.extractMapMetadata](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-extractMapMetadata.txt)
+- [NSDKMapStorage.mapData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-mapData.txt)
+- [NSDKMapStorage.mapUpdate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-mapUpdate.txt)
+- [NSDKMapStorage.mergeMapUpdate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMapStorage.method-mergeMapUpdate.txt)
+- [NSDKMeshDownloader](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKMeshDownloader.txt) -- A session-scoped utility for downloading mesh geometry associated with VPS locations.
+- [NSDKMeshDownloader.requestLocationMesh](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshDownloader.method-requestLocationMesh.txt)
+- [NSDKMeshingSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKMeshingSession.txt)
+- [NSDKMeshingSession.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshingSession.struct-Configuration.txt) -- The type of configuration used by this session.
+- [NSDKMeshingSession.MeshChunkUpdate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshingSession.enum-MeshChunkUpdate.txt)
+- [NSDKMeshingSession.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshingSession.method-configure.txt)
+- [NSDKMeshingSession.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshingSession.method-featureStatus.txt)
+- [NSDKMeshingSession.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshingSession.method-start.txt)
+- [NSDKMeshingSession.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKMeshingSession.method-stop.txt) -- Stops the meshing feature.
+- [NSDKRecordingExporter](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKRecordingExporter.txt)
+- [NSDKRecordingExporter.export](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKRecordingExporter.method-export.txt)
+- [NSDKRecordingExporter.exportSplitArchives](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKRecordingExporter.method-exportSplitArchives.txt)
+- [NSDKScanningSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKScanningSession.txt)
+- [NSDKScanningSession.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.struct-Configuration.txt) -- Configuration structure for the scanning session.
+- [NSDKScanningSession.RecordingInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.struct-RecordingInfo.txt) -- Information about the recording generated during scanning.
+- [NSDKScanningSession.SaveInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.struct-SaveInfo.txt) -- Information about a save operation for a scan.
+- [NSDKScanningSession.SaveError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.enum-SaveError.txt) -- Errors that can occur during a save operation.
+- [NSDKScanningSession.SaveError.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.SaveError.operator-op_Inequality.txt)
+- [NSDKScanningSession.computeVoxels](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-computeVoxels.txt)
+- [NSDKScanningSession.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-configure.txt)
+- [NSDKScanningSession.exportArchive](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-exportArchive.txt)
+- [NSDKScanningSession.exportSplitArchive](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-exportSplitArchive.txt)
+- [NSDKScanningSession.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-featureStatus.txt)
+- [NSDKScanningSession.recordingInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-recordingInfo.txt)
+- [NSDKScanningSession.saveCurrentScan](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-saveCurrentScan.txt)
+- [NSDKScanningSession.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-start.txt)
+- [NSDKScanningSession.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScanningSession.method-stop.txt)
+- [NSDKSceneSegmentationSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKSceneSegmentationSession.txt)
+- [NSDKSceneSegmentationSession.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.struct-Configuration.txt) -- Configuration structure for the scene segmentation session.
+- [NSDKSceneSegmentationSession.Configuration.convertToC](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.Configuration.method-convertToC.txt)
+- [NSDKSceneSegmentationSession.SceneSegmentationMode](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.enum-SceneSegmentationMode.txt)
+- [NSDKSceneSegmentationSession.SceneSegmentationMode.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.SceneSegmentationMode.method-hash.txt)
+- [NSDKSceneSegmentationSession.SceneSegmentationMode.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.SceneSegmentationMode.operator-op_Inequality.txt)
+- [NSDKSceneSegmentationSession.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-configure.txt)
+- [NSDKSceneSegmentationSession.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-featureStatus.txt)
+- [NSDKSceneSegmentationSession.latestConfidence](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-latestConfidence.txt)
+- [NSDKSceneSegmentationSession.latestImageParams](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-latestImageParams.txt)
+- [NSDKSceneSegmentationSession.latestPackedChannels](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-latestPackedChannels.txt)
+- [NSDKSceneSegmentationSession.latestSuppressionMask](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-latestSuppressionMask.txt)
+- [NSDKSceneSegmentationSession.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-start.txt)
+- [NSDKSceneSegmentationSession.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-stop.txt)
+- [NSDKSceneSegmentationSession.unpackChannelsFromBitmask](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSceneSegmentationSession.method-unpackChannelsFromBitmask.txt)
+- [NSDKSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKSession.txt)
+- [NSDKSession.CloudEnvConfig](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.struct-CloudEnvConfig.txt)
+- [NSDKSession.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.struct-Configuration.txt)
+- [NSDKSession.DeviceInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.struct-DeviceInfo.txt)
+- [NSDKSession.UserConfig](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.struct-UserConfig.txt)
+- [NSDKSession.acquireDepthSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireDepthSession.txt)
+- [NSDKSession.acquireDeviceMappingSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireDeviceMappingSession.txt)
+- [NSDKSession.acquireMapStorage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireMapStorage.txt)
+- [NSDKSession.acquireMeshDownloader](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireMeshDownloader.txt) -- Creates a new Mesh Downloader instance.
+- [NSDKSession.acquireMeshingSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireMeshingSession.txt)
+- [NSDKSession.acquireRecordingExporter](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireRecordingExporter.txt)
+- [NSDKSession.acquireScanningSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireScanningSession.txt)
+- [NSDKSession.acquireSceneSegmentationSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireSceneSegmentationSession.txt)
+- [NSDKSession.acquireSitesSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireSitesSession.txt)
+- [NSDKSession.acquireVps2Session](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-acquireVps2Session.txt)
+- [NSDKSession.destroy](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-destroy.txt)
+- [NSDKSession.destroyAll](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-destroyAll.txt)
+- [NSDKSession.getAccessAuthInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-getAccessAuthInfo.txt)
+- [NSDKSession.getRefreshAuthInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-getRefreshAuthInfo.txt)
+- [NSDKSession.logout](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-logout.txt)
+- [NSDKSession.setAccessToken](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-setAccessToken.txt)
+- [NSDKSession.setAgeLevel](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-setAgeLevel.txt)
+- [NSDKSession.setCallbackLogLevel](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-setCallbackLogLevel.txt) -- Sets the log level for callback logging.
+- [NSDKSession.setFileLogLevel](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-setFileLogLevel.txt) -- Sets the log level for file logging.
+- [NSDKSession.setStdoutLogLevel](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-setStdoutLogLevel.txt) -- Sets the log level for standard output logging.
+- [NSDKSession.update](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-update.txt)
+- [NSDKSession.version](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSession.method-version.txt) -- Retrieves the NSDK version string.
+- [NSDKSitesSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKSitesSession.txt)
+- [NSDKSitesSession.requestAssetInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestAssetInfo.txt) -- Requests asset info and waits for the result.
+- [NSDKSitesSession.requestAssetsForSite](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestAssetsForSite.txt) -- Requests assets for a site and waits for the result.
+- [NSDKSitesSession.requestOrganizationInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestOrganizationInfo.txt) -- Requests organization info and waits for the result.
+- [NSDKSitesSession.requestOrganizationsForUser](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestOrganizationsForUser.txt)
+- [NSDKSitesSession.requestSelfOrganizationInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestSelfOrganizationInfo.txt) -- Requests organizations for the current authenticated session and waits for the result.
+- [NSDKSitesSession.requestSelfUserInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestSelfUserInfo.txt)
+- [NSDKSitesSession.requestSiteAssetsByLocation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestSiteAssetsByLocation.txt)
+- [NSDKSitesSession.requestSiteInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestSiteInfo.txt) -- Requests site info and waits for the result.
+- [NSDKSitesSession.requestSitesForOrganization](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestSitesForOrganization.txt) -- Requests sites for an organization and waits for the result.
+- [NSDKSitesSession.requestUserInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSitesSession.method-requestUserInfo.txt) -- Requests user info and waits for the result.
+- [NSDKView](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKView.txt)
+- [NSDKView.SessionMode](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKView.enum-SessionMode.txt)
+- [NSDKView.getCamera](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKView.method-getCamera.txt)
+- [NSDKView.setup](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKView.method-setup.txt)
+- [NSDKVps2Session](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-NSDKVps2Session.txt)
+- [NSDKVps2Session.Configuration](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.struct-Configuration.txt) -- Configuration for the VPS2 session.
+- [NSDKVps2Session.anchorPayload](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-anchorPayload.txt)
+- [NSDKVps2Session.anchorUpdate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-anchorUpdate.txt)
+- [NSDKVps2Session.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-configure.txt)
+- [NSDKVps2Session.createAnchor](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-createAnchor.txt)
+- [NSDKVps2Session.deviceGeolocation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-deviceGeolocation.txt) -- Gets the geolocation of the device's last known camera pose.
+- [NSDKVps2Session.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-featureStatus.txt)
+- [NSDKVps2Session.getLatestLocalization](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-getLatestLocalization.txt)
+- [NSDKVps2Session.getLatestLocalizationRequestRecords](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-getLatestLocalizationRequestRecords.txt)
+- [NSDKVps2Session.getPose](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-getPose.txt) -- Converts a geolocation to an AR pose using the provided localization snapshot.
+- [NSDKVps2Session.removeAnchor](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-removeAnchor.txt)
+- [NSDKVps2Session.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-start.txt)
+- [NSDKVps2Session.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-stop.txt)
+- [NSDKVps2Session.trackAnchor](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKVps2Session.method-trackAnchor.txt)
+- [OrganizationResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-OrganizationResult.txt) -- Contains all the ``OrganizationInfo`` objects returned by a query to the Sites Manager service.
+- [PlaybackBackgroundRenderer](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackBackgroundRenderer.txt)
+- [PlaybackBackgroundRenderer.setup](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackBackgroundRenderer.method-setup.txt)
+- [PlaybackBackgroundRenderer.updateBackgroundImage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackBackgroundRenderer.method-updateBackgroundImage.txt)
+- [PlaybackCamera](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackCamera.txt)
+- [PlaybackCamera.displayOrientedTransform](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackCamera.method-displayOrientedTransform.txt)
+- [PlaybackCamera.projectionMatrix](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackCamera.method-projectionMatrix.txt)
+- [PlaybackCamera.projectPoint](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackCamera.method-projectPoint.txt)
+- [PlaybackCamera.viewMatrix](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackCamera.method-viewMatrix.txt)
+- [PlaybackCamera.viewportRect](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackCamera.method-viewportRect.txt)
+- [PlaybackDataset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackDataset.txt)
+- [PlaybackDataset.CaptureMetadata](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDataset.struct-CaptureMetadata.txt) -- Metadata structure for capture information. All fields optional so varying capture exports decode without keyNotFound.
+- [PlaybackDataset.CaptureRoot](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDataset.struct-CaptureRoot.txt) -- Root structure for the capture JSON file. Required fields per capture.json spec; optional fields may be omitted.
+- [PlaybackDataset.FrameMetadata](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDataset.struct-FrameMetadata.txt) -- Frame metadata structure matching the JSON format. Required fields per capture.json spec; optional fields may be omitted.
+- [PlaybackDataset.LocationMetadata](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDataset.struct-LocationMetadata.txt) -- Location metadata structure. All fields are optional so various capture formats (2D-only GPS, no compass, minimal logs) decode without keyNotFound.
+- [PlaybackDataset.PlaybackDatasetError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDataset.enum-PlaybackDatasetError.txt) -- Errors that can occur when retrieving frame data.
+- [PlaybackDataset.hasDepth](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDataset.method-hasDepth.txt) -- Checks if the dataset has depth data from a LiDAR source.
+- [PlaybackDatasetLoader](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackDatasetLoader.txt)
+- [PlaybackDatasetLoader.info](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetLoader.method-info.txt) -- Returns details about the loader configuration.
+- [PlaybackDatasetLoader.loadCaptureJSON](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetLoader.method-loadCaptureJSON.txt)
+- [PlaybackDatasetLoader.loadDataset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetLoader.method-loadDataset.txt)
+- [PlaybackDatasetLoader.loadDepthConfidence](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetLoader.method-loadDepthConfidence.txt)
+- [PlaybackDatasetLoader.loadDepthData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetLoader.method-loadDepthData.txt)
+- [PlaybackDatasetLoader.loadImage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetLoader.method-loadImage.txt)
+- [PlaybackRenderer](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackRenderer.txt)
+- [PlaybackRenderer.renderFrame](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackRenderer.method-renderFrame.txt) -- Called on the main queue for each new playback frame. Updates the background image and the virtual camera pose/FOV to match the frame.
+- [PlaybackSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackSession.txt)
+- [PlaybackSession.hasDepth](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSession.method-hasDepth.txt) -- Returns whether the dataset contains LiDAR depth (depthSource == "lidar"). Used by NSDKView.hasDepth and feature checks.
+- [PlaybackSession.pause](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSession.method-pause.txt) -- Stops playback. The loop exits on its next iteration; the current frame index is preserved so a later `run()` resumes from the same frame.
+- [PlaybackSession.run](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSession.method-run.txt)
+- [PlaybackSessionDataSource](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-PlaybackSessionDataSource.txt)
+- [PlaybackSessionDataSource.latestCameraSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSessionDataSource.method-latestCameraSample.txt) -- Returns the most recent camera sample, if available.
+- [PlaybackSessionDataSource.latestCompassSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSessionDataSource.method-latestCompassSample.txt) -- Returns the most recent compass (heading) sample, if available.
+- [PlaybackSessionDataSource.latestDepthMapSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSessionDataSource.method-latestDepthMapSample.txt) -- Returns the most recent platform depth sample, if available.
+- [PlaybackSessionDataSource.latestGpsSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSessionDataSource.method-latestGpsSample.txt) -- Returns the most recent GPS sample, if available.
+- [PlaybackSessionDataSource.latestTrackingStateSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSessionDataSource.method-latestTrackingStateSample.txt) -- Returns the most recent VIO tracking state report.
+- [RaycastBuffer](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-RaycastBuffer.txt) -- A read-only container for the raycast buffer information generated during scanning.
+- [SceneSegmentationResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-SceneSegmentationResult.txt)
+- [SiteAssetsResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-SiteAssetsResult.txt) -- Contains the ``SiteAssetsInfo`` objects returned by a location-based sites query.
+- [SiteResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-SiteResult.txt) -- Contains all the ``SiteInfo`` objects returned by a query to the Sites Manager service.
+- [SitesResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-SitesResult.txt) -- Base class for results returned by queries to the Sites Manager service.
+- [SitesResult.Error](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SitesResult.enum-Error.txt) -- Network request errors that can occur during Sites Manager operations.
+- [SitesResult.Error.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SitesResult.Error.operator-op_Inequality.txt)
+- [UserResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-UserResult.txt) -- Contains the user information returned by a query to the Sites Manager service.
+- [VoxelBuffer](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-VoxelBuffer.txt) -- A read-only container for the voxel buffer information generated during scanning.
+- [Vps2Heading](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-Vps2Heading.txt)
+- [Vps2Heading.copy](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2Heading.method-copy.txt)
+- [Vps2Heading.encode](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2Heading.method-encode.txt)
+- [Vps2Location](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.class-Vps2Location.txt)
+- [Vps2Location.copy](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2Location.method-copy.txt)
+- [Vps2Location.encode](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2Location.method-encode.txt)
+- [NSDKFeatureSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-NSDKFeatureSession.txt) -- A protocol that defines the common lifecycle and configuration interface for NSDK feature sessions.
+- [NSDKFeatureSession.configure](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureSession.method-configure.txt)
+- [NSDKFeatureSession.featureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureSession.method-featureStatus.txt)
+- [NSDKFeatureSession.start](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureSession.method-start.txt)
+- [NSDKFeatureSession.stop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureSession.method-stop.txt)
+- [NSDKLogCallback](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-NSDKLogCallback.txt)
+- [NSDKLogCallback.onLog](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKLogCallback.method-onLog.txt) -- Called when NSDK generates a log message.
+- [NSDKSessionDataSource](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-NSDKSessionDataSource.txt)
+- [NSDKSessionDataSource.latestCameraSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSessionDataSource.method-latestCameraSample.txt) -- Returns the most recent camera sample, if available.
+- [NSDKSessionDataSource.latestCompassSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSessionDataSource.method-latestCompassSample.txt) -- Returns the most recent compass (heading) sample, if available.
+- [NSDKSessionDataSource.latestDepthMapSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSessionDataSource.method-latestDepthMapSample.txt) -- Returns the most recent platform depth sample, if available.
+- [NSDKSessionDataSource.latestGpsSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSessionDataSource.method-latestGpsSample.txt) -- Returns the most recent GPS sample, if available.
+- [NSDKSessionDataSource.latestTrackingStateSample](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKSessionDataSource.method-latestTrackingStateSample.txt) -- Returns the most recent VIO tracking state report.
+- [NSDKViewDelegate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-NSDKViewDelegate.txt)
+- [PlaybackDatasetSource](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-PlaybackDatasetSource.txt)
+- [PlaybackDatasetSource.info](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetSource.method-info.txt) -- Returns details about the loader configuration.
+- [PlaybackDatasetSource.loadCaptureJSON](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetSource.method-loadCaptureJSON.txt) -- Loads the capture JSON data from the data source.
+- [PlaybackDatasetSource.loadDepthConfidence](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetSource.method-loadDepthConfidence.txt)
+- [PlaybackDatasetSource.loadDepthData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetSource.method-loadDepthData.txt)
+- [PlaybackDatasetSource.loadImage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackDatasetSource.method-loadImage.txt)
+- [PlaybackSessionDelegate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-PlaybackSessionDelegate.txt) -- Delegate protocol for receiving frame updates during playback (mirrors ARSessionDelegate-style callbacks).
+- [PlaybackSessionDelegate.playbackSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.PlaybackSessionDelegate.method-playbackSession.txt) -- Called on the main queue each time a new playback frame is ready. Use the frame's metadata, image, and optional depth for rendering or processing.
+- [ResourceOwner](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-ResourceOwner.txt)
+- [UIOrientationReporter](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.interface-UIOrientationReporter.txt)
+- [AreaTarget](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AreaTarget.txt) -- Contains a ``CoverageArea`` and its associated ``LocalizationTarget``.
+- [AreaTargetResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AreaTargetResult.txt)
+- [ARUtils](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-ARUtils.txt)
+- [ARUtils.isLidarAvailable](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ARUtils.method-isLidarAvailable.txt)
+- [AssetInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AssetInfo.txt)
+- [AssetMeshData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AssetMeshData.txt)
+- [AssetSplatData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AssetSplatData.txt)
+- [AssetVpsData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AssetVpsData.txt)
+- [AuthInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AuthInfo.txt)
+- [AwarenessImageParams](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-AwarenessImageParams.txt)
+- [CoverageArea](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-CoverageArea.txt) -- Represents a geographic area where VPS localization is possible.
+- [CoverageArea.Localizability](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.CoverageArea.enum-Localizability.txt)
+- [CoverageArea.Localizability.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.CoverageArea.Localizability.operator-op_Inequality.txt)
+- [CoverageAreaResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-CoverageAreaResult.txt) -- Contains all the ``CoverageArea`` objects returned by a query to the VPS Coverage service.
+- [GeolocationData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-GeolocationData.txt)
+- [GeolocationData.getEastDownNorthQuaternion](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.GeolocationData.method-getEastDownNorthQuaternion.txt) -- Returns the orientation in East-Down-North (EDN) frame.
+- [GeolocationData.getEastUpSouthQuaternion](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.GeolocationData.method-getEastUpSouthQuaternion.txt) -- Returns the orientation converted to East-Up-South (EUS) frame.
+- [GeolocationData.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.GeolocationData.operator-op_Inequality.txt)
+- [GeolocationData.op_Equality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.GeolocationData.operator-op_Equality.txt)
+- [HintImageResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-HintImageResult.txt) -- Image data returned by a query to a VPS hint image URL.
+- [ImageMath](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-ImageMath.txt)
+- [ImageMath.affineCrop](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineCrop.txt) -- Returns an affine transformation that crops the source size to match the aspect ratio of the target size.
+- [ImageMath.affineFit](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineFit.txt) -- Returns an affine transformation that maps normalized coordinates in the source frame to normalized coordinates in the target frame.
+- [ImageMath.affineInvertHorizontal](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineInvertHorizontal.txt) -- Returns an (u, v) -&gt; (u', v') transformation that represents a horizontal mirroring, i.e. (u, v) -&gt; (1 - u, v).
+- [ImageMath.affineInvertVertical](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineInvertVertical.txt) -- Returns an (u, v) -&gt; (u', v') transformation that represents a vertical mirroring, i.e. (u, v) -&gt; (u, 1 - v).
+- [ImageMath.affineRotation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineRotation.txt) -- Returns an (u, v) -&gt; (u', v') transformation that represents a 2D affine rotation.
+- [ImageMath.affineScaling](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineScaling.txt) -- Returns an (u, v) -&gt; (u', v') transformation that represents a 2D affine scaling.
+- [ImageMath.affineTranslation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-affineTranslation.txt) -- Returns an (u, v) -&gt; (u', v') transformation that represents a 2D affine translation.
+- [ImageMath.deviceRotation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-deviceRotation.txt)
+- [ImageMath.displayTransform](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-displayTransform.txt)
+- [ImageMath.reprojection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-reprojection.txt)
+- [ImageMath.viewRotation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ImageMath.method-viewRotation.txt)
+- [LocalizationTarget](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-LocalizationTarget.txt)
+- [LocalizationTargetResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-LocalizationTargetResult.txt) -- Contains all the ``LocalizationTarget`` objects returned by a query to the VPS Coverage service.
+- [MapMetadata](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-MapMetadata.txt) -- Structure representing the metadata of a device map for visualization and processing.
+- [MeshDownloaderResult](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-MeshDownloaderResult.txt) -- Represents a single mesh result with geometry, texture, and transform data.
+- [NSDKBuffer](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKBuffer.txt)
+- [NSDKFeatureStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKFeatureStatus.txt)
+- [NSDKFeatureStatus.contains](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-contains.txt)
+- [NSDKFeatureStatus.formIntersection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-formIntersection.txt)
+- [NSDKFeatureStatus.formSymmetricDifference](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-formSymmetricDifference.txt)
+- [NSDKFeatureStatus.formUnion](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-formUnion.txt)
+- [NSDKFeatureStatus.insert](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-insert.txt)
+- [NSDKFeatureStatus.intersection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-intersection.txt)
+- [NSDKFeatureStatus.isDisjoint](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-isDisjoint.txt)
+- [NSDKFeatureStatus.isOk](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-isOk.txt)
+- [NSDKFeatureStatus.isStrictSubset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-isStrictSubset.txt)
+- [NSDKFeatureStatus.isStrictSuperset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-isStrictSuperset.txt)
+- [NSDKFeatureStatus.isSubset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-isSubset.txt)
+- [NSDKFeatureStatus.isSuperset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-isSuperset.txt)
+- [NSDKFeatureStatus.remove](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-remove.txt)
+- [NSDKFeatureStatus.subtract](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-subtract.txt)
+- [NSDKFeatureStatus.subtracting](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-subtracting.txt)
+- [NSDKFeatureStatus.symmetricDifference](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-symmetricDifference.txt)
+- [NSDKFeatureStatus.union](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-union.txt)
+- [NSDKFeatureStatus.update](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.method-update.txt)
+- [NSDKFeatureStatus.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFeatureStatus.operator-op_Inequality.txt)
+- [NSDKFrameData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKFrameData.txt)
+- [NSDKFrameData.CameraIntrinsics](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.struct-CameraIntrinsics.txt)
+- [NSDKFrameData.CameraIntrinsics.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.CameraIntrinsics.operator-op_Inequality.txt)
+- [NSDKFrameData.CameraPlane](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.struct-CameraPlane.txt)
+- [NSDKFrameData.CameraPlane.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.CameraPlane.operator-op_Inequality.txt)
+- [NSDKFrameData.CompassData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.struct-CompassData.txt)
+- [NSDKFrameData.CompassData.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.CompassData.operator-op_Inequality.txt)
+- [NSDKFrameData.GpsData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.struct-GpsData.txt)
+- [NSDKFrameData.GpsData.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.GpsData.operator-op_Inequality.txt)
+- [NSDKFrameData.ImageFormat](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.enum-ImageFormat.txt)
+- [NSDKFrameData.ImageFormat.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.ImageFormat.operator-op_Inequality.txt)
+- [NSDKFrameData.withUnsafeCFrameData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.method-withUnsafeCFrameData.txt)
+- [NSDKFrameData.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKFrameData.operator-op_Inequality.txt)
+- [NSDKImage](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKImage.txt)
+- [NSDKImage.ImageType](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKImage.enum-ImageType.txt) -- Enum representing various image types supported by NSDK.
+- [NSDKImage.ImageType.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKImage.ImageType.operator-op_Inequality.txt)
+- [NSDKImage.withUnsafeBytes](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKImage.method-withUnsafeBytes.txt) -- Provides temporary, read-only access to the raw pixel buffer backing the image.
+- [NSDKInputDataFlags](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKInputDataFlags.txt)
+- [NSDKInputDataFlags.contains](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-contains.txt)
+- [NSDKInputDataFlags.formIntersection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-formIntersection.txt)
+- [NSDKInputDataFlags.formSymmetricDifference](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-formSymmetricDifference.txt)
+- [NSDKInputDataFlags.formUnion](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-formUnion.txt)
+- [NSDKInputDataFlags.insert](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-insert.txt)
+- [NSDKInputDataFlags.intersection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-intersection.txt)
+- [NSDKInputDataFlags.isDisjoint](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-isDisjoint.txt)
+- [NSDKInputDataFlags.isStrictSubset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-isStrictSubset.txt)
+- [NSDKInputDataFlags.isStrictSuperset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-isStrictSuperset.txt)
+- [NSDKInputDataFlags.isSubset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-isSubset.txt)
+- [NSDKInputDataFlags.isSuperset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-isSuperset.txt)
+- [NSDKInputDataFlags.remove](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-remove.txt)
+- [NSDKInputDataFlags.subtract](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-subtract.txt)
+- [NSDKInputDataFlags.subtracting](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-subtracting.txt)
+- [NSDKInputDataFlags.symmetricDifference](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-symmetricDifference.txt)
+- [NSDKInputDataFlags.union](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-union.txt)
+- [NSDKInputDataFlags.update](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.method-update.txt)
+- [NSDKInputDataFlags.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKInputDataFlags.operator-op_Inequality.txt)
+- [NSDKPathConfig](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKPathConfig.txt)
+- [NSDKUtils](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-NSDKUtils.txt)
+- [NSDKUtils.withNSDKStrings](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKUtils.method-withNSDKStrings.txt)
+- [OrganizationInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-OrganizationInfo.txt) -- Represents organization information from the Sites Manager service.
+- [PlaybackFrame](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-PlaybackFrame.txt)
+- [SceneSegmentationChannels](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-SceneSegmentationChannels.txt)
+- [SceneSegmentationChannels.contains](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-contains.txt)
+- [SceneSegmentationChannels.formIntersection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-formIntersection.txt)
+- [SceneSegmentationChannels.formSymmetricDifference](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-formSymmetricDifference.txt)
+- [SceneSegmentationChannels.formUnion](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-formUnion.txt)
+- [SceneSegmentationChannels.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-hash.txt)
+- [SceneSegmentationChannels.insert](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-insert.txt)
+- [SceneSegmentationChannels.intersection](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-intersection.txt)
+- [SceneSegmentationChannels.isDisjoint](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-isDisjoint.txt)
+- [SceneSegmentationChannels.isStrictSubset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-isStrictSubset.txt)
+- [SceneSegmentationChannels.isStrictSuperset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-isStrictSuperset.txt)
+- [SceneSegmentationChannels.isSubset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-isSubset.txt)
+- [SceneSegmentationChannels.isSuperset](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-isSuperset.txt)
+- [SceneSegmentationChannels.remove](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-remove.txt)
+- [SceneSegmentationChannels.subtract](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-subtract.txt)
+- [SceneSegmentationChannels.subtracting](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-subtracting.txt)
+- [SceneSegmentationChannels.symmetricDifference](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-symmetricDifference.txt)
+- [SceneSegmentationChannels.toChannelSet](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-toChannelSet.txt) -- Convert to an array of single-channel option sets (for iteration / display).
+- [SceneSegmentationChannels.union](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-union.txt)
+- [SceneSegmentationChannels.update](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.method-update.txt)
+- [SceneSegmentationChannels.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.SceneSegmentationChannels.operator-op_Inequality.txt)
+- [SiteAssetsInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-SiteAssetsInfo.txt) -- A single entry in a site-assets location query result.
+- [SiteInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-SiteInfo.txt) -- Represents site information from the Sites Manager service.
+- [TextureUtils](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-TextureUtils.txt)
+- [TextureUtils.createOrUpdateTexture](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.TextureUtils.method-createOrUpdateTexture.txt) -- Creates or updates a Metal texture using a `NSDKImage`.
+- [TimeoutError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-TimeoutError.txt)
+- [UserInfo](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-UserInfo.txt) -- Represents user information from the Sites Manager service.
+- [Vps2GeolocationData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-Vps2GeolocationData.txt) -- Location and heading data calculated by VPS2.
+- [Vps2Localization](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-Vps2Localization.txt)
+- [Vps2LocalizationRequestRecord](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-Vps2LocalizationRequestRecord.txt)
+- [Vps2Pose](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-Vps2Pose.txt) -- Pose in AR coordinate space calculated by VPS2 from a geolocation.
+- [VpsAnchorUpdate](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.struct-VpsAnchorUpdate.txt)
+- [VpsAnchorUpdate.TrackingData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsAnchorUpdate.struct-TrackingData.txt)
+- [VpsAnchorUpdate.TrackingData.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsAnchorUpdate.TrackingData.operator-op_Inequality.txt)
+- [VpsAnchorUpdate.AnchorTrackingState](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsAnchorUpdate.enum-AnchorTrackingState.txt)
+- [VpsAnchorUpdate.AnchorTrackingState.Reason](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsAnchorUpdate.AnchorTrackingState.enum-Reason.txt)
+- [VpsAnchorUpdate.AnchorTrackingState.Reason.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsAnchorUpdate.AnchorTrackingState.Reason.operator-op_Inequality.txt)
+- [VpsAnchorUpdate.AnchorTrackingState.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsAnchorUpdate.AnchorTrackingState.operator-op_Inequality.txt)
+- [AgeLevel](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-AgeLevel.txt)
+- [AgeLevel.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AgeLevel.operator-op_Inequality.txt)
+- [AssetDeploymentType](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-AssetDeploymentType.txt)
+- [AssetDeploymentType.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetDeploymentType.method-hash.txt)
+- [AssetDeploymentType.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetDeploymentType.operator-op_Inequality.txt)
+- [AssetPipelineJobStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-AssetPipelineJobStatus.txt)
+- [AssetPipelineJobStatus.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetPipelineJobStatus.method-hash.txt)
+- [AssetPipelineJobStatus.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetPipelineJobStatus.operator-op_Inequality.txt)
+- [AssetStatusType](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-AssetStatusType.txt)
+- [AssetStatusType.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetStatusType.method-hash.txt)
+- [AssetStatusType.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetStatusType.operator-op_Inequality.txt)
+- [AssetType](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-AssetType.txt)
+- [AssetType.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetType.method-hash.txt)
+- [AssetType.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AssetType.operator-op_Inequality.txt)
+- [AwarenessError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-AwarenessError.txt)
+- [AwarenessError.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.AwarenessError.operator-op_Inequality.txt)
+- [ExportResolution](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-ExportResolution.txt)
+- [ExportResolution.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ExportResolution.method-hash.txt)
+- [ExportResolution.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.ExportResolution.operator-op_Inequality.txt)
+- [HeadingMode](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-HeadingMode.txt) -- Controls how the heading is computed from the device's orientation.
+- [HeadingMode.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.HeadingMode.method-hash.txt)
+- [HeadingMode.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.HeadingMode.operator-op_Inequality.txt)
+- [NSDKAsyncState](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NSDKAsyncState.txt) -- Reports the state of an asynchronous NSDK operation.
+- [NSDKError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NSDKError.txt)
+- [NSDKError.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKError.operator-op_Inequality.txt)
+- [NSDKError.op_Equality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKError.operator-op_Equality.txt)
+- [NSDKLogLevel](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NSDKLogLevel.txt)
+- [NSDKLogLevel.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKLogLevel.operator-op_Inequality.txt)
+- [NSDKScreenOrientation](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NSDKScreenOrientation.txt) -- Represents the screen orientation in the NSDK layer.
+- [NSDKScreenOrientation.convertToCArdk](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScreenOrientation.method-convertToCArdk.txt)
+- [NSDKScreenOrientation.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScreenOrientation.method-hash.txt)
+- [NSDKScreenOrientation.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKScreenOrientation.operator-op_Inequality.txt)
+- [NSDKTelemetry](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NSDKTelemetry.txt) -- Namespace for NSDK telemetry controls.
+- [NSDKTelemetry.disable](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKTelemetry.method-disable.txt)
+- [NSDKTelemetryEnvironment](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NSDKTelemetryEnvironment.txt)
+- [NSDKTelemetryEnvironment.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKTelemetryEnvironment.method-hash.txt)
+- [NSDKTelemetryEnvironment.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NSDKTelemetryEnvironment.operator-op_Inequality.txt)
+- [NsdkTrackingState](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-NsdkTrackingState.txt) -- The general quality of position tracking available when the camera captured a frame.
+- [NsdkTrackingState.convertToCArdk](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NsdkTrackingState.method-convertToCArdk.txt)
+- [NsdkTrackingState.hash](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NsdkTrackingState.method-hash.txt)
+- [NsdkTrackingState.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.NsdkTrackingState.operator-op_Inequality.txt)
+- [PlaybackDatasetConstants](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-PlaybackDatasetConstants.txt) -- Constants for playback dataset file names and extensions.
+- [TypedAssetData](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-TypedAssetData.txt)
+- [Vps2LocalizationError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-Vps2LocalizationError.txt) -- Possible errors from VPS localization operations.
+- [Vps2LocalizationError.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2LocalizationError.operator-op_Inequality.txt)
+- [Vps2LocalizationRequestStatus](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-Vps2LocalizationRequestStatus.txt) -- Status of a network request.
+- [Vps2LocalizationRequestStatus.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2LocalizationRequestStatus.operator-op_Inequality.txt)
+- [Vps2LocalizationRequestType](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-Vps2LocalizationRequestType.txt)
+- [Vps2LocalizationRequestType.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2LocalizationRequestType.operator-op_Inequality.txt)
+- [Vps2TrackingState](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-Vps2TrackingState.txt)
+- [Vps2TrackingState.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.Vps2TrackingState.operator-op_Inequality.txt)
+- [VpsGraphOperationError](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.enum-VpsGraphOperationError.txt)
+- [VpsGraphOperationError.op_Inequality](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.VpsGraphOperationError.operator-op_Inequality.txt)
+- [playbackSession](https://www.nianticspatial.com/docs/llms-api-swift/NSDK.method-playbackSession.txt) -- Called on the main queue when the tracking state changes (e.g. at start of playback). For playback, state is typically .normal.

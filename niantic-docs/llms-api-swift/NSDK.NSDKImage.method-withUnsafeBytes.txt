@@ -1,0 +1,24 @@
+# withUnsafeBytes
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKImage.method-withUnsafeBytes/
+
+withUnsafeBytes
+Provides temporary, read-only access to the raw pixel buffer backing the image.
+
+---
+
+## Declaration
+
+func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R
+
+#### Summary
+
+Provides temporary, read-only access to the raw pixel buffer backing the image.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| body | (UnsafeRawBufferPointer) throws -> R | - |
+
+---

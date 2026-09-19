@@ -1,0 +1,26 @@
+# formIntersection
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKInputDataFlags.method-formIntersection/
+
+formIntersection
+
+---
+
+## Declaration
+
+mutating func formIntersection(_ other: Self)
+
+#### Summary
+
+Removes all elements of this option set that are not
+also present in the given set.
+This method is implemented as a & (bitwise AND) operation on the
+two sets' raw values.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | An option set. |
+
+---

@@ -1,0 +1,49 @@
+# PlaybackDataset
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackDataset/
+
+PlaybackDataset
+
+---
+
+## Declaration
+
+class PlaybackDataset
+
+## Summary
+
+A dataset loaded from a capture JSON file containing frame metadata.
+This class uses on-demand loading for frame images and depth data.
+Only the currently requested frame is loaded into memory, reducing memory pressure
+for large datasets.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| hasDepth | Bool | Checks if the dataset has depth data from a LiDAR source. |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CaptureMetadata | CaptureMetadata | Metadata structure for capture information. All fields optional so varying capture exports decode without keyNotFound. |
+| CaptureRoot | CaptureRoot | Root structure for the capture JSON file. Required fields per capture.json spec; optional fields may be omitted. |
+| FrameMetadata | FrameMetadata | Frame metadata structure matching the JSON format. Required fields per capture.json spec; optional fields may be omitted. |
+| LocationMetadata | LocationMetadata | Location metadata structure. All fields are optional so various capture formats (2D-only GPS, no compass, minimal logs) decode without keyNotFound. |
+
+---
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| PlaybackDatasetError | PlaybackDatasetError | Errors that can occur when retrieving frame data. |
+
+---

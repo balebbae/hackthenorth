@@ -1,0 +1,56 @@
+# Reason
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.VpsAnchorUpdate.AnchorTrackingState.enum-Reason/
+
+Reason
+
+---
+
+## Declaration
+
+enum Reason
+
+## Summary
+
+Provides additional context about why an anchor is in either the `notTracked`
+or `limited` tracking states.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case fatalNetworkError | fatalNetworkError | An unrecoverable network error has occured. Check the session's `featureStatus` formore information. |
+| case initializing | initializing | The anchor is still being initialized. |
+| case internalError | internalError | An unexpected internal error has occured. |
+| case noVisualLocalization | noVisualLocalization | The device is not localized to the VPS location/map that this anchor belongs to, butcoarse localization has been achieved through some other method(s). |
+| case permissionDenied | permissionDenied | The anchor is part of a private VPS location that this application does not haveauthorization to access. |
+| case removed | removed | Tracking has been stopped for this anchor. |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var description | String | A textual representation of this instance.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(describing:)`initializer. This initializer works with any type, and uses the custom`description` property for types that conform to`CustomStringConvertible`: struct Point: CustomStringConvertible { let x: Int, y: Int var description: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(describing: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `description` property. |
+| var isError | Bool | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.CustomStringConvertible

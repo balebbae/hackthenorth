@@ -1,0 +1,18 @@
+# version
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-version/
+
+version
+Retrieves the NSDK version string.
+
+---
+
+## Declaration
+
+static func version() -> String
+
+#### Summary
+
+Retrieves the NSDK version string.
+
+---

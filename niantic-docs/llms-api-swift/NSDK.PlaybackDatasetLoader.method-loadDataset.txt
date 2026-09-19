@@ -1,0 +1,23 @@
+# loadDataset
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDatasetLoader.method-loadDataset/
+
+loadDataset
+
+---
+
+## Declaration
+
+func loadDataset() -> PlaybackDataset?
+
+#### Summary
+
+Loads a dataset from the data source.
+This method only loads the capture JSON metadata upfront. Frame images and depth data
+are loaded on-demand when requested, reducing memory pressure for large datasets.
+
+#### Returns
+
+A PlaybackDataset configured for on-demand loading, or nil if loading fails
+
+---

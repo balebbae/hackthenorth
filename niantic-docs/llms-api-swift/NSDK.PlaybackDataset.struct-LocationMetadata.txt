@@ -1,0 +1,48 @@
+# LocationMetadata
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-LocationMetadata/
+
+LocationMetadata
+Location metadata structure. All fields are optional so various capture formats (2D-only GPS, no compass, minimal logs) decode without keyNotFound.
+
+---
+
+## Declaration
+
+struct LocationMetadata
+
+---
+
+## Constructors
+
+init(from decoder: any Decoder) throws
+
+#### Summary
+
+Creates a new instance by decoding from the given decoder.
+This initializer throws an error if reading from the decoder fails, or
+if the data read is corrupted or otherwise invalid.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let altitude | Double? | - |
+| let altitudeAccuracy | Double? | - |
+| let heading | Double? | - |
+| let headingAccuracy | Double? | - |
+| let headingTimestamp | Double? | - |
+| let latitude | Double? | - |
+| let longitude | Double? | - |
+| let positionAccuracy | Double? | - |
+| let positionTimestamp | Double? | - |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Decodable 
+
+conforms to:  Swift.Encodable

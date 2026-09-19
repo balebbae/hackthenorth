@@ -1,0 +1,32 @@
+# MeshChunkUpdate
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.enum-MeshChunkUpdate/
+
+MeshChunkUpdate
+
+---
+
+## Declaration
+
+enum MeshChunkUpdate
+
+## Summary
+
+Describes a change to a specific mesh chunk.
+Each case represents how a chunk identified by `id` should be handled:
+
+- `insert`: A new chunk should be added.
+- `update`: An existing chunk has new mesh data.
+- `remove`: A chunk should be removed.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case insert | Int64, : MeshData) | A new mesh chunk. |
+| case remove | Int64) | Removal of an existing mesh chunk. |
+| case update | Int64, : MeshData) | Updated data for an existing mesh chunk. |
+
+---

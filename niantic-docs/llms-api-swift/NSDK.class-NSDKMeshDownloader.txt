@@ -1,0 +1,22 @@
+# NSDKMeshDownloader
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKMeshDownloader/
+
+NSDKMeshDownloader
+A session-scoped utility for downloading mesh geometry associated with VPS locations.
+
+---
+
+## Declaration
+
+final class NSDKMeshDownloader
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| requestLocationMesh | MeshDownloaderResults | Requests all meshes for a VPS location identified by an anchor payload.Initiates a network request to download all meshes associated with the given VPS location.The call suspends until the operation completes successfully, fails, or times out.The method automatically polls for completion and returns a `MeshDownloaderResults` objectcontaining the downloaded geometry data. |
+
+---

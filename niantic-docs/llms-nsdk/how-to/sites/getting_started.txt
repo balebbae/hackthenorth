@@ -1,0 +1,228 @@
+# Getting Started with Sites
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/sites/getting_started/
+
+## Overview
+
+The Sites feature provides an API for querying hierarchical data in the Niantic Spatial platform. This guide will help you get started using Sites in your application.
+
+The Sites feature organizes data in a hierarchical structure:
+
+**Organization** -> **Site** -> **Asset**.
+
+Your application starts at the **Organization** level, which is resolved directly from your
+access token (see below).
+
+## Requirements
+
+The Sites feature requires authentication using Niantic Spatial Auth. Your application must be authenticated before using any Sites API methods.
+
+To authenticate:
+
+1. Ensure you have access the [Niantic Spatial Portal](https://scaniverse.nianticspatial.com) where you can manage your organizations, sites, and assets.
+2. Set up auth in your application by following the [Auth guide](https://www.nianticspatial.com/docs/nsdk/auth_getting_started)
+
+## Your access token and Organization
+
+Your access token is scoped to an Organization. That tells the SDK which
+Organization's data your app can access.
+Use `requestSelfOrganizationInfo` to get that Organization's information. For a code example, see [Get your organization](#2-get-your-organization).
+
+## Basic Usage
+
+The Sites API follows a simple pattern: Make requests and handle results. All requests are asynchronous and return struct data that represents the Sites entity you are requesting.
+
+### 1. Acquire a Sites Session
+
+### Platform: kotlin
+
+```kotlin
+val sitesSession = nsdkSession.sites.acquire()
+```
+
+### Platform: swift
+
+```swift
+let sitesSession = nsdkSession.acquireSitesSession()
+```
+
+### Platform: unity
+
+Add the Sites component to your unity scene's gameobject
+
+(image: Sites Client Manager component in Unity Inspector)
+
+Then add a reference to the Sites component to your monobehaviour:
+
+```csharp
+[SerializeField]
+private SitesClientManager _sitesClientManager;
+```
+
+### 2. Get your organization
+
+Resolve your organization directly from the access token with `requestSelfOrganizationInfo`.
+
+### Platform: kotlin
+
+```kotlin
+val orgResult = sitesSession.requestSelfOrganizationInfo()
+val organization = orgResult.organizations.firstOrNull()
+if (organization != null) {
+    println("Organization: ${organization.name}")
+    val orgId = organization.id
+}
+```
+
+### Platform: swift
+
+```swift
+let orgResult = try await sitesSession.requestSelfOrganizationInfo()
+if let organization = orgResult?.organizations.first {
+    print("Organization: \(organization.name)")
+    let orgId = organization.id
+}
+```
+
+### Platform: unity
+
+```csharp
+var orgResult = await _sitesClientManager.GetSelfOrganizationInfoAsync();
+if (orgResult.Status == SitesRequestStatus.Success && orgResult.Organizations.Count > 0) {
+    var organization = orgResult.Organizations[0];
+    Debug.Log($"Organization: {organization.Name}");
+    var orgId = organization.Id;
+}
+```
+
+### 3. Query Sites
+
+Browse sites within an organization, using the `orgId` from the previous step:
+
+### Platform: kotlin
+
+```kotlin
+val sitesResult = sitesSession.requestSitesForOrganization(orgId)
+sitesResult.sites.forEach { site ->
+    println("Site: ${site.name}")
+}
+```
+
+### Platform: swift
+
+```swift
+let sitesResult = try await sitesSession.requestSitesForOrganization(orgId: orgId)
+if let sites = sitesResult?.sites {
+    for site in sites {
+        print("Site: \(site.name)")
+    }
+}
+```
+
+### Platform: unity
+
+```csharp
+var sitesResult = await _sitesClientManager.GetSitesForOrganizationAsync(orgId);
+if (sitesResult.Status == SitesRequestStatus.Success) {
+    foreach (var site in sitesResult.Sites) {
+        Debug.Log($"Site: {site.Name}");
+    }
+}
+```
+
+### 4. Query Assets
+
+Discover spatial assets available at a site:
+
+### Platform: kotlin
+
+```kotlin
+val assetsResult = sitesSession.requestAssetsForSite(siteId)
+assetsResult.assets.forEach { asset ->
+    println("Asset: ${asset.name} (${asset.assetType})")
+}
+```
+
+### Platform: swift
+
+```swift
+let assetsResult = try await sitesSession.requestAssetsForSite(siteId: siteId)
+if let assets = assetsResult?.assets {
+    for asset in assets {
+        print("Asset: \(asset.name) (\(asset.assetType))")
+    }
+}
+```
+
+### Platform: unity
+
+```csharp
+var assetsResult = await _sitesClientManager.GetAssetsForSiteAsync(siteId);
+if (assetsResult.Status == SitesRequestStatus.Success) {
+    foreach (var asset in assetsResult.Assets) {
+        Debug.Log($"Asset: {asset.Name} ({asset.AssetType})");
+    }
+}
+```
+
+### 5. Get a Site's VPS anchor payload
+
+To precisely localize to a Site -- and place content on its anchor -- you need the Site's **anchor payload**. It lives on the Site's **production VPS asset**: find the asset whose type is VPS info and whose deployment is *production*, then read its `anchorPayload`.
+
+### Platform: kotlin
+
+```kotlin
+val assetsResult = sitesSession.requestAssetsForSite(siteId)
+val vpsAsset = assetsResult.assets.firstOrNull { asset ->
+    asset.assetType == AssetType.VPS_INFO && asset.deployment == AssetDeploymentType.PRODUCTION
+}
+val anchorPayload = vpsAsset?.vpsData?.anchorPayload
+// Pass anchorPayload to VPS2 to start map-relative localization for this Site.
+```
+
+### Platform: swift
+
+```swift
+let assetsResult = try await sitesSession.requestAssetsForSite(siteId: siteId)
+// Split the lookup into intermediate values to keep the example easy to read.
+let assets: [AssetInfo] = assetsResult?.assets ?? []
+let vpsAsset: AssetInfo? = assets.first { (asset: AssetInfo) in
+    asset.assetType == .vpsInfo && asset.deployment == .production
+}
+let anchorPayload: String? = vpsAsset?.vpsData?.anchorPayload
+// Pass anchorPayload to vps2Session.trackAnchor(payload:) to start map-relative localization for this Site.
+```
+
+### Platform: unity
+
+```csharp
+var assetsResult = await _sitesClientManager.GetAssetsForSiteAsync(siteId);
+string anchorPayload = null;
+if (assetsResult.Status == SitesRequestStatus.Success) {
+    foreach (var asset in assetsResult.Assets) {
+        if (asset.AssetType == AssetType.VpsInfo &&
+            asset.Deployment == AssetDeploymentType.Production &&
+            asset.VpsData.HasValue) {
+            anchorPayload = asset.VpsData.Value.AnchorPayload;
+            // Pass anchorPayload to VPS2 to start map-relative localization for this Site.
+            break;
+        }
+    }
+}
+```
+
+Fetching the anchor payload alone does not start map-relative localization. To start map-relative localization for a Site, pass the payload to `trackAnchor()`. For an example that passes the payload to `trackAnchor()` and places content on the tracked anchor, see [Place virtual content with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/). To learn which status to read while waiting for localization, see [Check device status and anchor status](https://www.nianticspatial.com/docs/nsdk/features/vps2/#check-device-status-and-anchor-status).
+
+## Next Steps
+
+### Platform: kotlin
+
+- Explore the full [API reference](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession)
+
+### Platform: swift
+
+- Explore the full [API reference](https://www.nianticspatial.com/docs/api/swift/SwiftyArdk.class-ArdkSitesSession)
+
+### Platform: unity
+
+- Explore the full [API reference](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient)

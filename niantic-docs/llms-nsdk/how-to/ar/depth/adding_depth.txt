@@ -1,0 +1,189 @@
+# Adding Depth to Your Project
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/adding_depth/
+
+### Platform: unity
+
+When using Unity, the Niantic Spatial SDK (NSDK) integrates seamlessly with **Unity's AR Foundation.** This means your application can access depth data through Unity's standard **AR Occlusion Manager** component.
+
+(image: AROcclusionManager)
+
+To enable depth in your scene, simply add an AROcclusionManager to your AR camera object. NSDK automatically provides depth data through this component when configured correctly.
+
+While the AROcclusionManager interface mirrors that of AR Foundation, its configuration options behave slightly differently under NSDK:
+
+- **Environment Depth Mode** -- This parameter controls which NSDK neural network architecture is used for depth estimation:
+  - **Medium:** Uses Niantic's in-house *MultiDepth* architecture for balanced accuracy and performance.
+  - **Best:** Uses a modified *MultiDepth Anti-Flicker* model that takes into account the previous frame's depth map to improve temporal stability.
+  - **Fastest:** Uses a smaller, lightweight model optimized for speed, with potential trade-offs in accuracy.
+- **Temporal Smoothing** -- *Not supported* in NSDK. Temporal consistency is instead managed internally through the anti-flicker depth model when the **Best** mode is selected.
+- **Human Segmentation** -- This section is unused in NSDK. For segmentation features such as detecting humans or other object classes, refer to the **Scene Segmentation** feature in the Niantic SDK, which provides broader category support.
+- **Occlusion Preference Mode** -- In standard AR Foundation, this setting toggles between environment and human occlusion. In NSDK, it is simplified: use **No Occlusion** to disable depth-based occlusion entirely.
+
+## More Information
+
+The [NSDK sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) includes an example of running depth.
+
+Also, see [How to Convert a Screen Point to Real-World Position Using Depth](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/convert_point_world_position/) for a guide of how to set up a project with depth.
+
+### Platform: swift
+
+The Niantic Spatial SDK (NSDK) exposes its depth functionality on native iOS through the **NsdkDepthSession** API.
+
+Depth data is delivered as part of the **DepthResult** type, which includes both the image and related metadata consisting of:
+
+- **frameId:** A unique identifier for the processed frame.
+- **timestampMs:** The timestamp of the AR frame that this awareness result was generated from.
+- **intrinsics:** This 3x3 matrix contains the camera's focal length, principal point, and other intrinsic parameters needed for coordinate transformations between image and camera coordinate systems.
+- **pose:** This 4x4 transformation matrix represents the camera's position and orientation in the world coordinate system. This can be interpreted as the world pose of the camera associated with the image that was used to infer depth.
+- **orientation:** The device orientation when the depth data was captured.
+
+The **RawImage** contained within a DepthResult is a **CPU-accessible buffer** storing 32-bit floating-point (ImageType.depthRawFloat) depth values in meters.
+
+---
+
+## Creating and Configuring a Depth Session
+
+The **NsdkDepthSession** manages the depth feature lifecycle -- configuration, activation, and retrieval of the latest depth data.
+It is created from an existing NsdkSession instance and works independently of other AR features.
+
+```swift
+
+// Assume an nsdk session is set up
+let nsdk = NSDKSession()
+
+// Enable depth functionality
+let depthSession = nsdk.acquireDepthSession()
+
+// Configure and start depth inference
+var config = NSDKDepthSession.Configuration()
+do {
+    try depthSession.configure(with: config)
+    depthSession.start()
+} catch {
+    print("Failed to configure depth session: \(error)")
+}
+
+```
+
+The default configuration infers depth at **10 FPS**, balancing accuracy and performance.
+
+## Retrieving Depth Data
+
+`NSDKDepthSession` exposes a `$result` publisher that emits updated depth data each frame. Subscribe to it with Combine:
+
+```swift
+depthSession.$result
+    .compactMap { state -> DepthResult? in
+        if case .success(let result) = state { return result } else { return nil }
+    }
+    .receive(on: DispatchQueue.main)
+    .sink { result in
+        // Use result.image, result.pose, result.intrinsics, result.orientation
+    }
+    .store(in: &cancellables)
+```
+
+The result is returned as an `NSDKAsyncState` value:
+
+- **.success(DepthResult)** -- The most recent depth frame is available and ready to use.
+- **.inProgress** -- The inference module has not yet finished initializing. This typically occurs shortly after starting the session, before the first depth frame is produced.
+- **.failure(AwarenessError)** -- The depth feature is unavailable or encountered an error.
+
+When successful, the `DepthResult` provides:
+
+- **image** -- A `RawImage` of type `.depthRawFloat`, where each pixel is a Float32 distance value in meters.
+- **pose** -- A 4x4 world-space camera transform corresponding to the frame used for inference.
+- **intrinsics** -- A 3x3 matrix defining the camera's projection parameters.
+- **orientation** -- The device orientation when the depth was captured.
+
+The depth image can be accessed directly on the CPU through `RawImage`, or uploaded to the GPU for rendering and occlusion processing.
+
+## More Information
+
+The [NSDK sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) includes an example of running depth.
+
+### Platform: kotlin
+
+The `DepthSession` class provides access to depth estimation capabilities in the Niantic Spatial SDK (NSDK) for Kotlin/Android. It enables your application to retrieve real-time depth data from the camera feed, which can be used for occlusion, spatial understanding, and AR effects.
+
+## Creating and Configuring a Depth Session
+
+To use depth in your application, you first need to acquire a `DepthSession` from your `NSDKSession`:
+
+```kotlin
+val depthSession = nsdkSessionManager.session.depthSession.acquire()
+```
+
+Once you have a `DepthSession`, configure it with a `DepthConfig` before starting:
+
+```kotlin
+depthSession.configure(
+    DepthConfig(
+        framerate = 30,
+        featureMode = AwarenessFeatureMode.UNSPECIFIED
+    )
+)
+```
+
+### Configuration Options
+
+The `DepthConfig` class allows you to customize depth estimation behavior:
+
+- **`framerate`** -- Controls the target frame rate for depth estimation. Higher frame rates provide smoother depth updates but may consume more processing resources.
+
+- **`featureMode`** -- Specifies the awareness feature mode to use.
+
+## Starting and Stopping the Session
+
+After configuration, start the depth session to begin receiving depth data:
+
+```kotlin
+val status = depthSession.start()
+```
+
+The `start()` method returns an `AwarenessStatus` indicating whether the session started successfully. Once started, the session will begin processing camera frames and generating depth estimates.
+
+To stop the session:
+
+```kotlin
+depthSession.stop()
+```
+
+Always stop the session when you no longer need depth data to free up system resources.
+
+## Retrieving Depth Data
+
+To get the latest depth buffer, call `latestDepth()`:
+
+```kotlin
+when (val result = depthSession.latestDepth()) {
+    is NSDKResult.Success -> {
+        val depthBuffer = result.value
+        // Use depthBuffer here
+    }
+    is NSDKResult.Error -> {
+        // Handle error - may indicate depth is not ready yet
+        Log.w("DepthSession", "Depth not available: ${result.code}")
+    }
+}
+```
+
+The `latestDepth()` method returns an `NSDKResult<DepthBuffer>`. The result may be an error if:
+
+- The session hasn't started yet
+- Depth estimation is still initializing
+- The camera feed is unavailable
+
+### DepthBuffer Properties
+
+The `DepthBuffer` object contains the depth data and metadata:
+
+- **`timestampMs`** -- Timestamp of the depth frame in milliseconds
+- **`imageWidth`** -- Width of the depth image in pixels
+- **`imageHeight`** -- Height of the depth image in pixels
+- **`image`** -- `FloatArray` containing depth values. Each value represents the distance in meters from the camera to the corresponding pixel in the scene.
+
+## More Information
+
+The [NSDK sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) includes an example of running depth.

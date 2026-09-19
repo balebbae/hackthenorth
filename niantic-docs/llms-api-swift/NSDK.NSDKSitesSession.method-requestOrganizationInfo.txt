@@ -1,0 +1,34 @@
+# requestOrganizationInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSitesSession.method-requestOrganizationInfo/
+
+requestOrganizationInfo
+Requests organization info and waits for the result.
+
+---
+
+## Declaration
+
+func requestOrganizationInfo(orgId: String, pollingInterval: TimeInterval = 0.5, timeout: TimeInterval = 60.0) async throws -> OrganizationResult
+
+#### Summary
+
+Requests organization info and waits for the result.
+
+#### Returns
+
+An OrganizationResult containing the organization info.
+
+#### Throws
+
+  - CancellationError if the Task running this function was cancelled.   - TimeoutError if the function timed out before it could complete execution.   - SitesResult.Error if there was an error specific to the network query.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orgId | String | The organization ID to fetch info for. |
+| pollingInterval | TimeInterval | The interval between status checks (default: 0.5 seconds). |
+| timeout | TimeInterval | Maximum time to wait for completion (default: 60 seconds). |
+
+---

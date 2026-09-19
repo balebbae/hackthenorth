@@ -1,0 +1,34 @@
+# featureStatus
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-featureStatus/
+
+featureStatus
+
+---
+
+## Declaration
+
+func featureStatus() -> NSDKFeatureStatus
+
+#### Summary
+
+Gets the current status of the Scene Segmentation feature.
+This method reports any errors or warnings that have occurred within the scene segmentation system.
+Check this periodically to monitor the health of semantic processing operations.
+Once an error is flagged, it will remain flagged until the problematic process runs again
+and completes successfully.
+
+#### Returns
+
+Feature status flags indicating current state and any issues
+
+#### Example
+
+```swift
+let status = sceneSegmentationSession.featureStatus()
+if status.contains(.failed) {
+    print("Scene Segmentation has encountered an error")
+}
+```
+
+---

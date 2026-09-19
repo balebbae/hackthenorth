@@ -1,0 +1,46 @@
+# BundlePlaybackDatasetLoader
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-BundlePlaybackDatasetLoader/
+
+BundlePlaybackDatasetLoader
+> inherits from PlaybackDatasetLoader 
+
+---
+
+## Declaration
+
+class BundlePlaybackDatasetLoader
+
+## Summary
+
+A loader that retrieves playback dataset data from the app bundle.
+This is the default implementation for loading datasets from `Bundle.main`.
+Frame images and depth data are loaded on-demand when requested.
+
+---
+
+## Constructors
+
+init(directory: String, bundle: Bundle = .main)
+
+#### Summary
+
+Initializes a bundle loader with the specified bundle.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| override info | String | Returns details about the loader configuration. |
+| override loadCaptureJSON | Data? | Loads the capture JSON data from the data source.This method must be overridden by subclasses. The base implementation will crash if called. |
+| override loadDepthConfidence | Data? | Loads depth confidence data from the data source.This method must be overridden by subclasses. The base implementation will crash if called.Called on-demand when confidence data is requested. |
+| override loadDepthData | Data? | Loads depth data from the data source.This method must be overridden by subclasses. The base implementation will crash if called.Called on-demand when depth data is requested. |
+| override loadImage | CGImage? | Loads an image from the data source.This method must be overridden by subclasses. The base implementation will crash if called.Called on-demand when a frame image is requested. |
+
+---
+
+## Relationships
+
+conforms to:  PlaybackDatasetSource

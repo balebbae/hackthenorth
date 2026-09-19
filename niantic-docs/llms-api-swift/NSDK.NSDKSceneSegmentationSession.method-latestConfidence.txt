@@ -1,0 +1,44 @@
+# latestConfidence
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-latestConfidence/
+
+latestConfidence
+
+---
+
+## Declaration
+
+func latestConfidence(channel: SceneSegmentationChannels) throws(NSDKError) -> NSDKAsyncState<SceneSegmentationResult, AwarenessError>
+
+#### Summary
+
+Retrieves the latest confidence map for a specific semantic channel.
+This method returns a confidence map where each pixel value represents the confidence
+score (0.0-1.0) that the pixel belongs to the specified semantic category. Higher
+confidence values indicate stronger belief in the semantic classification.
+
+#### Returns
+
+An NSDKAsyncState containing either the latest SceneSegmentationResult,
+  or an AwarenessError.
+
+#### Throws
+
+NSDKError.invalidArgument if zero or more than one channel is specified.
+
+#### Confidence Interpretation
+
+Confidence values range from 0.0 to 1.0:
+
+- **0.0**: Definitely not the specified semantic category
+- **0.5**: Uncertain classification
+- **1.0**: Definitely the specified semantic category
+  Use confidence thresholds to filter results based on your application's needs.
+
+  ### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channel | SceneSegmentationChannels | The semantic channel; throws if multiple channels are given. |
+
+---

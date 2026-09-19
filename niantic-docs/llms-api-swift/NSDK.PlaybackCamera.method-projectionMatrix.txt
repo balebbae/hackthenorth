@@ -1,0 +1,27 @@
+# projectionMatrix
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackCamera.method-projectionMatrix/
+
+projectionMatrix
+
+---
+
+## Declaration
+
+func projectionMatrix(for orientation: UIInterfaceOrientation, viewportSize: CGSize, zNear: CGFloat, zFar: CGFloat) -> simd_float4x4
+
+#### Summary
+
+Returns a projection matrix for the given orientation and viewport, with the requested near/far planes.
+Built from intrinsics with orientation applied: portrait swaps fx/fy and dimensions; landscape-left flips principal point.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orientation | UIInterfaceOrientation | - |
+| viewportSize | CGSize | - |
+| zNear | CGFloat | - |
+| zFar | CGFloat | - |
+
+---

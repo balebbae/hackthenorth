@@ -1,0 +1,19 @@
+# copy
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.Vps2Location.method-copy/
+
+copy
+
+---
+
+## Declaration
+
+override func copy(with zone: NSZone? = nil) -> Any
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| zone | NSZone? | - |
+
+---

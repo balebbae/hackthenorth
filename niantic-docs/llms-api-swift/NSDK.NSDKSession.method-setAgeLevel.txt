@@ -1,0 +1,30 @@
+# setAgeLevel
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-setAgeLevel/
+
+setAgeLevel
+
+---
+
+## Declaration
+
+func setAgeLevel(_ ageLevel: AgeLevel)
+
+#### Summary
+
+Sets the age level for the NSDK session.
+This method sets the age classification for the user
+
+#### Example
+
+```swift
+session.setAgeLevel(.adult)
+```
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ageLevel | AgeLevel | The age level to set (unknown, minor, teen, or adult) |
+
+---

@@ -1,0 +1,34 @@
+# latestSuppressionMask
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-latestSuppressionMask/
+
+latestSuppressionMask
+
+---
+
+## Declaration
+
+func latestSuppressionMask() -> NSDKAsyncState<SceneSegmentationResult, AwarenessError>
+
+#### Summary
+
+Retrieves the latest suppression mask for semantic processing.
+This method returns a binary mask indicating areas that should be ignored or suppressed
+during semantic processing. Suppression masks are useful for filtering out regions
+that are not relevant for semantic understanding, such as areas with poor image quality.
+
+#### Returns
+
+An NSDKAsyncState containing either the latest SceneSegmentationResult,
+  or an AwarenessError.
+
+#### Suppression Mask Usage
+
+Suppression masks are binary images where:
+
+- **0**: Areas to be suppressed (ignored in semantic processing)
+- **1**: Areas to be processed normally
+  Use suppression masks to improve semantic processing quality by excluding
+  problematic regions from analysis.
+
+---

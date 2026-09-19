@@ -1,0 +1,35 @@
+# subtracting
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKInputDataFlags.method-subtracting/
+
+subtracting
+
+---
+
+## Declaration
+
+func subtracting(_ other: Self) -> Self
+
+#### Summary
+
+Returns a new set containing the elements of this set that do not occur
+in the given set.
+In the following example, the nonNeighbors set is made up of the
+elements of the employees set that are not elements of neighbors:
+    let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"]
+    let neighbors: Set = ["Bethany", "Eric", "Forlani", "Greta"]
+    let nonNeighbors = employees.subtracting(neighbors)
+    print(nonNeighbors)
+    // Prints "["Diana", "Chris", "Alicia"]"
+
+#### Returns
+
+A new set.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | A set of the same type as the current set. |
+
+---

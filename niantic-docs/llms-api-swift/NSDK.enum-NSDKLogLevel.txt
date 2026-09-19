@@ -1,0 +1,52 @@
+# NSDKLogLevel
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKLogLevel/
+
+NSDKLogLevel
+
+---
+
+## Declaration
+
+enum NSDKLogLevel
+
+## Summary
+
+Defines the available logging levels for NSDK.
+`NSDKLogLevel` controls the verbosity of logging output from the NSDK system.
+Logging can be configured separately for stdout, files, and callback functions.
+
+## Overview
+
+Log levels follow a hierarchical structure where higher levels include all messages
+from lower levels. For example, setting the level to `.warn` will include warning,
+error, and fatal messages, but exclude debug and info messages.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case all | all | Logs all messages regardless of level.This is the most verbose logging level and should only be used for debugging. |
+| case debug | debug | Logs debug messages and all higher priority messages.Debug messages provide detailed information useful for development and troubleshooting. |
+| case error | error | Logs error messages and fatal messages.Error messages indicate problems that prevent normal operation or may causeunexpected behavior. |
+| case info | info | Logs informational messages and all higher priority messages.Info messages provide general information about system operation and state changes. |
+| case off | off | Disables all logging output.This level completely suppresses all log messages for maximum performance. |
+| case warn | warn | Logs warning messages and all higher priority messages.Warning messages indicate potential issues that don't prevent operation but mayaffect performance or reliability. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable

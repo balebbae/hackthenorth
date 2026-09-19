@@ -1,0 +1,28 @@
+# Scaniverse Documentation
+
+Source: https://www.nianticspatial.com/docs/scaniverse/
+
+Get started with Scaniverse
+
+Find guides for creating Sites, uploading scans from mobile or 360 cameras, and generating VPS maps, meshes, and Gaussian splats for reliable localization.
+
+Before you begin, make sure you download Scaniverse from the App Store or Google Play to your mobile device.
+
+Essentials
+
+Everything you need to get started using Scaniverse.
+
+Quick start
+Create and run your first Site.
+
+Scan techniques
+Learn techniques and best practices for creating high-quality scans.
+
+Use the 360 camera
+Learn best practices for 360 camera scans.
+
+Advanced tools
+Learn how to inspect, adjust, and manage your scans.
+
+Troubleshoot
+Learn how to fix common issues with scan quality and localization problems.

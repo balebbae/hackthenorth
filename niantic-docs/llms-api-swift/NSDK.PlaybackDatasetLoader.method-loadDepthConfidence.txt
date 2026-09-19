@@ -1,0 +1,35 @@
+# loadDepthConfidence
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDatasetLoader.method-loadDepthConfidence/
+
+loadDepthConfidence
+
+---
+
+## Declaration
+
+func loadDepthConfidence(confidenceFileName: String) -> Data?
+
+#### Summary
+
+Loads depth confidence data from the data source.
+This method must be overridden by subclasses. The base implementation will crash if called.
+Called on-demand when confidence data is requested.
+
+#### Returns
+
+The confidence data as Data, or nil if loading fails or confidence data is not available
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Subclasses must override this method. Do not call the base implementation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| confidenceFileName | String | The filename of the confidence data file (e.g., "confidence_00000000.bin") |
+
+---

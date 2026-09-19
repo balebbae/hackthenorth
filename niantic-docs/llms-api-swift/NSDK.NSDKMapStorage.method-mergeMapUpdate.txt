@@ -1,0 +1,34 @@
+# mergeMapUpdate
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-mergeMapUpdate/
+
+mergeMapUpdate
+
+---
+
+## Declaration
+
+func mergeMapUpdate(existingMap: NSDKBuffer, mapUpdate: NSDKBuffer) throws -> NSDKBuffer
+
+#### Summary
+
+Merges a map update into an existing map.
+This method combines incremental map updates with a base map to produce
+a merged map buffer containing the complete map data.
+
+#### Returns
+
+The merged map buffer
+
+#### Throws
+
+NSDKError of type NSDKError.invalidArgumentor   NSDKError.nullArgument indicating a problem with either   argument . Check NSDK's C logs for more information.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| existingMap | NSDKBuffer | The existing map to merge the update into. |
+| mapUpdate | NSDKBuffer | The map update to merge into the existing map. |
+
+---

@@ -1,0 +1,21 @@
+# TextureUtils
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-TextureUtils/
+
+TextureUtils
+
+---
+
+## Declaration
+
+struct TextureUtils
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @discardableResult static createOrUpdateTexture | Bool | Creates or updates a Metal texture using a `NSDKImage`. |
+
+---

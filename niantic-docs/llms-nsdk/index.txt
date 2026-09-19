@@ -1,0 +1,35 @@
+# Overview
+
+Source: https://www.nianticspatial.com/docs/nsdk/
+
+Welcome to Niantic SpatialSDK for NSDK
+
+### Platform: unity
+
+> **Info:**
+>
+> **Looking for Unity documentation from a previous release?**
+>
+> Archived documentation is available for download [here](https://github.com/niantic-lightship/nsdk-docs-archive).
+
+> **Info:**
+>
+> **[Lightship.dev](https://lightship.dev/signin) has been decommissioned.**
+>
+> If you previously used Lightship.dev, log in to [scaniverse.nianticspatial.com](https://scaniverse.nianticspatial.com), and select **Migrate a Lightship account** to create a new account and access your projects. For more information, see the [Migration guide](https://www.nianticspatial.com/docs/nsdk/migration_guide/).
+
+## Essentials
+
+[Getting Started](https://www.nianticspatial.com/docs/nsdk/setup): Build your first AR experience!
+
+## Overview
+
+[Localization](https://www.nianticspatial.com/docs/nsdk/features/localization): Anchor your experiences to the real world.
+
+[AR Effects](https://www.nianticspatial.com/docs/nsdk/features/ar_effects): Bring your content to life in AR with these features.
+
+[Developer Tools](https://www.nianticspatial.com/docs/nsdk/features/developer_tools): Streamline the development of your product.
+
+## Samples
+
+[Samples Project](https://www.nianticspatial.com/docs/nsdk/sample_projects): A demonstration of the SDK's main features.

@@ -1,0 +1,29 @@
+# removeAnchor
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-removeAnchor/
+
+removeAnchor
+
+---
+
+## Declaration
+
+@discardableResult func removeAnchor(withId anchorId: NSDKVpsAnchorId) -> Bool
+
+#### Summary
+
+Stops tracking an anchor.
+Once removed, the anchor will no longer receive updates or consume processing resources.
+- Precondition: anchorId must be exactly 32 characters long.
+
+#### Returns
+
+true if the anchor was removed, false if no anchor with that ID exists.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorId | NSDKVpsAnchorId | - |
+
+---

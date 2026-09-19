@@ -1,0 +1,694 @@
+# How to Exclude Semantic Channels with Mesh Filtering
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/
+
+Semantic Mesh Filtering allows you to set an allow list or block list of semantic channels. These follow standard allow/block list behavior. Using an allow list will exclude all channels not in the list, while the block list excludes all channels in the list.
+
+For a list of usable semantic channels, see [Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/#available-semantic-channels).
+
+(image: Example of Mesh Filtering being turned on and off)
+
+### Platform: unity
+
+## Prerequisites
+
+You will need a Unity project with NSDK installed and a basic AR scene. For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity) and [Set up a basic AR scene](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-a-basic-ar-scene).
+
+Your project must also have the Nsdk Meshing subsystem. To add Meshing to your project, follow the steps under [Creating the Mesh](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/adding_meshing/).
+
+## Setting Up Semantic Mesh Filtering
+
+To set up semantic mesh filtering:
+
+1. In the **Hierarchy**, expand the **XROrigin** and **Camera Offset**, then select the **Main Camera**.
+2. In the **Inspector**, click **Add Component**, then add an `ARSegmentationManager` to the **Main Camera**.
+3. In the **Hierarchy**, select the **MeshManager** `GameObject` that you created during the Meshing setup.
+4. Next, find the **Nsdk Meshing Extension**, then check the box next to **Mesh Filtering** to enable it.
+5. Two options will appear: **Enable Allow List** and **Enable Block List**. Choose which lists you would like to use, then click the `+` below each list to add slots to it. Once you have added slots, enter the names of the semantic channels you would like to allow/exclude, one per line. In the following example, the `ground` channel is in an allowlist, so meshing will only capture the ground.
+
+(image: Example usage of a semantic filtering allowlist)
+
+The allow/block lists will remember your settings and channel lists, even if you disable and re-enable them.
+
+## Recommended Usage
+
+Semantic channels apply to a variety of common objects and structures, and there are some that you will usually not want included when creating a mesh. At minimum, we recommend excluding `sky` using a block list to keep those elements out of your mesh.
+
+(image: Example usage of a semantic filtering blocklist)
+
+You can also combine allow lists and block lists to capture specific parts of a scene as a mesh. As an example, if you wanted to capture a mesh of a path through a grassy field, you could allow `ground` while blocking `sky` and `grass` to only capture ground areas with no grass on them, resulting in a mesh of the path.
+
+(image: Example usage of both semantic filtering lists)
+
+## Script Example
+
+This script demonstrates a basic example of how to use mesh filtering in code. It defines an allowlist and makes sure the list is active, then provides a method for turning mesh filtering on and off.
+
+#### Click to reveal ToggleMeshFiltering.cs
+
+```cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using NianticSpatial.NSDK.AR.Meshing;
+
+
+public class ToggleMeshFiltering : MonoBehaviour
+{
+    [SerializeField] private NsdkMeshingExtension _meshingExtension;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+      // Define the Allow List
+      _meshingExtension.AllowList = new List<string>() {"ground"};
+      _meshingExtension.IsFilteringAllowListEnabled = true;
+    }
+
+    void ToggleMeshFiltering()
+    {
+      _meshingExtension.IsMeshFilteringEnabled = !_meshingExtension.IsMeshFilteringEnabled;
+    }
+}
+```
+
+### Platform: swift
+
+## Prerequisites
+
+You will need an Xcode project with NSDK installed and `BaseARViewController` set up.
+For more information, see [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+## Setting Up Semantic Mesh Filtering
+
+To set up semantic mesh filtering, begin by creating a MeshingManager class.
+This class will configure the meshing feature to use semantic filtering, control the feature lifecycle and read mesh data from the feature for rendering in AR.
+
+```swift
+class MeshingManager: NSObject {
+    var meshingSession: NsdkMeshingSession
+    weak var arView: ARView!
+    weak var infoLabel: UILabel!
+
+    // Dictionary to track mesh chunks by their IDs
+    private var meshChunks: [Int64: ModelEntity] = [:]
+    private var meshMaterial: CustomMaterial
+    private var lastUpdateTime: UInt64 = 0
+    private var meshAnchor: AnchorEntity!
+
+    init(nsdk: NsdkSession, arView: ARView, infoLabel: UILabel) {
+        meshingSession = nsdk.createMeshingSession()
+        self.arView = arView
+        self.infoLabel = infoLabel
+        let mtlLibrary = MTLCreateSystemDefaultDevice()!.makeDefaultLibrary()!
+
+        let surfaceShader = CustomMaterial.SurfaceShader(named: "normalSurfaceShader", in: mtlLibrary)
+        // Create a custom material for the mesh
+        let simpleMaterial = SimpleMaterial(
+            color: UIColor(white: 1.0, alpha: 1),
+            roughness: 0.5,
+            isMetallic: false
+        )
+        // Create a custom material for the mesh
+        meshMaterial = try! CustomMaterial(from: simpleMaterial, surfaceShader: surfaceShader)
+
+        super.init()
+
+        // Create an anchor for all mesh entities
+        meshAnchor = AnchorEntity(world: .zero)
+        arView.scene.addAnchor(meshAnchor)
+    }
+```
+
+### Configure Settings and Start
+
+Use semantic filtering to only mesh the ground.
+For more information on the available semantic channels, please see [Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/).
+
+```swift
+    func start() {
+        clearMeshChunks()
+        var config = NsdkMeshingSession.Configuration()
+
+        // Enable semantic filtering
+        config.filterMeshWithSemantics = true
+        config.enableAllowlist = true
+        // Filter for the ground channel
+        config.packedAllowlist = 1 << 1
+        do {
+            try meshingSession.configure(with: config)
+            meshingSession.start()
+        } catch {
+            print("Invalid meshing configuration")
+        }
+    }
+```
+
+### Update the Mesh
+
+Then, finish out the class with functions to update the mesh chunks, stop the feature and clear the mesh chunks.
+
+```swift
+    func stop() {
+        meshingSession.stop()
+    }
+
+    func updateMesh() {
+        let timestamp = meshingSession.lastMeshUpdateTime()
+
+        guard let timestamp = timestamp else {
+            // No mesh is available yet
+            return
+        }
+
+        if lastUpdateTime == timestamp {
+            // It's still the same mesh as last time
+            return
+        }
+
+        lastUpdateTime = timestamp
+
+        let meshInfos = meshingSession.updatedMeshInfos()
+
+        guard let meshInfos = meshInfos else {
+            return
+        }
+
+        let totalChunks = meshInfos.ids.count / MemoryLayout<Int64>.stride
+        var chunksToRemove = Set(meshChunks.keys)
+        var numUpdated = 0
+
+        // Process updated chunks
+        for (index, chunkId) in meshInfos.ids.enumerated() {
+            // If the chunk is still valid, keep it in the scene
+            if chunksToRemove.contains(chunkId) {
+                chunksToRemove.remove(chunkId)
+            }
+
+            // Only process chunks that have been updated
+            if meshInfos.updated[index] == 1 {
+                let chunkData = meshingSession.meshDataById(id: chunkId)
+
+                if (chunkData != nil) {
+                    updateMeshChunk(id: chunkId, chunkData: chunkData!)
+                    numUpdated += 1
+                } else {
+                    print("Error getting mesh data for chunk \(chunkId): ")
+                }
+            }
+        }
+
+        // Process removed chunks
+        for id in chunksToRemove {
+            if let node = meshChunks[id] {
+                node.removeFromParent()
+                meshChunks.removeValue(forKey: id)
+            }
+        }
+
+        // Update info label on main thread
+        DispatchQueue.main.async {
+            self.infoLabel.text = "Total mesh chunks: \(totalChunks)\nUpdating \(numUpdated), removing \(chunksToRemove.count)"
+        }
+    }
+
+    private func updateMeshChunk(id: Int64, chunkData: MeshData) {
+        // Remove existing chunk if it exists
+        if let existingEntity = meshChunks[id] {
+            existingEntity.removeFromParent()
+        }
+
+        if let meshResource = chunkData.toMeshResource() {
+            let modelEntity = ModelEntity(mesh: meshResource, materials: [meshMaterial])
+
+            // Store the mesh chunk and render it in the scene
+            meshChunks[id] = modelEntity
+            meshAnchor.addChild(modelEntity)
+        }
+    }
+
+    private func clearMeshChunks() {
+        for (_, entity) in meshChunks {
+            entity.removeFromParent()
+        }
+        meshChunks.removeAll()
+    }
+}
+```
+
+#### Click to see the full `MeshingManager.swift` script
+
+```swift
+import Foundation
+import RealityKit
+import ARKit
+import NSDK
+import Metal
+
+class MeshingManager: NSObject {
+    var meshingSession: NsdkMeshingSession
+    weak var arView: ARView!
+    weak var infoLabel: UILabel!
+
+    // Dictionary to track mesh chunks by their IDs
+    private var meshChunks: [Int64: ModelEntity] = [:]
+    private var meshMaterial: CustomMaterial
+    private var lastUpdateTime: UInt64 = 0
+    private var meshAnchor: AnchorEntity!
+
+    init(nsdk: NsdkSession, arView: ARView, infoLabel: UILabel) {
+        meshingSession = nsdk.createMeshingSession()
+        self.arView = arView
+        self.infoLabel = infoLabel
+        let mtlLibrary = MTLCreateSystemDefaultDevice()!.makeDefaultLibrary()!
+
+        let surfaceShader = CustomMaterial.SurfaceShader(named: "normalSurfaceShader", in: mtlLibrary)
+        // Create a custom material for the mesh
+        let simpleMaterial = SimpleMaterial(
+            color: UIColor(white: 1.0, alpha: 1),
+            roughness: 0.5,
+            isMetallic: false
+        )
+        // Create a custom material for the mesh
+        meshMaterial = try! CustomMaterial(from: simpleMaterial, surfaceShader: surfaceShader)
+
+        super.init()
+
+        // Create an anchor for all mesh entities
+        meshAnchor = AnchorEntity(world: .zero)
+        arView.scene.addAnchor(meshAnchor)
+    }
+
+    func start() {
+        clearMeshChunks()
+        var config = NsdkMeshingSession.Configuration()
+
+        // Enable semantic filtering
+        config.filterMeshWithSemantics = true
+        config.enableAllowlist = true
+        // Filter for the ground channel
+        config.packedAllowlist = 1 << 1
+        do {
+            try meshingSession.configure(with: config)
+            meshingSession.start()
+        } catch {
+            print("Invalid meshing configuration")
+        }
+    }
+
+    func stop() {
+        meshingSession.stop()
+    }
+
+    func updateMesh() {
+        let timestamp = meshingSession.lastMeshUpdateTime()
+
+        guard let timestamp = timestamp else {
+            // No mesh is available yet
+            return
+        }
+
+        if lastUpdateTime == timestamp {
+            // It's still the same mesh as last time
+            return
+        }
+
+        lastUpdateTime = timestamp
+
+        let meshInfos = meshingSession.updatedMeshInfos()
+
+        guard let meshInfos = meshInfos else {
+            return
+        }
+
+        let totalChunks = meshInfos.ids.count / MemoryLayout<Int64>.stride
+        var chunksToRemove = Set(meshChunks.keys)
+        var numUpdated = 0
+
+        // Process updated chunks
+        for (index, chunkId) in meshInfos.ids.enumerated() {
+            // If the chunk is still valid, keep it in the scene
+            if chunksToRemove.contains(chunkId) {
+                chunksToRemove.remove(chunkId)
+            }
+
+            // Only process chunks that have been updated
+            if meshInfos.updated[index] == 1 {
+                let chunkData = meshingSession.meshDataById(id: chunkId)
+
+                if (chunkData != nil) {
+                    updateMeshChunk(id: chunkId, chunkData: chunkData!)
+                    numUpdated += 1
+                } else {
+                    print("Error getting mesh data for chunk \(chunkId): ")
+                }
+            }
+        }
+
+        // Process removed chunks
+        for id in chunksToRemove {
+            if let node = meshChunks[id] {
+                node.removeFromParent()
+                meshChunks.removeValue(forKey: id)
+            }
+        }
+
+        // Update info label on main thread
+        DispatchQueue.main.async {
+            self.infoLabel.text = "Total mesh chunks: \(totalChunks)\nUpdating \(numUpdated), removing \(chunksToRemove.count)"
+        }
+    }
+
+    private func updateMeshChunk(id: Int64, chunkData: MeshData) {
+        // Remove existing chunk if it exists
+        if let existingEntity = meshChunks[id] {
+            existingEntity.removeFromParent()
+        }
+
+        if let meshResource = chunkData.toMeshResource() {
+            let modelEntity = ModelEntity(mesh: meshResource, materials: [meshMaterial])
+
+            // Store the mesh chunk and render it in the scene
+            meshChunks[id] = modelEntity
+            meshAnchor.addChild(modelEntity)
+        }
+    }
+
+    private func clearMeshChunks() {
+        for (_, entity) in meshChunks {
+            entity.removeFromParent()
+        }
+        meshChunks.removeAll()
+    }
+}
+```
+
+### Add a Shader
+
+This class will require a shader to render the mesh.
+Create a new shader named **NormalShaders.metal** in your project to render the mesh.
+
+```swift
+#include <metal_stdlib>
+#include <RealityKit/RealityKit.h>
+using namespace metal;
+
+[[visible]]
+void normalSurfaceShader(realitykit::surface_parameters params) {
+
+    // Get the interpolated/shading normal provided by RealityKit
+    float3 interpNormal = normalize(params.surface().normal());
+
+    // Compute a face (flat) normal using derivatives. This effectively gives
+    // each triangle a constant color instead of a smoothly interpolated one.
+    // Use dfdx/dfdy on the position to get the geometric normal of the surface
+    // in the current coordinate space.
+    float3 pos = params.geometry().model_position();
+    float3 dpdx = dfdx(pos);
+    float3 dpdy = dfdy(pos);
+
+    float3 faceNormal = normalize(cross(dpdx, dpdy));
+
+    // If derivatives produce a degenerate normal (e.g. zero-length), fall back
+    // to the interpolated normal. Use absolute value so negative components
+    // don't get clipped to black when remapped to color space.
+    bool validFace = all(isfinite(faceNormal)) && length(faceNormal) > 1e-6;
+    float3 chosen = validFace ? faceNormal : interpNormal;
+
+    // Map from [-1, 1] to [0, 1] for display
+    half3 color = half3(abs(chosen) * 0.5 + 0.5);
+
+    // Set the base color to the mapped normal color
+    params.surface().set_base_color(color);
+}
+```
+
+### Add a View Controller
+
+Add a basic view controller to the project to control the lifecycle of `MeshingManager`.
+This class depends on the `BaseARViewController` class in [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+#### Click to see the full `MeshingViewController.swift` script
+
+```swift
+import UIKit
+import ARKit
+import NSDK
+
+class MeshingViewController: BaseARViewController {
+    private var nsdkMeshing: MeshingManager?
+    private var isMeshing = false
+    private var timer: Timer?
+    private var meshingButton: UIButton?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+
+    override func setupUI() {
+        super.setupUI()
+
+        self.title = "Meshing"
+        helpLabel.text = "Meshing Sample Help\n\nThis sample creates a 3d mesh of the environment in front of your device camera.\n\n TO USE: \n Press the \"Start Meshing\" button and move the camera around. A mesh is dynamically created and rendered. this Mesh is not persistent and to restart press the \"Stop Meshing\" button, and the process will restart."
+
+        updateInfoLabel(text: "Ready to start meshing")
+        self.meshingButton = addButton(buttonTitle: "Start Meshing", onClickAction: #selector(handleToggleMeshingTap))
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        stopMeshing()
+    }
+
+    private func startMeshing() {
+        meshingButton?.setTitle("Stop Meshing", for: .normal)
+        nsdkMeshing?.start()
+        // Start polling for mesh updates
+        isMeshing = true
+        updateInfoLabel(text: "Meshing started")
+    }
+
+    private func stopMeshing() {
+        timer?.invalidate()
+        timer = nil
+        isMeshing = false
+        nsdkMeshing?.stop()
+        meshingButton?.setTitle("Start Meshing", for: .normal)
+        updateInfoLabel(text: "Meshing stopped")
+    }
+
+    @objc private func handleToggleMeshingTap() {
+        if nsdkMeshing == nil {
+            nsdkMeshing = MeshingManager(nsdk: nsdkManager!.session, arView: arView, infoLabel: sampleInfoLabel)
+        }
+
+        if isMeshing {
+            stopMeshing()
+        } else {
+            startMeshing()
+        }
+    }
+
+    // NSDK update loop
+    override func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        super.session(session, didUpdate: frame)
+
+        if (isMeshing) {
+            // Checks if there is new mesh data available and renders it in the sceneView
+            nsdkMeshing?.updateMesh()
+        }
+    }
+}
+```
+
+### Try it Out
+
+Launch the view controller in your app and start meshing.
+A mesh should appear over the ground but not over other surfaces.
+
+## Recommended Usage
+
+Semantic channels apply to a variety of common objects and structures, and there are some that you will usually not want included when creating a mesh. At minimum, we recommend excluding `sky` and `person` using a block list to keep those elements out of your mesh.
+
+You can also combine allow lists and block lists to capture specific parts of a scene as a mesh. As an example, if you wanted to capture a mesh of a path through a grassy field, you could allow `ground` while blocking `sky` and `grass` to only capture ground areas with no grass on them, resulting in a mesh of the path. For another example, if you wanted to capture a mesh of an interesting building, you could allow `building` while blocking `person`, `ground`, and `sky` to make sure the building is all that is captured.
+
+### Platform: kotlin
+
+## Prerequisites
+
+You will need an Android project with NSDK installed and an AR session running.
+For more information, see [Set up the NSDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-kotlin).
+
+## Setting Up Semantic Mesh Filtering
+
+To set up semantic mesh filtering, create a `MeshingManager` class that acquires the meshing session, configures it with semantic filtering, and collects mesh updates.
+
+### Create a MeshingManager
+
+```kotlin
+import com.nianticspatial.nsdk.NSDKSession
+import com.nianticspatial.nsdk.MeshingConfig
+import com.nianticspatial.nsdk.MeshData
+import com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+
+class MeshingManager(
+    private val nsdkSession: NSDKSession,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+) {
+    val meshingSession = nsdkSession.meshingSession.acquire()
+
+    private var meshUpdateJob: Job? = null
+```
+
+### Configure and Start
+
+Configure meshing with an allowlist to mesh only the ground. For more information on the available semantic channels, see [Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/).
+
+> **Note:**
+>
+> The `packedAllowlist` and `packedBlocklist` fields use a packed image layout where each channel occupies a bit position of `31 - channelOrdinal` (Sky=bit 31, Ground=bit 30, NaturalGround=bit 29, ArtificialGround=bit 28, Grass=bit 27).
+
+```kotlin
+    fun start(onMeshUpdated: (Map<Long, MeshData>) -> Unit) {
+        val config = MeshingConfig(
+            filterMeshWithSceneSegmentation = true,
+            enableAllowlist = true,
+            // Ground has ordinal 1, so its packed bit is 31 - 1 = 30
+            packedAllowlist = 1u shl (31 - SceneSegmentationChannel.Ground.ordinal)
+        )
+        meshingSession.configure(config)
+        meshingSession.start()
+
+        meshUpdateJob = coroutineScope.launch {
+            meshingSession.meshUpdates.collect { updateInfo ->
+                if (updateInfo != null) {
+                    val meshDataMap = mutableMapOf<Long, MeshData>()
+                    updateInfo.ids.forEachIndexed { index, meshId ->
+                        val isUpdated = updateInfo.updated.getOrNull(index) == 1.toByte()
+                        if (isUpdated) {
+                            meshingSession.getData(meshId)?.let { meshDataMap[meshId] = it }
+                        }
+                    }
+                    onMeshUpdated(meshDataMap)
+                }
+            }
+        }
+    }
+```
+
+### Stop
+
+```kotlin
+    fun stop() {
+        meshUpdateJob?.cancel()
+        meshUpdateJob = null
+        meshingSession.stop()
+    }
+
+    fun destroy() {
+        stop()
+        coroutineScope.cancel()
+        meshingSession.close()
+    }
+}
+```
+
+#### Click to see the full `MeshingManager.kt` script
+
+```kotlin
+import com.nianticspatial.nsdk.NSDKSession
+import com.nianticspatial.nsdk.MeshingConfig
+import com.nianticspatial.nsdk.MeshData
+import com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+
+class MeshingManager(
+    private val nsdkSession: NSDKSession,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+) {
+    val meshingSession = nsdkSession.meshingSession.acquire()
+
+    private var meshUpdateJob: Job? = null
+
+    fun start(onMeshUpdated: (Map<Long, MeshData>) -> Unit) {
+        val config = MeshingConfig(
+            filterMeshWithSceneSegmentation = true,
+            enableAllowlist = true,
+            // Ground has ordinal 1, so its packed bit is 31 - 1 = 30
+            packedAllowlist = 1u shl (31 - SceneSegmentationChannel.Ground.ordinal)
+        )
+        meshingSession.configure(config)
+        meshingSession.start()
+
+        meshUpdateJob = coroutineScope.launch {
+            meshingSession.meshUpdates.collect { updateInfo ->
+                if (updateInfo != null) {
+                    val meshDataMap = mutableMapOf<Long, MeshData>()
+                    updateInfo.ids.forEachIndexed { index, meshId ->
+                        val isUpdated = updateInfo.updated.getOrNull(index) == 1.toByte()
+                        if (isUpdated) {
+                            meshingSession.getData(meshId)?.let { meshDataMap[meshId] = it }
+                        }
+                    }
+                    onMeshUpdated(meshDataMap)
+                }
+            }
+        }
+    }
+
+    fun stop() {
+        meshUpdateJob?.cancel()
+        meshUpdateJob = null
+        meshingSession.stop()
+    }
+
+    fun destroy() {
+        stop()
+        coroutineScope.cancel()
+        meshingSession.close()
+    }
+}
+```
+
+### Try it Out
+
+Instantiate `MeshingManager` with your `NSDKSession`, call `start` with a callback to receive updated mesh data, and call `stop` when done. Meshing should appear over the ground but not over other surfaces.
+
+## Recommended Usage
+
+Semantic channels apply to a variety of common objects and structures, and there are some that you will usually not want included when creating a mesh. At minimum, we recommend excluding `sky` using a block list to keep those elements out of your mesh.
+
+```kotlin
+val config = MeshingConfig(
+    filterMeshWithSceneSegmentation = true,
+    enableBlocklist = true,
+    // Sky has ordinal 0, so its packed bit is 31 - 0 = 31
+    packedBlocklist = 1u shl (31 - SceneSegmentationChannel.Sky.ordinal)
+)
+```
+
+You can also combine allow lists and block lists to capture specific parts of a scene as a mesh. As an example, if you wanted to capture a mesh of a path through a grassy field, you could allow `ground` while blocking `sky` and `grass` to only capture ground areas with no grass on them.
+
+```kotlin
+val config = MeshingConfig(
+    filterMeshWithSceneSegmentation = true,
+    enableAllowlist = true,
+    // Ground has ordinal 1 -> packed bit 30
+    packedAllowlist = 1u shl (31 - SceneSegmentationChannel.Ground.ordinal),
+    enableBlocklist = true,
+    // Sky has ordinal 0 -> packed bit 31, Grass has ordinal 4 -> packed bit 27
+    packedBlocklist = (1u shl (31 - SceneSegmentationChannel.Sky.ordinal)) or
+                      (1u shl (31 - SceneSegmentationChannel.Grass.ordinal))
+)
+```

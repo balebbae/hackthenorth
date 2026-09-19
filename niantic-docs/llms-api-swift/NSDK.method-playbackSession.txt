@@ -1,0 +1,25 @@
+# playbackSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.method-playbackSession/
+
+playbackSession
+Called on the main queue when the tracking state changes (e.g. at start of playback). For playback, state is typically .normal.
+
+---
+
+## Declaration
+
+func playbackSession(_ session: PlaybackSession, cameraDidChangeTrackingState camera: PlaybackCamera)
+
+#### Summary
+
+Called on the main queue when the tracking state changes (e.g. at start of playback). For playback, state is typically .normal.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| session | PlaybackSession | - |
+| camera | PlaybackCamera | - |
+
+---

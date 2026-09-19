@@ -1,0 +1,34 @@
+# anchorPayload
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-anchorPayload/
+
+anchorPayload
+
+---
+
+## Declaration
+
+func anchorPayload(anchorId: NSDKVpsAnchorId) -> NSDKAsyncState<String, Never>?
+
+#### Summary
+
+Gets the payload data of a specified anchor.
+The payload encodes the data needed to relocalize an anchor across devices or sessions.
+It can be stored and used later with trackAnchor(payload:).
+For anchors created via createAnchor(at:), subscribe to createdAnchorPayload
+instead of polling this method -- the session handles polling automatically.
+- Precondition: anchorId must be exactly 32 characters long.
+
+#### Returns
+
+- .inProgress(nil): The anchor is tracked but the payload is not yet available.
+    - .success(payload): The base64-encoded payload is ready.
+    - nil: No anchor with anchorId was found.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorId | NSDKVpsAnchorId | The unique identifier of the anchor. |
+
+---

@@ -1,0 +1,31 @@
+# configure
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.method-configure/
+
+configure
+
+---
+
+## Declaration
+
+func configure(with config: Configuration) throws
+
+#### Summary
+
+Configures the session with the specified settings.
+- Attention: This method must be called while the session is stopped,
+  or else configuration will fail. In that case, while this function returns without
+  throwing, configuration will still fail asynchronously. Use featureStatus()
+  to check that configuration has not failed.
+
+#### Throws
+
+NSDKError.invalidArgument if the configuration is invalid.   Check NSDK's C logs for more information.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| config | Configuration | - |
+
+---

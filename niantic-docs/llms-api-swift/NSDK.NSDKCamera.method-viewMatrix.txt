@@ -1,0 +1,25 @@
+# viewMatrix
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.method-viewMatrix/
+
+viewMatrix
+
+---
+
+## Declaration
+
+func viewMatrix(for orientation: UIInterfaceOrientation) -> simd_float4x4
+
+#### Summary
+
+Returns the view matrix (world-to-camera) for the given interface orientation.
+Pass the current device orientation (e.g. from the window scene) so that rendering follows the device when rotated.
+For both live and playback, the returned matrix matches the display-oriented camera transform.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orientation | UIInterfaceOrientation | - |
+
+---

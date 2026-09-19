@@ -1,0 +1,61 @@
+# AnchorTrackingState
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.VpsAnchorUpdate.enum-AnchorTrackingState/
+
+AnchorTrackingState
+
+---
+
+## Declaration
+
+enum AnchorTrackingState
+
+## Summary
+
+Represents the current tracking state of a VPS anchor.
+The tracking state indicates how well the system is able to track an anchor's position
+and orientation in the current environment.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case limited | Reason?) | The anchor is being tracked with limited accuracy.Tracking information is available, but is of poor quality and shouldnot be relied upon at close distances. |
+| case notTracked | Reason?) | The anchor is not currently being tracked. |
+| case tracked | tracked | The anchor is being tracked with full accuracy. |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var description | String | A textual representation of this instance.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(describing:)`initializer. This initializer works with any type, and uses the custom`description` property for types that conform to`CustomStringConvertible`: struct Point: CustomStringConvertible { let x: Int, y: Int var description: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(describing: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `description` property. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Nested Types
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Reason | Reason | Provides additional context about why an anchor is in either the `notTracked`or `limited` tracking states. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.CustomStringConvertible

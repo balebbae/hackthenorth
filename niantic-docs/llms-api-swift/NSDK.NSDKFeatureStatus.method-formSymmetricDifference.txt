@@ -1,0 +1,26 @@
+# formSymmetricDifference
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFeatureStatus.method-formSymmetricDifference/
+
+formSymmetricDifference
+
+---
+
+## Declaration
+
+mutating func formSymmetricDifference(_ other: Self)
+
+#### Summary
+
+Replaces this set with a new set containing all elements
+contained in either this set or the given set, but not in both.
+This method is implemented as a ^ (bitwise XOR) operation on the two
+sets' raw values.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | An option set. |
+
+---

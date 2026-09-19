@@ -1,0 +1,17 @@
+# ResourceOwner
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-ResourceOwner/
+
+ResourceOwner
+
+---
+
+## Declaration
+
+protocol ResourceOwner : AnyObject
+
+---
+
+## Relationships
+
+conformance:  DataResourceOwner

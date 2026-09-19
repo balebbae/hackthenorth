@@ -1,0 +1,26 @@
+# acquireMeshingSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireMeshingSession/
+
+acquireMeshingSession
+
+---
+
+## Declaration
+
+@MainActor func acquireMeshingSession() -> NSDKMeshingSession
+
+#### Summary
+
+Returns the shared meshing session, creating it on first call.
+Subsequent calls return the same instance. The session is inactive until start() is
+called. NSDKSession.update() will call update() on it automatically each frame once
+it is started.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

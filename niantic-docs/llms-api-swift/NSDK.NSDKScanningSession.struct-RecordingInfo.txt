@@ -1,0 +1,22 @@
+# RecordingInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.struct-RecordingInfo/
+
+RecordingInfo
+Information about the recording generated during scanning.
+
+---
+
+## Declaration
+
+struct RecordingInfo
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let frameCount | Int | The number of frames in the recording. |
+
+---

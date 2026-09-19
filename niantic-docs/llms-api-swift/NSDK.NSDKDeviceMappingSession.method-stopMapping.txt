@@ -1,0 +1,18 @@
+# stopMapping
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDeviceMappingSession.method-stopMapping/
+
+stopMapping
+
+---
+
+## Declaration
+
+func stopMapping()
+
+#### Summary
+
+Stop the current mapping sequence.
+This stops adding new frames to the current on-device VPS Map.
+
+---

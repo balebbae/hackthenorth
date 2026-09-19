@@ -1,0 +1,50 @@
+# CoverageArea
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-CoverageArea/
+
+CoverageArea
+Represents a geographic area where VPS localization is possible
+
+---
+
+## Declaration
+
+struct CoverageArea
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_VPSCoverage_CoverageArea)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let centroid | CLLocationCoordinate2D | Centroid of the polygon described in `shape`. |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let localizability | Localizability | Quality of VPS coverage in the area. |
+| let localizationTargetIdentifiers | [String] | Identifiers of all the localization targets within the coverage area. |
+| let shape | [CLLocationCoordinate2D] | Points describing a polygon outline of the area. |
+
+---
+
+## Nested Types
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Localizability | Localizability | Indicates the quality and reliability of VPS localization in a coverage area.`Localizability` provides information about the expected quality and reliabilityof VPS localization within a specific coverage area, helping applicationsmake informed decisions about VPS usage.Different coverage areas may have varying levels of localization qualitybased on factors such as mapping completeness, feature density, andenvironmental conditions. This enum helps applications understand whatto expect from VPS localization in different areas. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.SendableMetatype

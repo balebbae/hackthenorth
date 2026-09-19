@@ -1,0 +1,105 @@
+# NSDKScanningSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKScanningSession/
+
+NSDKScanningSession
+
+---
+
+## Declaration
+
+final class NSDKScanningSession
+
+## Summary
+
+A session for 3D scanning and visualization with Combine publisher support.
+The scanning feature provides capabilities for capturing, processing, and exporting
+3D scan data from AR sessions. Scans of a location can be processed by the Visual
+Positioning System's (VPS's) cloud services to enable VPS localization.
+
+## Overview
+
+Use `$latestRaycastBuffer` and `$latestVoxelBuffer` to reactively update your UI or
+visualization in response to new scan data, rather than polling each frame manually.
+
+## Usage Pattern
+
+```swift
+let scanSession = nsdkSession.acquireScanningSession()
+let config = NSDKScanningSession.Configuration(
+    enableRaycastVisualization: true,
+    enableVoxelVisualization: true
+)
+try scanSession.configure(with: config)
+scanSession.start()
+// Subscribe to raycast buffer updates
+scanSession.$latestRaycastBuffer
+    .compactMap { $0 }
+    .sink { buffer in
+        // Update raycast visualization
+    }
+    .store(in: &cancellables)
+// Trigger voxel computation and subscribe to results
+scanSession.computeVoxels()
+scanSession.$latestVoxelBuffer
+    .compactMap { $0 }
+    .sink { buffer in
+        // Update voxel visualization
+    }
+    .store(in: &cancellables)
+```
+
+`$latestRaycastBuffer` is updated automatically each frame by `NSDKSession.update()` while
+the session is active and raycast visualization is enabled. `$latestVoxelBuffer` is updated
+each frame when new voxel data is available after `computeVoxels()` has been called.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @Published var latestRaycastBuffer | RaycastBuffer | The most recently computed raycast buffer. Updated each frame by `NSDKSession` while active.`nil` until the first buffer arrives after `start()`. Requires `enableRaycastVisualization`to be set in the configuration. |
+| @Published var latestVoxelBuffer | VoxelBuffer | The most recently computed voxel buffer. Updated each frame when new voxel data is ready.`nil` until `computeVoxels()` has been called and results become available. Requires`enableVoxelVisualization` to be set in the configuration. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| computeVoxels | void | Triggers asynchronous voxel computation. Subscribe to `$latestVoxelBuffer` to receivethe result once processing completes.- Precondition: Voxel visualization must have been enabled in the configuration. |
+| configure | void | Configures the session with the specified settings.- Attention: This method must be called while the session is stopped, or else configuration will fail. In that case, while this function returns without throwing, configuration will still fail asynchronously. Use `featureStatus()` to check that configuration has not failed. |
+| exportArchive | String? | Exports the scan data as an archive file.This method processes the saved scan data and exports it to a standard archive formatthat can be used with external 3D processing tools or Niantic's VPS map. |
+| exportSplitArchive | [String]? | Exports the scan data as multiple archive files.This method processes the saved scan data and exports it to multiple archive filesbased on the maxFramesPerArchive parameter. Each archive will contain at mostmaxFramesPerArchive frames. |
+| featureStatus | NSDKFeatureStatus | Reports errors that have occurred within processes running inside this feature.Check this periodically to see if any errors have occurred with processes runninginside this feature. Once an error has been flagged, it will remain flagged until theculprit process has been run again and completed successfully. |
+| recordingInfo | NSDKScanningSession.RecordingInfo | Returns information about the current recording.Call this method **before** `saveCurrentScan()` to ensure that the recordingcontains frames to save. Otherwise, the save operation may fail. |
+| saveCurrentScan | NSDKScanningSession.SaveInfo | Stops recording and asynchronously saves the recording to the configured path.Calling this function will stop the active recording, but `stop` must still be calledafterward to completely shut down this session. |
+| start | void | Starts scanning."Scanning" here may include up to three processes -- recording input AR data, raycasting,and voxelization -- depending on how the feature is configured.Raycasting and voxelization are useful for visualizing scanned areas andproviding feedback to the user about their scan.- SeeAlso: `stop()`- SeeAlso: `configure(_:)` |
+| stop | void | Stops scanning and discards any unsaved scan data.Halts any active scanning while keeping the scanner instance alive.You can restart scanning later by calling `start()`.- SeeAlso: `start()` |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configuration | Configuration | Configuration structure for the scanning session. |
+| RecordingInfo | RecordingInfo | Information about the recording generated during scanning. |
+| SaveInfo | SaveInfo | Information about a save operation for a scan. |
+
+---
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SaveError | SaveError | Errors that can occur during a save operation. |
+
+---
+
+## Relationships
+
+conforms to:  NSDKFeatureSession

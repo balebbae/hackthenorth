@@ -1,0 +1,24 @@
+# displayOrientedTransform
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.method-displayOrientedTransform/
+
+displayOrientedTransform
+
+---
+
+## Declaration
+
+func displayOrientedTransform(orientation: UIInterfaceOrientation) -> simd_float4x4
+
+#### Summary
+
+Returns the camera transform adjusted for the given display orientation (Z-axis rotation applied).
+Use when you need the camera pose in the same coordinate frame as the on-screen image (e.g. for overlay alignment).
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orientation | UIInterfaceOrientation | - |
+
+---

@@ -1,0 +1,463 @@
+# How to Set Up Real-World Occlusion
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/setup_real_world_occlusion/
+
+### Platform: swift
+
+On iOS, Niantic Spatial depth can be used to occlude virtual content in several ways,
+depending on how much control you need over rendering and synchronization.
+
+This guide explains one specific technique: **occlusion using a full-screen occluder mesh**
+rendered with Metal. This approach is functionally equivalent to Unity's
+**NSDK Occlusion Extension -> Preferred Occlusion Technique: Occlusion Mesh**.
+
+## Overview
+
+In this sample, real-world occlusion is achieved by:
+
+1. Converting the depth image into a GPU texture
+2. Reconstructing a **world-space mesh** from that depth
+3. Rendering the mesh **into the depth buffer only**
+4. Drawing virtual content afterward so it is automatically occluded
+
+## Full-Screen Occluder Mesh
+
+The **occluder mesh** is a screen-aligned grid with **one vertex per depth pixel**. The mesh itself is invisible, but it writes depth values that block virtual objects.
+
+- Each vertex stores a `(u, v)` coordinate into the depth texture
+- Triangles connect adjacent pixels into a continuous surface
+- The mesh is generated **once**, after the first depth frame arrives
+- Only the depth texture and transforms change per frame
+
+Conceptually: **Depth Image -> Occluder Mesh -> Depth Buffer**
+
+Any virtual geometry rendered **after** the occluder mesh that participates in normal depth testing, will be automatically hidden wherever its geometry is behind the mesh.
+
+## Data Required to Build the Occluder Mesh
+
+To reconstruct and render the occluder mesh, the renderer needs **five pieces of data**
+every frame: the **depth image** (GPU texture), **depth intrinsics** and  **extrinsics**, **ARKit view** and **projection** matrices.
+
+These inputs together define how depth pixels are converted into world-space geometry
+and then projected into the current camera view.
+
+The NSDK occlusion sample collects and updates these resources inside the render loop so they are
+always used together when drawing the occluder mesh.
+
+```swift
+private func fetchDepthData() -> Bool {
+    guard
+        let depthResult = /* Acquire the latest DepthResult from NSDK */,
+        let frame = /* Acquire the latest ARFrame from ARKit*/
+    else { return false }
+
+    // Update the depth texture when a new depth frame arrives
+    if depthResult.frameId != lastDepthFrameId {
+        lastDepthFrameId = depthResult.frameId
+
+        TextureUtils.createOrUpdateTexture(
+            from: depthResult.image,
+            texture: &depthTexture,
+            device: device
+        )
+
+        intrinsicsMatrix = depthResult.intrinsics
+        extrinsicsMatrix = depthResult.pose
+    }
+
+    // Update the current AR camera matrices
+    viewMatrix = frame.camera.viewMatrix(for: orientation)
+    projectionMatrix = frame.camera.projectionMatrix(
+        for: orientation,
+        viewportSize: mtlView.drawableSize,
+        zNear: 0.01,
+        zFar: 10.0
+    )
+
+    return true
+}
+```
+
+### What Each Resource Is Used For
+
+- **Depth Texture**: The depth image is uploaded to a Metal texture and sampled in the vertex shader.
+  Each pixel represents the distance from the depth camera to real-world surfaces. This texture provides the raw depth values used to construct the occluder geometry.
+
+- **Depth Intrinsics**: The depth intrinsics describe how pixel coordinates in the depth image map to
+  camera-space rays. They are used to unproject each depth pixel into a 3D position in the depth
+  camera's coordinate system.
+
+- **Depth Camera Pose** (Extrinsics): The depth camera pose represents the position and orientation of the camera at the moment the depth image was captured. This matrix is used to transform points from depth camera space into world space, placing the reconstructed geometry correctly in the scene.
+
+- **ARKit View Matrix**: The ARKit view matrix describes the inverse transform of the current camera pose. It is used to transform world-space geometry into the current camera's view space for rendering.
+
+- **ARKit Projection Matrix**: The projection matrix defines the camera's lens parameters and viewport mapping. It projects view-space geometry into clip space so the occluder mesh aligns correctly with the live camera image.
+
+## Depth-Only Rendering
+
+The occluder mesh is rendered **only into the depth buffer**. This is esnured by specifying and empty write mask to the color attachment of the render pipeline used to draw the mesh.
+
+```swift
+let occDesc = MTLRenderPipelineDescriptor()
+...
+occDesc.depthAttachmentPixelFormat = mtlView.depthStencilPixelFormat
+occDesc.colorAttachments[0].pixelFormat = mtlView.colorPixelFormat
+occDesc.colorAttachments[0].writeMask = [] // depth-only (bypass color)
+```
+
+As a result:
+
+- The mesh is invisible
+- Depth values are written
+- Any geometry drawn afterward is occluded automatically
+
+## Depth Unprojection (Vertex Shader)
+
+In the occlusion vertex shader, each vertex:
+
+1. Samples the depth texture
+2. Unprojects the pixel using depth intrinsics
+3. Transforms the point into world space using the depth camera pose (extrinsics)
+4. Projects it using the current ARKit view-projection matrix
+
+```swift
+float depth = depthTexture.sample(depthSampler, uv).r;
+
+// The values cx, cy, fx, and fy come from the intrinsics of the depth image.
+// Additionally, px and py represent the coordinates of the current pixel.
+float x_cam = (px - cx) * depth / fx;
+float y_cam = (py - cy) * depth / fy;
+float z_cam = -depth;
+
+float4 camPos   = float4(x_cam, y_cam, z_cam, 1.0);
+float4 worldPos = extrinsics * camPos;
+
+out.position = viewProj * worldPos;
+```
+
+This reprojects the depth geometry from the depth camera's capture pose into the current AR camera view, stabilizing occlusion even when depth updates arrive
+at a lower frame rate.
+
+For full implementation details, see the Swift Occlusion Sample in the Niantic Spatial iOS samples project.
+
+For more information, see the [Occlusion Feature page](https://www.nianticspatial.com/docs/nsdk/features/occlusion/)
+
+### Platform: unity
+
+Niantic Spatial Occlusion creates depth in AR applications, rendering game objects in front of or behind objects in the real world.
+Niantic Spatial SDK for Unity (NSDK) integrates seamlessly with the AR Foundation Occlusion Manager, enabling occlusion options not available in ARKit and ARCore.
+
+(image: Occlusion in action)
+
+## Prerequisites
+
+You will need a Unity project with NSDK installed and a set-up basic AR scene.
+For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity) and [Set up a basic AR scene](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-a-basic-ar-scene).
+
+## Setting Up Occlusion
+
+To set up Niantic Spatial occlusion:
+
+1. Add an `AROcclusionManager` to your **Main Camera** `GameObject`:
+   1. In the **Hierarchy**, expand the `XROrigin` and **Camera Offset**, then select the **Main Camera** object. Then, in the **Inspector**, click **Add Component** and add an `AROcclusionManager`.
+2. Add a cube as a child of your Camera, then set its position, rotation, and scale:
+   1. In the **Hierarchy**, right-click the **Main Camera**, then mouse over **3D Object** and select **Cube**.
+   2. In the **Inspector**, under the **Transform** heading, set the cube's position to (0, 0, 2), its rotation to (0, 45, 45), and its scale to (0.2, 0.2, 0.2).
+3. When you build to device or use playback, your cube will be occluded by physical objects that are less than 2 meters away from your phone.
+
+(image: More occlusion in action)
+
+## Improving Occlusion Quality with the NSDK Occlusion Extension
+
+By adding the NSDK Occlusion Extension, you can improve the visual quality of occlusions by adding functionality to the standard `AROcclusionManager`.
+
+To add the extension and test one of its features:
+
+1. Add a `NsdkOcclusionExtension` to the Main Camera `GameObject`.
+   1. In the **Hierarchy**, expand the `XROrigin` and select the **Main Camera**. Then, in the **Inspector**, click **Add Component** and add a `Nsdk Occlusion Extension`.
+2. If you are using the Universal Render Pipeline, add a `Nsdk Occlusion Extension Feature` to the URP renderer:
+   1. In the **Project** window, find the URP renderer you are using under the **Assets** directory.
+   2. In the **Inspector**, click the **Add Renderer Feature** button, then select `Nsdk Occlusion Extension Feature`. Make sure it comes after the `AR Background Renderer Feature`.
+   3. Enable Unity's **Compatibility Mode (RenderGraph disabled)** under Edit -> Project Settings -> Graphics -> URP
+3. In the extension options menu, set the **Optimal Occlusion Distance Mode** to **Specified Game Object**.
+4. Set the **Cube** you created earlier as the **Principal Occludee**.
+5. When you build to device or run in playback, the edges of objects in the image should now line up more precisely with the occlusion boundaries of the cube.
+
+   (image: NSDK Occlusion Extension)
+
+For more information on the NSDK Occlusion Extension and its features, see [Adding Occlusion to Your Project](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_occlusion/#nsdk-occlusion-extension).
+
+> **Caution:**
+>
+> **Attention!**
+>
+> URP users using the `NSDK Occlusion Extension Feature` will need to enable **Compatibility Mode (RenderGraph disabled)** (Edit > Project Settings > Graphics > URP). Otherwise, the extension will have no effect.
+
+## Setting up Occlusion Suppression
+
+**Occlusion Suppression** prevents pixels containing specified semantic information from occluding AR assets.
+Depth-based occlusion can be noisy and lead to inconsistencies with particular semantic channels.
+Enabling Occlusion Suppression can improve the visual quality of occlusions, particularly when AR characters appear to clip into the floor or disappear into the sky.
+
+1. Follow the steps in [**Improving Occlusion Quality with the NSDK Occlusion Extension**](#improving-occlusion-quality-with-the-nsdk-occlusion-extension).
+2. Add an `ARSemanticSegmentationManager` to the **Main Camera** `GameObject`.
+   1. In the **Hierarchy**, expand the 'XROrigin' and select the **Main Camera**. Then, in the **Inspector**, click **Add Component** and add an `AR Semantic Segmentation Manager` to it.
+3. In the **Inspector**, open the **Nsdk Occlusion Extension** options menu, then check the box labeled **Enable Occlusion Suppression**. This will make new options appear.
+4. Drag the **Main Camera** `GameObject` from the **Hierarchy** to the **Semantic Segmentation Manager** field in the **Inspector**.
+5. In the **Suppression Channels** list, add `sky` for Element 0 and `ground` for Element 1.
+6. Done! When you test your application, pixels corresponding to the ground or sky should not occlude your virtual objects. Try using other semantic channels from the [Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/) page and see what happens!
+
+   (image: NSDK Occlusion Extension with AR Semantic Segmentation Manager)
+
+## Setting up Occlusion Stabilization
+
+**Occlusion Stabilization** combines information from the instantaneous depth buffer and a depth field rendered from the world mesh to stabilize occlusions between frames.
+This leads to higher-quality, more consistent occlusions in static parts of the scene.
+
+1. Follow the steps in [**Improving Occlusion Quality with the NSDK Occlusion Extension**](#improving-occlusion-quality-with-the-nsdk-occlusion-extension).
+
+2. Set up Meshing in your scene:
+   1. In the **Hierarchy**, select the `XROrigin` and add an empty `GameObject` to it. Name it **Meshing**.
+
+   2. Select **Meshing**, then, in the **Inspector**, click **Add Component** and add an **ARMeshManager** Component to it.
+
+   3. In the **ARMeshManager** Component, set the **MeshPrefab** to **FusedMesh** (located in `Packages/Niantic Spatial Development Kit AR Plugin/Assets/Prefabs`).
+      1. This prefab has a layer set to "Mesh". In your next project, if you add a different prefab here, make sure it is on a new layer. To create a new layer, in the **Inspector**, select the **Layer** drop-down, then create a layer and give it a unique name. (The name can be anything as long as it is not already in use.)
+      2. [URP Only] If you are using the universal render pipeline, you will need to add the prefab directly to your Unity project before assigning it to **ARMeshManager**. In the **Project** window, scroll down to **Packages**, then open **NSDK AR Plugin**. In the **Assets** subfolder, select **Prefabs**, then drag and drop the **FusedMesh** prefab to your project's **Assets** folder. Once you have done so, set the **MeshPrefab** to **FusedMesh**.
+
+   4. [Optional] To configure advanced settings for meshing, add a **NsdkMeshingExtension** Component to the **Meshing** `GameObject`.
+
+   5. Change the Shader for the **FusedMesh** Material to `Nsdk/FusedDepthChunkURP`.
+
+      (image: The Meshing object with AR Mesh Manager)
+
+3. Enable Occlusion Stabilization:
+   1. In the **Inspector**, open the **Nsdk Occlusion Extension** options menu, then check the box labeled **Enable Occlusion Stabilization**. This will make new options appear.
+   2. Drag the **Meshing** `GameObject` from the **Hierarchy** to the **Meshing Manager** field in the **Inspector**.
+
+      (image: Nsdk Occlusion Extension)
+
+### Platform: kotlin
+
+On Android, Niantic Spatial depth can be used to occlude virtual content in several ways,
+depending on how much control you need over rendering and synchronization.
+
+This guide explains one specific technique: **occlusion using a full-screen depth material**
+rendered with Filament.
+
+## Prerequisites
+
+- A Kotlin or Compose app configured with the Niantic Spatial SDK (NSDK) for Android.
+- Access to `NSDKSession` so you can acquire a `DepthSession`.
+- A rendering layer (Filament, OpenGL, etc.) where you can draw depth information for occlusion.
+
+## Overview
+
+In this sample, real-world occlusion is achieved by:
+
+1. Creating the depth material and applying it to the **ARCameraStream**
+2. Registering for frame updates from the **NSDKSessionManager's ARSessionManager**
+3. Polling for depth updates each frame and updating the depth texture accordingly
+4. Drawing virtual content afterward so it is automatically occluded
+
+## Setting up the Depth Buffer
+
+Occlusion in Kotlin starts with creating a depth buffer from the NSDK `DepthSession`. To do this first obtain the instance of the `DepthSession` from the `NSDKSessionManager` and configure it for use:
+
+```kotlin
+private val engine: Engine
+private val session: depthSession = nsdkSessionManager.session.depthSession.acquire()
+private val cameraStream: ARCameraStream?
+private val materialLoader: MaterialLoader
+
+private var viewportSize : Size
+private var _depthTexture: Texture? = null
+private var _nsdkMaterial: Material? = null
+
+depthSession.configure(
+    DepthConfig(
+        framerate = 30,
+        featureMode = AwarenessFeatureMode.UNSPECIFIED
+    )
+)
+```
+
+Once configured, you can start polling for depth data and obtain the latest depth buffer values which can then be stored for later processing:
+
+```kotlin
+fun startDepth() {
+    if (isRunning) return
+    val status = depthSession.start()
+    isRunning = true
+    log("Started depth session (native status=$status)")
+
+    pollJob = coroutineScope.launch {
+        var hasReceivedFirstFrame = false
+        while (isRunning) {
+            when (val latestDepth = depthSession.latestDepth()) {
+                is NSDKResult.Success -> {
+                    hasReceivedFirstFrame = true
+                    if (latestDepth.value.timestampMs > lastFrameTime) {
+                        lastFrameTime = latestDepth.value.timestampMs
+                        currentDepthBuffer = latestDepth.value
+                    }
+                }
+                is NSDKResult.Error -> {
+                    if (!hasReceivedFirstFrame || latestDepth.code == AwarenessStatus.NOT_READY) {
+                        log("No depth frame received: ${latestDepth.code}")
+                        log( "depth Status:  ${status}")
+                        delay(500)
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+## Creating the CameraStream and Listening for Depth Buffer Updates
+
+To use the depth data received from the `DepthSession`, set up an `ARCameraStream` that will contain the material the depth texture will write to. Create a depth material using the NSDK depth material (found within the [NSDK Sample Project](https://www.nianticspatial.com/docs/nsdk/sample_projects/): "materials/camera_stream_depth_nsdk.filamat"), and begin listening for frame updates:
+
+```kotlin
+init {
+    nsdkSessionManager.arManager.addFrameUpdateListener(this)
+    cameraStream?.let { stream ->
+        _originalMaterialInstances = stream.materialInstances
+        val buffer = context.assets.open(_DEPTH_MATERIAL).use {
+            ByteBuffer.wrap(it.readBytes())
+        }
+        _nsdkMaterial = materialLoader.createMaterial(buffer).apply {
+            defaultInstance.apply {
+                setParameter(kUVTransformParameter, Transform())
+                setExternalTexture(kCameraTextureParameter, stream.cameraTexture)
+            }
+        }
+        stream.setMaterialInstances(_nsdkMaterial!!.defaultInstance)
+        materialInstance = _nsdkMaterial!!.defaultInstance
+    }
+}
+```
+
+## Updating the Depth Texture
+
+Each frame, the depth texture received from the `Depth Session` will need to be transformed to align with the current camera orientation. The frame update listener checks if the `depthBuffer` has changed since the last timestamp, and if so process the depth texture so it can be updated within the `CameraStream`:
+
+```kotlin
+fun onFrameUpdate(frame: Frame) {
+    val mi = materialInstance ?: return
+    val depthBuffer = currentDepthBuffer ?: return
+    val currentViewportSize = viewportSize ?: return
+
+    if (depthBuffer.timestampMs != _lastDepthTimestamp) {
+        _updateDepthTexture(depthBuffer, mi)
+        _lastDepthTimestamp = depthBuffer.timestampMs
+    }
+    _updateUvTransform(depthBuffer, frame, currentViewportSize, mi)
+}
+```
+
+To update the depth texture, you first need to get the latest pixel data from the buffer, and update the material:
+
+```kotlin
+/**
+ * Allocates or reuses a Filament R32F texture and uploads the latest depth
+ * image from [depthBuffer]. Recreates the texture if dimensions have changed.
+ */
+private fun _updateDepthTexture(depthBuffer: DepthBuffer, mi: MaterialInstance) {
+    try {
+        val width = depthBuffer.imageWidth
+        val height = depthBuffer.imageHeight
+        if (_depthTexture == null ||
+            _depthTexture?.getWidth(0) != width ||
+            _depthTexture?.getHeight(0) != height) {
+            _depthTexture?.let { engine.safeDestroyTexture(it) }
+            _depthTexture = Texture.Builder()
+                .width(width).height(height)
+                .sampler(Texture.Sampler.SAMPLER_2D)
+                .format(Texture.InternalFormat.R32F)
+                .levels(1)
+                .build(engine)
+            mi.setParameter("depthTexture", _depthTexture!!, _depthTextureSampler)
+        }
+        val byteBuffer = ByteBuffer.allocateDirect(depthBuffer.image.size * Float.SIZE_BYTES)
+            .order(ByteOrder.nativeOrder())
+        byteBuffer.asFloatBuffer().put(depthBuffer.image)
+        byteBuffer.rewind()
+        _depthTexture?.setImage(engine, 0,
+            Texture.PixelBufferDescriptor(byteBuffer, Texture.Format.R, Texture.Type.FLOAT))
+    } catch (e: Exception) {
+        Log.e(_TAG, "Failed to update depth texture: ${e.message}", e)
+    }
+}
+```
+
+Additionally, the data needs to be transformed to match the current display:
+
+```kotlin
+/**
+ * Computes the combined display + reprojection UV transform and writes it
+ * to the [MaterialInstance] as a mat3 parameter.
+ *
+ * Two corrections are applied each frame:
+ * - Display orientation: the NSDK depth image is in sensor orientation and must
+ *   be rotated/flipped to match the current display orientation and viewport aspect ratio.
+ * - Temporal reprojection: NSDK depth runs asynchronously and lags behind the
+ *   AR frame. The depth was captured from a slightly different camera pose, so
+ *   each screen pixel must be remapped to where it fell in the depth image at
+ *   capture time. Without this, fast motion causes depth to drift against the scene.
+ */
+private fun _updateUvTransform(depthBuffer: DepthBuffer, arFrame: Frame, viewportSize: Size, mi: MaterialInstance) {
+    try {
+        val imageSize = depthBuffer.intrinsics.getImageDimensions()
+        val display = ImageMath.displayTransform(
+            orientation = nsdkSessionManager.arManager.lastImageOrientation,
+            viewportSize = viewportSize,
+            imageSize = Size(imageSize[0], imageSize[1])
+        ) * ImageMath.affineInvertVertical()
+        val reprojection = _calculateReprojection(depthBuffer, arFrame)
+        val uvTransform = Matrix()
+        (display * reprojection).invert(uvTransform)
+        uvTransform.getValues(_uvTransformMatrix)
+        mi.setParameter("depthUvTransform", MaterialInstance.FloatElement.MAT3, _uvTransformMatrix, 0, 1)
+    } catch (e: Exception) {
+        Log.e(_TAG, "Failed to update UV transform: ${e.message}", e)
+    }
+}
+
+/**
+ * Computes the perspective reprojection matrix from the depth capture pose
+ * to the current camera pose, accounting for the depth intrinsics.
+ *
+ * Because NSDK depth is captured asynchronously, [depthBuffer.pose] and the
+ * current [arFrame] camera pose will differ whenever the device has moved since
+ * the last depth capture. This matrix re-aligns depth samples to the current
+ * viewpoint so occlusion edges remain correctly placed under motion.
+ */
+private fun _calculateReprojection(depthBuffer: DepthBuffer, arFrame: Frame): Matrix {
+    val reference = depthBuffer.pose.inverse()
+    val target = arFrame.camera.pose.inverse()
+    reference.toMatrix(_referenceView, 0)
+    target.toMatrix(_targetView, 0)
+    val imageSize = depthBuffer.intrinsics.getImageDimensions()
+    val focalLengthY = depthBuffer.intrinsics.getFocalLength()[1]
+    return ImageMath.reprojection(
+        aspect = imageSize[0].toFloat() / imageSize[1].toFloat(),
+        fovRadians = 2f * atan(imageSize[1].toFloat() / (2f * focalLengthY)),
+        zNear = 0.2f,
+        zFar = 100f,
+        referenceView = _referenceView,
+        targetView = _targetView
+    )
+}
+```
+
+The end result of this process will be a depth buffer aligned with the current camera orientation. Any virtual 3d geometry drawn afterwards will be automatically occluded based on the depth buffer information.
+
+For full implementation details, see the Kotlin Occlusion Sample in the [NSDK Sample Project](https://www.nianticspatial.com/docs/nsdk/sample_projects/).
+
+For more information, see the [Occlusion Feature page](https://www.nianticspatial.com/docs/nsdk/features/occlusion/)
+
+## More Information
+
+For more information, see the [Occlusion Feature page](https://www.nianticspatial.com/docs/nsdk/features/occlusion/) and [Adding Occlusion to Your Project](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_occlusion/).

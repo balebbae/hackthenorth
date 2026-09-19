@@ -1,0 +1,26 @@
+# acquireScanningSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireScanningSession/
+
+acquireScanningSession
+
+---
+
+## Declaration
+
+@MainActor func acquireScanningSession() -> NSDKScanningSession
+
+#### Summary
+
+Returns the shared Scanning session, creating it on first call.
+Subsequent calls return the same instance. The session is inactive until start() is
+called. NSDKSession.update() will call update() on it automatically each frame once
+it is started.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

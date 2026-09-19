@@ -1,0 +1,45 @@
+# LocalizationTarget
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-LocalizationTarget/
+
+LocalizationTarget
+
+---
+
+## Declaration
+
+struct LocalizationTarget
+
+## Summary
+
+Represents a real-world point of interest that is a VPS localization target.
+VPS localization is more likely to succeed when a localization target is in camera view.
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_VPSCoverage_LocalizationTarget)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let center | CLLocationCoordinate2D | Geolocation coordinates of this target |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let defaultAnchorPayload | String | VPS anchor payload that can be used to localize when near this target. |
+| let hintImageUrl | String? | URL where an image of the target is stored, if available.This image can be a visual aid for users to help them know what to put in tocamera view in order to localize. |
+| let identifier | String | Unique identifier of this target |
+| let name | String | Name of this target |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.SendableMetatype

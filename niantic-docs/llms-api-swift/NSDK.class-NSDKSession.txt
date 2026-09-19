@@ -1,0 +1,158 @@
+# NSDKSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSession/
+
+NSDKSession
+
+---
+
+## Declaration
+
+final class NSDKSession
+
+## Summary
+
+The main entry point for the NSDK (Native SDK) framework.
+`NSDKSession` provides the core functionality for AR applications, managing the lifecycle
+of NSDK features and serving as a factory for specialized sessions like VPS2, scanning, and mapping.
+This class handles frame data processing, configuration management, and resource cleanup.
+
+## Overview
+
+Use `NSDKSession` to:
+
+- Initialize the NSDK with auth tokens or a configuration file
+- Send camera frame data for processing
+- Create specialized feature sessions (VPS2, Scanning, Mapping)
+- Query required input data formats
+- Manage the lifecycle of NSDK resources
+
+## Example Usage
+
+```swift
+// Initialize with tokens
+let session = NSDKSession(accessToken: "access-token", refreshToken: "refresh-token")
+// Create a VPS2 session for localization
+let vps2Session = session.createVps2Session()
+// Send frame data during AR session
+let status = session.sendFrame(frameData)
+```
+
+---
+
+## Constructors
+
+### Constructor
+
+@MainActor convenience init?(withConfig config: Configuration)
+
+#### Summary
+
+Creates a new NSDK session with a Configuration object.
+Use this initializer for fine-grained control over NSDK configuration
+
+#### Returns
+
+A new NSDK session, or nil if configuration is invalid
+
+#### Example
+
+```swift
+let config = Configuration()
+// Configure settings...
+if let session = NSDKSession(withConfig: config) {
+    // Session created successfully
+}
+```
+
+---
+
+### Overload 1
+
+@MainActor convenience init?(withJson configFilePath: String, logCallback: NSDKLogCallback? = nil)
+
+#### Summary
+
+Creates a new NSDK session from a JSON configuration file.
+Use this initializer for fine-grained control over NSDK configuration
+or when loading settings from a configuration file.
+
+#### Returns
+
+A new NSDK session, or nil if configuration loading fails
+
+#### Example
+
+```swift
+if let session = NSDKSession(withJson: "/path/to/config.json") {
+    // Session created successfully
+} else {
+    // Failed to load configuration
+}
+```
+
+---
+
+### Overload 2
+
+@MainActor convenience init(accessToken: String, useLidar: Bool = true, pathConfig: NSDKPathConfig? = nil, logCallback: NSDKLogCallback? = nil)
+
+#### Summary
+
+Convenience initializer that accepts an access token.
+The token is sanitized and passed to native AuthManagerApi immediately via creation call.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var currentFrame | NSDKFrameData | - |
+| weak var dataSource | ( NSDKSessionDataSource)? | The component supplying the session with sensory data. |
+| var isAuthorized | Bool | Returns true if a valid, non-expired access token is available.Use this to check if features requiring authentication can be used.If a feature returns an auth error, poll this property until it returns truebefore retrying. |
+| let nativeHandle | NSDKHandle | The native handle to the underlying NSDK C API instance.This handle is used internally to communicate with the native NSDK libraryand should not be modified directly by application code. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @MainActor acquireDepthSession | NSDKDepthSession | Returns the shared depth session, creating it on first call.Subsequent calls return the same instance. The session is inactive until `start()` iscalled. `NSDKSession.update()` will call `update()` on it automatically each frame onceit is started. |
+| @MainActor acquireDeviceMappingSession | NSDKDeviceMappingSession | Returns the shared device mapping session, creating it on first call.Subsequent calls return the same instance. The session is inactive until `start()` iscalled. `NSDKSession.update()` will call `update()` on it automatically each frame onceit is started.The session holds a reference to the shared `NSDKMapStorage`, which is alsocreated on first call and reused on subsequent calls. |
+| @MainActor acquireMapStorage | NSDKMapStorage | - |
+| @MainActor acquireMeshDownloader | NSDKMeshDownloader | Creates a new Mesh Downloader instance. |
+| @MainActor acquireMeshingSession | NSDKMeshingSession | Returns the shared meshing session, creating it on first call.Subsequent calls return the same instance. The session is inactive until `start()` iscalled. `NSDKSession.update()` will call `update()` on it automatically each frame onceit is started. |
+| @MainActor acquireRecordingExporter | NSDKRecordingExporter | Creates a new Recording Exporter session.Recording Export enables the conversion and export of saved scan recordingsto various formats for external processing or sharing. This session managesthe export workflow from scan selection through format conversion and output. |
+| @MainActor acquireScanningSession | NSDKScanningSession | Returns the shared Scanning session, creating it on first call.Subsequent calls return the same instance. The session is inactive until `start()` iscalled. `NSDKSession.update()` will call `update()` on it automatically each frame onceit is started. |
+| @MainActor acquireSceneSegmentationSession | NSDKSceneSegmentationSession | Returns the shared scene segmentation session, creating it on first call.Subsequent calls return the same instance. The session is inactive until `start()` iscalled. `NSDKSession.update()` will call `update()` on it automatically each frame onceit is started. |
+| @MainActor acquireSitesSession | NSDKSitesSession | - |
+| @MainActor acquireVps2Session | NSDKVps2Session | Returns the shared VPS2 session, creating it on first call.Subsequent calls return the same instance. The session is inactive until `start()` iscalled. `NSDKSession.update()` will call `update()` on it automatically each frame onceit is started. |
+| @MainActor destroy | void | Destroys a specific session, stopping it and releasing its native resources.After this call the session is removed from `disposables` and must not be used again. |
+| @MainActor destroyAll | void | Destroys all sessions at once, releasing all native resources.Use this on reset or when the `NSDKSession` is no longer needed. |
+| getAccessAuthInfo | AuthInfo? | Gets access token authentication information.Returns authentication information containing information about the current access token. |
+| getRefreshAuthInfo | AuthInfo? | Gets refresh token authentication information.Returns authentication information containing information about the current refresh token. |
+| static logout | void | Clears cached auth tokens from persistent storage without requiring an NSDK session.This is the preferred logout path. It can be called before NSDK is initialized or afterit has been destroyed. Any running session will pick up the cleared tokens on its nextreconciliation cycle. |
+| @MainActor setAccessToken | void | Sets the access token on native (routed through AuthManagerApi via C-ABI).Empty or whitespace-only tokens are ignored by native. |
+| setAgeLevel | void | Sets the age level for the NSDK session.This method sets the age classification for the user |
+| setCallbackLogLevel | void | Sets the log level for callback logging. |
+| setFileLogLevel | void | Sets the log level for file logging. |
+| setStdoutLogLevel | void | Sets the log level for standard output logging. |
+| update | void | Collects the latest requested sensor inputs from the assigned`NsdkSessionDataSource` and submits a single frame for processing. |
+| static version | String | Retrieves the NSDK version string. |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CloudEnvConfig | CloudEnvConfig | - |
+| Configuration | Configuration | Configuration settings for initializing an NSDK session.This struct encapsulates various configuration optionsincluding device info, cloud environment settings, user credentials,and logging preferences. |
+| DeviceInfo | DeviceInfo | - |
+| UserConfig | UserConfig | - |
+
+---

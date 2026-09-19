@@ -1,0 +1,34 @@
+# NSDKMapStorage
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKMapStorage/
+
+NSDKMapStorage
+
+---
+
+## Declaration
+
+final class NSDKMapStorage
+
+## Summary
+
+A storage system for managing device-generated maps.
+The map storage feature provides capabilities for capturing, storing, and managing
+map data from AR sessions. This data can be persisted and used for Visual Positioning
+System (VPS) localization and map updates.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| addMap | void | Adds previously serialized map data to the map storage. |
+| clear | void | Clears the map storage.This method removes all stored map data and localization data |
+| createRootAnchor | String? | Creates an anchor on the existing map located at the origin of the current AR session, if possible.The root anchor represents the origin point of the map coordinate system and can beused with VPS for localization. |
+| extractMapMetadata | MapMetadata? | Extracts metadata from a map relative to a specified anchor.Render the feature points in the metadata relative to the specified anchor to visualize the map.This is only possible when the anchor is linked directly to the map's node(s), or ifthe anchor's nodes are reachable to the map's nodes from the currently activetransform graph. |
+| mapData | NSDKBuffer? | Gets the complete map data.This function returns all the map data accumulated during the AR session, serialized as aDeviceMap protobuf. This data can be saved, shared, and/or used for localization. |
+| mapUpdate | NSDKBuffer? | Gets the latest map update data.This method returns the incremental map changes (new nodes and edges) that have been addedsince the last update. |
+| mergeMapUpdate | NSDKBuffer | Merges a map update into an existing map.This method combines incremental map updates with a base map to producea merged map buffer containing the complete map data. |
+
+---

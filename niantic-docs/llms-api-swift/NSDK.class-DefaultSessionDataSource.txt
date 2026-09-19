@@ -1,0 +1,73 @@
+# DefaultSessionDataSource
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-DefaultSessionDataSource/
+
+DefaultSessionDataSource
+> inherits from ObjectiveC.NSObject
+
+---
+
+## Declaration
+
+final class DefaultSessionDataSource
+
+## Summary
+
+Default iOS implementation of `NSDKSessionDataSource` backed by
+`ARSession` and `CLLocationManager`.
+
+---
+
+## Constructors
+
+init(session: ARSession, orientationReporter: UIOrientationReporter)
+
+#### Summary
+
+Creates a data source that reads camera frames from the provided AR session.
+The AR session is not owned by this object and must be configured and run
+by the caller.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var isReady | Bool | Indicates whether the data source is currently able to providemeaningful sensor data. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| latestCameraSample | (image: CVPixelBuffer, intrinsics: NSDKCameraIntrinsics, pose: NSDKCameraExtrinsics, orientation: NSDKScreenOrientation, timestamp: UInt64)? | Returns the most recent camera sample, if available. |
+| latestCompassSample | NSDKFrameData.CompassData? | Returns the most recent compass (heading) sample, if available. |
+| latestDepthMapSample | (image: CVPixelBuffer, confidence: CVPixelBuffer?, intrinsics: NSDKCameraIntrinsics, pose: NSDKCameraExtrinsics, orientation: NSDKScreenOrientation, timestamp: UInt64)? | Returns the most recent platform depth sample, if available. |
+| latestGpsSample | NSDKFrameData.GpsData? | Returns the most recent GPS sample, if available. |
+| latestTrackingStateSample | NsdkTrackingState | Returns the most recent VIO tracking state report |
+| locationManager | void | - |
+| locationManagerDidChangeAuthorization | void | - |
+
+---
+
+## Relationships
+
+conforms to:  ObjectiveC.NSObjectProtocol
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.CVarArg 
+
+conforms to:  Swift.CustomStringConvertible 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  NSDKSessionDataSource 
+
+conforms to:  CoreLocation.CLLocationManagerDelegate
+
+conforms to:  Swift.Copyable

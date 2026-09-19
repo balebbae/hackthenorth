@@ -1,0 +1,19 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.method-start/
+
+start
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts the meshing feature.
+The feature will begin processing AR frame data and building a mesh according to the
+currently applied configuration.
+
+---

@@ -1,0 +1,19 @@
+# updateBackgroundImage
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackBackgroundRenderer.method-updateBackgroundImage/
+
+updateBackgroundImage
+
+---
+
+## Declaration
+
+@MainActor func updateBackgroundImage(image: CGImage?)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| image | CGImage? | - |
+
+---

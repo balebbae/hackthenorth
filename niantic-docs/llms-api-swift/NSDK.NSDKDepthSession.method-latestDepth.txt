@@ -1,0 +1,23 @@
+# latestDepth
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.method-latestDepth/
+
+latestDepth
+Retrieves the latest depth result from the depth session.
+
+---
+
+## Declaration
+
+func latestDepth() -> NSDKAsyncState<DepthResult, AwarenessError>
+
+#### Summary
+
+Retrieves the latest depth result from the depth session.
+
+#### Returns
+
+An NSDKAsyncState containing either the latest DepthResult,
+ or an AwarenessError.
+
+---

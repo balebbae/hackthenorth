@@ -1,0 +1,35 @@
+# requestSelfUserInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSitesSession.method-requestSelfUserInfo/
+
+requestSelfUserInfo
+
+---
+
+## Declaration
+
+func requestSelfUserInfo(pollingInterval: TimeInterval = 0.5, timeout: TimeInterval = 60.0) async throws -> UserResult
+
+#### Summary
+
+Requests self user info and waits for the result.
+Uses the user ID from the authenticated session's metadata.
+To fetch organizations, consider using
+requestSelfOrganizationInfo(pollingInterval:timeout:) instead.
+
+#### Returns
+
+A UserResult containing the user info.
+
+#### Throws
+
+  - CancellationError if the Task running this function was cancelled.   - TimeoutError if the function timed out before it could complete execution.   - SitesResult.Error if there was an error specific to the network query.   - NSDKError.invalidOperation if no access token was available.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| pollingInterval | TimeInterval | The interval between status checks (default: 0.5 seconds). |
+| timeout | TimeInterval | Maximum time to wait for completion (default: 60 seconds). |
+
+---

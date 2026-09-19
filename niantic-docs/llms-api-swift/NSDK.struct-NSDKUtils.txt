@@ -1,0 +1,33 @@
+# NSDKUtils
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKUtils/
+
+NSDKUtils
+
+---
+
+## Declaration
+
+struct NSDKUtils
+
+## Summary
+
+Utility functions for NSDK string management and memory handling.
+`NSDKUtils` provides helper methods for safely managing C string conversions
+and memory allocation when working with the NSDK C API.
+
+## Overview
+
+The utilities in this struct help manage the complexity of converting between
+Swift strings and C strings while ensuring proper memory cleanup and avoiding
+memory leaks.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static withNSDKStrings<Result>(_ body | Result | Safely manages multiple C string conversions with automatic memory cleanup.This function provides a convenient way to work with multiple C strings in a single scopewhile ensuring proper memory management. It automatically allocates memory for C stringsand cleans up all allocated memory when the scope exits.Use this function when you need to have multiple C strings in a single scope andthe number of nested scopes gets too messy. Otherwise, prefer Swift's built-in`String.withCString` for simpler cases. |
+
+---

@@ -1,0 +1,108 @@
+---
+source: https://www.nianticspatial.com/docs/scaniverse/advanced_tools/
+title: Advanced Scan Review Tools
+---
+
+<div class="mobile-docs-controls">
+
+<div class="mobile-docs-controls__main">
+
+</div>
+
+</div>
+
+<div class="docContentTransition">
+
+<div class="theme-doc-markdown markdown">
+
+<div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info">
+
+<div class="admonitionHeading_Gvgb">
+
+<span class="admonitionIcon_Rf37">![](data:image/svg+xml;base64,PHN2ZyB2aWV3Ym94PSIwIDAgMTQgMTYiPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTcgMi4zYzMuMTQgMCA1LjcgMi41NiA1LjcgNS43cy0yLjU2IDUuNy01LjcgNS43QTUuNzEgNS43MSAwIDAgMSAxLjMgOGMwLTMuMTQgMi41Ni01LjcgNS43LTUuN3pNNyAxQzMuMTQgMSAwIDQuMTQgMCA4czMuMTQgNyA3IDcgNy0zLjE0IDctNy0zLjE0LTctNy03em0xIDNINnY1aDJWNHptMCA2SDZ2Mmgydi0yeiIgLz48L3N2Zz4=)</span><a href="https://lightship.dev/signin" target="_blank" rel="noopener noreferrer">Lightship.dev</a> has been decommissioned.
+
+</div>
+
+<div class="admonitionContent_BuS1">
+
+If you previously used Lightship.dev, log in to <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">scaniverse.nianticspatial.com</a>, and select **Migrate a Lightship account** to create a new account and access your projects. For more information, see the [Migration guide](https://www.nianticspatial.com/docs/scaniverse/migration_guide/).
+
+</div>
+
+</div>
+
+<div>
+
+# Advanced tools to review coverage and identify gaps
+
+</div>
+
+Use the <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">Scaniverse Web</a> to inspect your scans and identify coverage gaps. Check meshes and splats, validate localization, export supported asset files, and focus improvements where needed. Playback sessions record device movement and camera input so you can evaluate localization behavior and validate performance before deploying or updating a Production Asset Version. These tools let you adjust, refine, and manage your scans for more reliable and reusable results.
+
+### Record or review playback sessions<a href="#record-or-review-playback-sessions" class="hash-link" aria-label="Direct link to Record or review playback sessions" title="Direct link to Record or review playback sessions">​</a>
+
+A playback session is recorded in the Scaniverse app to simulate how a user moves through a space during localization. Unlike a scan, a playback session does not generate new assets. It captures device movement and camera input so you can test whether existing assets localize reliably.
+
+Playback sessions help you:
+
+- Test localization without revisiting the Site.
+- Evaluate performance in conditions such as low light, glare, or weather changes.
+- Provide reproducible test input to a developer.
+
+To record a playback session:
+
+1.  Open the Site in the Scaniverse app. If you do not yet have a Site, follow the instructions in [Create a Site](https://www.nianticspatial.com/docs/scaniverse/techniques/#create-a-site).
+2.  Select the **Scans** tab.
+3.  Tap **+ Capture**.
+4.  Tap **Playback**.
+5.  Tap the red button to start recording.
+6.  Move through the space as a user would.
+7.  Tap the red button to stop recording. A preview plays on screen.
+8.  If needed, delete the recording using the trash icon or rename it using the pen icon.
+9.  Tap **Save** to store the playback locally.
+10. Open the saved playback.
+11. Tap **Upload** to upload it to the cloud for team access.
+
+Once the status changes from **Validating** to **Passed**, members of your organization can review the playback in the <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">Scaniverse Web</a>.
+
+To download a playback session:
+
+1.  Open the <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">Scaniverse Web</a> in a web browser.
+2.  Select the Site.
+3.  Select the **Scans** tab. All playback sessions have a **Type** of **Playback**.
+4.  Select the download icon to save the playback.
+
+### Inspect assets<a href="#inspect-assets" class="hash-link" aria-label="Direct link to Inspect assets" title="Direct link to Inspect assets">​</a>
+
+You can inspect meshes and splats in the <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">Scaniverse Web</a> to evaluate scan quality and identify coverage gaps. This helps you decide whether to add targeted scans or adjust existing data. You can also use the **Georeference tool** to adjust the Asset's real-world position.
+
+Follow these steps to inspect, adjust, and export assets in the Scaniverse Web:
+
+1.  Open the <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">Scaniverse Web</a> in a desktop or laptop browser.
+2.  Select the Site you want to inspect.
+3.  Select the **Assets** tab. By default, the mesh view opens. Select the white teapot icon at the bottom to switch to a splat view.
+4.  Look for the following issues to identify gaps or misalignment:
+    - Large empty voids where surfaces should exist.
+    - Warped, tilted, or distorted surfaces that should be flat.
+    - Areas where geometry abruptly ends or appears disconnected.
+    - Visible seams or misalignment between scans.
+    - Sparse regions with little detail or limited viewpoint coverage.
+5.  Note areas that are weak or missing coverage. A sparse mesh usually indicates insufficient overlap or limited viewpoint variation. Misalignment between scans often indicates weak overlap at transitions.
+6.  You can use the **Georeference tool** to ensure the asset's location matches its real-world position.
+    1.  Select the compass icon to open the Georeference tool. A map with a bullseye opens. The bullseye marks the center point of the asset on the map.
+    2.  Drag the bullseye over the map to adjust the asset's location. Use the **+** and **-** to zoom in or out on the map for more precise placement.
+    3.  Select **Save** and **Confirm** to apply the adjustment.
+7.  Select the **Download assets** icon to save a mesh or splat to your local device for offline review or backup. Supported exports include `.ply`, `.spz`, `.glb`, `.fbx`, and `.usdz`.
+
+Use the information from your inspection to improve coverage efficiently.
+
+After reviewing, you can:
+
+- Add a short, targeted scan starting from a well-captured area to fill gaps.
+- Replace a problematic scan with a new scan.
+
+After identifying gaps during inspection, you must select the scans you want to use and regenerate the Asset Version. Re-inspect the updated mesh to verify improvements.
+
+</div>
+
+</div>

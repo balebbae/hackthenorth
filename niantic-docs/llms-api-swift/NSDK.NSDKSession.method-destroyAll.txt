@@ -1,0 +1,24 @@
+# destroyAll
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-destroyAll/
+
+destroyAll
+
+---
+
+## Declaration
+
+@MainActor func destroyAll()
+
+#### Summary
+
+Destroys all sessions at once, releasing all native resources.
+Use this on reset or when the NSDKSession is no longer needed.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

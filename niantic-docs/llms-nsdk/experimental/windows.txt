@@ -1,0 +1,28 @@
+# Windows Development
+
+Source: https://www.nianticspatial.com/docs/nsdk/experimental/windows/
+
+### Platform: unity
+
+# Windows Development
+
+Windows development is available in NSDK 4 as an experimental feature.
+
+> **Tip:**
+>
+> **Important!**
+>
+> Features in Windows may display unexpected behavior or not function entirely. If you find an issue that is not listed on this page, please join us in the [Niantic Spatial Developer Community](https://community.nianticspatial.com/) to provide feedback.
+
+## Known Issues
+
+- Playback works in Windows, but Recording does not. To use Playback in Windows, you will need to record on another platform.
+- Building projects for iOS with NSDK is not supported on Windows.
+
+### Platform: kotlin
+
+Windows is not a currently supported platform for Kotlin development. If you are looking for this functionality, please join us in the [Niantic Spatial Developer Community](https://community.nianticspatial.com/) to provide feedback.
+
+### Platform: swift
+
+Windows is not a supported environment for iOS application development.

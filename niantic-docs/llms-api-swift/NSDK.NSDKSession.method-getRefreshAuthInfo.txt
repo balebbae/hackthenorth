@@ -1,0 +1,22 @@
+# getRefreshAuthInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-getRefreshAuthInfo/
+
+getRefreshAuthInfo
+
+---
+
+## Declaration
+
+func getRefreshAuthInfo() -> AuthInfo?
+
+#### Summary
+
+Gets refresh token authentication information.
+Returns authentication information containing information about the current refresh token.
+
+#### Returns
+
+AuthInfo containing refresh token claims, or nil if the operation fails
+
+---

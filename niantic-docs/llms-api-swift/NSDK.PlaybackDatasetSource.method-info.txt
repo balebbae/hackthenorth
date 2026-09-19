@@ -1,0 +1,22 @@
+# info
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDatasetSource.method-info/
+
+info
+Returns details about the loader configuration.
+
+---
+
+## Declaration
+
+func info() -> String
+
+#### Summary
+
+Returns details about the loader configuration.
+
+#### Returns
+
+A string describing the loader configuration
+
+---

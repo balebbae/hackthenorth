@@ -1,0 +1,53 @@
+# VpsGraphOperationError
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-VpsGraphOperationError/
+
+VpsGraphOperationError
+
+---
+
+## Declaration
+
+enum VpsGraphOperationError
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case noGeoreferenceData | noGeoreferenceData | - |
+| case notInitialized | notInitialized | - |
+| case notLocalized | notLocalized | - |
+| case noTransformToTrackingNode | noTransformToTrackingNode | - |
+| case targetNodeNotFound | targetNodeNotFound | - |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var localizedDescription | String | Retrieve the localized description for this error. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.Error 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

@@ -1,0 +1,26 @@
+# PlaybackSessionDelegate
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-PlaybackSessionDelegate/
+
+PlaybackSessionDelegate
+Delegate protocol for receiving frame updates during playback (mirrors ARSessionDelegate-style callbacks).
+
+---
+
+## Declaration
+
+protocol PlaybackSessionDelegate : AnyObject
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| playbackSession | void | Called on the main queue each time a new playback frame is ready. Use the frame's metadata, image, and optional depth for rendering or processing. |
+
+---
+
+## Relationships
+
+conformance:  NSDKViewDelegate

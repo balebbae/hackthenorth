@@ -1,0 +1,20 @@
+# logout
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-logout/
+
+logout
+
+---
+
+## Declaration
+
+static func logout()
+
+#### Summary
+
+Clears cached auth tokens from persistent storage without requiring an NSDK session.
+This is the preferred logout path. It can be called before NSDK is initialized or after
+it has been destroyed. Any running session will pick up the cleared tokens on its next
+reconciliation cycle.
+
+---

@@ -30,3 +30,6 @@ xcuserdata/
 # Generated or exported map assets
 /maps/assets/*
 !/maps/assets/.gitkeep
+
+# Local agent instructions
+CLAUDE.md

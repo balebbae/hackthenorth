@@ -1,0 +1,18 @@
+# featureStatus
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.method-featureStatus/
+
+featureStatus
+The current feature status of the depth session.
+
+---
+
+## Declaration
+
+func featureStatus() -> NSDKFeatureStatus
+
+#### Summary
+
+The current feature status of the depth session.
+
+---

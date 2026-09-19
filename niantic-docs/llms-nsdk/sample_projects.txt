@@ -1,0 +1,265 @@
+# Sample Projects
+
+Source: https://www.nianticspatial.com/docs/nsdk/sample_projects/
+
+### Platform: unity
+
+# Sample Projects
+
+|   | These samples are designed to demonstrate the uses of each feature in our SDK. The sample project launches multiple small samples that you can try out and look though the code to learn how to get started with any feature. Step by step how-to guides are available to teach you how to to leverage each feature. |
+| --- | --- |
+
+## Installing the Samples
+
+#### Android
+
+The samples are available on our GitHub: https://github.com/nianticspatial/nsdk-samples-csharp -- after cloning, open the **`NsdkSamples`** folder in Unity Hub (Unity project root).
+
+**How to clone/download the samples:**
+
+`git clone https://github.com/nianticspatial/nsdk-samples-csharp.git`
+
+or
+
+Download the repo from https://github.com/nianticspatial/nsdk-samples-csharp using the **code/download** button on **github**.
+
+Open the samples project in Unity by pressing **Add** in **Unity Hub** and browsing to the **`NsdkSamples`** folder inside the clone.
+
+#### iOS
+
+The samples are available on our GitHub: https://github.com/nianticspatial/nsdk-samples-csharp -- after cloning, open the **`NsdkSamples`** folder in Unity Hub (Unity project root).
+
+**How to clone/download the samples:**
+
+`git clone https://github.com/nianticspatial/nsdk-samples-csharp.git`
+
+or
+
+Download the repo from https://github.com/nianticspatial/nsdk-samples-csharp using the **code/download** button on **github**.
+
+Open the samples project in Unity by pressing **Add** in **Unity Hub** and browsing to the **`NsdkSamples`** folder inside the clone.
+
+#### Meta Quest 3
+
+The **Niantic Spatial Meta Plugin** includes sample scenes designed for use with Meta Quest 3 in AR. While the UI will appear different, the functionality of these sample scenes are very similar to the sample scenes for iOS/Android mobile devices described below.
+
+> **Info:**
+>
+> **Authentication**
+>
+> Meta Quest samples require a Niantic Spatial access token. For most development and internal testing, use a Developer Token. For more information, see the [Authorization guide](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+1. Follow the steps in [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity).
+2. In Unity, open the **Window** top menu, then select **Package Manager**.
+3. With **Packages: Unity Registry** selected, browse to and install the **XR Interaction Toolkit** (com.unity.xr.interaction.toolkit).
+4. With **Packages: In Project** selected, select the **Niantic Spatial Meta Plugin**, and from there select the **Samples** tab.
+5. Click **Import** to import the samples into your current project.
+6. Find the sample scenes under `Assets/Samples/Niantic Spatial SDK Meta Plugin/`.
+7. In the **File** top menu, select **Build Settings**.
+8. Drag the sample scenes that you wish to test into **Scenes in Build**. Ensure that the **Home** scene is at the top of the list.
+
+   (image: Selecting scenes in the Build Settings menu)
+9. In Unity, open the **File** top menu, then select **Build Settings** and click **Build and Run** when the Meta Quest 3 device is connected and awake to test out the samples.
+
+## Samples
+
+### Depth Display
+
+|   | The depth scene demonstrates how to get the depth buffer and display it as an overlay in the scene. Open **DepthDisplay.unity** in the **Depth** folder to try it out. |
+| --- | --- |
+
+### Occlusion
+
+|   | This sample demonstrates occlusion by moving a static cube in front of the camera. Because the cube does not move, you can walk around and inspect the occlusion quality directly. To open it, see **Occlusion.unity** in the **Depth** folder. This sample also demonstrates two advanced occlusion options available in NSDK, **Occlusion Suppression** and **Occlusion Stabilization**. These options reduce flicker and improve the visual quality of occlusions using input from either scene segmentation or meshing. For more information on how these capabilities work, see the How-To sections for [Occlusion Suppression](./how-to/ar/setup_real_world_occlusion.md#setting-up-occlusion-suppression) and [Occlusion Stabilization](./how-to/ar/setup_real_world_occlusion.md#setting-up-occlusion-stabilization). |
+| --- | --- |
+
+### Scene Segmentation
+
+|   | This sample demonstrates scene segmentation by applying a shader that colors anything recognized on-screen as part of a semantic channel. To open this sample, see **SemanticsDisplay.unity** in the **Semantics** folder.To use this sample:Select a semantic channel from the drop down list.Look for the corresponding object(s) on your phone camera. |
+| --- | --- |
+
+### Meshing
+
+|   | This sample demonstrates how to use meshing to generate a physics mesh in your scene. It shows the mesh using a Normal shader, the colors represent Up, Right and Forward.To open this sample, see **NormalMeshes.unity** in the **Meshing** folder. |
+| --- | --- |
+
+### Triplanar Mesh
+
+|   | This sample demonstrates how to texture an NSDK mesh. It works like the Meshing sample but uses an example triplanar shader that demonstrates one way to do world space UV projection. The sample tiles three textures in the scene; one for the ground, the walls, and the ceiling.To open this sample, see **TriplanarMesh.unity** in the **Meshing** folder. |
+| --- | --- |
+
+### VPS2 Localization
+
+|   | **Attention**This sample requires [Auth Login](./auth_getting_started.md)).This sample shows a list of sites in the selected Organization and allows you to choose a VPS Asset from the Sites API as a localization target, then interfaces with your phone's position to guide you to it. To open this sample, see **VPS2Localization.unity** in the **PersistentAR** folder.To use this sample:Build to your device and open the app. Make sure to allow location and camera permissions.Choose an Organization where the site you're looking for is.Choose the site you'll want to localize to and tap the Localize button.Physically visit the location and point the camera at the scaned location. A red arrow will appear pointing you in the general direction.Wait for the status to change to **Tracking** and a 3d mesh of the scan should appear on top of the real world location. |
+| --- | --- |
+
+### Recording
+
+|   | This sample allows you to scan a real-world location for playback in your editor. To open this sample, see **Recording.unity** in the **Scanning** folder. To learn how to use this sample, see [How to Create Datasets for Playback](./how-to/playback/create_playback_dataset.md). |
+| --- | --- |
+
+### Sites
+
+|   | The Sites feature provides access to organized entity data in the Niantic Spatial platform, enabling your application to discover and navigate the relationships between a user, organization, site, and spatial data asset. This feature allows you to query what spatial content is available to users and how it's structured within your organization. |
+| --- | --- |
+
+### Platform: swift
+
+# Swift Sample Projects
+
+|   | The NSDK Swift samples are designed to demonstrate the uses of each feature in our SDK. The sample project launches multiple small samples that you can try out and look though the code to learn how to get started with any feature. |
+| --- | --- |
+
+## Installing the Samples
+
+The samples are available on our github https://github.com/nianticspatial/nsdk-samples-swift
+
+#### How to clone/download the samples:
+
+`git clone https://github.com/nianticspatial/nsdk-samples-swift`
+
+or
+
+Download the repo from https://github.com/nianticspatial/nsdk-samples-swift using the **code/download** button on **github**.
+
+To open the samples project from within xcode:
+
+1. Open the **File** menu and select **Open...**.
+2. Browse to the the root of the repository and look for the xcode project file : `ArdkSamples.xcodeproj`.
+
+Or run the open command on your terminal:
+
+`open *REPOSITORY_ROOT_LOCATION*/ArdkSamples/ArdkSamples.xcodeproj`
+
+> **Info:**
+>
+> **Authentication**
+>
+> The sample app uses authenticated sessions to access your organization's data from Niantic's backend services. For more information, see the [Auth guide](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+## Samples
+
+### VPS2 Sites
+
+|   | **Attention**This sample requires [Auth Login](./auth_getting_started.md)).This sample shows a list of sites in the selected Organization and allows you to choose a VPS Asset from the Sites API as a localization target, then interfaces with your phone's map to guide you to it.To use this sample:Build to your device and open the app. Make sure to allow location and camera permissions.Choose an Organization where the site you're looking for is.Choose the site you'll want to localize to.Tap the Localize Anchor buttonPhysically visit the location and point the camera at the scaned location. A red arrow will appear pointing you in the general direction.Wait for the status to change to **Tracking**.A 3d mesh of the scan should appear on top of the real world location as well as a map showing your phone's position. |
+| --- | --- |
+
+### Meshing
+
+|   | This sample demonstrates how to use meshing to generate a physics mesh in your scene. It shows the mesh using a Normal shader, the colors represent Up, Right and Forward. |
+| --- | --- |
+
+### Device Mapping
+
+|   | This sample demonstrates how to create a VPS map locally. This is created and stored on the device and can be used to align and persist content. |
+| --- | --- |
+
+### Depth
+
+|   | This sample demonstrates how to get the depth buffer and display it as an overlay in the scene. |
+| --- | --- |
+
+### Scene Segmentation
+
+|   | This sample demonstrates scene segmentation by applying a shader that colors anything recognized on-screen as part of a semantic channel. To use this sample:Select a semantic channel from the drop down list.Look for the corresponding object(s) on your phone camera. |
+| --- | --- |
+
+### Capture
+
+|   | This scene allows you to capture a real-world location for playback. To use this sample:Press **Start capture** in the space you would like to create the dataset.Walk through the scene as normal.Press **Stop capture** when done.Press **Export** to obtain a file that can be used for playback. |
+| --- | --- |
+
+### VPS2
+
+|   | **Attention**This sample requires [Auth Login](./auth_getting_started.md)) and a valid VPS Anchor Payload.The VPS2 sample is a more direct way to test out localizing to a specific anchor. It will skip the site selection of the VPS2 Sites sample and immediately try to localize to the payload provided. |
+| --- | --- |
+
+### Platform: kotlin
+
+# Kotlin Sample Projects
+
+|   | The NSDK Kotlin samples are designed to demonstrate the uses of each feature in our SDK. The sample project launches multiple small samples that you can try out and look though the code to learn how to get started with any feature. |
+| --- | --- |
+
+## Installing the Samples
+
+Clone the public [`nsdk-samples-kotlin`](https://github.com/nianticspatial/nsdk-samples-kotlin) repository:
+
+```bash
+git clone https://github.com/nianticspatial/nsdk-samples-kotlin.git
+```
+
+Alternatively, select **Code > Download ZIP** on GitHub, then extract the ZIP.
+
+The Android Studio project is nested inside the downloaded repository:
+
+```text
+nsdk-samples-kotlin/
+└── NsdkSamples/          <- Open this directory in Android Studio
+    ├── settings.gradle.kts
+    ├── gradlew
+    └── NsdkSamples/      <- Application module; do not open this directory by itself
+```
+
+Open and run the samples as follows:
+
+1. Launch Android Studio and select **File > Open**.
+2. Select `<download-location>/nsdk-samples-kotlin/NsdkSamples`, the directory containing `settings.gradle.kts` and `gradlew`, then select **Open**.
+3. If prompted, select **Trust Project**.
+4. Wait for Gradle sync and indexing to finish. If sync does not start automatically, select **File > Sync Project with Gradle Files**.
+5. Connect an ARCore-compatible Android device with USB debugging enabled and select it in the target-device menu.
+6. Select the `NsdkSamples` run configuration, then select **Run**.
+7. On the device, grant the requested camera and location permissions and complete the sample app's sign-in flow.
+8. Select a feature, such as **Capture**, from the sample list.
+
+> **Info:**
+>
+> **Authentication**
+>
+> The sample app uses authenticated sessions to access your organization's data from Niantic's backend services. For more information, see the [Auth guide](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+## Samples
+
+### VPS2
+
+|   | **Attention**This sample requires [Auth Login](./auth_getting_started.md)).This sample shows a list of sites in the selected Organization and allows you to choose a VPS Asset from the Sites API as a localization target, then interfaces with your phone's map to guide you to it.To use this sample:Build to your device and open the app. Make sure to allow location and camera permissions.Choose an Organization where the site you're looking for is.Choose the site you'll want to localize to.Tap the Localize Anchor buttonPhysically visit the location and point the camera at the scaned location. A red arrow will appear pointing you in the general direction.Wait for the status to change to **Tracking**.A 3d mesh of the scan should appear on top of the real world location as well as a map showing your phone's position. |
+| --- | --- |
+
+### World Pose
+
+|   | This sample demonstrates the World Positioning System's accuracy. As you turn and move around you will see the trasking precision in the map preview screen. As you walk around, World Pose should stabilize and become more accurate over time. |
+| --- | --- |
+
+### Depth
+
+|   | This sample demonstrates how to get the depth buffer and display it as an overlay in the scene. |
+| --- | --- |
+
+### Scene Segmentation
+
+|   | This sample runs scene segmentation, streams the selected channel's confidence map, and draws a pink/blue overlay that you can fade using the transparency slider. The dropdown lists every semantic channel reported by NSDK.To use this sample:Launch the Kotlin samples app and open **Semantics** from the list.Wait for the status card to report that channels are streaming, then pick a semantic label from the dropdown.Adjust the transparency slider or tap **Hide Overlay** to compare the filtered view with the raw camera feed. |
+| --- | --- |
+
+### Capture
+
+|   | This sample allows you to capture a real-world location for playback. To use this sample:Press **Start capture** in the space you would like to create the dataset.Walk through the scene as normal.Press **Stop capture** when done.Press **Export** to obtain a file that can be used for playback. |
+| --- | --- |
+
+### Sites
+
+|   | The Sites feature provides access to organized entity data in the Niantic Spatial platform, enabling your application to discover and navigate the relationships between a user, organization, site, and spatial data asset. This feature allows you to query what spatial content is available to users and how it's structured within your organization. |
+| --- | --- |
+
+### Platform: kotlin, swift
+
+### Auth
+
+|   | This sample demonstrates different methods of authentication and authorization when working with NSDK.There are two options:A developer login that provides full access to all features.Connection to a sample Enterprise backend where the user is anonymized. |
+| --- | --- |
+
+### Platform: unity
+
+### Auth
+
+|   | This sample demonstrates different methods of authentication and authorization when working with NSDK.There is a toggle, leading to two options:A developer login that provides full access to all features.Connection to a sample Enterprise backend where the user is anonymized. |
+| --- | --- |

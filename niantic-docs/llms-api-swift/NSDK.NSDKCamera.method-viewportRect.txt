@@ -1,0 +1,26 @@
+# viewportRect
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.method-viewportRect/
+
+viewportRect
+
+---
+
+## Declaration
+
+func viewportRect(fittingIn drawableSize: CGSize, displayOrientation: UIInterfaceOrientation? = nil) -> CGRect
+
+#### Summary
+
+Returns the viewport rect to use when rendering into the given drawable size.
+- Live: returns the full drawable (origin zero, size = drawableSize).
+- Playback: returns an aspect-fill rect so the camera image aligns with the rendered content; pass displayOrientation (current device orientation) so the viewport fits correctly in portrait and landscape.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| drawableSize | CGSize | - |
+| displayOrientation | UIInterfaceOrientation? | - |
+
+---

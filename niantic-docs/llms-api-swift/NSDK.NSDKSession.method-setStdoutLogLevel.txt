@@ -1,0 +1,24 @@
+# setStdoutLogLevel
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-setStdoutLogLevel/
+
+setStdoutLogLevel
+Sets the log level for standard output logging.
+
+---
+
+## Declaration
+
+func setStdoutLogLevel(logLevel: NSDKLogLevel)
+
+#### Summary
+
+Sets the log level for standard output logging.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| logLevel | NSDKLogLevel | The desired log level for standard output |
+
+---

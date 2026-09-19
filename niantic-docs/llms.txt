@@ -1,0 +1,698 @@
+# Niantic Spatial Platform
+
+> Documentation for the Niantic Spatial SDK (NSDK) and related platform features. NSDK powers AR experiences with localization (VPS), AR effects (depth, occlusion, meshing, semantics), and developer tooling across Unity, Swift, and Kotlin. Scaniverse is the capture and publishing side of the workflow: use it to scan spaces and publish Sites, then use NSDK in your app to localize against and interact with that spatial data.
+
+## AI retrieval index
+
+Use these entry points first when the goal is task completion rather than broad retrieval:
+
+- Foundational reference: [Core concepts](https://www.nianticspatial.com/docs/nsdk/core_concepts/)
+- Additional featured references: [Localization](https://www.nianticspatial.com/docs/nsdk/features/localization/), [Visual Positioning System 2 (VPS2)](https://www.nianticspatial.com/docs/nsdk/features/vps2/), [Sites](https://www.nianticspatial.com/docs/nsdk/features/sites/), [AR Effects](https://www.nianticspatial.com/docs/nsdk/features/ar_effects/)
+- SDK setup and installation: [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/)
+- Account and authorization: [Account](https://www.nianticspatial.com/docs/nsdk/create_account/) and [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/)
+- Featured end-to-end workflow: [First localization with NSDK](https://www.nianticspatial.com/docs/nsdk/first_localization/)
+- Additional featured workflows: [Account](https://www.nianticspatial.com/docs/nsdk/create_account/), [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/), [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/), [Set up the project](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started/), [Migration guide](https://www.nianticspatial.com/docs/nsdk/migration_guide/)
+- VPS2 end-to-end app workflow: [Create a wayfinding app](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started/)
+- Scaniverse capture and publishing: [Scaniverse Quickstart](https://www.nianticspatial.com/docs/scaniverse/quickstart/)
+- NSDK guide index (per-page): [llms-nsdk.txt](https://www.nianticspatial.com/docs/llms-nsdk.txt)
+- Platform API indexes: [llms-api-unity.txt](https://www.nianticspatial.com/docs/llms-api-unity.txt), [llms-api-swift.txt](https://www.nianticspatial.com/docs/llms-api-swift.txt), [llms-api-kotlin.txt](https://www.nianticspatial.com/docs/llms-api-kotlin.txt)
+
+## Common workflows
+
+- Build and validate your first NSDK app: [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/) -> [First localization with NSDK](https://www.nianticspatial.com/docs/nsdk/first_localization/)
+- Capture in Scaniverse, publish a Site, then localize in NSDK: [Scaniverse Quickstart](https://www.nianticspatial.com/docs/scaniverse/quickstart/) -> [First localization with NSDK](https://www.nianticspatial.com/docs/nsdk/first_localization/)
+- Create a VPS2 end-to-end app (Create a wayfinding app): [Create a wayfinding app](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started/)
+- Create an account and prepare app auth: [Account](https://www.nianticspatial.com/docs/nsdk/create_account/) -> [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/) -> [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/)
+- Move from setup guides to implementation details: [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/) -> [llms-api-unity.txt](https://www.nianticspatial.com/docs/llms-api-unity.txt), [llms-api-swift.txt](https://www.nianticspatial.com/docs/llms-api-swift.txt), [llms-api-kotlin.txt](https://www.nianticspatial.com/docs/llms-api-kotlin.txt)
+
+## Quick start for LLMs
+
+New to NSDK? These three guides give you the mental model and a working starting point:
+
+- [Core concepts](https://www.nianticspatial.com/docs/nsdk/core_concepts/) -- mental model: pose, tracking, coordinate spaces, anchors
+- [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/) -- per-platform install (Unity, Swift, Kotlin)
+- [First localization with NSDK](https://www.nianticspatial.com/docs/nsdk/first_localization/) -- minimal working example
+
+For an index of all guides as individual pages, see [llms-nsdk.txt](https://www.nianticspatial.com/docs/llms-nsdk.txt).
+
+## NSDK Documentation
+
+- [Overview](https://www.nianticspatial.com/docs/nsdk/) -- Welcome to the Niantic Spatial SDK -- AR development tools for localization (VPS), depth, occlusion, meshing, and semantics across Unity, Swift, and Kotlin.
+- [Core concepts](https://www.nianticspatial.com/docs/nsdk/core_concepts/) -- This guide introduces the core concepts behind building AR applications with the Niantic Spatial Development Kit (NSDK) and explains how it operates so you can...
+- **Essentials**
+  - **Getting Started**
+    - [Account](https://www.nianticspatial.com/docs/nsdk/create_account/) -- To use Niantic's SDK (NSDK), you must have a Scaniverse account. Each account belongs to an Organization, which manages projects, collaborators, and shared...
+    - [Set up the Niantic SDK](https://www.nianticspatial.com/docs/nsdk/setup/) -- The Niantic Spatial SDK (NSDK) for Unity extends AR Foundation with Niantic Spatial features for VPS localization, depth, occlusion, meshing, semantics, and...
+    - [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/) -- There are three common reasons to use token-based authorization with NSDK:.
+      - [Sample login reference](https://www.nianticspatial.com/docs/nsdk/auth_client/) -- The NSDK sample apps include a complete login flow that exchanges a Scaniverse login for an NSDK access token through Niantic's sample backend. This page...
+      - [Generate developer tokens](https://www.nianticspatial.com/docs/nsdk/auth_developer_token/) -- Developer tokens are the simplest way to authorize the Niantic Software Development Kit (NSDK) and Niantic Spatial REST APIs. When you generate a developer...
+      - [Generate access tokens](https://www.nianticspatial.com/docs/nsdk/auth_backend/) -- This page describes the production deployment authorization flow introduced in Authorization. In this flow, your backend uses a service account API key to...
+    - [Getting Logs](https://www.nianticspatial.com/docs/nsdk/getting_logs/) -- This guide explains how to access logs for your NSDK application on Kotlin and Swift platforms.
+    - [Niantic SDK Settings](https://www.nianticspatial.com/docs/nsdk/xr_settings/) -- You will need a Unity project with NSDK enabled. For more information, see Set up the Niantic SDK for Unity.
+    - [Developing for NSDK on XR Headsets](https://www.nianticspatial.com/docs/nsdk/how-to/unity/headset_development/) -- Working with NSDK on XR headsets is, in many ways, the same as developing an AR experience for mobile devices. Due to hardware differences between XR headsets...
+    - [Project Validation](https://www.nianticspatial.com/docs/nsdk/features/project_validation/) -- Niantic Spatial SDK enables the Unity Project Validation system to identify issues with NSDK, including configuration problems in Projects and Scenes. These...
+  - [First Localization](https://www.nianticspatial.com/docs/nsdk/first_localization/) -- Localization determines a device's position and orientation in the real world. VPS2 localization provides precise alignment when the device is within a scanned...
+- [Localization](https://www.nianticspatial.com/docs/nsdk/features/localization/) -- Anchor your experiences to the real world.
+  - **Features**
+    - [VPS2](https://www.nianticspatial.com/docs/nsdk/features/vps2/) -- Niantic Spatial's Visual Positioning System 2 (VPS2) helps an app estimate where the device is in the world, and place content at a stable position inside a...
+      - [Get started with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/adding_vps2/) -- This guide assumes that you have already completed: - Set up the Niantic SDK for Unity - Authorization.
+      - [Geolocate with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/getting_vps2_geoposition/) -- This guide assumes that you have already completed:.
+      - [Place virtual content with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/) -- This guide explains how to place virtual content in an AR scene using an anchor.
+      - [Migrate from VPS to VPS2](https://www.nianticspatial.com/docs/nsdk/features/vps2_migration/) -- This guide is for developers migrating from Unity ARDK 3.x to NSDK 4.x.
+    - [Sites](https://www.nianticspatial.com/docs/nsdk/features/sites/) -- The Sites feature provides access to organized entity data in the Niantic Spatial platform, enabling your application to discover and navigate the...
+      - [Getting Started with Sites](https://www.nianticspatial.com/docs/nsdk/how-to/sites/getting_started/) -- The Sites feature provides an API for querying hierarchical data in the Niantic Spatial platform. This guide will help you get started using Sites in your...
+  - **Guides**
+    - [How to Download a Mesh Using the API](https://www.nianticspatial.com/docs/nsdk/how-to/vps/mesh_download/) -- With the Mesh Download API, you can download and create a mesh of any Site at runtime, allowing you to dynamically create mesh overlays in AR scenes. This...
+    - **Create a wayfinding app**
+      - [Set up the project](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started/) -- This guide begins a five-part series on creating a wayfinding experience with VPS2. In this tutorial, wayfinding means helping a user understand where they...
+      - [Initialize the wayfinding app](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-landing-page/) -- This guide is the second part of a five-part series on creating a wayfinding experience to help a user understand where they are, choose a destination...
+      - [Select a Site and anchor payload](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-map-view/) -- This page implements the Select a Site and anchor payload step in the wayfinding workflow. In this workflow, the user browses Sites on a map, selects a Site...
+      - [Start VPS2 localization](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-1/) -- This page implements the Start VPS2 localization step in the wayfinding workflow. In this workflow, the user has already selected a Site, passed its Production...
+      - [Advanced AR and localization](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-2/) -- This page implements the Advanced AR effects and precise localization step in the wayfinding workflow. In this workflow, the user has already selected a Site...
+- [AR Effects](https://www.nianticspatial.com/docs/nsdk/features/ar_effects/) -- Tools for grounding your virtual content in the real world.
+  - **Features**
+    - [Depth](https://www.nianticspatial.com/docs/nsdk/features/depth/) -- Depth refers to the distance between the camera and the objects in a scene -- essentially, how far away each pixel is from the viewer's perspective. In...
+      - [Adding Depth to Your Project](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/adding_depth/) -- When using Unity, the Niantic Spatial SDK (NSDK) integrates seamlessly with Unity's AR Foundation. This means your application can access depth data through...
+      - [Displaying Depth](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/display_depth/) -- This tutorial explains how to visualize the environment depth texture provided by NSDK using Unity's UI system. This can be useful for debugging or validating...
+      - [Displaying Interpolated Depth](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/interpolated_depth/) -- In the previous tutorial, we learned how to display the raw environment depth texture from NSDK using Unity's AROcclusionManager. That setup visualized the...
+      - [Preloading the Model File](https://www.nianticspatial.com/docs/nsdk/features/model_preloading/) -- NSDK's awareness features rely on neural network models to know how to draw each pixel in an AR environment. Because these models are not included with NSDK...
+    - [Occlusion](https://www.nianticspatial.com/docs/nsdk/features/occlusion/) -- Occlusion ensures virtual content appears correctly behind real-world objects. Without occlusion, AR objects may appear to float in front of surfaces they...
+      - [Adding Occlusion to Your Project](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_occlusion/) -- The Niantic Spatial Unity SDK (NSDK) extends the AR Foundation XROcclusion and XRMeshing subsystems with Niantic Spatial's improved algorithms, seamlessly...
+    - [Meshing](https://www.nianticspatial.com/docs/nsdk/features/meshing/) -- The nature of augmented reality requires physical space to be perceived and understood so that graphics and contextual information are correct from the user's...
+      - [Adding Meshing to Your Project](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/adding_meshing/) -- By placing the standard ARMeshManager in a scene, developers can access a live mesh that allows virtual objects to interact with the real-world environment...
+      - [Level of Detail Meshing](https://www.nianticspatial.com/docs/nsdk/experimental/level_of_detail_meshing/) -- Niantic Spatial Meshing reconstructs the visible geometry of the scene, allowing AR characters and objects to interact physically with their environment. By...
+      - [Preloading the Model File](https://www.nianticspatial.com/docs/nsdk/features/model_preloading_meshing/) -- NSDK's awareness features rely on neural network models to know how to draw each pixel in an AR environment. Because these models are not included with NSDK...
+    - [Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/) -- Scene Segmentation is the process of classifying every pixel in an image into meaningful categories, creating a detailed understanding of the environment. This...
+      - [Adding Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_semantics/) -- NSDK provides this unique feature through the new XRSemanticsSubsystem class. The ARSemanticSegmentationManager makes this subsystem's data available as a...
+      - [Preloading the Model File](https://www.nianticspatial.com/docs/nsdk/features/model_preloading_semantics/) -- NSDK's awareness features rely on neural network models to know how to draw each pixel in an AR environment. Because these models are not included with NSDK...
+  - **Guides**
+    - [How to Convert a Screen Point to Real-World Position Using Depth](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/convert_point_world_position/) -- Niantic Spatial SDK's depth map output allows for dynamically placing objects in an AR scene without the use of planes or a mesh. This guide covers the process...
+    - [How to Set Up Real-World Occlusion](https://www.nianticspatial.com/docs/nsdk/how-to/ar/setup_real_world_occlusion/) -- On iOS, Niantic Spatial depth can be used to occlude virtual content in several ways, depending on how much control you need over rendering and synchronization.
+    - [How to Exclude Semantic Channels with Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) -- Semantic Mesh Filtering allows you to set an allow list or block list of semantic channels. These follow standard allow/block list behavior. Using an allow...
+    - [How to Add Physics to a Meshed Scene](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/meshing_physics_real_world/) -- This how-to covers: Adding dynamic meshing to a scene with the default manager; How to create a prefab for meshing; Interacting with mesh physics; Making the...
+    - [How to Query Scene Segmentation and Highlight Semantic Channels](https://www.nianticspatial.com/docs/nsdk/how-to/ar/query_semantics_real_objects/) -- This how-to covers: Querying scene segmentation to detect what is on-screen at a point the player touches; Highlighting a specific semantic channel based on...
+    - [How to Use Neural Network Model Preloading](https://www.nianticspatial.com/docs/nsdk/how-to/ar/use_model_preloading/) -- Meshing, depth & occlusion, and scene segmentation use neural network models to process the camera frames. To improve runtime performance, Model Preloading...
+    - [How to enable scan visualization](https://www.nianticspatial.com/docs/nsdk/how-to/ar/scan_visualization/) -- Scan visualization gives users real-time feedback while they scan. Areas that have been sufficiently captured appear in full color, while incomplete areas...
+- [Experimental](https://www.nianticspatial.com/docs/nsdk/experimental/) -- Experimental features are not recommended for use in production-level applications! :::.
+  - [Windows Development](https://www.nianticspatial.com/docs/nsdk/experimental/windows/) -- Windows development is available in NSDK 4 as an experimental feature.
+  - [Device Mapping](https://www.nianticspatial.com/docs/nsdk/features/device_mapping/) -- Device Mapping is a system that scans and tracks real-world objects, allowing you to place content in alignment with the real world. On the surface, it is...
+    - [How to Create a Device Map](https://www.nianticspatial.com/docs/nsdk/how-to/vps/adding_device_mapping/) -- Before you can use a device map in your AR application, you will need to create and save it. In this tutorial, we will go over how to create and save a device...
+    - [Using Device Maps](https://www.nianticspatial.com/docs/nsdk/how-to/vps/using_device_maps/) -- Now that we have created a device map and saved it to a file, we can read it to place virtual objects in the AR scene. In this how-to, we will cover reading a...
+- [Sample Projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/) -- These samples are designed to demonstrate the uses of each feature in our SDK. The sample project launches multiple small samples that you can try out and look...
+- [Developer Tools](https://www.nianticspatial.com/docs/nsdk/features/developer_tools/) -- Streamline the development of your product. Our developer tools enable you to test your project from the comfort of your desk and eliminates the need to visit...
+  - **Unity Editor**
+    - [How to Set Up and Run NSDK Simulation](https://www.nianticspatial.com/docs/nsdk/how-to/unity/simulation_mocking/) -- NSDK Simulation allows you to test your AR content in-editor without having to use Unity's playback mode. Our simulation mode allows you to move freely around...
+  - **Playback**
+    - [Recording and Playback](https://www.nianticspatial.com/docs/nsdk/features/playback/) -- The Playback feature allows you to import pre-recorded AR sessions and re-run them during a new AR runtime session. Using Playback supplies the application...
+    - [How to set up playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/) -- This guide explains how to set up Playback so you can iterate in the Unity Editor instead of building to a device. Playback runs NSDK algorithms in the editor...
+    - [Create playback datasets](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/) -- Use NSDK Recording to capture camera, motion, and sensor data from an AR session. Export the recording as a playback dataset for repeatable testing in the...
+- [Migration guide](https://www.nianticspatial.com/docs/nsdk/migration_guide/) -- Upgrade from legacy Lightship.dev and ARDK SDK to Scaniverse and NSDK 4.0. Developers must migrate Lightship.dev content to Scaniverse. Developers maintaining...
+- [Glossary](https://www.nianticspatial.com/docs/nsdk/glossary/) -- AR Scene - A Unity Scene that has an ARSession and XROrigin setup to enable AR. See Set up a basic AR scene.
+- **Resources**
+  - [Download SDK](https://www.nianticspatial.com/docs/nsdk/downloads/) -- The Niantic Spatial SDK (NSDK) is built to work with iOS, Android, and Unity. For the best experience, please ensure your development environment meets the...
+  - [Release Notes](https://www.nianticspatial.com/docs/nsdk/release_notes/) -- Scaniverse now available on Android Meta Quest 3 support restored iOS simulator support for x86_64 New Kotlin wayfinding guide * Updated Unity version to...
+  - [NSDK Data Privacy](https://www.nianticspatial.com/docs/nsdk/data_privacy/) -- Niantic Spatial requires applications built on its platform to prioritize user safety, privacy, and responsible real-world interactions. Developers must avoid...
+  - [Contact Us](https://www.nianticspatial.com/docs/nsdk/contact_us/) -- You can contact the Niantic Spatial Platform team in our Community Forums if you have any questions.
+
+## NSDK Guides (per-page)
+
+Each NSDK guide above is also a small individual plain-text page (JSX/MDX flattened; platform-conditional content expanded under "Platform: <name>" headings). The file below indexes those pages -- fetch the one you need.
+
+- [llms-nsdk.txt](https://www.nianticspatial.com/docs/llms-nsdk.txt): index of per-page NSDK guide files
+
+## Scaniverse Documentation
+
+> Scaniverse is the scanning and publishing side of the NSDK workflow. Use it to capture spaces, process scans, and publish Sites or spatial content, then use NSDK in your app to localize against and interact with those outputs.
+
+- [Scaniverse Documentation](https://www.nianticspatial.com/docs/scaniverse/) -- Learn how to use Scaniverse for mobile scanning, 360 camera capture, meshes, Gaussian splats, asset generation, exports, and localization workflows.
+- [Scaniverse Quickstart](https://www.nianticspatial.com/docs/scaniverse/quickstart/) -- Get started with Scaniverse by creating a Site, capturing scans, generating assets, and testing localization.
+- [Scan Techniques for Scaniverse](https://www.nianticspatial.com/docs/scaniverse/techniques/) -- Learn Scaniverse scanning best practices for overlap, coverage, scan patterns, lighting, and localization quality.
+- [Advanced Scan Review Tools](https://www.nianticspatial.com/docs/scaniverse/advanced_tools/) -- Learn how to inspect Scaniverse meshes and splats, review playback sessions, export supported files, and identify scan coverage gaps.
+- [360 Camera Scanning Guide](https://www.nianticspatial.com/docs/scaniverse/360camera/) -- Learn how to scan with a 360 camera in Scaniverse, including camera setup, capture technique, upload workflow, asset generation options, export formats, and...
+- [Lightship to Scaniverse Migration Guide](https://www.nianticspatial.com/docs/scaniverse/migration_guide/) -- Migrate from Lightship.dev to Scaniverse and preserve Sites, scans, VPS maps, and API keys.
+- [Troubleshooting Scaniverse Scans](https://www.nianticspatial.com/docs/scaniverse/troubleshoot/) -- Troubleshoot common Scaniverse scanning and localization issues, including patchy meshes, poor localization, drift, and missing coverage.
+
+## Scaniverse Guides (per-page)
+
+Each Scaniverse guide above is also a small individual plain-text page. The file below indexes those pages -- fetch the one you need.
+
+- [llms-scaniverse.txt](https://www.nianticspatial.com/docs/llms-scaniverse.txt): index of per-page Scaniverse guide files
+
+## Feature availability
+
+Heuristic platform support matrix derived from `<IfPlatform is="...">` tags found anywhere in each feature's sidebar subtree (feature index pages plus their how-tos and guides). A `Yes` means the subtree contains platform-specific documentation; a `-` means no platform-conditional content was found (the feature may still be supported with general docs -- verify in the full guides).
+
+| Feature | Unity | Swift | Kotlin |
+| --- | --- | --- | --- |
+| [Project Validation](https://www.nianticspatial.com/docs/nsdk/features/project_validation/) | - | - | - |
+| [Localization](https://www.nianticspatial.com/docs/nsdk/features/localization/) | Yes | Yes | Yes |
+| [Visual Positioning System 2 (VPS2)](https://www.nianticspatial.com/docs/nsdk/features/vps2/) | Yes | Yes | Yes |
+| [Migrate from VPS to VPS2](https://www.nianticspatial.com/docs/nsdk/features/vps2_migration/) | - | - | - |
+| [Sites](https://www.nianticspatial.com/docs/nsdk/features/sites/) | Yes | Yes | Yes |
+| [AR Effects](https://www.nianticspatial.com/docs/nsdk/features/ar_effects/) | Yes | Yes | Yes |
+| [Niantic Spatial Depth](https://www.nianticspatial.com/docs/nsdk/features/depth/) | Yes | Yes | Yes |
+| [Preloading the Model File](https://www.nianticspatial.com/docs/nsdk/features/model_preloading/) | - | - | - |
+| [Occlusion](https://www.nianticspatial.com/docs/nsdk/features/occlusion/) | Yes | Yes | Yes |
+| [Meshing](https://www.nianticspatial.com/docs/nsdk/features/meshing/) | Yes | Yes | Yes |
+| [Preloading the Model File](https://www.nianticspatial.com/docs/nsdk/features/model_preloading_meshing/) | - | - | - |
+| [Niantic Spatial Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/) | Yes | Yes | Yes |
+| [Preloading the Model File](https://www.nianticspatial.com/docs/nsdk/features/model_preloading_semantics/) | - | - | - |
+| [Device Mapping](https://www.nianticspatial.com/docs/nsdk/features/device_mapping/) | Yes | Yes | Yes |
+| [Developer Tools](https://www.nianticspatial.com/docs/nsdk/features/developer_tools/) | Yes | Yes | Yes |
+| [Recording and Playback](https://www.nianticspatial.com/docs/nsdk/features/playback/) | Yes | Yes | Yes |
+
+## API Reference
+
+Auto-generated class, enum, and protocol references for each NSDK platform. Each platform's API index is linked below -- it maps each class/enum/protocol to a small per-page file (fetch the page you need) -- followed by direct class-level page links.
+
+
+### Kotlin (145 classes / 355 pages)
+
+- [llms-api-kotlin.txt](https://www.nianticspatial.com/docs/llms-api-kotlin.txt): Kotlin API reference index (links each page)
+- [kotlin API overview](https://www.nianticspatial.com/docs/api/kotlin/)
+- [com.nianticspatial.nsdk](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk/)
+- [AsyncResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AsyncResult/)
+- [AwarenessImageParams](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessImageParams/)
+- [CameraIntrinsics](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CameraIntrinsics/)
+- [CameraIntrinsicsFromARCore](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CameraIntrinsicsFromARCore/)
+- [DepthConfig](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.DepthConfig/)
+- [DeviceMappingConfig](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.DeviceMappingConfig/)
+- [FrameData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.FrameData/)
+- [Image](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Image/)
+- [MeshingConfig](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MeshingConfig/)
+- [NsdkCamera](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkCamera/)
+- [NsdkFeatureAlreadyInitializedStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkFeatureAlreadyInitializedStatusException/)
+- [NsdkFeatureNotInitializedStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkFeatureNotInitializedStatusException/)
+- [NsdkFrame](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkFrame/)
+- [NsdkInvalidArgumentStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkInvalidArgumentStatusException/)
+- [NsdkInvalidHandleStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkInvalidHandleStatusException/)
+- [NsdkInvalidOperationStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkInvalidOperationStatusException/)
+- [NsdkNullArgumentStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkNullArgumentStatusException/)
+- [NSDKResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKResult/)
+- [NSDKSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession/)
+- [NsdkStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkStatusException/)
+- [NsdkUnknownStatusException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkUnknownStatusException/)
+- [ScannerConfig](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ScannerConfig/)
+- [SessionBase](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.SessionBase/)
+- [UUIDKey](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.UUIDKey/)
+- [Vps2Config](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Vps2Config/)
+- [NsdkConfiguration](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkConfiguration/)
+- [ErrorCodeProvider](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ErrorCodeProvider/)
+- [ErrorFactory](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ErrorFactory/)
+- [NsdkLogCallback](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkLogCallback/)
+- [NsdkSessionDataSource](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkSessionDataSource/)
+- [AnchorUpdate](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AnchorUpdate/)
+- [AreaTarget](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AreaTarget/)
+- [AuthInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AuthInfo/)
+- [AwarenessContext](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessContext/)
+- [CameraSample](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CameraSample/)
+- [Compass](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Compass/)
+- [CoverageArea](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CoverageArea/)
+- [DepthBuffer](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.DepthBuffer/)
+- [DepthSample](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.DepthSample/)
+- [GeolocationData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.GeolocationData/)
+- [LatLng](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.LatLng/)
+- [LocalizationTarget](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.LocalizationTarget/)
+- [MapMetadata](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MapMetadata/)
+- [MeshData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MeshData/)
+- [MeshDownloaderData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MeshDownloaderData/)
+- [MeshingUpdateInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MeshingUpdateInfo/)
+- [PathConfig](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.PathConfig/)
+- [RecordingInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.RecordingInfo/)
+- [ScanSaveInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ScanSaveInfo/)
+- [AgeLevel](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AgeLevel/)
+- [AnchorTrackingState](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AnchorTrackingState/)
+- [AnchorTrackingStateReason](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AnchorTrackingStateReason/)
+- [AwarenessFeatureMode](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessFeatureMode/)
+- [AwarenessStatus](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessStatus/)
+- [FeatureStatus](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.FeatureStatus/)
+- [ImageType](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ImageType/)
+- [InputDataFlags](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags/)
+- [Localizability](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Localizability/)
+- [MeshDownloaderError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MeshDownloaderError/)
+- [NSDKStatus](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKStatus/)
+- [Orientation](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Orientation/)
+- [ScanSaveError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ScanSaveError/)
+- [ScanSaveState](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ScanSaveState/)
+- [VpsCoverageError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.VpsCoverageError/)
+- [VpsGraphOperationError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.VpsGraphOperationError/)
+- [com.nianticspatial.nsdk.awareness.scenesegmentation](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation/)
+- [SceneSegmentationConfig](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationConfig/)
+- [SceneSegmentationResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationResult/)
+- [SceneSegmentationSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationSession/)
+- [SceneSegmentationChannel](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationChannel/)
+- [com.nianticspatial.nsdk.depth](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.depth/)
+- [DepthSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.depth.DepthSession/)
+- [com.nianticspatial.nsdk.helpers](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers/)
+- [LocationHelper](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.LocationHelper/)
+- [SensorHelper](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper/)
+- [com.nianticspatial.nsdk.logging](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.logging/)
+- [Logging](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.logging.Logging/)
+- [LogLevel](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.logging.LogLevel/)
+- [com.nianticspatial.nsdk.mapping](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping/)
+- [DeviceMappingSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession/)
+- [MappingStorageSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.MappingStorageSession/)
+- [com.nianticspatial.nsdk.mesh](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh/)
+- [MeshDownloaderSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshDownloaderSession/)
+- [MeshingSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshingSession/)
+- [com.nianticspatial.nsdk.playback](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback/)
+- [AssetPlaybackDatasetLoader](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.AssetPlaybackDatasetLoader/)
+- [PlaybackBackgroundView](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackBackgroundView/)
+- [PlaybackCamera](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackCamera/)
+- [PlaybackDataset](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDataset/)
+- [PlaybackDatasetError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetError/)
+- [PlaybackDatasetLoader](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetLoader/)
+- [PlaybackSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackSession/)
+- [PlaybackDatasetConstants](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetConstants/)
+- [PlaybackImageUtility](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackImageUtility/)
+- [PlaybackDatasetSource](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetSource/)
+- [CaptureMetadata](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.CaptureMetadata/)
+- [CaptureRoot](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.CaptureRoot/)
+- [FrameMetadata](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.FrameMetadata/)
+- [LocationMetadata](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.LocationMetadata/)
+- [PlaybackFrame](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackFrame/)
+- [PlaybackGpsLocation](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackGpsLocation/)
+- [com.nianticspatial.nsdk.recording](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.recording/)
+- [RecordingExporter](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.recording.RecordingExporter/)
+- [ExportResolution](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.recording.ExportResolution/)
+- [com.nianticspatial.nsdk.scanning](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning/)
+- [ScanningSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.ScanningSession/)
+- [RaycastBuffer](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.RaycastBuffer/)
+- [VoxelBuffer](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.VoxelBuffer/)
+- [com.nianticspatial.nsdk.sites](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites/)
+- [SitesException](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesException/)
+- [SitesSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession/)
+- [TypedAssetData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.TypedAssetData/)
+- [AssetInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetInfo/)
+- [AssetMeshData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetMeshData/)
+- [AssetResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetResult/)
+- [AssetSplatData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetSplatData/)
+- [AssetVpsData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetVpsData/)
+- [OrganizationInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.OrganizationInfo/)
+- [OrganizationResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.OrganizationResult/)
+- [SiteAssetsInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SiteAssetsInfo/)
+- [SiteAssetsResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SiteAssetsResult/)
+- [SiteInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SiteInfo/)
+- [SiteResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SiteResult/)
+- [UserInfo](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.UserInfo/)
+- [UserResult](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.UserResult/)
+- [AssetDeploymentType](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetDeploymentType/)
+- [AssetPipelineJobStatus](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetPipelineJobStatus/)
+- [AssetStatusType](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetStatusType/)
+- [AssetType](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetType/)
+- [SitesError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesError/)
+- [SitesRequestStatus](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesRequestStatus/)
+- [com.nianticspatial.nsdk.utils](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils/)
+- [FlowPollingManager](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.FlowPollingManager/)
+- [ImageMath](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath/)
+- [com.nianticspatial.nsdk.vps2](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2/)
+- [Vps2Session](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session/)
+- [Vps2GeolocationData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2GeolocationData/)
+- [Vps2Localization](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Localization/)
+- [Vps2LocalizationRequestRecord](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationRequestRecord/)
+- [HeadingMode](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.HeadingMode/)
+- [Vps2LocalizationError](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationError/)
+- [Vps2LocalizationRequestStatus](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationRequestStatus/)
+- [Vps2LocalizationRequestType](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationRequestType/)
+- [Vps2TrackingState](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2TrackingState/)
+
+### Swift (143 classes / 424 pages)
+
+- [llms-api-swift.txt](https://www.nianticspatial.com/docs/llms-api-swift.txt): Swift API reference index (links each page)
+- [swift API overview](https://www.nianticspatial.com/docs/api/swift/)
+- [NSDK](https://www.nianticspatial.com/docs/api/swift/NSDK/)
+- [AssetResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-AssetResult/)
+- [AwarenessImageResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-AwarenessImageResult/)
+- [AwarenessResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-AwarenessResult/)
+- [BundlePlaybackDatasetLoader](https://www.nianticspatial.com/docs/api/swift/NSDK.class-BundlePlaybackDatasetLoader/)
+- [DataResourceOwner](https://www.nianticspatial.com/docs/api/swift/NSDK.class-DataResourceOwner/)
+- [DefaultSessionDataSource](https://www.nianticspatial.com/docs/api/swift/NSDK.class-DefaultSessionDataSource/)
+- [DepthResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-DepthResult/)
+- [MeshData](https://www.nianticspatial.com/docs/api/swift/NSDK.class-MeshData/)
+- [MeshDownloaderResults](https://www.nianticspatial.com/docs/api/swift/NSDK.class-MeshDownloaderResults/)
+- [Error](https://www.nianticspatial.com/docs/api/swift/NSDK.MeshDownloaderResults.enum-Error/)
+- [NSDKCamera](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKCamera/)
+- [Backing](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.enum-Backing/)
+- [NSDKDepthSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKDepthSession/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.struct-Configuration/)
+- [DepthMode](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.enum-DepthMode/)
+- [NSDKDeviceMappingSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKDeviceMappingSession/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDeviceMappingSession.struct-Configuration/)
+- [NSDKMapStorage](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKMapStorage/)
+- [NSDKMeshDownloader](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKMeshDownloader/)
+- [NSDKMeshingSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKMeshingSession/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.struct-Configuration/)
+- [MeshChunkUpdate](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.enum-MeshChunkUpdate/)
+- [NSDKRecordingExporter](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKRecordingExporter/)
+- [NSDKScanningSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKScanningSession/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.struct-Configuration/)
+- [RecordingInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.struct-RecordingInfo/)
+- [SaveInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.struct-SaveInfo/)
+- [SaveError](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.enum-SaveError/)
+- [NSDKSceneSegmentationSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSceneSegmentationSession/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.struct-Configuration/)
+- [SceneSegmentationMode](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.enum-SceneSegmentationMode/)
+- [NSDKSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSession/)
+- [CloudEnvConfig](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-CloudEnvConfig/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-Configuration/)
+- [UserConfig](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-UserConfig/)
+- [NSDKSitesSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSitesSession/)
+- [NSDKView](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKView/)
+- [SessionMode](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKView.enum-SessionMode/)
+- [NSDKVps2Session](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKVps2Session/)
+- [Configuration](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.struct-Configuration/)
+- [OrganizationResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-OrganizationResult/)
+- [PlaybackBackgroundRenderer](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackBackgroundRenderer/)
+- [PlaybackCamera](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackCamera/)
+- [PlaybackDataset](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackDataset/)
+- [CaptureMetadata](https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-CaptureMetadata/)
+- [CaptureRoot](https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-CaptureRoot/)
+- [FrameMetadata](https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-FrameMetadata/)
+- [LocationMetadata](https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-LocationMetadata/)
+- [PlaybackDatasetError](https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.enum-PlaybackDatasetError/)
+- [PlaybackDatasetLoader](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackDatasetLoader/)
+- [PlaybackRenderer](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackRenderer/)
+- [PlaybackSession](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackSession/)
+- [PlaybackSessionDataSource](https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackSessionDataSource/)
+- [RaycastBuffer](https://www.nianticspatial.com/docs/api/swift/NSDK.class-RaycastBuffer/)
+- [SceneSegmentationResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-SceneSegmentationResult/)
+- [SiteAssetsResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-SiteAssetsResult/)
+- [SiteResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-SiteResult/)
+- [SitesResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-SitesResult/)
+- [Error](https://www.nianticspatial.com/docs/api/swift/NSDK.SitesResult.enum-Error/)
+- [UserResult](https://www.nianticspatial.com/docs/api/swift/NSDK.class-UserResult/)
+- [VoxelBuffer](https://www.nianticspatial.com/docs/api/swift/NSDK.class-VoxelBuffer/)
+- [Vps2Heading](https://www.nianticspatial.com/docs/api/swift/NSDK.class-Vps2Heading/)
+- [Vps2Location](https://www.nianticspatial.com/docs/api/swift/NSDK.class-Vps2Location/)
+- [NSDKFeatureSession](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKFeatureSession/)
+- [NSDKLogCallback](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKLogCallback/)
+- [NSDKSessionDataSource](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKSessionDataSource/)
+- [NSDKViewDelegate](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKViewDelegate/)
+- [PlaybackDatasetSource](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-PlaybackDatasetSource/)
+- [PlaybackSessionDelegate](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-PlaybackSessionDelegate/)
+- [ResourceOwner](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-ResourceOwner/)
+- [UIOrientationReporter](https://www.nianticspatial.com/docs/api/swift/NSDK.interface-UIOrientationReporter/)
+- [AreaTarget](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AreaTarget/)
+- [AreaTargetResult](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AreaTargetResult/)
+- [ARUtils](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-ARUtils/)
+- [AssetInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AssetInfo/)
+- [AssetMeshData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AssetMeshData/)
+- [AssetSplatData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AssetSplatData/)
+- [AssetVpsData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AssetVpsData/)
+- [AuthInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AuthInfo/)
+- [AwarenessImageParams](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AwarenessImageParams/)
+- [CoverageArea](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-CoverageArea/)
+- [Localizability](https://www.nianticspatial.com/docs/api/swift/NSDK.CoverageArea.enum-Localizability/)
+- [CoverageAreaResult](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-CoverageAreaResult/)
+- [GeolocationData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-GeolocationData/)
+- [HintImageResult](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-HintImageResult/)
+- [ImageMath](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-ImageMath/)
+- [LocalizationTarget](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-LocalizationTarget/)
+- [LocalizationTargetResult](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-LocalizationTargetResult/)
+- [MapMetadata](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-MapMetadata/)
+- [MeshDownloaderResult](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-MeshDownloaderResult/)
+- [NSDKBuffer](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKBuffer/)
+- [NSDKFeatureStatus](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKFeatureStatus/)
+- [NSDKFrameData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKFrameData/)
+- [CameraIntrinsics](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-CameraIntrinsics/)
+- [CameraPlane](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-CameraPlane/)
+- [CompassData](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-CompassData/)
+- [GpsData](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-GpsData/)
+- [ImageFormat](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.enum-ImageFormat/)
+- [NSDKImage](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKImage/)
+- [ImageType](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKImage.enum-ImageType/)
+- [NSDKInputDataFlags](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKInputDataFlags/)
+- [NSDKPathConfig](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKPathConfig/)
+- [NSDKUtils](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKUtils/)
+- [OrganizationInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-OrganizationInfo/)
+- [PlaybackFrame](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-PlaybackFrame/)
+- [SceneSegmentationChannels](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-SceneSegmentationChannels/)
+- [SiteAssetsInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-SiteAssetsInfo/)
+- [SiteInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-SiteInfo/)
+- [TextureUtils](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-TextureUtils/)
+- [TimeoutError](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-TimeoutError/)
+- [UserInfo](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-UserInfo/)
+- [Vps2GeolocationData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2GeolocationData/)
+- [Vps2Localization](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2Localization/)
+- [Vps2LocalizationRequestRecord](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2LocalizationRequestRecord/)
+- [Vps2Pose](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2Pose/)
+- [VpsAnchorUpdate](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-VpsAnchorUpdate/)
+- [TrackingData](https://www.nianticspatial.com/docs/api/swift/NSDK.VpsAnchorUpdate.struct-TrackingData/)
+- [AnchorTrackingState](https://www.nianticspatial.com/docs/api/swift/NSDK.VpsAnchorUpdate.enum-AnchorTrackingState/)
+- [Reason](https://www.nianticspatial.com/docs/api/swift/NSDK.VpsAnchorUpdate.AnchorTrackingState.enum-Reason/)
+- [AgeLevel](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AgeLevel/)
+- [AssetDeploymentType](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AssetDeploymentType/)
+- [AssetPipelineJobStatus](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AssetPipelineJobStatus/)
+- [AssetStatusType](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AssetStatusType/)
+- [AssetType](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AssetType/)
+- [AwarenessError](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AwarenessError/)
+- [ExportResolution](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-ExportResolution/)
+- [HeadingMode](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-HeadingMode/)
+- [NSDKAsyncState](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKAsyncState/)
+- [NSDKError](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKError/)
+- [NSDKLogLevel](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKLogLevel/)
+- [NSDKScreenOrientation](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKScreenOrientation/)
+- [NSDKTelemetry](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKTelemetry/)
+- [NSDKTelemetryEnvironment](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKTelemetryEnvironment/)
+- [NsdkTrackingState](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NsdkTrackingState/)
+- [PlaybackDatasetConstants](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-PlaybackDatasetConstants/)
+- [TypedAssetData](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-TypedAssetData/)
+- [Vps2LocalizationError](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-Vps2LocalizationError/)
+- [Vps2LocalizationRequestStatus](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-Vps2LocalizationRequestStatus/)
+- [Vps2LocalizationRequestType](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-Vps2LocalizationRequestType/)
+- [Vps2TrackingState](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-Vps2TrackingState/)
+- [VpsGraphOperationError](https://www.nianticspatial.com/docs/api/swift/NSDK.enum-VpsGraphOperationError/)
+- [playbackSession](https://www.nianticspatial.com/docs/api/swift/NSDK.method-playbackSession/)
+
+### Unity (C#) (228 classes / 596 pages)
+
+- [llms-api-unity.txt](https://www.nianticspatial.com/docs/llms-api-unity.txt): Unity (C#) API reference index (links each page)
+- [unity API overview](https://www.nianticspatial.com/docs/api/unity/)
+- [NianticSpatial.NSDK.AR](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR/)
+- [Compass](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Compass/)
+- [Input](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Input/)
+- [LocationService](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationService/)
+- [MatrixUtils](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MatrixUtils/)
+- [NativeHandleValidation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NativeHandleValidation/)
+- [SpoofCompassInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SpoofCompassInfo/)
+- [SpoofLocationInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SpoofLocationInfo/)
+- [HeadingMode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.HeadingMode/)
+- [LocationDataSource](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationDataSource/)
+- [NianticSpatial.NSDK.AR.Editor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor/)
+- [BasePlaybackSettingsEditor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.BasePlaybackSettingsEditor/)
+- [DevicePlaybackSettingsEditor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.DevicePlaybackSettingsEditor/)
+- [EditorPlaybackSettingsEditor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.EditorPlaybackSettingsEditor/)
+- [IPlaybackSettingsEditor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.IPlaybackSettingsEditor/)
+- [NianticSpatial.NSDK.AR.Editor.Auth](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth/)
+- [AuthBuildPreprocessor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.AuthBuildPreprocessor/)
+- [AuthBuildProcessor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.AuthBuildProcessor/)
+- [AuthEditorLoginFailedPage](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.AuthEditorLoginFailedPage/)
+- [AuthEditorLoginSuccessfulPage](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.AuthEditorLoginSuccessfulPage/)
+- [IAuthEditorSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.IAuthEditorSettings/)
+- [NianticSpatial.NSDK.AR.Mapping](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping/)
+- [ARDeviceMappingManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.ARDeviceMappingManager/)
+- [DeviceMapAccessController](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController/)
+- [XRDeviceMap](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.XRDeviceMap/)
+- [XRDeviceMapGraph](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.XRDeviceMapGraph/)
+- [DeviceMappingType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMappingType/)
+- [NianticSpatial.NSDK.AR.Core](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Core/)
+- [NsdkPlugin](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Core.NsdkPlugin/)
+- [NsdkUnityContext](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Core.NsdkUnityContext/)
+- [NianticSpatial.NSDK.AR.Auth](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth/)
+- [AuthClient](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthClient/)
+- [AuthRuntimeRefreshManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthRuntimeRefreshManager/)
+- [AuthInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthInfo/)
+- [AuthEnvironmentType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthEnvironmentType/)
+- [NianticSpatial.NSDK.AR.PAM](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM/)
+- [NsdkCpuImage](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM.NsdkCpuImage/)
+- [NsdkCpuImagePlane](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM.NsdkCpuImagePlane/)
+- [ImageFormatCEnum](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM.ImageFormatCEnum/)
+- [NianticSpatial.NSDK.AR.Scanning](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning/)
+- [ARScanningManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/)
+- [ARScanQualityClassifier](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanQualityClassifier/)
+- [SavedScan](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanStore.SavedScan/)
+- [ScanArchiveBuilder](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanArchiveBuilder/)
+- [ScanQualityResult](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanQualityResult/)
+- [ScanStore](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanStore/)
+- [UploadUserInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.UploadUserInfo/)
+- [IARScanQualityClassifier](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.IARScanQualityClassifier/)
+- [ScanningSqcScores](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanningSqcScores/)
+- [ScanQualityCategory](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanQualityCategory/)
+- [NianticSpatial.NSDK.AR.Utilities](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities/)
+- [ARDeviceMapCompatibilityUtil](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ARDeviceMapCompatibilityUtil/)
+- [CameraMath](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.CameraMath/)
+- [GameViewUtils](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.GameViewUtils/)
+- [ImageSamplingUtils](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ImageSamplingUtils/)
+- [PublicAPIAttribute](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.PublicAPIAttribute/)
+- [ReciprocalExtension](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ReciprocalExtension/)
+- [TrackableIdExtension](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.TrackableIdExtension/)
+- [URPMaterialSetter](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.URPMaterialSetter/)
+- [XRDisplayContext](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.XRDisplayContext/)
+- [LatLng](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.LatLng/)
+- [MatrixLayout](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.CameraMath.MatrixLayout/)
+- [NianticSpatial.NSDK.AR.Utilities.Textures](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Textures/)
+- [ExternalTextureUtils](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Textures.ExternalTextureUtils/)
+- [NianticSpatial.NSDK.AR.Utilities.Auth](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Auth/)
+- [AuthPublicUtils](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Auth.AuthPublicUtils/)
+- [NianticSpatial.NSDK.AR.Utilities.Preloading](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading/)
+- [IModelPreloader](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.IModelPreloader/)
+- [ModelPreloaderFactory](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.ModelPreloaderFactory/)
+- [DepthMode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.DepthMode/)
+- [PreloaderStatusCode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.PreloaderStatusCode/)
+- [ScanningSQCMode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.ScanningSQCMode/)
+- [SceneSegmentationMode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.SceneSegmentationMode/)
+- [NianticSpatial.NSDK.AR.Utilities.Logging](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Logging/)
+- [LogLevel](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Logging.LogLevel/)
+- [NianticSpatial.NSDK.AR.Common](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common/)
+- [CompositeRenderer](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common.CompositeRenderer/)
+- [ConditionalRenderer](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common.ConditionalRenderer/)
+- [NsdkARUpdateOrder](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common.NsdkARUpdateOrder/)
+- [RenderComponent](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common.RenderComponent/)
+- [NianticSpatial.NSDK.AR.Sites](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites/)
+- [SitesClient](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient/)
+- [SitesClientManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClientManager/)
+- [AssetInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetInfo/)
+- [AssetMeshData](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetMeshData/)
+- [AssetResult](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetResult/)
+- [AssetSplatData](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetSplatData/)
+- [AssetVpsData](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetVpsData/)
+- [OrganizationInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.OrganizationInfo/)
+- [OrganizationResult](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.OrganizationResult/)
+- [SiteAssetsInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SiteAssetsInfo/)
+- [SiteAssetsResult](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SiteAssetsResult/)
+- [SiteInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SiteInfo/)
+- [SiteResult](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SiteResult/)
+- [UserInfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.UserInfo/)
+- [UserResult](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.UserResult/)
+- [AssetDeploymentType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetDeploymentType/)
+- [AssetPipelineJobStatus](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetPipelineJobStatus/)
+- [AssetStatusType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetStatusType/)
+- [AssetType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetType/)
+- [SitesError](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesError/)
+- [SitesRequestStatus](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesRequestStatus/)
+- [NianticSpatial.NSDK.AR.Loader](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader/)
+- [DevicePlaybackSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.DevicePlaybackSettings/)
+- [EditorPlaybackSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.EditorPlaybackSettings/)
+- [NativeLoaderHelper](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NativeLoaderHelper/)
+- [NsdkLoaderHelper](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkLoaderHelper/)
+- [NsdkSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSettings/)
+- [NsdkSettingsHelper](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSettingsHelper/)
+- [NsdkSimulationLoader](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSimulationLoader/)
+- [NsdkSimulationParams](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSimulationParams/)
+- [NsdkStandaloneLoader](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkStandaloneLoader/)
+- [OverloadPlaybackSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.OverloadPlaybackSettings/)
+- [RuntimeNsdkSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.RuntimeNsdkSettings/)
+- [INsdkExternalLoader](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.INsdkExternalLoader/)
+- [INsdkLoader](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.INsdkLoader/)
+- [INsdkPlaybackSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.INsdkPlaybackSettings/)
+- [NianticSpatial.NSDK.AR.NavigationMesh](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh/)
+- [NavMeshModel](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NavMeshModel/)
+- [NsdkNavMesh](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh/)
+- [NsdkNavMeshAgent](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgent/)
+- [NsdkNavMeshAgentPathRenderer](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgentPathRenderer/)
+- [NsdkNavMeshManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshManager/)
+- [NsdkNavMeshRenderer](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshRenderer/)
+- [Path](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Path/)
+- [SpatialTree](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.SpatialTree/)
+- [Surface](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Surface/)
+- [Utils](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Utils/)
+- [AgentConfiguration](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.AgentConfiguration/)
+- [Bounds](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Bounds/)
+- [GridNode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.GridNode/)
+- [ModelSettings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.ModelSettings/)
+- [Waypoint](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Waypoint/)
+- [AgentNavigationState](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgent.AgentNavigationState/)
+- [MovementType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Waypoint.MovementType/)
+- [PathFindingBehaviour](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.PathFindingBehaviour/)
+- [Status](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Path.Status/)
+- [NianticSpatial.NSDK.AR.API](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.API/)
+- [VpsGraphOperationError](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.API.VpsGraphOperationError/)
+- [NianticSpatial.NSDK.AR.Telemetry](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Telemetry/)
+- [TelemetryPublishingNative](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Telemetry.TelemetryPublishingNative/)
+- [NianticSpatial.NSDK.AR.MapStorageAccess](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess/)
+- [MapNode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.MapNode/)
+- [MapSubGraph](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.MapSubGraph/)
+- [OutputEdgeType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.OutputEdgeType/)
+- [NianticSpatial.NSDK.AR.Settings](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Settings/)
+- [Metadata](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Settings.Metadata/)
+- [PrivacyData](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Settings.PrivacyData/)
+- [NianticSpatial.NSDK.AR.Simulation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation/)
+- [NsdkSimulationCameraSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationCameraSubsystem/)
+- [NsdkSimulationNavigationUtility](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationNavigationUtility/)
+- [NsdkSimulationOcclusionSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationOcclusionSubsystem/)
+- [NianticSpatial.NSDK.AR.Subsystems](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems/)
+- [LocationMeshManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.LocationMeshManager/)
+- [MeshDownloadRequestResponse](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.MeshDownloadRequestResponse/)
+- [NianticSpatial.NSDK.AR.Subsystems.Vps2](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Vps2/)
+- [NsdkVps2Subsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Vps2.NsdkVps2Subsystem/)
+- [NianticSpatial.NSDK.AR.Subsystems.XR](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.XR/)
+- [ISubsystemWithModelMetadata](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.XR.ISubsystemWithModelMetadata/)
+- [NianticSpatial.NSDK.AR.Subsystems.Occlusion](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Occlusion/)
+- [NsdkOcclusionSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Occlusion.NsdkOcclusionSubsystem/)
+- [NianticSpatial.NSDK.AR.Subsystems.Scanning](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Scanning/)
+- [NsdkScanningSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Scanning.NsdkScanningSubsystem/)
+- [ScannerConfigurationCStruct](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Scanning.ScannerConfigurationCStruct/)
+- [RecordingStatus](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Scanning.RecordingStatus/)
+- [NianticSpatial.NSDK.AR.Subsystems.Playback](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback/)
+- [NsdkPlaybackCameraSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.NsdkPlaybackCameraSubsystem/)
+- [NsdkPlaybackOcclusionSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.NsdkPlaybackOcclusionSubsystem/)
+- [NsdkPlaybackSessionSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.NsdkPlaybackSessionSubsystem/)
+- [ScreenOrientationFromPose](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.ScreenOrientationFromPose/)
+- [NianticSpatial.NSDK.AR.Subsystems.SceneSegmentation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.SceneSegmentation/)
+- [NsdkSceneSegmentationSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.SceneSegmentation.NsdkSceneSegmentationSubsystem/)
+- [SceneSegmentationChannel](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.SceneSegmentation.SceneSegmentationChannel/)
+- [NianticSpatial.NSDK.AR.Subsystems.DeviceMapping](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.DeviceMapping/)
+- [NsdkDeviceMappingSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.DeviceMapping.NsdkDeviceMappingSubsystem/)
+- [NianticSpatial.NSDK.AR.XRSubsystems](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems/)
+- [Provider](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.Provider/)
+- [Provider](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem.Provider/)
+- [Provider](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.Provider/)
+- [Provider](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.Provider/)
+- [XRDeviceMappingSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem/)
+- [XRDeviceMappingSubsystemDescriptor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystemDescriptor/)
+- [XRScanningConfiguration](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningConfiguration/)
+- [XRScanningSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem/)
+- [XRScanningSubsystemDescriptor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystemDescriptor/)
+- [XRSceneSegmentationSubsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem/)
+- [XRSceneSegmentationSubsystemDescriptor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystemDescriptor/)
+- [XRVps2Subsystem](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem/)
+- [XRVps2SubsystemDescriptor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2SubsystemDescriptor/)
+- [Cinfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystemDescriptor.Cinfo/)
+- [Cinfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystemDescriptor.Cinfo/)
+- [XRGeolocation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRGeolocation/)
+- [XRScanningVoxelData](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningVoxelData/)
+- [XRSceneSegmentationSubsystemCinfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystemCinfo/)
+- [XRVps2Anchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Anchor/)
+- [XRVps2AnchorPayload](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2AnchorPayload/)
+- [XRVps2Geolocation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Geolocation/)
+- [XRVps2Localization](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Localization/)
+- [XRVps2LocalizationRequestRecord](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2LocalizationRequestRecord/)
+- [XRVps2Pose](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Pose/)
+- [XRVps2SubsystemCinfo](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2SubsystemCinfo/)
+- [ScanningState](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.ScanningState/)
+- [Vps2AnchorTrackingStateReason](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.Vps2AnchorTrackingStateReason/)
+- [Vps2LocalizationError](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.Vps2LocalizationError/)
+- [Vps2LocalizationRequestStatus](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.Vps2LocalizationRequestStatus/)
+- [Vps2LocalizationRequestType](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.Vps2LocalizationRequestType/)
+- [Vps2TrackingState](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.Vps2TrackingState/)
+- [NianticSpatial.NSDK.AR.VPS2](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2/)
+- [ARVps2Anchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Anchor/)
+- [ARVps2AnchorPayload](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2AnchorPayload/)
+- [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager/)
+- [NianticSpatial.NSDK.AR.LocationAR](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR/)
+- [ARLocation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR.ARLocation/)
+- [ARLocationManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR.ARLocationManager/)
+- [ARLocationTrackingStateReason](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR.ARLocationTrackingStateReason/)
+- [NianticSpatial.NSDK.AR.Occlusion](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion/)
+- [NsdkOcclusionExtension](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension/)
+- [NsdkOcclusionExtensionFeature](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtensionFeature/)
+- [NsdkPointCloudGenerator](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkPointCloudGenerator/)
+- [OcclusionTechnique](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension.OcclusionTechnique/)
+- [OptimalOcclusionDistanceMode](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension.OptimalOcclusionDistanceMode/)
+- [NianticSpatial.NSDK.AR.Meshing](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Meshing/)
+- [NsdkMeshingExtension](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension/)
+- [NianticSpatial.NSDK.AR.SceneSegmentation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation/)
+- [ARSceneSegmentationManager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager/)
+- [NsdkSceneSegmentationOverlay](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.NsdkSceneSegmentationOverlay/)
+- [ARSceneSegmentationFrameEventArgs](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationFrameEventArgs/)
+- [ARSceneSegmentationModelEventArgs](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationModelEventArgs/)

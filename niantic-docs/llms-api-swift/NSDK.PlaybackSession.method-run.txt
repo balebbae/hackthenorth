@@ -1,0 +1,25 @@
+# run
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackSession.method-run/
+
+run
+
+---
+
+## Declaration
+
+override func run(_ configuration: ARConfiguration, options: ARSession.RunOptions = [])
+
+#### Summary
+
+Starts playback. The playback loop runs asynchronously on a background queue; frames are delivered on the main queue.
+Configuration and options are ignored (playback uses the dataset's frame rate and content). Call pause() to stop.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configuration | ARConfiguration | - |
+| options | ARSession.RunOptions | - |
+
+---

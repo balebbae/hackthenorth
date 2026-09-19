@@ -1,0 +1,30 @@
+# viewRotation
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-viewRotation/
+
+viewRotation
+
+---
+
+## Declaration
+
+static func viewRotation(fromOrientation: UIInterfaceOrientation, toOrientation: UIInterfaceOrientation) -> CGAffineTransform
+
+#### Summary
+
+Returns an affine transform that rotates between two interface orientations around the center.
+This method models UI rotation (opposite to physical device rotation).
+For example, rotating from .landscapeRight to .portrait results in a counter-clockwise transform.
+
+#### Returns
+
+A CGAffineTransform representing the rotation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| fromOrientation | UIInterfaceOrientation | The starting interface orientation. |
+| toOrientation | UIInterfaceOrientation | The target interface orientation. |
+
+---

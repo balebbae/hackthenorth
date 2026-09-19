@@ -1,0 +1,29 @@
+# recordingInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-recordingInfo/
+
+recordingInfo
+
+---
+
+## Declaration
+
+func recordingInfo() -> NSDKScanningSession.RecordingInfo
+
+#### Summary
+
+Returns information about the current recording.
+Call this method **before** saveCurrentScan() to ensure that the recording
+contains frames to save. Otherwise, the save operation may fail.
+
+#### Returns
+
+A RecordingInfo object containing details about the current recording.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: Make sure to call this method before `saveCurrentScan()` if you plan to
+
+---

@@ -1,0 +1,23 @@
+# latestImageParams
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.method-latestImageParams/
+
+latestImageParams
+Retrieves the latest image parameters associated with the depth data.
+
+---
+
+## Declaration
+
+func latestImageParams() -> NSDKAsyncState<AwarenessImageParams, AwarenessError>
+
+#### Summary
+
+Retrieves the latest image parameters associated with the depth data.
+
+#### Returns
+
+An NSDKAsyncState containing either the latest AwarenessImageParams,
+ or an AwarenessError.
+
+---

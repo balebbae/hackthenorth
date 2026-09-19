@@ -1,0 +1,17 @@
+# NSDK Data Privacy
+
+Source: https://www.nianticspatial.com/docs/nsdk/data_privacy/
+
+## Developer policy
+
+Niantic Spatial requires applications built on its platform to prioritize user safety, privacy, and responsible real-world interactions. Developers must avoid harmful or misleading content, prevent unsafe experiences, and respect the privacy of users and others. Niantic reviews reported experiences and may enforce these requirements through warnings, suspension, or termination.
+
+For more information, see the [Niantic Spatial Platform SDK Developer Policy](https://www.nianticspatial.com/legal/developer-policy/niantic-spatial-platform-sdk).
+
+## Privacy policy
+
+Niantic Spatial collects and processes personal data to provide, maintain, and improve its services. This includes account information, device and usage data, location data, and data provided through integrations or developer applications. Data supports service functionality, security, analytics, and product development.
+
+Personal data may be shared with service providers, for legal compliance, or during business transactions. Niantic applies safeguards for international data transfers, retains data only as needed, and provides users with rights to access, correct, or delete their data, subject to applicable laws. Niantic does not sell personal data as defined under applicable privacy laws and applies protections for children's data.
+
+For more information, see the [Niantic Consumer Privacy Policy](https://www.nianticspatial.com/privacy-consumer).

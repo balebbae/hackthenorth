@@ -1,0 +1,17 @@
+# DataResourceOwner
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-DataResourceOwner/
+
+DataResourceOwner
+
+---
+
+## Declaration
+
+class DataResourceOwner
+
+---
+
+## Relationships
+
+conforms to:  ResourceOwner
