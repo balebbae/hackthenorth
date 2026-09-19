@@ -1,0 +1,45 @@
+# PlaybackRenderer
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackRenderer/
+
+PlaybackRenderer
+
+---
+
+## Declaration
+
+@MainActor class PlaybackRenderer
+
+## Summary
+
+Renders each playback frame: (1) draws the recorded camera image as the background, (2) **moves the
+RealityKit camera** (pose + FOV) to match the playback frame. **PlaybackSession** holds an optional
+reference and calls `renderFrame(_:)` on the main queue for every new frame.
+Relation to Apple AR: **Manipulates** RealityKit--sets `arView.environment.background = .color(.clear)`,
+adds a **PerspectiveCamera** and **AnchorEntity**, and updates their transform and `fieldOfViewInDegrees`
+every frame from PlaybackCamera. In playback, ARView's default camera is off; we drive the virtual camera.
+
+---
+
+## Constructors
+
+@MainActor init(in view: UIView, arView: ARView)
+
+#### Summary
+
+Creates the renderer: a background view (camera image) in the given container and a RealityKit camera in the ARView.
+The ARView's environment background is set to clear so the playback image is visible behind RealityKit content.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @MainActor renderFrame | void | Called on the main queue for each new playback frame. Updates the background image and the virtual camera pose/FOV to match the frame. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable

@@ -1,0 +1,23 @@
+# mapData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-mapData/
+
+mapData
+
+---
+
+## Declaration
+
+func mapData() -> NSDKBuffer?
+
+#### Summary
+
+Gets the complete map data.
+This function returns all the map data accumulated during the AR session, serialized as a
+DeviceMap protobuf. This data can be saved, shared, and/or used for localization.
+
+#### Returns
+
+The serialized map data buffer if available, nil if no map data exists.
+
+---

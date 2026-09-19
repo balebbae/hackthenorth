@@ -1,0 +1,26 @@
+# acquireSceneSegmentationSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireSceneSegmentationSession/
+
+acquireSceneSegmentationSession
+
+---
+
+## Declaration
+
+@MainActor func acquireSceneSegmentationSession() -> NSDKSceneSegmentationSession
+
+#### Summary
+
+Returns the shared scene segmentation session, creating it on first call.
+Subsequent calls return the same instance. The session is inactive until start() is
+called. NSDKSession.update() will call update() on it automatically each frame once
+it is started.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

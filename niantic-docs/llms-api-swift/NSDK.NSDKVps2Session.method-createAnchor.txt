@@ -1,0 +1,37 @@
+# createAnchor
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-createAnchor/
+
+createAnchor
+
+---
+
+## Declaration
+
+func createAnchor(at pose: simd_float4x4) throws -> NSDKVpsAnchorId
+
+#### Summary
+
+Requests to create an anchor at the specified pose.
+Creates an anchor relative to the currently tracked location, and begins tracking (no
+need to call trackAnchor(payload:)). The payload for the new anchor will not be
+available immediately -- the session polls for it each frame and fires
+createdAnchorPayload once it becomes ready.
+- Attention: Anchors can only be created when the current localization's tracking state
+  is .precise. Use $latestLocalization to observe tracking state.
+
+#### Returns
+
+A unique identifier for the created anchor.
+
+#### Throws
+
+NSDKError.invalidOperation if the localization is not in .precise state.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| pose | simd_float4x4 | - |
+
+---

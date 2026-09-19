@@ -1,0 +1,42 @@
+# Release Notes
+
+Source: https://www.nianticspatial.com/docs/nsdk/release_notes/
+
+## Version 4.1.0
+
+### Highlights
+
+- [Scaniverse now available on Android](#scaniverse-android-support)
+- [Meta Quest 3 support restored](#meta-quest-3)
+- [iOS simulator support for x86_64](#ios-simulator-support-for-x86_64)
+- [New Kotlin wayfinding guide](#kotlin-vps2-sample)
+- [Updated Unity version to 6000.0.74f1](#unity-version-update)
+
+### Features/Fixes
+
+#### Scaniverse Android support
+
+- Scaniverse is now available on supported Android devices. The new experience enables users to capture scans, upload them, generate assets, and test localization as part of the new enterprise workflow.
+
+#### Meta Quest 3
+
+- NSDK version 4.1 restores support for Meta Quest 3.
+
+#### iOS Simulator support for x86_64
+
+- Added x86_64 iOS Simulator support to improve simulator-based development.
+
+#### Kotlin VPS2 Sample
+
+- A new end-to-end [Kotlin wayfinding guide](https://github.com/nianticspatial/nsdk-samples-kotlin) demonstrates how to create a wayfinding app using VPS2.
+
+#### Unity version update
+
+- Updated the supported Unity version to **6000.0.74f1**.
+
+### Known Issues
+
+- Meta Quest 3: Force the OpenXR Plugin (`com.unity.xr.openxr`) to version **1.15.1**. Version 1.16.1 is incompatible and will cause issues.
+- Importing the NSDK UPM in a project started from Universal 3D template might cause a few build errors reported in the console. Restarting the editor should fix this.
+- Playback rendering on Android native may not match live results. Some features, such as occlusion, may not function as expected. Improvements are planned in a future update.
+- On iPad Pro running iOS 17 in the Unity External Sample, rotating the device from landscape to portrait may cause a soft lock and screen flickering.

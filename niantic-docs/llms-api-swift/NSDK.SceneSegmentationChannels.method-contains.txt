@@ -1,0 +1,36 @@
+# contains
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.SceneSegmentationChannels.method-contains/
+
+contains
+
+---
+
+## Declaration
+
+func contains(_ member: Self) -> Bool
+
+#### Summary
+
+Returns a Boolean value that indicates whether a given element is a
+member of the option set.
+This example uses the contains(_:) method to check whether next-day
+shipping is in the availableOptions instance.
+    let availableOptions = ShippingOptions.express
+    if availableOptions.contains(.nextDay) {
+        print("Next day shipping available")
+    }
+    // Prints "Next day shipping available"
+
+#### Returns
+
+true if the option set contains member; otherwise,
+  false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| member | Self | The element to look for in the option set. |
+
+---

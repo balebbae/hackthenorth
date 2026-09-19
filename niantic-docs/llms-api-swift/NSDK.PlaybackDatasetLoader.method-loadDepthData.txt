@@ -1,0 +1,35 @@
+# loadDepthData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDatasetLoader.method-loadDepthData/
+
+loadDepthData
+
+---
+
+## Declaration
+
+func loadDepthData(depthFileName: String) -> Data?
+
+#### Summary
+
+Loads depth data from the data source.
+This method must be overridden by subclasses. The base implementation will crash if called.
+Called on-demand when depth data is requested.
+
+#### Returns
+
+The depth data as Data, or nil if loading fails or depth data is not available
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Subclasses must override this method. Do not call the base implementation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthFileName | String | The filename of the depth data file (e.g., "depth_00000000.bin") |
+
+---

@@ -1,0 +1,33 @@
+# NSDKAsyncState
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKAsyncState/
+
+NSDKAsyncState
+Reports the state of an asynchronous NSDK operation.
+
+---
+
+## Declaration
+
+enum NSDKAsyncState<Value, Error> where Error : Error
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case failure | Error) | The asynchronous operation has failed with an error. |
+| case inProgress | Value?) | The asynchronous operation is currently in progress.The associated value may contain a partial result if available. |
+| case notReady | notReady | Deprecated - use `inProgress` instead. |
+| case success | Value) | The asynchronous operation has completed successfully with a result. |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var isFinished | Bool | Indicates whether the asynchronous operation has finished |
+
+---

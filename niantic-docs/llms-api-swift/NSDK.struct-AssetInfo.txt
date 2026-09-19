@@ -1,0 +1,54 @@
+# AssetInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AssetInfo/
+
+AssetInfo
+
+---
+
+## Declaration
+
+struct AssetInfo
+
+## Summary
+
+Represents asset information from the Sites Manager service.
+Maps to proto messages AssetRecord, AssetData, and AssetComputedValues.
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_SitesManager_AssetInfo)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let assetStatus | AssetStatusType | Asset status. |
+| let assetType | AssetType | Asset type - determines which typed asset data is present. |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let deployment | AssetDeploymentType | Asset deployment type. |
+| let description | String? | Asset description (nil if empty). |
+| let id | String | Asset identifier. |
+| var meshData | AssetMeshData | Mesh data (nil if asset type is not mesh). |
+| let name | String | Asset display name. |
+| let pipelineJobId | String? | Pipeline job identifier (nil if not present). |
+| let pipelineJobStatus | AssetPipelineJobStatus | Pipeline job status. |
+| let siteId | String | Site identifier that owns this asset. |
+| let sourceScanIds | [String] | Source scan IDs used to create this asset. |
+| var splatData | AssetSplatData | Splat data (nil if asset type is not splat). |
+| let typedData | TypedAssetData | Typed asset data based on asset type. |
+| var vpsData | AssetVpsData | VPS data (nil if asset type is not vps). |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

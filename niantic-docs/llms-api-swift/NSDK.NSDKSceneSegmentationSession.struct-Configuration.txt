@@ -1,0 +1,40 @@
+# Configuration
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.struct-Configuration/
+
+Configuration
+Configuration structure for the scene segmentation session.
+
+---
+
+## Declaration
+
+struct Configuration
+
+---
+
+## Constructors
+
+init(framerate: UInt32 = 0, mode: SceneSegmentationMode = .unspecified, suppressionMaskChannels: SceneSegmentationChannels = [], thresholds: [Float] = [], numThresholds: UInt32 = 0)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var framerate | UInt32 | The desired frame rate for scene segmentation processing. |
+| var mode | SceneSegmentationMode | The desired scene segmentation mode. |
+| var numThresholds | UInt32 | Number of threshold values. Must match `thresholds.count`. |
+| var suppressionMaskChannels | SceneSegmentationChannels | The semantic channels for which a suppression mask should be generated.Set this to the channels you intend to query via `latestSuppressionMask()`.Defaults to an empty set (suppression mask disabled). |
+| var thresholds | [Float] | Threshold values for semantic channel classification. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| convertToC | ARDK_Semantics_Config | - |
+
+---

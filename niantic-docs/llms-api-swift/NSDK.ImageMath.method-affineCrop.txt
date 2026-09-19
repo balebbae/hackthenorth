@@ -1,0 +1,29 @@
+# affineCrop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineCrop/
+
+affineCrop
+Returns an affine transformation that crops the source size to match the aspect ratio of the target size.
+
+---
+
+## Declaration
+
+static func affineCrop(source: CGSize, target: CGSize) -> CGAffineTransform
+
+#### Summary
+
+Returns an affine transformation that crops the source size to match the aspect ratio of the target size.
+
+#### Returns
+
+An affine transformation matrix that crops the source to fit the target aspect ratio.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| source | CGSize | The size of the source container. |
+| target | CGSize | The size of the target container. |
+
+---

@@ -1,0 +1,82 @@
+# Vps2Heading
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-Vps2Heading/
+
+Vps2Heading
+> inherits from CoreLocation.CLHeading
+
+---
+
+## Declaration
+
+final class Vps2Heading
+
+## Summary
+
+A `CLHeading` subclass representing heading data computed by VPS2.
+VPS2 derives heading from visual-inertial localization rather than a physical magnetometer,
+so the raw magnetometer component values (`x`, `y`, `z`) are zero and not meaningful.
+
+---
+
+## Constructors
+
+### Constructor
+
+required init?(coder: NSCoder)
+
+---
+
+### Overload
+
+init(trueHeading: CLLocationDirection, headingAccuracy: CLLocationDirection, timestamp: Date = Date())
+
+#### Summary
+
+Creates a Vps2Heading from a VPS2-computed true heading and its accuracy.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| override var headingAccuracy | CLLocationDirection | Maximum deviation from the reported heading, in degrees.A negative value indicates the heading is invalid. |
+| override var magneticHeading | CLLocationDirection | Heading relative to magnetic north, in degrees.VPS2 does not use a magnetometer, so this mirrors `trueHeading`. |
+| override class var supportsSecureCoding | Bool | - |
+| override var timestamp | Date | The time at which this heading was determined. |
+| override var trueHeading | CLLocationDirection | Heading relative to true north, in degrees. |
+| override var x | CLHeadingComponentValue | Raw magnetometer x-component. VPS2 does not use a magnetometer; returns `0`. |
+| override var y | CLHeadingComponentValue | Raw magnetometer y-component. VPS2 does not use a magnetometer; returns `0`. |
+| override var z | CLHeadingComponentValue | Raw magnetometer z-component. VPS2 does not use a magnetometer; returns `0`. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| override copy | Any | - |
+| override encode | void | - |
+
+---
+
+## Relationships
+
+conforms to:  Foundation.NSCopying 
+
+conforms to:  Foundation.NSSecureCoding 
+
+conforms to:  Foundation.NSCoding 
+
+conforms to:  ObjectiveC.NSObjectProtocol
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.CVarArg 
+
+conforms to:  Swift.CustomStringConvertible 
+
+conforms to:  Swift.CustomDebugStringConvertible

@@ -1,0 +1,24 @@
+# RaycastBuffer
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-RaycastBuffer/
+
+RaycastBuffer
+A read-only container for the raycast buffer information generated during scanning.
+
+---
+
+## Declaration
+
+class RaycastBuffer
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var normals | NSDKImage | The normals image of the raycast buffer. |
+| var positionAndConfidence | NSDKImage | The position and confidence image of the raycast buffer. |
+| var rgba | NSDKImage | The RGBA image of the raycast buffer. |
+
+---

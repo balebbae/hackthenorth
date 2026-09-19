@@ -1,0 +1,13 @@
+# convertToCArdk
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NsdkTrackingState.method-convertToCArdk/
+
+convertToCArdk
+
+---
+
+## Declaration
+
+func convertToCArdk() -> ARDK_TrackingState
+
+---

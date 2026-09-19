@@ -1,0 +1,28 @@
+# onLog
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKLogCallback.method-onLog/
+
+onLog
+Called when NSDK generates a log message.
+
+---
+
+## Declaration
+
+func onLog(level: NSDKLogLevel, message: String, fileName: String?, fileLine: Int, funcName: String?)
+
+#### Summary
+
+Called when NSDK generates a log message.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| level | NSDKLogLevel | The severity level of the log message |
+| message | String | The log message content |
+| fileName | String? | Optional source file name where the log was generated |
+| fileLine | Int | Line number in the source file |
+| funcName | String? | Optional function name where the log was generated |
+
+---

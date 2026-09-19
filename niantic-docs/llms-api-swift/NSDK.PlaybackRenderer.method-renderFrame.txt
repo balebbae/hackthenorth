@@ -1,0 +1,24 @@
+# renderFrame
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackRenderer.method-renderFrame/
+
+renderFrame
+Called on the main queue for each new playback frame. Updates the background image and the virtual camera pose/FOV to match the frame.
+
+---
+
+## Declaration
+
+@MainActor func renderFrame(_ frame: PlaybackFrame)
+
+#### Summary
+
+Called on the main queue for each new playback frame. Updates the background image and the virtual camera pose/FOV to match the frame.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| frame | PlaybackFrame | - |
+
+---

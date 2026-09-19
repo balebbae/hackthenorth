@@ -1,0 +1,41 @@
+# CloudEnvConfig
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-CloudEnvConfig/
+
+CloudEnvConfig
+
+---
+
+## Declaration
+
+struct CloudEnvConfig
+
+---
+
+## Constructors
+
+init(vpsEndpoint: String? = nil, vpsCoverageEndpoint: String? = nil, identityEndpoint: String? = nil, portalEndpoint: String? = nil, sharedArEndpoint: String? = nil, fastDepthEndpoint: String? = nil, mediumDepthEndpoint: String? = nil, smoothDepthEndpoint: String? = nil, fastSceneSegmentationEndpoint: String? = nil, mediumSceneSegmentationEndpoint: String? = nil, smoothSceneSegmentationEndpoint: String? = nil, scanningEndpoint: String? = nil, scanningSqcEndpoint: String? = nil, telemetryEndpoint: String? = nil, geographiclibGeoidEndpoint: String? = nil)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var fastDepthEndpoint | String? | - |
+| var fastSceneSegmentationEndpoint | String? | - |
+| var geographiclibGeoidEndpoint | String? | - |
+| var identityEndpoint | String? | - |
+| var mediumDepthEndpoint | String? | - |
+| var mediumSceneSegmentationEndpoint | String? | - |
+| var portalEndpoint | String? | - |
+| var scanningEndpoint | String? | - |
+| var scanningSqcEndpoint | String? | - |
+| var sharedArEndpoint | String? | - |
+| var smoothDepthEndpoint | String? | - |
+| var smoothSceneSegmentationEndpoint | String? | - |
+| var telemetryEndpoint | String? | - |
+| var vpsCoverageEndpoint | String? | - |
+| var vpsEndpoint | String? | - |
+
+---

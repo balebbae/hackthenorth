@@ -1,0 +1,18 @@
+# getEastDownNorthQuaternion
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.GeolocationData.method-getEastDownNorthQuaternion/
+
+getEastDownNorthQuaternion
+Returns the orientation in East-Down-North (EDN) frame.
+
+---
+
+## Declaration
+
+func getEastDownNorthQuaternion() -> simd_quatf
+
+#### Summary
+
+Returns the orientation in East-Down-North (EDN) frame.
+
+---

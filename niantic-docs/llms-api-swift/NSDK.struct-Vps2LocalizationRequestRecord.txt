@@ -1,0 +1,32 @@
+# Vps2LocalizationRequestRecord
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2LocalizationRequestRecord/
+
+Vps2LocalizationRequestRecord
+
+---
+
+## Declaration
+
+struct Vps2LocalizationRequestRecord
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| var endTimeMs | UInt64 | The end time of the network request in milliseconds since epoch, if any. |
+| var error | Vps2LocalizationError | The error of the localization request, if any. |
+| var frameId | UInt64 | The identifier of the input ARDK_Frame associated with this request. |
+| var identifier | String | The unique identifier of the network request (32-byte ARDK UUID / identifier string). |
+| var startTimeMs | UInt64 | The start time of the network request in milliseconds since epoch. |
+| var status | Vps2LocalizationRequestStatus | The status of the network request. |
+| var type | Vps2LocalizationRequestType | The type of the network request. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible

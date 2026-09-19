@@ -1,0 +1,550 @@
+# Using Device Maps
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/vps/using_device_maps/
+
+> **Caution:**
+>
+> **Attention!**
+>
+> This feature is experimental and may not work as expected. For more information about it, see the [Device Mapping Feature page](https://www.nianticspatial.com/docs/nsdk/features/device_mapping/).
+
+### Platform: unity
+
+# How to Place Virtual Content Using a Device Map
+
+Now that we have created a device map and saved it to a file, we can read it to place virtual objects in the AR scene. In this how-to, we will cover reading a device map file into your Unity project and how to use it to place content.
+
+## Prerequisites
+
+Before you start, complete [How to Create a Device Map](https://www.nianticspatial.com/docs/nsdk/how-to/vps/adding_device_mapping/). You will need the Unity project from that tutorial for this one. You will also need one prefab asset to place as virtual content, such as a basic cube.
+
+## Placing Content on the Map
+
+1. Select `DeviceMappingDemo` from the **Hierarchy**, then, in the **Inspector**, click **Add Component**. Search for and add a **New Script** to it, then name it `Tracker.cs`.
+
+2. Open `Tracker.cs` and replace its contents with the following snippet:
+
+   ```cs
+   using System.Collections;
+   using System.IO;
+   using NianticSpatial.NSDK.AR.Mapping;
+   using NianticSpatial.NSDK.AR.PersistentAnchors;
+   using NianticSpatial.NSDK.AR.VPS2;
+   using UnityEngine;
+   using UnityEngine.UI;
+   using UnityEngine.XR.ARFoundation;
+   using UnityEngine.XR.ARSubsystems;
+
+   public class Tracker : MonoBehaviour
+   {
+
+   }
+   ```
+
+3. In the **Hierarchy**, select the **XROrigin**, then, in the **Inspector**, click **Add Component** and add an **`ARVps2Manager`** to it.
+
+4. Add a reference to the manager and an `Awake()` method so VPS2 uses **device map localization** (and turns off VPS map and universal localization for this tutorial flow):
+
+   ```cs
+   [SerializeField]
+   private ARVps2Manager _vps2Manager;
+
+   private void Awake()
+   {
+       _vps2Manager.DeviceMapLocalizationEnabled = true;
+       _vps2Manager.VpsMapLocalizationEnabled = false;
+       _vps2Manager.UniversalLocalizationEnabled = false;
+   }
+   ```
+
+   VPS2 reads these settings when the subsystem starts. Set them in `Awake()` or match them on the **ARVps2Manager** component in the Inspector before play.
+
+5. Add UI elements to the `Tracker` script for choosing a device map:
+
+   1. Add a button to start and stop tracking:
+      1. Right-click in the **Hierarchy**, then open the **Create** menu and select **Button** from the **UI** sub-menu. This will create a **Canvas** element and add the button to it.
+      2. In the script, add a serialized field for the button.
+   2. Create a private method, `OnStartTrackingClicked()`, and have it listen for button clicks in `Start()`.
+
+   ```cs
+   [SerializeField]
+   private Button _startTrackingButton;
+
+   private void Start()
+   {
+       _startTrackingButton.onClick.AddListener(OnStartTrackingClicked);
+   }
+
+   // When tracking button is clicked
+   private void OnStartTrackingClicked()
+   {
+   }
+
+   ```
+
+6. Add logic to `Tracker.cs` that toggles the tracking state when the button is clicked:
+
+   ```cs
+   private ARVps2Anchor _anchor;
+   // variable for reference to the object on the map
+   private GameObject _anchorVisualObject;
+   private bool _isTrackingRunning;
+
+   // When tracking button is clicked
+   private void OnStartTrackingClicked()
+   {
+       var buttonText = _startTrackingButton.GetComponentInChildren<Text>();
+       if (_isTrackingRunning)
+       {
+           // Stop tracking if running and clean up anchor
+           if (_anchor)
+           {
+               _vps2Manager.RemoveAnchor(_anchor);
+               _anchor = null;
+               _anchorVisualObject = null;
+           }
+           buttonText.text = "Start Tracking";
+           _isTrackingRunning = false;
+       }
+       // otherwise, change the button to "stop" and start tracking
+       else
+       {
+           buttonText.text = "Stop Tracking";
+           _isTrackingRunning = true;
+           StartCoroutine(RestartTracking());
+       }
+   }
+   ```
+
+7. Add the next code snippet to restart tracking using the map from the file:
+   1. We need to clean up some elements before restarting tracking:
+      1. If there is already an anchor, remove it. Wait a moment before continuing because the anchor can take an extra frame to be removed in some situations.
+      2. Disable and re-enable `ARVps2Manager` to restart tracking. We wait a moment between stopping and starting so that subsystem state is cleaned up asynchronously.
+   2. Once cleanup is done, we can set the saved serialized map data from the file we saved it into earlier.
+      1. Read the serialized map data into memory and pass it to `DeviceMapAccessController.AddMap()` so that it will be tracked.
+   3. Call `ARVps2Manager.TryTrackAnchor` with a **base64** payload string (see snippet) to start tracking again using a new anchor.
+
+8. After adding this snippet to `Tracker.cs`, open the **Hierarchy** and select **DeviceMappingDemo**. Then, in the **Inspector**, find `Tracker.cs` and assign **ARVps2Manager** from the **XROrigin** to the fields in the script.
+
+   ```cs
+   private DeviceMapAccessController _deviceMapAccessController;
+
+   private void Awake()
+   {
+       _vps2Manager.DeviceMapLocalizationEnabled = true;
+       _vps2Manager.VpsMapLocalizationEnabled = false;
+       _vps2Manager.UniversalLocalizationEnabled = false;
+       _deviceMapAccessController = DeviceMapAccessController.Acquire();
+   }
+
+   private IEnumerator RestartTracking()
+   {
+       if (_anchor)
+       {
+           _vps2Manager.RemoveAnchor(_anchor);
+           _anchor = null;
+           _anchorVisualObject = null;
+       }
+       // wait a moment after removing anchor
+       yield return null;
+
+       _vps2Manager.enabled = false;
+
+       // wait a moment before toggling tracking
+       yield return null;
+
+       _vps2Manager.enabled = true;
+
+       // Read a new device map from file
+       var path = Path.Combine(Application.persistentDataPath, Mapper.MapFileName);
+       var serializedDeviceMap = File.ReadAllBytes(path);
+
+       // Assign the device map to the DeviceMapAccessController
+       _deviceMapAccessController.AddMap(serializedDeviceMap);
+
+       // Create a root anchor payload and track it
+       if (_deviceMapAccessController.CreateRootAnchor(out var anchorPayload))
+       {
+           _vps2Manager.TryTrackAnchor(anchorPayload, out _anchor);
+       }
+   }
+   ```
+
+9. When the anchor enters the **Tracking** state, place virtual objects according to the device map:
+
+   1. Create variables to hold the virtual content:
+      1. Add a serialized field variable for the prefab, then assign it to yours.
+   2. Replace your earlier `Start()` method so you subscribe once to the button and to **`ARVps2Manager.trackablesChanged`** (VPS2 consolidates anchor add/update/remove into this event).
+   3. Add `OnDestroy()` to unsubscribe, and implement the handler:
+      1. For the `ARVps2Anchor` reference you received from `TryTrackAnchor`, when its `trackingState` is `Tracking`, instantiate an object from the prefab with the tracked anchor as its parent.
+
+   ```cs
+   [SerializeField]
+   private GameObject _locationAnchorPrefab;
+
+   private void Start()
+   {
+       _startTrackingButton.onClick.AddListener(OnStartTrackingClicked);
+       _vps2Manager.trackablesChanged += OnVps2TrackablesChanged;
+   }
+
+   private void OnDestroy()
+   {
+       if (_vps2Manager != null)
+       {
+           _vps2Manager.trackablesChanged -= OnVps2TrackablesChanged;
+       }
+       _deviceMapAccessController?.Release();
+       _deviceMapAccessController = null;
+   }
+
+   // Event listener for anchor changes
+   private void OnVps2TrackablesChanged(ARTrackablesChangedEventArgs<ARVps2Anchor> args)
+   {
+       foreach (var u in args.updated)
+       {
+           // Handle anchor updates
+       }
+       // `args` contains added anchors and deleted anchors. You can process them as needed
+   }
+   ```
+
+Your virtual object should now be visible!
+
+## Completed Tracker Script
+
+If you are having trouble with your tracking script, compare it to the finished product here!
+
+#### Click to reveal the final Tracker.cs script
+
+```cs
+using System.Collections;
+using System.IO;
+using NianticSpatial.NSDK.AR.Mapping;
+using NianticSpatial.NSDK.AR.PersistentAnchors;
+using NianticSpatial.NSDK.AR.VPS2;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+
+public class Tracker : MonoBehaviour
+{
+    [SerializeField]
+    private ARVps2Manager _vps2Manager;
+
+    [SerializeField]
+    private GameObject _locationAnchorPrefab;
+
+    [SerializeField]
+    private Button _startTrackingButton;
+
+    private GameObject _anchorVisualObject;
+    private ARVps2Anchor _anchor;
+    private bool _isTrackingRunning;
+
+    private DeviceMapAccessController _deviceMapAccessController;
+
+    private void Awake()
+    {
+        _vps2Manager.DeviceMapLocalizationEnabled = true;
+        _vps2Manager.VpsMapLocalizationEnabled = false;
+        _vps2Manager.UniversalLocalizationEnabled = false;
+        _deviceMapAccessController = DeviceMapAccessController.Acquire();
+    }
+
+    private void Start()
+    {
+        _vps2Manager.trackablesChanged += OnVps2TrackablesChanged;
+        _startTrackingButton.onClick.AddListener(OnStartTrackingClicked);
+    }
+
+    private void OnDestroy()
+    {
+        if (_vps2Manager != null)
+        {
+            _vps2Manager.trackablesChanged -= OnVps2TrackablesChanged;
+        }
+    }
+
+    private void OnStartTrackingClicked()
+    {
+        var buttonText = _startTrackingButton.GetComponentInChildren<Text>();
+        if (_isTrackingRunning)
+        {
+            if (_anchor)
+            {
+                _vps2Manager.RemoveAnchor(_anchor);
+                _anchor = null;
+                _anchorVisualObject = null;
+            }
+            buttonText.text = "Start Tracking";
+            _isTrackingRunning = false;
+        }
+        else
+        {
+            buttonText.text = "Stop Tracking";
+            _isTrackingRunning = true;
+            StartCoroutine(RestartTracking());
+        }
+    }
+
+    private IEnumerator RestartTracking()
+    {
+        if (_anchor)
+        {
+            _vps2Manager.RemoveAnchor(_anchor);
+            _anchor = null;
+            _anchorVisualObject = null;
+        }
+        // wait a moment after removing anchor
+        yield return null;
+
+        _vps2Manager.enabled = false;
+
+        // wait a moment before toggling tracking
+        yield return null;
+
+        _vps2Manager.enabled = true;
+
+        // Read a new device map from file
+        var path = Path.Combine(Application.persistentDataPath, Mapper.MapFileName);
+        var serializedDeviceMap = File.ReadAllBytes(path);
+
+        // Assign the device map to the DeviceMapAccessController
+        _deviceMapAccessController.AddMap(serializedDeviceMap);
+
+        // Create a root anchor payload and track it
+        if (_deviceMapAccessController.CreateRootAnchor(out var anchorPayload))
+        {
+            _vps2Manager.TryTrackAnchor(anchorPayload, out _anchor);
+        }
+    }
+
+    private void OnVps2TrackablesChanged(ARTrackablesChangedEventArgs<ARVps2Anchor> args)
+    {
+        if (_anchor == null || _locationAnchorPrefab == null)
+            return;
+
+        void ConsiderAnchor(ARVps2Anchor anchor)
+        {
+            if (anchor != _anchor)
+                return;
+            if (anchor.trackingState == TrackingState.Tracking && !_anchorVisualObject)
+            {
+                _anchorVisualObject = Instantiate(_locationAnchorPrefab, _anchor.transform);
+                Debug.Log("Tracking");
+            }
+        }
+
+        foreach (var a in args.added)
+            ConsiderAnchor(a);
+        foreach (var u in args.updated)
+            ConsiderAnchor(u);
+    }
+}
+```
+
+### Platform: swift
+
+# How to Place Virtual Content Using a Device Map
+
+Now that we have created a device map and saved it to a file, we can read it to place virtual objects in the AR scene. In this how-to, we will cover reading a device map file into your Swift project and how to use it to place content.
+
+## Prerequisites
+
+Before you start, complete [How to Create a Device Map](https://www.nianticspatial.com/docs/nsdk/how-to/vps/adding_device_mapping/). You will need the Swift project from that tutorial for this one.
+
+## Loading a Device Map
+
+Before we can localize to a saved device map, the map data must be loaded into map storage and a root anchor must be created for the VPS2 session to track.
+
+Create the map storage and the VPS2 session from your `NSDKSession`:
+
+```swift
+let mapStorage = nsdkSession.acquireMapStorage()
+let vps2Session = nsdkSession.acquireVps2Session()
+```
+
+Load the map data from disk and add it to storage:
+
+```swift
+// Read the saved map and add it to storage
+let mapData = try Data(contentsOf: mapFileURL)
+let mapBuffer = NSDKBuffer(data: mapData)
+try mapStorage.addMap(map: mapBuffer)
+
+// Create the root anchor payload from the loaded map
+guard let anchorPayload = mapStorage.createRootAnchor() else {
+    print("Failed to get root anchor for loaded map.")
+    return
+}
+```
+
+> **Caution:**
+>
+> `addMap()` **appends** to existing storage. If you want to replace the current map rather than merge with it, call `mapStorage.clear()` before `addMap()`. Do **not** call `clear()` while VPS is running -- stop the VPS2 session first.
+
+## Configuring and Starting VPS2
+
+Configure the VPS2 session for device-map-only localization, then start it and begin tracking the root anchor:
+
+```swift
+var vpsConfig = NSDKVps2Session.Configuration()
+vpsConfig.deviceMapLocalizationEnabled = true
+vpsConfig.universalLocalizationEnabled = false
+vpsConfig.vpsMapLocalizationEnabled = false
+try vps2Session.configure(with: vpsConfig)
+
+vps2Session.start()
+
+let anchorId = try vps2Session.trackAnchor(payload: anchorPayload)
+```
+
+## Tracking Anchor Updates
+
+Subscribe to `vps2Session.anchorUpdated` to receive per-frame pose updates for tracked anchors:
+
+```swift
+vps2Session.anchorUpdated
+    .receive(on: DispatchQueue.main)
+    .sink { [weak self] anchorId, update in
+        guard let trackingData = update.trackingData else { return }
+        let transform = trackingData.targetAnchorTransform
+        // Use this transform to position content relative to the anchor
+    }
+    .store(in: &cancellables)
+```
+
+The `targetAnchorTransform` is a `simd_float4x4` matrix representing the anchor's pose in the current AR session coordinate space.
+
+## Placing Virtual Content
+
+Use the anchor's transform to position content in the scene. For example, with RealityKit:
+
+```swift
+// When anchor tracking data arrives, update your content's transform
+if let trackingData = update.trackingData {
+    myEntity.transform = Transform(matrix: trackingData.targetAnchorTransform)
+}
+```
+
+For more details on placing content relative to anchors, see [Placing Virtual Content with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/#place-content-relative-to-an-anchor).
+
+## Extending an Existing Map
+
+Once the map data is loaded into storage, it behaves just as it did when first created. You can start a new mapping session to append additional scan data to the existing map and save the result, allowing you to build up a map incrementally across multiple sessions.
+
+## Stopping
+
+When you are done tracking, remove the anchor and stop the session:
+
+```swift
+_ = vps2Session.removeAnchor(withId: anchorId)
+vps2Session.stop()
+```
+
+### Platform: kotlin
+
+# How to Place Virtual Content Using a Device Map
+
+Now that we have created a device map and saved it to a file, we can read it to place virtual objects in the AR scene. In this how-to, we will cover reading a device map file into your Kotlin project and how to use it to place content.
+
+## Prerequisites
+
+Before you start, complete [How to Create a Device Map](https://www.nianticspatial.com/docs/nsdk/how-to/vps/adding_device_mapping/). You will need the Kotlin project from that tutorial for this one.
+
+## Loading a Device Map
+
+Before we can localize to a saved device map, the map data must be loaded into the `MappingStorageSession` and a root anchor must be created for the VPS2 session to track.
+
+Create the map storage and VPS2 sessions from your `NSDKSession`:
+
+```kotlin
+val mapStoreSession = nsdkSession.mapStore.acquire()
+val vps2Session = nsdkSession.vps2.acquire()
+```
+
+Load the map data from disk and add it to storage:
+
+```kotlin
+// Read the saved map and add it to storage
+val mapData = File(context.filesDir, fileName).readBytes()
+mapStoreSession.add(mapData)
+
+// Create the root anchor payload from the loaded map
+val rootAnchorPayload = mapStoreSession.createRootAnchor()
+    ?: error("Failed to get root anchor for loaded map.")
+```
+
+> **Caution:**
+>
+> `add()` **appends** to existing storage. If you want to replace the current map rather than merge with it, call `mapStoreSession.clear()` before `add()`. Do **not** call `clear()` while VPS is running -- stop the VPS2 session first.
+
+## Configuring and Starting VPS2
+
+Configure the VPS2 session for device-map-only localization, then start it and begin tracking the root anchor:
+
+```kotlin
+val vps2Config = Vps2Config(
+    enableUniversalLocalization = false,
+    enableVpsMapLocalization = false,
+    enableDeviceMapLocalization = true
+)
+vps2Session.configure(vps2Config)
+
+vps2Session.start()
+
+val anchorId = vps2Session.trackAnchor(rootAnchorPayload)
+```
+
+## Tracking Anchor Updates
+
+Collect `vps2Session.anchorUpdates` to receive per-frame pose updates for tracked anchors:
+
+```kotlin
+coroutineScope.launch {
+    vps2Session.anchorUpdates.collect { update ->
+        // Filter for the anchor we care about
+        if (!update.uuid.contentEquals(anchorId)) return@collect
+
+        when (update.trackingState) {
+            AnchorTrackingState.TRACKED -> {
+                // Localization succeeded -- use the anchor's transform to position content
+                val transform = update.anchorToLocalTrackingTransform
+            }
+            else -> {
+                // Still localizing...
+            }
+        }
+    }
+}
+```
+
+The `anchorToLocalTrackingTransform` represents the anchor's pose in the current AR session coordinate space.
+
+## Placing Virtual Content
+
+Use the anchor's transform to position content in the scene. For example, convert it to a 4x4 matrix and apply it to a scene node:
+
+```kotlin
+val matrix = FloatArray(16)
+update.anchorToLocalTrackingTransform.toMatrix(matrix, 0)
+// Apply `matrix` to your 3D content's world transform
+```
+
+For more details on placing content relative to anchors, see [Placing Virtual Content with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/#place-content-relative-to-an-anchor).
+
+## Extending an Existing Map
+
+Once the map data is loaded into storage, it behaves just as it did when first created. You can start a new mapping session to append additional scan data to the existing map and save the result, allowing you to build up a map incrementally across multiple sessions.
+
+## Stopping
+
+When you are done tracking, remove the anchor, stop the sessions, and release resources:
+
+```kotlin
+vps2Session.removeAnchor(anchorId)
+vps2Session.stop()
+vps2Session.close()
+```

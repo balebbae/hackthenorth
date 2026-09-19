@@ -1,0 +1,30 @@
+# MeshDownloaderResult
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-MeshDownloaderResult/
+
+MeshDownloaderResult
+Represents a single mesh result with geometry, texture, and transform data.
+
+---
+
+## Declaration
+
+struct MeshDownloaderResult
+
+---
+
+## Constructors
+
+init(fromC cResult: ARDK_MeshDownloader_Data, owner: ResourceOwner?)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let imageData | NSDKBuffer | The texture image data for the mesh, or an empty buffer if texture was not requested. |
+| let meshData | MeshData | The mesh geometry data containing vertices, faces, and texture coordinates. |
+| let transform | simd_float4x4 | The transform matrix that positions this mesh in world space. |
+
+---

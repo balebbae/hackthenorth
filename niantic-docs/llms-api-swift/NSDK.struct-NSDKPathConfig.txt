@@ -1,0 +1,23 @@
+# NSDKPathConfig
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKPathConfig/
+
+NSDKPathConfig
+
+---
+
+## Declaration
+
+struct NSDKPathConfig
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var privateApplicationPath | String? | - |
+| var publicApplicationPath | String? | - |
+| var tmpPath | String? | - |
+
+---

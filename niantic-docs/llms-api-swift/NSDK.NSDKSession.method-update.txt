@@ -1,0 +1,18 @@
+# update
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-update/
+
+update
+
+---
+
+## Declaration
+
+func update()
+
+#### Summary
+
+Collects the latest requested sensor inputs from the assigned
+NsdkSessionDataSource and submits a single frame for processing.
+
+---

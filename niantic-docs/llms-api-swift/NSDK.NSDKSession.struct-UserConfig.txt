@@ -1,0 +1,29 @@
+# UserConfig
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-UserConfig/
+
+UserConfig
+
+---
+
+## Declaration
+
+struct UserConfig
+
+---
+
+## Constructors
+
+init(accessToken: String? = nil, refreshToken: String? = nil, featureFlagFilePath: String? = nil)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var accessToken | String? | - |
+| var featureFlagFilePath | String? | - |
+| var refreshToken | String? | - |
+
+---

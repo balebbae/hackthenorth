@@ -1,0 +1,22 @@
+# hasDepth
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.method-hasDepth/
+
+hasDepth
+Checks if the dataset has depth data from a LiDAR source.
+
+---
+
+## Declaration
+
+func hasDepth() -> Bool
+
+#### Summary
+
+Checks if the dataset has depth data from a LiDAR source.
+
+#### Returns
+
+true if depthSource exists and equals "lidar", false otherwise
+
+---

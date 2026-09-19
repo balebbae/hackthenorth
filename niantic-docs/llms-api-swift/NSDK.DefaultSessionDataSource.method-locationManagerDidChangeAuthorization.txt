@@ -1,0 +1,19 @@
+# locationManagerDidChangeAuthorization
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.DefaultSessionDataSource.method-locationManagerDidChangeAuthorization/
+
+locationManagerDidChangeAuthorization
+
+---
+
+## Declaration
+
+func locationManagerDidChangeAuthorization(_ manager: CLLocationManager)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| manager | CLLocationManager | - |
+
+---

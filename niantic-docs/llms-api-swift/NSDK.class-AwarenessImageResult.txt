@@ -1,0 +1,37 @@
+# AwarenessImageResult
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-AwarenessImageResult/
+
+AwarenessImageResult
+> inherits from AwarenessResult 
+Image-based awareness result containing an NSDKImage.
+
+---
+
+## Declaration
+
+class AwarenessImageResult
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let image | NSDKImage | RawImage associated with this awareness result, if available. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| calculateReprojection | matrix_float3x3? | A helper function that computes a 3x3 homography to reproject the imageinto the coordinate frame of the given target pose. |
+
+---
+
+## Relationships
+
+derived:  DepthResult 
+
+derived:  SceneSegmentationResult

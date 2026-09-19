@@ -1,0 +1,180 @@
+# NSDKFeatureStatus
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKFeatureStatus/
+
+NSDKFeatureStatus
+
+---
+
+## Declaration
+
+struct NSDKFeatureStatus
+
+## Summary
+
+Status flags for NSDK features indicating their current operational state.
+`NSDKFeatureStatus` is an option set that represents various status conditions
+for NSDK features like VPS2, scanning, and mapping. Multiple status flags
+can be active simultaneously to provide detailed status information.
+
+## Overview
+
+Use this to monitor the health and state of NSDK features:
+
+- Check for errors that need attention
+- Monitor initialization progress
+- Verify configuration and API key validity
+- Ensure features are ready for operation
+
+## Example Usage
+
+```swift
+let status = vpsSession.getFeatureStatus()
+if status.contains(.badApiKey) {
+    print("Invalid API key - check your credentials")
+} else if status.contains(.configurationFailed) {
+    print("Feature configuration failed")
+} else if status.contains(.initializing) {
+    print("Feature is still initializing...")
+} else if status == .ok {
+    print("Feature is ready and operational")
+}
+```
+
+---
+
+## Constructors
+
+### Constructor
+
+init()
+
+#### Summary
+
+Creates an empty option set.
+This initializer creates an option set with a raw value of zero.
+
+---
+
+### Overload 1
+
+init(arrayLiteral: Self.Element...)
+
+#### Summary
+
+Creates a set containing the elements of the given array literal.
+Do not call this initializer directly. It is used by the compiler when
+you use an array literal. Instead, create a new set using an array
+literal as its value by enclosing a comma-separated list of values in
+square brackets. You can use an array literal anywhere a set is expected
+by the type context.
+Here, a set of strings is created from an array literal holding only
+strings:
+    let ingredients: Set = ["cocoa beans", "sugar", "cocoa butter", "salt"]
+    if ingredients.isSuperset(of: ["sugar", "salt"]) {
+        print("Whatever it is, it's bound to be delicious!")
+    }
+    // Prints "Whatever it is, it's bound to be delicious!"
+
+---
+
+### Overload 2
+
+init(fromC: ARDK_FeatureStatus)
+
+#### Summary
+
+Creates a feature status from a C API status value.
+
+---
+
+### Overload 3
+
+init(rawValue: UInt32)
+
+#### Summary
+
+Creates a feature status with the specified raw value.
+
+---
+
+### Overload 4
+
+init<S>(_ sequence: S) where S : Sequence, Self.Element == S.Element
+
+#### Summary
+
+Creates a new set from a finite sequence of items.
+Use this initializer to create a new set from an existing sequence, like
+an array or a range:
+    let validIndices = Set(0..<7).subtracting([2, 4, 5])
+    print(validIndices)
+    // Prints "[6, 0, 1, 3]"
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static let badApiKey | NSDKFeatureStatus | Invalid or expired API key.The provided API key is not valid or has expired. Verify your API keyand ensure it has the necessary permissions for the requested features. |
+| static let configurationFailed | NSDKFeatureStatus | Feature configuration failed.This indicates that the feature could not be configured with the provided settings.Check configuration parameters and try reconfiguring the feature. |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| var isEmpty | Bool | A Boolean value that indicates whether the set has no elements. |
+| static let notused1 | NSDKFeatureStatus | Reserved status flag (not used in current implementation). |
+| static let notused2 | NSDKFeatureStatus | Reserved status flag (not used in current implementation). |
+| static let ok | NSDKFeatureStatus | Feature is operating normally with no issues.This represents the ideal state where the feature is ready and functional. |
+| let rawValue | UInt32 | The raw value representing the status flags. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| contains | Bool | Returns a Boolean value that indicates whether a given element is amember of the option set.This example uses the `contains(_:)` method to check whether next-dayshipping is in the `availableOptions` instance. let availableOptions = ShippingOptions.express if availableOptions.contains(.nextDay) { print("Next day shipping available") } // Prints "Next day shipping available" |
+| mutating formIntersection | void | Removes all elements of this option set that are notalso present in the given set.This method is implemented as a `&amp;` (bitwise AND) operation on thetwo sets' raw values. |
+| mutating formSymmetricDifference | void | Replaces this set with a new set containing all elementscontained in either this set or the given set, but not in both.This method is implemented as a `^` (bitwise XOR) operation on the twosets' raw values. |
+| mutating formUnion | void | Inserts the elements of another set into this option set.This method is implemented as a `\|` (bitwise OR) operation on thetwo sets' raw values. |
+| @discardableResult mutating insert | (inserted: Bool, memberAfterInsert: Self.Element) | Adds the given element to the option set if it is not already a member.In the following example, the `.secondDay` shipping option is added tothe `freeOptions` option set if `purchasePrice` is greater than 50.0. Forthe `ShippingOptions` declaration, see the `OptionSet` protocoldiscussion. let purchasePrice = 87.55 var freeOptions: ShippingOptions = [.standard, .priority] if purchasePrice > 50 { freeOptions.insert(.secondDay) } print(freeOptions.contains(.secondDay)) // Prints "true" |
+| intersection | Self | Returns a new option set with only the elements contained in both thisset and the given set.This example uses the `intersection(_:)` method to limit the availableshipping options to what can be used with a PO Box destination. // Can only ship standard or priority to PO Boxes let poboxShipping: ShippingOptions = [.standard, .priority] let memberShipping: ShippingOptions = [.standard, .priority, .secondDay] let availableOptions = memberShipping.intersection(poboxShipping) print(availableOptions.contains(.priority)) // Prints "true" print(availableOptions.contains(.secondDay)) // Prints "false" |
+| isDisjoint | Bool | Returns a Boolean value that indicates whether the set has no members incommon with the given set.In the following example, the `employees` set is disjoint with the`visitors` set because no name appears in both sets. let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let visitors: Set = ["Marcia", "Nathaniel", "Olivia"] print(employees.isDisjoint(with: visitors)) // Prints "true" |
+| isOk | Bool | - |
+| isStrictSubset | Bool | Returns a Boolean value that indicates whether this set is a strictsubset of the given set.Set *A* is a strict subset of another set *B* if every member of *A* isalso a member of *B* and *B* contains at least one element that is not amember of *A*. let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let attendees: Set = ["Alicia", "Bethany", "Diana"] print(attendees.isStrictSubset(of: employees)) // Prints "true" // A set is never a strict subset of itself: print(attendees.isStrictSubset(of: attendees)) // Prints "false" |
+| isStrictSuperset | Bool | Returns a Boolean value that indicates whether this set is a strictsuperset of the given set.Set *A* is a strict superset of another set *B* if every member of *B* isalso a member of *A* and *A* contains at least one element that is *not*a member of *B*. let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let attendees: Set = ["Alicia", "Bethany", "Diana"] print(employees.isStrictSuperset(of: attendees)) // Prints "true" // A set is never a strict superset of itself: print(employees.isStrictSuperset(of: employees)) // Prints "false" |
+| isSubset | Bool | Returns a Boolean value that indicates whether the set is a subset ofanother set.Set *A* is a subset of another set *B* if every member of *A* is also amember of *B*. let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let attendees: Set = ["Alicia", "Bethany", "Diana"] print(attendees.isSubset(of: employees)) // Prints "true" |
+| isSuperset | Bool | Returns a Boolean value that indicates whether the set is a superset ofthe given set.Set *A* is a superset of another set *B* if every member of *B* is also amember of *A*. let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let attendees: Set = ["Alicia", "Bethany", "Diana"] print(employees.isSuperset(of: attendees)) // Prints "true" |
+| @discardableResult mutating remove | Self.Element? | Removes the given element and all elements subsumed by it.In the following example, the `.priority` shipping option is removed fromthe `options` option set. Attempting to remove the same shipping optiona second time results in `nil`, because `options` no longer contains`.priority` as a member. var options: ShippingOptions = [.secondDay, .priority] let priorityOption = options.remove(.priority) print(priorityOption == .priority) // Prints "true" print(options.remove(.priority)) // Prints "nil"In the next example, the `.express` element is passed to `remove(_:)`.Although `.express` is not a member of `options`, `.express` subsumesthe remaining `.secondDay` element of the option set. Therefore,`options` is emptied and the intersection between `.express` and`options` is returned. let expressOption = options.remove(.express) print(expressOption == .express) // Prints "false" print(expressOption == .secondDay) // Prints "true" |
+| mutating subtract | void | Removes the elements of the given set from this set.In the following example, the elements of the `employees` set that arealso members of the `neighbors` set are removed. In particular, thenames `"Bethany"` and `"Eric"` are removed from `employees`. var employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let neighbors: Set = ["Bethany", "Eric", "Forlani", "Greta"] employees.subtract(neighbors) print(employees) // Prints "["Diana", "Chris", "Alicia"]" |
+| subtracting | Self | Returns a new set containing the elements of this set that do not occurin the given set.In the following example, the `nonNeighbors` set is made up of theelements of the `employees` set that are not elements of `neighbors`: let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"] let neighbors: Set = ["Bethany", "Eric", "Forlani", "Greta"] let nonNeighbors = employees.subtracting(neighbors) print(nonNeighbors) // Prints "["Diana", "Chris", "Alicia"]" |
+| symmetricDifference | Self | Returns a new option set with the elements contained in this set or inthe given set, but not in both. |
+| union | Self | Returns a new option set of the elements contained in this set, in thegiven set, or in both.This example uses the `union(_:)` method to add two more shipping optionsto the default set. let defaultShipping = ShippingOptions.standard let memberShipping = defaultShipping.union([.secondDay, .priority]) print(memberShipping.contains(.priority)) // Prints "true" |
+| @discardableResult mutating update | Self.Element? | Inserts the given element into the set.If `newMember` is not contained in the set but subsumes current membersof the set, the subsumed members are returned. var options: ShippingOptions = [.secondDay, .priority] let replaced = options.update(with: .express) print(replaced == .secondDay) // Prints "true" |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.OptionSet 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.RawRepresentable 
+
+conforms to:  Swift.SetAlgebra 
+
+conforms to:  Swift.SendableMetatype 
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.ExpressibleByArrayLiteral

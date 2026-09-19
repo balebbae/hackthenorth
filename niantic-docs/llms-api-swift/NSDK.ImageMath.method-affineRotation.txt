@@ -1,0 +1,24 @@
+# affineRotation
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineRotation/
+
+affineRotation
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine rotation.
+
+---
+
+## Declaration
+
+static func affineRotation(radians: Float) -> CGAffineTransform
+
+#### Summary
+
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine rotation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| radians | Float | - |
+
+---

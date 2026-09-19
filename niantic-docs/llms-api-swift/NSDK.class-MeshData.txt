@@ -1,0 +1,75 @@
+# MeshData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-MeshData/
+
+MeshData
+
+---
+
+## Declaration
+
+class MeshData
+
+## Summary
+
+Contains 3D mesh data for rendering and visualization.
+`MeshData` provides access to 3D mesh geometry including vertices, indices,
+normals, and texture coordinates.
+
+## Overview
+
+MeshData includes:
+
+- **Vertices**: 3D position data for mesh geometry
+- **Indices**: The triangles that make up the mesh
+- **Normals**: Surface normal vectors for the vertices, commonly used for lighting calculations
+  (only available for live meshing)
+- **UVs**: Texture coordinates for the vertices, used for mapping textures to the mesh
+  (only available for mesh downloader)
+
+## Example Usage
+
+```swift
+let (status, meshData) = meshDownloader.downloadMesh(meshId: meshId)
+if status.isOk() {
+    print("Mesh vertices: \(meshData.vertices.count)")
+    print("Mesh triangles: \(meshData.indices.count / 3)")
+    // Convert to SceneKit geometry for rendering
+    if let geometry = meshData.toSCNGeometry() {
+        let node = SCNNode(geometry: geometry)
+        sceneView.scene.rootNode.addChildNode(node)
+    }
+}
+```
+
+## Memory Management
+
+Mesh data is backed by native memory that is automatically managed.
+The data remains valid as long as the `MeshData` instance exists.
+
+---
+
+## Constructors
+
+init(fromC cMeshData: ARDK_MeshData, owner: ResourceOwner? = nil)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let indicesPtr | UnsafeBufferPointer<UInt32> | Pointer to the indices data. Array of 3 indices per triangle. |
+| let normalsPtr | UnsafeBufferPointer<Float>? | Pointer to the normals data. Array of 3 floats per normal. Only available for live meshing. |
+| let uvsPtr | UnsafeBufferPointer<Float>? | Pointer to the UVs data. Array of 2 floats per UV. |
+| let verticesPtr | UnsafeBufferPointer<Float> | Pointer to the vertices data. Array of 3 floats per vertex. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| toSCNGeometry | SCNGeometry? | Creates a SceneKit geometry from this mesh chunk's vertex positions, normals and triangle indices. |
+
+---

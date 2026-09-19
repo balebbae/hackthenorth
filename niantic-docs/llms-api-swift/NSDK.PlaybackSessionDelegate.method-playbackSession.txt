@@ -1,0 +1,42 @@
+# playbackSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackSessionDelegate.method-playbackSession/
+
+playbackSession
+Called on the main queue each time a new playback frame is ready. Use the frame's metadata, image, and optional depth for rendering or processing.
+
+---
+
+## Declaration
+
+func playbackSession(_ session: PlaybackSession, didUpdate frame: PlaybackFrame)
+
+#### Summary
+
+Called on the main queue each time a new playback frame is ready. Use the frame's metadata, image, and optional depth for rendering or processing.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| session | PlaybackSession | - |
+| frame | PlaybackFrame | - |
+
+---
+
+## Overload
+
+func playbackSession(_ session: PlaybackSession, cameraDidChangeTrackingState camera: PlaybackCamera)
+
+#### Summary
+
+Called on the main queue when the tracking state changes (e.g. at start of playback). For playback, state is typically .normal.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| session | PlaybackSession | - |
+| frame | PlaybackFrame | - |
+
+---

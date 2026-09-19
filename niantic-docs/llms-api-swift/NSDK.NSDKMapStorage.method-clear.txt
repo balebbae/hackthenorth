@@ -1,0 +1,24 @@
+# clear
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-clear/
+
+clear
+
+---
+
+## Declaration
+
+func clear()
+
+#### Summary
+
+Clears the map storage.
+This method removes all stored map data and localization data
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: Must not be called if VPS is running. If called,
+
+---

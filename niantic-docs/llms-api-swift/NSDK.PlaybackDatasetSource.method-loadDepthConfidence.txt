@@ -1,0 +1,28 @@
+# loadDepthConfidence
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDatasetSource.method-loadDepthConfidence/
+
+loadDepthConfidence
+
+---
+
+## Declaration
+
+func loadDepthConfidence(confidenceFileName: String) -> Data?
+
+#### Summary
+
+Loads depth confidence data from the data source.
+This method is called on-demand when confidence data is requested.
+
+#### Returns
+
+The confidence data as Data, or nil if loading fails or confidence data is not available
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| confidenceFileName | String | The filename of the confidence data file (e.g., "confidence_00000000.bin") |
+
+---

@@ -1,0 +1,31 @@
+# subtract
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.SceneSegmentationChannels.method-subtract/
+
+subtract
+
+---
+
+## Declaration
+
+mutating func subtract(_ other: Self)
+
+#### Summary
+
+Removes the elements of the given set from this set.
+In the following example, the elements of the employees set that are
+also members of the neighbors set are removed. In particular, the
+names "Bethany" and "Eric" are removed from employees.
+    var employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"]
+    let neighbors: Set = ["Bethany", "Eric", "Forlani", "Greta"]
+    employees.subtract(neighbors)
+    print(employees)
+    // Prints "["Diana", "Chris", "Alicia"]"
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | A set of the same type as the current set. |
+
+---

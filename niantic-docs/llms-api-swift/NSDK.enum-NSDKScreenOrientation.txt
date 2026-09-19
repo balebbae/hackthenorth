@@ -1,0 +1,95 @@
+# NSDKScreenOrientation
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKScreenOrientation/
+
+NSDKScreenOrientation
+Represents the screen orientation in the NSDK layer.
+
+---
+
+## Declaration
+
+@frozen enum NSDKScreenOrientation
+
+---
+
+## Constructors
+
+### Constructor
+
+init?(rawValue: Int)
+
+#### Summary
+
+Creates a new instance with the specified raw value.
+If there is no value of the type that corresponds with the specified raw
+value, this initializer returns nil. For example:
+    enum PaperSize: String {
+        case A4, A5, Letter, Legal
+    }
+    print(PaperSize(rawValue: "Legal"))
+    // Prints "Optional(PaperSize.Legal)"
+    print(PaperSize(rawValue: "Tabloid"))
+    // Prints "nil"
+
+---
+
+### Overload
+
+init(_ interfaceOrientation: UIInterfaceOrientation)
+
+#### Summary
+
+Initialize from UIKit's UIInterfaceOrientation
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case landscapeLeft | landscapeLeft | - |
+| case landscapeRight | landscapeRight | - |
+| case portrait | portrait | - |
+| case portraitUpsideDown | portraitUpsideDown | - |
+| case unknown | unknown | - |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var hashValue | Int | - |
+| var uiInterfaceOrientation | UIInterfaceOrientation | Convert to UIKit's UIInterfaceOrientation |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| convertToCArdk | ARDK_Orientation | - |
+| hash | void | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.RawRepresentable 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.BitwiseCopyable

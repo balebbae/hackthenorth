@@ -1,0 +1,239 @@
+# Scaniverse Quickstart
+
+Source: https://www.nianticspatial.com/docs/scaniverse/quickstart/
+
+> **Info:**
+>
+> **[Lightship.dev](https://lightship.dev/signin) has been decommissioned.**
+>
+> If you previously used Lightship.dev, log in to [scaniverse.nianticspatial.com](https://scaniverse.nianticspatial.com) and select **Migrate a Lightship account** to create a new account and access your projects. For more information, see the [Migration guide](https://www.nianticspatial.com/docs/scaniverse/migration_guide/).
+
+# Quickstart
+
+This guide walks you through capturing a location in Scaniverse, generating assets, and confirming that it localizes successfully.
+
+By the end of this guide, you will:
+
+- Create a **Site**, which represents a real-world location.
+- Capture and upload **Scans** within that Site to generate **Assets**, including meshes and splats.
+- Create an **Asset Version** and set it to **Production** so it can be used for **localization**, which aligns a device to the VPS map.
+- Test localization in Scaniverse.
+
+This guide covers the following steps:
+
+1. [Install](#install-the-scaniverse-app) - Install and sign in to Scaniverse.
+2. [Create a Scaniverse account](#create-a-scaniverse-account) - Sign yourself up or accept an invitation to an existing Organization.
+3. [Create a Site](#create-a-site) - Create a Site to organize your scans and 3D assets.
+4. [Capture and upload](#capture-and-upload) - Capture overlapping scans and upload them to begin generating assets.
+5. [Generate and publish](#generate-and-publish) - Generate a new Asset Version and set it to **Production**.
+6. [Test](#test-localization) - Return to the location and confirm successful localization.
+
+---
+
+### Prerequisites
+
+Before you begin, ensure that you have the following:
+
+- A supported mobile device:
+  - **iPhone 13 or newer**. Pro models with LiDAR produce higher-quality results.
+  - **Samsung Galaxy S24, Google Pixel 8, or newer Android device running Android 14 or later**. Flagship models produce higher-quality results.
+- Physical access to the location you want to scan.
+- A **New** [Scaniverse account](https://scaniverse.nianticspatial.com/signin). If you don't have an account, follow the steps in [Create a Scaniverse account](#create-a-scaniverse-account).
+
+---
+
+### Plans and pricing
+
+Scaniverse offers subscription plans with varying feature availability and credits allocation. Higher tiers provide increased processing credits, storage, collaboration capabilities, and additional features for production workflows.
+
+Pricing scales with credit allowance, allowing teams to experiment with smaller projects while giving teams and organizations the resources needed to manage larger environments and deployments.
+
+For current plan options and limits, see [Plans and Pricing](https://www.nianticspatial.com/pricing).
+
+---
+
+## Install the Scaniverse app
+
+The Scaniverse app includes a **New** experience designed for team workflows and cloud processing. To use it, existing users must [create a new Scaniverse account](#create-a-scaniverse-account); you can use the same email address. The **Classic** experience remains available for single scans and local processing.
+
+Existing Scaniverse users can update to **version 5.2 or later**, then switch to the **New** experience as follows:
+
+1. Open the Scaniverse app.
+2. Tap **LIBRARY** at the bottom of your screen.
+3. Tap the **Settings** wheel at the top of the screen.
+4. Tap **Discover the New Scaniverse**.
+5. Tap **Continue**.
+6. Log in using the email address associated with Scaniverse or authenticate with Google.
+
+## Create a Scaniverse account
+
+You can create a Scaniverse account by [signing yourself up](#sign-yourself-up) or by [accepting an invitation](#accept-an-invitation) into an existing Organization in Scaniverse.
+
+> **Tip:**
+>
+> **Multiple Organizations**
+>
+> If you are in multiple Organizations, go to **Profile** and select the appropriate Organization from the **select Organization** dropdown.
+
+### Sign yourself up
+
+You can sign yourself up on the [Scaniverse app](#install-the-scaniverse-app) or in [Scaniverse Web](https://scaniverse.nianticspatial.com/signin).
+
+1. Open the Scaniverse app or navigate to [Scaniverse Web](https://scaniverse.nianticspatial.com/signup).
+2. Select the **New** experience. You can't use the NSDK with the **Classic** Scaniverse experience.
+3. Select **Continue**.
+4. Tap **Sign up** at the bottom of the screen.
+5. Choose a sign-up method:
+   - **Sign up with Email** to associate your email with your Niantic login.
+   - **Sign up with Google** to authenticate with your Google account.
+6. Select the verification link sent to your email to activate your account. If you don't receive an email, check your spam or junk folder.
+7. Enter your Organization's name to complete account setup.
+8. Select **Allow Once** or **Allow While Using App** to grant Scaniverse permission to use your location.
+
+### Accept an invitation
+
+You can also create an account by accepting an invitation from someone inside an existing Organization.
+
+1. Ask someone inside an existing Organization to complete the steps to [add others](https://www.nianticspatial.com/docs/nsdk/create_account#add-others-to-your-organization).
+2. Select the **Accept Invitation** link sent to your email to activate your account. If you don't receive an email, check your spam or junk folder. A web browser opens to prompt you to join Scaniverse.
+3. Enter your first and last name to **Join your team on Scaniverse**.
+4. Choose a sign-up method:
+   - **Sign up with email** to associate your email with your Niantic login.
+   - **Sign up with Google** to authenticate with your Google account.
+
+Contact [Niantic's Sales team](https://www.nianticspatial.com/capture/contact-sales) if you have questions or need additional capacity for production deployments.
+
+## Check usage quotas
+
+Quotas apply per Organization. For current limits, see [Plans and Pricing](https://www.nianticspatial.com/pricing).
+
+You can check your usage against your plan in the Scaniverse Dashboard as follows:
+
+1. Log in to [Scaniverse Web](https://scaniverse.nianticspatial.com).
+2. Select **Dashboard** from the left navigation bar.
+
+### Top Ups
+
+If you exhaust your monthly credits, you can purchase Top Ups rather than waiting for your credits to refresh. Top Up credits are shared across your Organization and are only drawn down after your monthly balance runs out.
+
+Top Ups are available in preset amounts ($10, $20, $50) or a custom amount, with a $5 minimum purchase. Per-credit pricing varies by plan. Top Up credits do not unlock plan-gated features.
+
+Top Up credits expire based on your billing period:
+
+- **Monthly plans:** Top Up credits are valid for 3 months.
+- **Annual plans:** Top Up credits are valid for 12 months.
+
+To purchase a Top Up, select **Add credits** from the Dashboard when your credits are low.
+
+If you need higher capacity on an ongoing basis, select **Contact sales** to reach out to [Niantic's Sales team](https://www.nianticspatial.com/capture/contact-sales) or see [Plans and Pricing](https://www.nianticspatial.com/pricing) to upgrade your plan.
+
+## Add others to your Organization
+
+You can invite a team member by email to join your Organization. They do not have to have an existing Niantic account.
+
+1. Log in to the [Scaniverse Web](https://scaniverse.nianticspatial.com).
+2. Select your profile at the bottom of the left navigation bar.
+3. Select **Account settings**.
+4. Select the name of the Organization that you want to add a person to.
+5. Select **Send invite**.
+6. Enter their email address. You can also select **Add another** to invite more people.
+7. Select **Send invite**.
+8. Ask the person to check their email for your invitation. The link in the email expires 7 days after you invite them.
+
+## Create a Site
+
+Sites are **private** by default, meaning they're accessible only to you and team members in your Organization.
+
+1. Tap **+** button in the top-right corner. The **Add private Site** screen opens.
+2. Enter a clear, descriptive, and unique name under **Site Name**.
+3. Tap **Confirm**.
+
+## Capture and upload (Mobile)
+
+Capture overlapping scans of your location, then upload them for processing. Each scan supports up to five minutes of recording time and can cover up to 500 square meters.
+
+For more reliable localization:
+
+- Use strong overlap between views.
+- Move slowly and continuously while scanning.
+- Capture each area from multiple viewpoints.
+
+For more detailed guidance, see [Scan techniques](https://www.nianticspatial.com/docs/scaniverse/techniques/).
+
+**Capture**
+
+Capture overlapping scans of your location as follows:
+
+1. Open the Site you created in the previous step.
+2. Tap **+ Capture** at the bottom of the screen.
+3. Tap the red button at the bottom of the screen to start scanning.
+4. Move slowly through the space, capturing overlapping views.
+5. Tap the red button again to stop.
+6. Review the scan and tap **Save**.
+
+In addition to these steps, the Plus and Pro plans also enable Organizations to capture Sites by uploading 360 **video** files recorded with a 360 camera (`.insv` or equirectangular `.mp4`). Still panoramic images are not supported. After upload, 360 scans can be processed into either a **Mesh** or a **Gaussian splat**. For supported export formats and more information, see [360 Camera](https://www.nianticspatial.com/docs/scaniverse/360camera/).
+
+---
+
+**Upload**
+
+After capturing scans, upload them so you can generate an Asset Version for localization:
+
+1. Open the Site you created.
+2. Tap the **Scans** tab.
+3. Select the scans you want to upload.
+4. Select **Upload** or **Upload All**.
+
+---
+
+## Generate and publish
+
+After your scans are uploaded, generate an Asset Version and set it to Production so it can be used for localization.
+
+**Generate Assets**
+
+**Asset types**
+
+- **Splat:** Best for visual quality and scene preview. Usually takes longer to generate.
+- **Mesh:** Best for geometry-based 3D workflows and exports.
+- **VPS map:** Used for localization and device positioning in the real world.
+
+1. Select **Generate** Assets.
+2. Name the Asset version.
+3. Under **Choose your scan type**, select **Mobile scans** or **360 scan**.
+4. Select the scan or scans you want to include. Only scans that have passed validation will be available for selection.
+5. Review the preview panel for the selected scan when available.
+6. Under **Choose what assets you want generated**, select from **Splat**, **Mesh**, and **VPS map** for mobile scans, and **Splat**, **Mesh** for 360 scans.
+7. Review the capture duration and credits summary for your selection. To learn more about credit costs, visit [pricing](https://www.nianticspatial.com/pricing).
+8. Confirm and wait for asset generation.
+
+Processing can take several hours or longer. After processing completes, the **Assets** tab contains your new Asset Version, which defines the spatial data used during localization.
+
+**Publish**
+
+Newly generated VPS maps are not available for VPS by default. To make one active, set the asset to **Production** as follows:
+
+1. Open the **Assets** tab for your Site.
+2. Tap the three horizontal dots next to the Asset Version name.
+3. Select **Set as Production** from the drop-down list.
+
+## Test localization
+
+After setting an Asset Version to **Production**, return to the physical location to confirm that it localizes successfully.
+
+**Test in Scaniverse**
+
+1. Go to the physical place you scanned.
+2. Open the Scaniverse app.
+3. Select your Site.
+4. Select the **Assets** tab.
+5. Select **Localize**.
+6. If prompted, allow camera access.
+
+If localization is successful, the asset aligns with the real-world environment and remains stable as you move.
+
+**If localization fails**
+
+- Ensure you are in the same area that was scanned.
+- Move slowly and point the camera at areas with strong visual detail.
+- If localization continues to fail, review the [Troubleshoot](https://www.nianticspatial.com/docs/scaniverse/troubleshoot/) guide and capture additional overlapping scans using the tips in [Scan techniques](https://www.nianticspatial.com/docs/scaniverse/techniques/) before generating a new Asset Version.

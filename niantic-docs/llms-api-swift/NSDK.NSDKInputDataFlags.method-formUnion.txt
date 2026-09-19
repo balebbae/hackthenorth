@@ -1,0 +1,25 @@
+# formUnion
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKInputDataFlags.method-formUnion/
+
+formUnion
+
+---
+
+## Declaration
+
+mutating func formUnion(_ other: Self)
+
+#### Summary
+
+Inserts the elements of another set into this option set.
+This method is implemented as a | (bitwise OR) operation on the
+two sets' raw values.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | An option set. |
+
+---

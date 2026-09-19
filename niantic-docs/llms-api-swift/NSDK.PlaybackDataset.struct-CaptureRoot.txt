@@ -1,0 +1,59 @@
+# CaptureRoot
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-CaptureRoot/
+
+CaptureRoot
+Root structure for the capture JSON file. Required fields per capture.json spec; optional fields may be omitted.
+
+---
+
+## Declaration
+
+struct CaptureRoot
+
+---
+
+## Constructors
+
+init(from decoder: any Decoder) throws
+
+#### Summary
+
+Creates a new instance by decoding from the given decoder.
+This initializer throws an error if reading from the decoder fails, or
+if the data read is corrupted or otherwise invalid.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let app | String? | - |
+| let autofocus | Int? | - |
+| let coordinates | String | - |
+| let depthFormat | String? | - |
+| let depthSource | String? | - |
+| let duration | Double? | - |
+| let formatVersion | String | - |
+| let frameCount | Int? | - |
+| let framerate | Double? | - |
+| let frames | [FrameMetadata] | - |
+| let imageFormat | String | - |
+| let imageQuality | Int? | - |
+| let manufacturer | String? | - |
+| let metadata | CaptureMetadata? | - |
+| let model | String? | - |
+| let recorder | String? | - |
+| let resolution | [Int] | - |
+| let timestamp | Double | - |
+| let timezone | Int? | - |
+| let uuid | String | - |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Decodable 
+
+conforms to:  Swift.Encodable

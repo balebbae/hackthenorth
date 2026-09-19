@@ -1,0 +1,163 @@
+# Level of Detail Meshing
+
+Source: https://www.nianticspatial.com/docs/nsdk/experimental/level_of_detail_meshing/
+
+# Level of Detail Meshing (Experimental)
+
+## Overview
+
+Niantic Spatial Meshing reconstructs the visible geometry of the scene, allowing AR characters and objects to interact physically with their environment. By default, the spatial resolution used for this reconstruction is constant. Level of Detail Meshing is a new experimental feature that changes the local resolution of the reconstruction based on how far the player is from specific points in space. While they are far away, world details are rendered coarsely, but as they approach, the resolution becomes finer, showing a more precise version of the geometry.
+
+### Platform: unity
+
+## Enabling Levels of Detail
+
+To enable Level of Detail Meshing, expand the `XROrigin` in the **Hierarchy** and select the object that contains your Nsdk Meshing Extension.
+Then, in the **Inspector** under "Experimental Meshing Options," check the box for "Enable Levels of Detail".
+Choose a value from 2 to 5, with 5 providing the most detail and 2 the least.
+(Setting this to 1 or 0 will result in the default behavior: no additional levels of detail.)
+
+> **Caution:**
+>
+> Enabling levels of detail in conjunction with **Distance-based Volumetric Cleanup** is not recommended.
+
+## How is Level of Detail Defined?
+
+When a new Mesh Block is surfaced to Unity, it creates a new GameObject in the `Trackables` section of the Hierarchy. The names for these GameObjects follow the format `Mesh-<32 digit number>-<32 zeroes>`, where the first digit of the 32-digit number is the level of detail used to reconstruct the triangles in the mesh. Each level doubles the voxel size and block size for that mesh region. For example, a Level 3 mesh block covers a cubic region with sides 8 times longer than a Level 1 mesh block and contains voxels that are 8 times larger.
+
+## Level of Detail Setup Examples
+
+We provide two examples for how to set up meshing level of detail in your project. The first example, taken at a distance of 30 meters, is suitable for indoor use, while the second, taken at 100 meters, is better for outdoor experiences.
+
+Example indoor configuration:
+
+(image: Example Indoor Configuration.)
+
+Example outdoor configuration:
+
+(image: Example Outdoor Configuration.)
+
+### Platform: swift
+
+## Enabling Levels of Detail
+
+To enable levels of detail, configure the meshing session with more than one level of detail:
+
+```swift
+var config = NsdkMeshingSession.Configuration()
+
+// Enable LOD
+config.numVoxelLevels = 3
+do {
+    try meshingSession.configure(with: config)
+    meshingSession.start()
+} catch {
+    print("Invalid meshing configuration")
+}
+```
+
+Choose a value from 2 to 5, with 5 providing the most detail and 2 the least.
+(Setting this to 1 or 0 will result in the default behavior: no additional levels of detail.)
+
+> **Caution:**
+>
+> Enabling levels of detail in conjunction with **Distance-based Volumetric Cleanup** is not recommended.
+
+To try this code on your device, download the [Sample Project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) or see the guide on creating a project with [semantic mesh filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/).
+
+## Level of Detail Setup Examples
+
+We provide two examples for how to set up meshing level of detail in your project. The first example, set for a distance of 30 meters, is suitable for indoor use, while the second, set for 100 meters, is better for outdoor experiences.
+
+### Indoor LOD Configuration
+
+- **frameRate:** 10
+- **fuseKeyframesOnly:** true
+- **maximumIntegrationDistance:** 30
+- **voxelSize:** 0.025
+- **enableDistanceBasedVolumetricCleanup:** true
+- **meshBlockSize:** 2
+- **meshCullingDistance:** 0
+- **enableMeshDecimation:** true
+- **filterMeshWithSemantics:** true
+- **enableBlocklist:** true
+- **packedBlocklist:** 1
+- **numVoxelLevels:** 3
+
+### Outdoor LOD Configuration
+
+- **frameRate:** 10
+- **fuseKeyframesOnly:** true
+- **maximumIntegrationDistance:** 100
+- **voxelSize:** 0.05
+- **enableDistanceBasedVolumetricCleanup:** true
+- **meshBlockSize:** 2
+- **meshCullingDistance:** 0
+- **enableMeshDecimation:** true
+- **filterMeshWithSemantics:** true
+- **enableBlocklist:** true
+- **packedBlocklist:** 1
+- **numVoxelLevels:** 4
+
+### Platform: kotlin
+
+## Enabling Levels of Detail
+
+To enable levels of detail, configure the meshing session with more than one level of detail:
+
+```kotlin
+val meshingSession = nsdkSession.meshingSession.acquire()
+
+// Configure and start meshing
+meshingSession.configure(
+    MeshingConfig(
+        fuseKeyframesOnly = true,
+        numVoxelLevels = 3,
+    )
+)
+
+meshingSession.start()
+```
+
+Choose a value from 2 to 5, with 5 providing the most detail and 2 the least.
+(Setting this to 1 or 0 will result in the default behavior: no additional levels of detail.)
+
+> **Caution:**
+>
+> Enabling levels of detail in conjunction with **Distance-based Volumetric Cleanup** is not recommended.
+
+To try this code on your device, download the [Sample Project](https://www.nianticspatial.com/docs/nsdk/sample_projects/).
+
+## Level of Detail Setup Examples
+
+We provide two examples for how to set up meshing level of detail in your project. The first example, set for a distance of 30 meters, is suitable for indoor use, while the second, set for 100 meters, is better for outdoor experiences.
+
+### Indoor LOD Configuration
+
+- **frameRate:** 10
+- **fuseKeyframesOnly:** true
+- **maximumIntegrationDistance:** 30
+- **voxelSize:** 0.025
+- **enableDistanceBasedVolumetricCleanup:** true
+- **meshBlockSize:** 2
+- **meshCullingDistance:** 0
+- **enableMeshDecimation:** true
+- **filterMeshWithSemantics:** true
+- **enableBlocklist:** true
+- **packedBlocklist:** 1
+- **numVoxelLevels:** 3
+
+### Outdoor LOD Configuration
+
+- **frameRate:** 10
+- **fuseKeyframesOnly:** true
+- **maximumIntegrationDistance:** 100
+- **voxelSize:** 0.05
+- **enableDistanceBasedVolumetricCleanup:** true
+- **meshBlockSize:** 2
+- **meshCullingDistance:** 0
+- **enableMeshDecimation:** true
+- **filterMeshWithSemantics:** true
+- **enableBlocklist:** true
+- **packedBlocklist:** 1
+- **numVoxelLevels:** 4

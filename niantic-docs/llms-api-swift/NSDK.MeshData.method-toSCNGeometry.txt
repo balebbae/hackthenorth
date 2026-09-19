@@ -1,0 +1,28 @@
+# toSCNGeometry
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.MeshData.method-toSCNGeometry/
+
+toSCNGeometry
+Creates a SceneKit geometry from this mesh chunk's vertex positions, normals and triangle indices.
+
+---
+
+## Declaration
+
+func toSCNGeometry(material: SCNMaterial? = nil) -> SCNGeometry?
+
+#### Summary
+
+Creates a SceneKit geometry from this mesh chunk's vertex positions, normals and triangle indices.
+
+#### Returns
+
+SCNGeometry representing the mesh.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| material | SCNMaterial? | Optional material to apply to the resulting geometry. |
+
+---

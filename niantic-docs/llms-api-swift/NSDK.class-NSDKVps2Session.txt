@@ -1,0 +1,103 @@
+# NSDKVps2Session
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKVps2Session/
+
+NSDKVps2Session
+
+---
+
+## Declaration
+
+final class NSDKVps2Session
+
+## Summary
+
+A session for VPS2 (Visual Positioning System) localization with Combine publisher support.
+`NSDKVps2Session` provides capabilities for localizing the device in the real world using
+VPS maps, universal localization, and anchor tracking. Anchors can be created at specific
+poses and tracked across sessions using payloads.
+
+## Overview
+
+VPS2 features include:
+
+- Real-time localization updates for converting between AR space and geolocation
+- Anchor tracking with per-anchor pose updates
+- Payload-based anchor persistence across sessions
+- Localization request diagnostics
+
+## Usage Pattern
+
+```swift
+// Acquire and configure the VPS2 session
+let vps2Session = nsdkSession.acquireVps2Session()
+let config = NSDKVps2Session.Configuration()
+try vps2Session.configure(with: config)
+// Subscribe to localization updates
+vps2Session.$latestLocalization
+    .compactMap { $0 }
+    .sink { localization in
+        // Use localization.trackingState to check localization quality
+    }
+    .store(in: &cancellables)
+// Subscribe to anchor updates
+vps2Session.anchorUpdated
+    .sink { id, update in
+        // Handle per-anchor pose update
+    }
+    .store(in: &cancellables)
+vps2Session.start()
+// Track an anchor by payload
+let anchorId = try vps2Session.trackAnchor(payload: base64Payload)
+```
+
+`$latestLocalization` is updated automatically each frame by `NSDKSession.update()` while
+the session is active. `anchorUpdated`, `createdAnchorPayload`, and `localizationRequestRecords`
+are fired via `PassthroughSubject` during `update()` when new data is available.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let anchorUpdated | PassthroughSubject<(id: NSDKVpsAnchorId, update: VpsAnchorUpdate), Never> | Fires each frame for every tracked anchor that returns an update.Subscribe to this to receive per-anchor pose changes. The session internally tracksall anchors registered via `trackAnchor(payload:)` or `createAnchor(at:)` and pollsthem each frame. |
+| let createdAnchorPayload | PassthroughSubject<(id: NSDKVpsAnchorId, payload: String), Never> | Fires once when the payload for a created anchor becomes available.After calling `createAnchor(at:)`, the session automatically polls for the anchor'spayload each frame. When the payload is ready, this subject fires once with the anchorID and the base64-encoded payload string, which can be stored and used later with`trackAnchor(payload:)` to relocalize the anchor in a future session. |
+| @Published var latestLocalization | Vps2Localization | The latest VPS2 localization. Updated each frame by `NSDKSession` while active.`nil` until the first frame update after `start()`. Use `localization.trackingState` todetermine localization quality -- fields other than `trackingState` are only valid whenthe state is not `.unavailable`. |
+| let localizationRequestRecords | PassthroughSubject<[Vps2LocalizationRequestRecord], Never> | Fires each frame when new localization request records are available.The array contains only records that occurred since the last call -- it is a delta, nota cumulative list. Use this for diagnostics and monitoring localization request activity. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorPayload | NSDKAsyncState<String, Never>? | Gets the payload data of a specified anchor.The payload encodes the data needed to relocalize an anchor across devices or sessions.It can be stored and used later with `trackAnchor(payload:)`.For anchors created via `createAnchor(at:)`, subscribe to `createdAnchorPayload`instead of polling this method -- the session handles polling automatically.- Precondition: `anchorId` must be exactly 32 characters long. |
+| anchorUpdate | VpsAnchorUpdate? | Gets the latest tracking update for a specified anchor.Call this for one-shot queries. For ongoing per-frame updates, subscribe to`anchorUpdated` instead.- Precondition: `anchorId` must be exactly 32 characters long. |
+| configure | void | Configures the session with the specified settings.- Attention: This method must be called while the session is stopped, or else configuration will fail. In that case, while this function returns without throwing, configuration will still fail asynchronously. Use `featureStatus()` to check that configuration has not failed. |
+| createAnchor | NSDKVpsAnchorId | Requests to create an anchor at the specified pose.Creates an anchor relative to the currently tracked location, and begins tracking (noneed to call `trackAnchor(payload:)`). The payload for the new anchor will not beavailable immediately -- the session polls for it each frame and fires`createdAnchorPayload` once it becomes ready.- Attention: Anchors can only be created when the current localization's tracking state is `.precise`. Use `$latestLocalization` to observe tracking state. |
+| deviceGeolocation | Vps2GeolocationData? | Gets the geolocation of the device's last known camera pose. |
+| featureStatus | NSDKFeatureStatus | Gets the current status of the VPS2 feature.This method reports any errors or warnings that have occurred within the VPS2 system.Check this periodically to monitor the health of localization operations.Once an error is flagged, it will remain flagged until the problematic process runs againand completes successfully. |
+| getLatestLocalization | Vps2Localization | Gets a copy of the latest VPS2 localization.The localization contains all data required to convert between AR space and geolocation.If VPS2 has not yet localized, the localization's `trackingState` will be `.unavailable`and the other fields should be considered invalid.For reactive use, subscribe to `$latestLocalization` instead of calling this directly. |
+| getLatestLocalizationRequestRecords | [Vps2LocalizationRequestRecord] | Gets the latest localization request records from the VPS2 feature.Returns only records that occurred since the last call -- this is a delta, not cumulative.For reactive use, subscribe to `localizationRequestRecords` instead. |
+| getPose | Vps2Pose? | Converts a geolocation to an AR pose using the provided localization snapshot. |
+| @discardableResult removeAnchor | Bool | Stops tracking an anchor.Once removed, the anchor will no longer receive updates or consume processing resources.- Precondition: `anchorId` must be exactly 32 characters long. |
+| start | void | Starts the VPS2 session.This begins collecting local device sensor data required for localization. To actuallylocalize, call `trackAnchor(payload:)` with a valid VPS payload. |
+| stop | void | Stops the VPS2 session.This halts all VPS2 processing and anchor tracking. The session can be reconfiguredand restarted after stopping. `$latestLocalization` is reset to `nil`. |
+| trackAnchor | NSDKVpsAnchorId | Requests to start tracking an anchor specified by a payload.A VPS payload contains all the data needed to localize at a VPS-activated location.A default payload for a VPS-activated location can be obtained from the "blob" fieldin the details view of an entry in the Geospatial Browser, or via`anchorPayload(anchorId:)` for user-generated anchors.The returned anchor ID is automatically polled each frame via `update()`, and updatesare published on `anchorUpdated`. |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configuration | Configuration | Configuration for the VPS2 session. |
+
+---
+
+## Relationships
+
+conforms to:  NSDKFeatureSession

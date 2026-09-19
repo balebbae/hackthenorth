@@ -1,0 +1,228 @@
+# Set up the project
+
+Source: https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started/
+
+This guide begins a five-part series on creating a wayfinding experience with VPS2. In this tutorial, wayfinding means helping a user understand where they are, choose a destination, localize to that location, and follow AR guidance in the space.
+
+You will build an app that signs a user in, loads Sites from an Organization, lets the user choose a destination, localizes to that Site with VPS2, and then shows AR wayfinding guidance and anchored content.
+
+### Platform: kotlin
+
+This page focuses on how to add and configure the Niantic Software Development Kit (NSDK) in a new or existing Android Studio project.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A Scaniverse account. If you do not have an account, follow directions to [create a Niantic Spatial account](https://www.nianticspatial.com/docs/nsdk/create_account/#create-a-scaniverse-account).
+- A Scaniverse Site with its Production VPS asset already generated.
+- Android Studio.
+- Android SDK platform 24 or later.
+- A physical Android device that supports ARCore. To verify ARCore support:
+  1. Look up the device on Google's [ARCore supported devices](https://developers.google.com/ar/discover/supported-devices) list.
+  2. Confirm that the device has access to **Google Play Services for AR** through the Play Store.
+- A testing plan for localization: either be physically close to the Site you will use for testing, or prepare a playback dataset for playback-mode testing.
+- Basic familiarity with Kotlin, Jetpack Compose, and Android navigation.
+
+## Set up an Android AR project
+
+The following steps verify the minimal project setup needed for the rest of the tutorial.
+
+1. Open or create an Android AR project.
+
+   The project should:
+
+   - Use the **Empty Activity** template.
+   - Use **Kotlin DSL** for the build configuration language.
+   - Set the **Minimum SDK** to API 24 ("Nougat"; Android 7.0) or higher.
+
+   If you are creating a new app, use the following steps:
+
+   1. From Android Studio's main menu, select **File > New > New Project...**.
+   2. Select the **Empty Activity** template.
+   3. Select **Next**.
+   4. Enter a name for your application.
+   5. Set the **Minimum SDK** to API 24 ("Nougat"; Android 7.0) or higher.
+   6. Choose Kotlin DSL for your build configuration language.
+   7. Select **Finish**.
+
+2. Confirm the Android project configuration.
+
+   In an existing app, confirm that your current project already meets the minimum Android requirements for this walkthrough. If you are unsure how to check this step, use the new app expectations below as a reference.
+
+   In a new app, confirm that the project you just created matches the expected configuration.
+
+   The project should:
+
+   - Set the `defaultConfig` in your app's build.gradle.kts file to `minSdk` to **24** or later as follows:
+     ```kotlin
+     defaultConfig {
+       minSdk = 24
+     }
+     ```
+
+3. Add the NSDK package to your Android app.
+
+   Follow the steps in [Add the GitHub packages](https://www.nianticspatial.com/docs/nsdk/setup/#add-the-github-packages) in [Set up the NSDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-kotlin) to update your current Android project so it includes the NSDK package and the supporting Android configuration for this walkthrough.
+
+4. Sync and build the Android project.
+
+   Do not continue until the project builds successfully. If the build fails:
+
+   1. Confirm that the project `minSdk` is set to **24** or later.
+   2. Confirm that Android Studio finished syncing the project with Gradle files.
+   3. Confirm that the Android SDK and build tools required by the project are installed locally.
+   4. Review the build output and resolve any missing SDK, Gradle, or dependency errors before continuing.
+
+## Prepare the sample project
+
+Use the public `vps2e2e` sample app as a reference point while you work through the rest of this Kotlin walkthrough. The sample app is useful for comparing your implementation against a working VPS2 flow and locating the files referenced in later pages. You will inspect the startup, Sites, and VPS2 flows described in the sample app while building your own app as follows:
+
+1. Clone [vps2e2e](https://github.com/nianticspatial/nsdk-vps2-wayfinding-sample-kotlin):
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-vps2-wayfinding-sample-kotlin.git
+   ```
+
+2. Open the `vps2e2e` project in Android Studio.
+
+3. In the sample project, follow the package installation steps in [Add the GitHub packages](https://www.nianticspatial.com/docs/nsdk/setup/#add-the-github-packages) in [Set up the NSDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-kotlin) before you try to build or run the sample.
+
+4. Add a Mapbox public access token to the sample project so the map can load tiles:
+
+   1. [Create a Mapbox account](https://www.mapbox.com/signup/) if you do not already have one.
+
+   2. Sign in to the Mapbox Developer Console, open the **Access Tokens** page, and copy a public token that starts with `pk.`.
+
+   3. In Android Studio, expand `src/main/res/values`, right-click the `values` folder, select **New > Values Resource File**, and enter `mapbox_access_token` as the file name.
+
+   4. Create `src/main/res/values/mapbox_access_token.xml` in the sample project as shown in the following code example:
+
+      ```xml
+      <resources xmlns:tools="http://schemas.android.com/tools">
+          <string name="mapbox_access_token" translatable="false" tools:ignore="UnusedResources">YOUR_MAPBOX_ACCESS_TOKEN</string>
+      </resources>
+      ```
+
+   5. Replace `YOUR_MAPBOX_ACCESS_TOKEN` in the previous code example with your Mapbox public access token.
+
+5. Sync, build, and run the `VPS2 E2E Sample` app on an Android device.
+
+6. If you plan to test live localization, go to the physical Site that matches the Production VPS asset you will use. If you are not close to that Site, use a playback dataset instead of expecting live VPS2 tracking to reach `LIMITED` or `TRACKED`.
+
+For the rest of this Kotlin walkthrough, keep two Android Studio projects available:
+
+- The public `vps2e2e` sample app, to use as a reference.
+- Your own Android app, which is the app you create or modify while following this tutorial. This can be a new standalone wayfinding app or an existing app that you extend with VPS2 wayfinding.
+
+When this tutorial tells you to create or update files, make those changes in your own app, not in the sample project.
+
+## Next steps
+
+Continue to [Initialize the wayfinding app](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-landing-page/) to inspect how the sample app presents authentication, creates the shared session, and routes into the Site-based VPS2 flow.
+
+### Platform: swift
+
+This page focuses on how to add and configure the Niantic Software Development Kit (NSDK) in a new or existing Xcode project.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A Scaniverse account. If you do not have an account, follow directions to [create a Niantic Spatial account](https://www.nianticspatial.com/docs/nsdk/create_account/#create-a-scaniverse-account).
+- A Scaniverse Site with its Production VPS asset already generated.
+- Xcode 16.0 or later.
+- iOS 17.0 or later.
+- Apple Developer Program access, with signing certificates and provisioning profile set up for the bundle ID you will use.
+- A physical iOS device that supports ARKit and is running iOS 17.0 or later.
+- A testing plan for localization: either be physically close to the Site you will use for testing, or prepare a playback dataset for playback-mode testing.
+- Basic familiarity with SwiftUI, RealityKit, and ARKit.
+
+## Set up an iOS AR project
+
+The following steps verify the minimal project setup needed for your own app before you use the sample project as a reference.
+
+1. Open or create your iOS AR project.
+
+   The project should:
+
+   - Use the **Augmented Reality App** template.
+   - Use **SwiftUI** for the interface.
+   - Use the SwiftUI app lifecycle so the app opens from a `WindowGroup` scene instead of a storyboard root.
+
+   If you are creating a new app, use the following steps:
+
+   1. From Xcode's main menu, select **File > New > Project**.
+   2. Choose the **Augmented Reality App** template.
+   3. Enter a **Product Name**.
+   4. Select a **Team**.
+   5. Select **SwiftUI** from the drop-down list next to **Interface**.
+   6. Select **Next**.
+   7. Navigate to your project's future location.
+   8. Select **Create**.
+
+2. Update the Xcode target configuration.
+
+   In an existing app, update your current target so it uses the frameworks and signing configuration this walkthrough needs. The target should:
+
+   - Already target **iOS 17.0** or later.
+   - Support only **Portrait** orientation for both **iPhone** and **iPad**, to match the standalone flow used in this tutorial and the sample reference.
+   - Open from a SwiftUI `App` scene instead of a storyboard root. If your project still launches from a storyboard or view controller, replace that root in the next page's `Set the root UI` step.
+   - Link **SwiftUI**, **RealityKit**, and **ARKit** under **General > Frameworks, Libraries, and Embedded Content**. If any framework is missing, open **General > Frameworks, Libraries, and Embedded Content**, select **+**, and add the missing framework before continuing.
+   - Use a valid signing configuration for the bundle identifier you plan to run.
+
+   In many Xcode AR app templates, you do not need to set the minimum iOS version manually because the template already writes it into the project.
+
+   If you are creating a new app, also update **General > Deployment Info** so:
+
+   - **iPhone Orientation** is set to **Portrait**
+   - **iPad Orientation** is set to **Portrait**
+
+3. Add the NSDK package to your iOS app.
+
+   Follow the steps in [Add the NSDK package](https://www.nianticspatial.com/docs/nsdk/setup/#add-the-nsdk-package) in [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift) for the iOS app you are building in this walkthrough.
+
+4. Build the Xcode project.
+
+   Do not continue until the project builds successfully after the NSDK package is in place. If the build fails:
+
+   1. Confirm that the selected **Team** matches the Apple account you want to use for signing.
+   2. Confirm that the project **Bundle Identifier** is unique for your account.
+   3. Review the signing messages in Xcode under **Signing & Capabilities** and resolve any missing certificate or provisioning profile issues before continuing.
+
+## Prepare the sample project
+
+Use the public `vps2e2e` sample app as a reference point while you work through the rest of this Swift walkthrough. The sample app is useful for comparing your implementation against a working VPS2 flow and locating the files referenced in later pages. You will inspect the startup, Sites, and VPS2 flows described in the sample app while building your own app as follows:
+
+1. Clone [vps2e2e](https://github.com/nianticspatial/nsdk-vps2-wayfinding-sample-swift.git):
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-vps2-wayfinding-sample-swift.git
+   ```
+
+2. Open the `Vps2E2eSample/Vps2E2eSample.xcodeproj` project in Xcode.
+
+3. In the sample project, complete the package installation steps in [Add the NSDK package](https://www.nianticspatial.com/docs/nsdk/setup/#add-the-nsdk-package) in [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift) before you try to build or run the sample.
+
+4. Confirm that the sample target links **NSDK**, **SwiftUI**, **RealityKit**, and **ARKit** under **General > Frameworks, Libraries, and Embedded Content**.
+
+5. Confirm that the sample target sets **NSDK** to **Embed & Sign**.
+
+6. Confirm that the sample target's `Info.plist` includes the required location usage description.
+
+7. Build the `Vps2E2eSample` app.
+
+8. Run the `Vps2E2eSample` app on a physical iOS device.
+
+9. In the sample app, verify that the Landing screen opens successfully.
+
+10. If you plan to test live localization, go to the physical Site that matches the Production VPS asset you will use. If you are not close to that Site, use a playback dataset instead of expecting live VPS2 tracking to reach `LIMITED` or `TRACKED`.
+
+For the rest of this Swift walkthrough, keep two Xcode projects available:
+
+- The `vps2-e2e-swift` sample app, to use as a reference.
+- Your own iOS app, which is the app you create or modify while following this tutorial. This can be a new standalone wayfinding app or an existing app that you extend with VPS2 wayfinding.
+
+## Next steps
+
+Continue to [Initialize the wayfinding app](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-landing-page/) to build the landing screen, request permissions, and create the shared session.

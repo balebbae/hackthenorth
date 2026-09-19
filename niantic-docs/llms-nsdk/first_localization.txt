@@ -1,0 +1,520 @@
+# First localization with NSDK
+
+Source: https://www.nianticspatial.com/docs/nsdk/first_localization/
+
+Localization determines a device's position and orientation in the real world. VPS2 localization provides precise alignment when the device is within a scanned Site that has a Production Asset Version. Outside those areas, localization may be limited or unavailable.
+
+This guide walks through the complete workflow--from installing the Scaniverse app to testing localization at your first scanned location using the NSDK Kotlin or Swift sample apps. You will build Niantic's NsdkSamples application and use the Sites scene to verify localization on your device.
+
+By the end of this guide, you will:
+
+- Capture a location.
+- Generate an Asset Version and set it to **Production**.
+- Deploy the sample app.
+- Successfully localize at that physical location.
+
+This guide covers the following steps:
+
+1. [Capture a scan](#capture-a-scan) - Install and use the Scaniverse mobile app to record visual features as you move through a space.
+2. [Upload and process scans](#upload-and-process-scans) - Upload and process scans to convert them into 3D spatial representations of a place, such as meshes or splats.
+3. [Configure assets](#configure-assets) - Set generated assets to production and test localization.
+4. [Build and run](#build-and-run) - Install, configure, build and deploy Niantic's sample application on your desktop and run it on a mobile device.
+
+---
+
+## Prerequisites
+
+Before you begin, ensure that you have the following:
+
+### Platform: unity
+
+- A desktop computer to build and run a mobile app.
+- A working [Git](https://git-scm.com/) installation.
+- A [Scaniverse business or enterprise account](https://scaniverse.nianticspatial.com/signin). If you don't have an account, follow the steps in [Create Account](https://www.nianticspatial.com/docs/nsdk/create_account/) to sign up for one.
+- A USB cable to connect your desktop to your mobile device.
+- [Unity Hub](https://unity.com/download) and *Unity Engine* installed.
+- A mobile device compatible with the NSDK
+  - An Android device running **Android 7.0 or later** with USB debugging enabled.
+  - An iOS device that supports [ARKit](https://developer.apple.com/augmented-reality/arkit/).
+
+### Platform: kotlin
+
+- A desktop computer to build and run a mobile app.
+- A working [Git](https://git-scm.com/) installation.
+- A [Scaniverse business or enterprise account](https://scaniverse.nianticspatial.com/signin). If you don't have an account, follow the steps in [Create Account](https://www.nianticspatial.com/docs/nsdk/create_account/) to sign up for one.
+- A USB cable to connect your desktop to your mobile device.
+- [Android Studio](https://developer.android.com/studio) installed.
+- Android SDK platform **24 or higher** installed.
+- An Android device running **Android 7.0 or later** with USB debugging enabled.
+
+### Platform: swift
+
+- A desktop computer to build and run a mobile app.
+- A working [Git](https://git-scm.com/) installation.
+- A [Scaniverse business or enterprise account](https://scaniverse.nianticspatial.com/signin). If you don't have an account, follow the steps in [Create Account](https://www.nianticspatial.com/docs/nsdk/create_account/) to sign up for one.
+- A USB cable to connect your desktop to your mobile device.
+- [Xcode](https://developer.apple.com/xcode/) installed on macOS.
+- An [Apple ID](https://account.apple.com/) added to Xcode so that app can be signed and run on a physical iOS device. An Apple Developer account is not required to run the sample on your own device.
+- An iOS device that supports [ARKit](https://developer.apple.com/augmented-reality/arkit/).
+
+---
+
+## Capture a scan
+
+The Scaniverse mobile app uses your device camera to capture live images as you move through a space. Niantic backend services process these scans using the NSDK to create spatial assets for localization. Assets must be set to **Production** before they are available for localization in the sample app or your own applications. After installing the app, you must sign in with a Niantic business or enterprise account.
+
+### Platform: kotlin
+
+> **Info:**
+>
+> **Android Support**
+>
+> Android support for the enterprise Scaniverse experience is coming soon. For now, use an iOS device to complete the following scanning workflow.
+
+### Install the Scaniverse app
+
+1. Install the latest [Scaniverse app](https://apps.apple.com/us/app/scaniverse-3d-scanner/id1541433223) from the Apple App Store on your mobile device.
+2. Open the Scaniverse app on your mobile device.
+3. Select the profile icon, shown as a person, in the top right corner of the app.
+   - If you're already logged into Scaniverse as a consumer, sign out.
+4. At the bottom of the login screen, tap **Sign in with Business Account** and sign in using your Niantic business or enterprise account.
+
+> **Tip:**
+>
+> **Multiple Organizations**
+>
+> If you are in multiple organizations, you can select your organization by going to **Profile** -> **select Organization** dropdown.
+
+### Create a private Site
+
+When you create a Site as a business or enterprise customer, the Sites you create are **private** by default. This means that only you or your organization can access it. You can use a private Site for testing, internal tools, or unreleased locations. You can create a Site either from the Scaniverse app as follows:
+
+1. Select the **+** button on the top right corner of the app. The **Add private site** window opens.
+2. Under **Site Name**, enter a clear, descriptive, and unique name.
+3. Select **Confirm**.
+
+### Add scans to your Site
+
+A scan is a collection of camera images that capture visual features as you move through a space. Each individual scan supports up to five minutes of recording time and can cover up to 500 square meters. For larger environments, capture multiple overlapping Scans within the same Site.
+
+Niantic's backend services use these scans to build a three-dimensional representation of the space. You can use this representation to localize a device by aligning it to the physical environment. You can group multiple scans together in a Site, but they must overlap so that Niantic can connect some of the same visual features into a single, consistent representation. In the following steps, you will create a Site and record scans.
+
+For more reliable localization:
+
+- Capture distinct visual features such as walls, furniture, and decorations.
+- Move slowly and steadily to reduce motion blur.
+- Include multiple angles and viewpoints.
+- Cover the full area that you want to localize to.
+
+For more detailed guidance, see [Scan techniques](https://www.nianticspatial.com/docs/scaniverse/techniques).
+
+Use a mobile device camera to capture scans as follows:
+
+1. **Start a scan**
+   1. On your mobile device, select the Site you created in the previous step.
+   2. Select **+ Capture** at the bottom of the screen.
+   3. Select the red button at the bottom of the screen to begin scanning the space.
+
+2. **Move and capture**
+   1. Point your device camera at the area you want to scan.
+   2. Move slowly and steadily to reduce motion blur.
+
+3. **Finish and review**
+   1. Select the red button again to stop scanning. A preview of the scan begins to play.
+   2. Select **Localize** at the bottom of the app to quickly check the quality of your scan. The app will use the camera to compare live images against the visual features in the scan to see if it can recognize the location and determine the device position and orientation. If localization fails, you can immediately rescan the environment instead of uploading the scan and discovering problems later.
+   3. Select the pen tool next to the default name to change the name of the scan to a clear, descriptive name.
+   4. Select the trash icon at the bottom left of the screen to discard, or **Save** to keep your scan.
+
+---
+
+## Upload and process scans
+
+After you capture scans, you upload them so Niantic's backend services can generate spatial assets used for localization and reconstruction. These assets represent the scanned space and can include the following:
+
+- **Mesh** - a 3D surface model for accurate geometry, occlusion and interaction.
+- **Splat** - a lightweight 3D representation for efficient visualization and localization.
+- **VPS Map** - a nonvisual map that enables localization at a scanned location.
+
+To generate assets, [upload](#upload-scans) your scans and [process](#process-scans) them. To use them in an app, [configure](#configure) the assets by setting them to production. After generation, you can [test localization](#test-localization) to confirm that the scan was processed successfully.
+
+### Upload scans
+
+During upload, your scans are transferred to Niantic's cloud and prepared for processing. You can upload all scans at once or select them individually. Uploading selectively is useful when working with large scans, testing quality, or reducing processing time and cost.
+
+The Scaniverse app lists all scans for your Site under the **Scans** tab.
+
+Select the scan from the previous step to upload it individually, or select **Upload All** to upload all scans in the Site. After upload, your scans are also available to your team in the Scaniverse Web.
+
+### Process scans
+
+During processing, Niantic's backend services analyze the uploaded scans, extract visual features, and generate spatial assets used to recognize and align a device in the environment. This step generates the assets required for localization and reconstruction. Depending on the size of the scan, this step can take several minutes to over an hour.
+
+Start processing in the Scaniverse app as follows:
+
+1. Navigate to the **Scans** tab for your Site.
+2. Select the checkbox next to the uploaded scans that you want to process.
+3. Select **Generate Assets** at the top right corner of the main window.
+4. (Optional) Enter a meaningful name under **Version name** to help track changes in the scan.
+5. Select **Confirm**.
+
+Processing typically can take several minutes to over an hour depending on scan complexity.
+Once processing is complete, newly generated assets will be available in either the Scaniverse Web or the Scaniverse app under **Assets -> History**.
+
+## Configure assets
+
+After your scans finish processing, Niantic's backend services add the generated assets to your Site. By default, these assets are in a preview state and are not available to live applications.
+
+> **Important:**
+>
+> **Production Asset**
+>
+> To make them accessible to users and applications, you must set the asset to production.
+
+Once the asset is in production, it becomes available to authenticated applications in your organization.
+
+Set the assets to production state in the Scaniverse app as follows:
+
+1. Navigate to the **Assets** tab for your Site.
+2. Select the three horizontal dots next to the name of your scan at the bottom of your screen.
+3. Select **Set as Production** from the drop-down list.
+
+Once localization works in Scaniverse, you're ready to verify it in the NSDK sample app.
+
+### Test localization
+
+Asset generation only creates the underlying spatial data. It does not guarantee that localization will work reliably in a real space. Before using the assets in an app, test localization to confirm the following:
+
+- Devices can reliably localize in the scanned physical space.
+- Tracking remains stable and content stays accurately aligned.
+- Performance is acceptable across supported devices.
+- Changes in lighting, occlusion, or the environment don't prevent successful localization.
+
+Testing localization to ensure your device can match live camera input to your generated asset, and validate the user experience as follows:
+
+1. Go to the physical place you scanned.
+2. In the Scaniverse app, select the Site that you want to test.
+3. Select the **Assets** tab.
+4. Select **Localize**.
+5. If prompted, select **Allow** to give Scaniverse permission to access your device camera.
+
+The app attempts to match your current camera view to the generated assets.
+If localization is **successful**, the asset will appear correctly aligned in your environment.
+
+If localization fails, see the following:
+
+Rescan the space using guidelines in the [Capture a scan](#capture-a-scan) section.
+Once you've completed rescanning the environment, do the following:
+
+1. Go back to the [Upload and process scans](#upload-and-process-scans) step.
+2. Unselect the scan(s) you are replacing, and select the new scan(s).
+3. Generate assets again.
+
+The new asset appears in the **Assets** tab after processing. Previous versions remain available under the **History** tab. Scroll to view different versions of your assets. To test localization, select the three horizontal dots next to its name and select **Test localization**. When you decide which version to use in your app, select the three horizontal dots next to its name and select **Set as Production**.
+
+---
+
+### Platform: kotlin, unity
+
+## Build and run
+
+After generating assets, configure and deploy the Niantic sample app to verify localization against your production asset. To do this, [set up the sample app](#set-up-the-sample-app), then [build and deploy](#build-and-deploy) the sample app from your desktop as follows:
+
+### Set up the sample app
+
+In Niantic's sample app, you will run the **Sites** example, which shows how to localize a device and place AR content in a real world environment. The Sites scene retrieves your organization's Sites and production assets and localizes dynamically without hardcoding anchor payloads.
+
+Do the following:
+
+### Platform: unity
+
+1. Clone the Unity Samples repository:
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-csharp.git
+   ```
+2. Open the Unity samples project in Unity *6000.0.74f1*:
+   1. Launch Unity Hub.
+   2. Select **Add** -> **Add project from disk**.
+   3. Navigate into the cloned repo and select the **`NsdkSamples`** folder (the Unity project root, not the repository root).
+
+### Platform: kotlin
+
+1. Clone the Kotlin samples repository:
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-kotlin
+   ```
+2. Open the NsdkSamples project in Android Studio:
+   1. Launch Android Studio.
+   2. Select **File** -> **Open**.
+   3. Navigate to the cloned kotlin-samples folder.
+   4. Select the NsdkSamples->NsdkSamples->build.gradle.kts and allow Gradle sync to complete.
+
+---
+
+### Build and deploy
+
+### Platform: unity
+
+1. Open the **Build Profiles** window by selecting **File** > **Build Profiles**.
+2. Select iOS or Android, then click **Switch Platform**. After the progress bar finishes, click **Player Settings**. Select your platform from the tabs, scroll down to **Other Settings**, and change the following settings:
+
+#### Android
+
+Rendering - Uncheck Auto Graphics API. If Vulkan appears in the Graphics API list, remove it.
+Identification - Set the Minimum API Level to Android 7.0 'Nougat' (API Level 24) or higher.
+Configuration - Set the Scripting Backend to IL2CPP, then enable both ARMv7 and ARM64.
+
+#### iOS
+
+Identification > Signing Team ID - Enter your iOS app developer key from developer.apple.com.
+Camera Use Description -  Write a description for how you're using AR, such as "NSDK".
+Target Minimum iOS Version -  Set to 14.0 or higher.
+Architecture - Select ARM64.
+
+### Platform: kotlin
+
+Use Android Studio to build and deploy to an Android device.
+
+---
+
+### Localize in sample app
+
+After building the **NsdkSamples** app on your desktop and deploying it to your mobile device, you can run any of Niantic's sample modules to explore different features.
+
+This guide focuses on the **Sites** sample, which demonstrates how to:
+
+- Browse organizations and Sites associated with your account.
+- Select a Site that has a Production Asset Version available.
+- Test localization directly at that physical location.
+
+When you select a production asset, the app prepares the Site for localization on your device.
+
+Localization works best in locations that have already been scanned and processed. For best results, return to the same physical space where the scan was captured.
+
+> **Info:**
+>
+> **Authentication**
+>
+> Before browsing Sites and assets, you must sign in. The sample app uses authenticated sessions to access your organization's data from Niantic's backend services. For more information, see the [Auth guide](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+Launch the sample app and authenticate as follows:
+
+1. Ensure you are located at the physical location you scanned.
+2. Open the **NsdkSamples** app on your device.
+3. Sign in using the same account you used to upload and process scans.
+
+### Platform: unity
+
+4. Select **VPS2 Localization** from the main menu.
+
+### Platform: kotlin
+
+4. Select **VPS2 (With sites)** from the main menu.
+
+5) Choose your organization.
+6) Select **Start Tracking**.
+7) Point your device camera at the scanned area.
+   - Move slowly to help the system match visual features
+   - Ensure good lighting matches the scan conditions
+8) Use the following **Localization Tracking State** indicators to adjust how you attempt to localize:
+   - Red = not localized
+   - Yellow = limited localization
+   - Green = precise localization (success)
+
+### Platform: unity
+
+(image: NSDK VPS2 Localization scene deployed on iOS device shows visual indicators of localization quality.)
+
+### Platform: unity
+
+**View detailed tracking state behavior:**
+
+**Anchor Tracking State** (bottom center)
+
+Each tracked anchor displays visual feedback based on its `AnchorUpdateType`:
+
+- **`NOT_TRACKING`**:
+  - Info label: "No anchors tracked".
+  - Markers disabled and hidden.
+  - No visual indicator.
+
+- **`LIMITED`**:
+  - Info label: "coarse".
+  - A Large **Cube marker** appears at the anchor location.
+  - The mesh marker is disabled and hidden.
+  - The device has an approximate location with lower precision.
+  - A red arrow appears in front of the camera pointing toward the place of interest.
+
+- **`TRACKING`**:
+  - Info label: "precise"
+  - A **Mesh marker** with textures overlays the location.
+  - The cube marker is disabled and hidden.
+  - The device has a precise location with high accuracy.
+  - The mesh represents the actual scanned environment geometry.
+
+### Platform: kotlin
+
+(image: NSDK Sites scene deployed on Android shows visual indicators of localization quality.)
+
+### Platform: kotlin
+
+**View detailed tracking state behavior:**
+
+**Localization Tracking State** (top right circle)
+
+A colored circle in the top-right corner indicates the overall VPS2 localization tracking state:
+
+- **Red**: `NOT_TRACKED` - VPS2 is not localized
+- **Yellow**: `LIMITED` - Coarse localization gives an approximate location
+- **Green**: `TRACKED` - Precise localization gives a high accuracy location
+
+**Anchor Tracking States** (bottom left box)
+
+Each tracked anchor displays visual feedback based on its `AnchorUpdateType`:
+
+- **`LIMITED` (Coarse tracking)**:
+  - A large **Orange cube** appears at the anchor location.
+  - Indicates approximate location with lower precision.
+  - The mesh is not rendered.
+
+- **`TRACKED` (Precise tracking)**:
+  - A small **Green cube**  appears at the anchor location.
+  - **Mesh geometry** with textures overlays the location.
+  - Indicates precise location with high accuracy.
+  - The mesh represents the actual scanned environment geometry.
+
+The colored dot shows the current state as follows:
+
+- **Green dot + "TRACKED"**: The anchor is tracked with high accuracy.
+- **Red dot + "NOT_TRACKED"**: The anchor is not currently being tracked.
+- **Yellow dot + "LIMITED"**: Anchor tracking is limited and in a degraded state.
+
+Each anchor entry displays: `Anchor Name - State (UpdateType)`
+
+**Geolocation Display** (center right box)
+
+When tracking is active, the bottom-right panel allows you to compare VPS2-localized position with device GPS position as follows:
+
+- **VPS2 coordinates**: Latitude, longitude, and heading derived from VPS2 localization with a red compass indicator showing the VPS2 heading direction.
+- **Device GPS coordinates**: Latitude, longitude, and heading from device sensors with a blue compass indicator showing device heading direction.
+
+### Platform: swift
+
+**View detailed tracking state behavior:**
+
+**Anchor Tracking State** (bottom center)
+
+Each tracked anchor displays visual feedback based on its `AnchorUpdateType`:
+
+- **`.notTracked`**:
+  - Info label: "No anchors tracked".
+  - Markers disabled and hidden.
+  - No visual indicator.
+
+- **`.limited`**:
+  - Info label: "coarse".
+  - A Large **Red cube marker** appears at the anchor location.
+  - The mesh marker is disabled and hidden.
+  - The device has an approximate location with lower precision.
+  - A red arrow appears in front of the camera pointing toward the place of interest.
+
+- **`.tracked`**:
+  - Info label: "precise"
+  - A **Mesh marker** with textures overlays the location.
+  - A map of the current device location is visible.
+  - The red cube marker is disabled and hidden.
+  - The device has a precise location with high accuracy.
+  - The mesh represents the actual scanned environment geometry.
+
+---
+
+### Platform: kotlin
+
+## Advanced: localization with VPS2
+
+The VPS2 scene demonstrates how to localize using a hardcoded anchor payload instead of dynamically retrieving it from Sites. This approach is useful for testing a single known production asset or building a highly customized localization flow including the following scenarios:
+
+- You want to localize to a single known Site
+- You are testing a specific production asset
+- You need tighter control over anchor configuration
+- You are building a more customized localization flow
+
+To use a specific anchor payload, you must retrieve it from a generated asset in **production state**, and then rebuild and deploy the app.
+
+### Retrieve anchor
+
+An anchor payload is a long base64 encoded string that links your app to the generated assets, and allows it to localize users in the physical space you scanned. Use the Scaniverse Web to retrieve the anchor payload as follows:
+
+1. From your desktop, login to the [Scaniverse Web](https://scaniverse.nianticspatial.com/).
+2. Select the **Assets** tab.
+3. Select the **Production Version** tab.
+4. Select the clipboard icon next to **Anchor Payload** from the right navigation bar.
+
+### Configure and rebuild app
+
+1. Open Android Studio.
+2. Select the **NsdkSamples** project folder that you opened when you built the Sites scene.
+3. Locate the following line in the `build.gradle.kts` file:
+   ```kotlin
+   buildConfigField("String", "DEFAULT_VPS_PAYLOAD", "\"YOUR_PAYLOAD\"")
+   ```
+4. Replace `"YOUR_PAYLOAD"` with the anchor payload in your clipboard:
+   ```kotlin
+   buildConfigField("String", "DEFAULT_VPS_PAYLOAD", "\"YOUR_ANCHOR_PAYLOAD_FROM_RETRIEVE_ANCHOR_STEP\"")
+   ```
+5. Save the file and allow the project to resync if prompted.
+6. Use a USB cable to attach your Android device to your desktop computer.
+7. Rebuild and deploy the app.
+
+### Platform: swift
+
+### Set up the sample app
+
+You can run the VPS2 E2E sample app to localize to your sites. To setup the sample app, follow the instructions below:
+
+1. Clone the repository of the VPS swift sample:
+   ```bash
+   git clone PENDING_SWIFT_VPS_SAMPLE_URL
+   ```
+
+2. Open the project in Xcode:
+   1. Launch Xcode.
+   2. Select **File** -> **Open**.
+   3. Navigate to the cloned vps2-sample directory.
+   4. Select `Vps2E2eSample.xcodeproj`.
+   5. If prompted, select **Trust**.
+   6. Select **Open** and allow Xcode to resolve Swift packages and finish indexing.
+
+3. Build and deploy the application to your device.
+
+### Localize in sample app
+
+After building the **Vps2E2eSample** app on your desktop and deploying it to your mobile device, you can localize to your sites.
+
+The app shows your Sites on a map and lets you navigate to a selected Site.
+
+1. Ensure you are near the physical location you scanned.
+2. Open the **VPS Sample** app on your device.
+3. Sign in using the same account you used to upload and process scans.
+4. On the map, locate the Site you created in Scaniverse.
+
+(image: Map view showing available VPS Sites.)
+
+(image: Selecting a Site opens the Navigate option.)
+
+5. Select **Navigate**. The app automatically starts in **Coarse** VPS2 localization mode, and AR navigation arrows guide you towards the Site.
+
+   (image: AR arrows guide you towards the Site in coarse localization mode.)
+
+6. Follow the AR navigation arrows to approach the general direction of the Site. Remain aware of your surroundings and follow real-world traffic rules. As you get closer, localization automatically switches to **Precise** mode.
+
+   (image: Aligned wireframe mesh indicating precise localization.)
+
+7. Confirm that a wireframe mesh aligned with the real-world environment appears in the AR view, indicating **Precise** localization.
+
+### Map view during navigation
+
+During navigation, the **Vps2E2eSample** app displays a map that shows your position and destination.
+
+Your position appears as a blue marker, with a faint cone indicating the device's heading. The destination is shown as a red dot.
+
+During **Coarse** localization, you can tap the map to zoom in and out.

@@ -1,0 +1,317 @@
+# How to set up playback
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/
+
+### Platform: unity
+
+## Description
+
+This guide explains how to set up Playback so you can iterate in the Unity Editor instead of building to a device. Playback runs NSDK algorithms in the editor using a prerecorded `ARSession` dataset so you can play through your project on desktop as if it were running on a mobile device.
+
+(image: Playback recording running in Unity Editor)
+
+## Prerequisites
+
+You will need a Unity project with NSDK AR enabled and an AR scene configured. For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity).
+
+## Steps
+
+To set up Playback in the Unity Editor, complete the following steps:
+
+1. [Download or create a Playback dataset](#download-or-create-a-recording-to-use-for-playback) -- Obtain a dataset to simulate AR sessions in the editor.
+2. [Verify that Niantic SDK is selected on the PC platform](#verify-that-niantic-sdk-is-selected-on-the-pc-platform) -- Enable the correct XR plugin for editor playback.
+3. [Enable Playback](#enable-playback) -- Configure the dataset and playback settings in NSDK.
+4. [Run Playback in the editor](#playback-is-now-configured) -- Start playback and verify it works in the Game or Simulator view.
+5. [Control playback manually](#control-playback-manually) -- Step through frames to inspect behavior.
+
+### Download or create a Playback dataset
+
+You can either download a sample Playback dataset or record your own using the [NSDK recording pipeline](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/). Playback datasets must be created this way because they bundle AR session tracking data together with images. Externally captured videos don't contain this tracking information and can't be converted into supported Playback datasets.
+
+- Download a sample Playback recording of the Gandhi statue shown at the top of the page, where a single user walks around the statue from one side: [gandhi_statue.tgz](https://storage.googleapis.com/nianticweb-epos-web-staging/gandhi_statue.tgz). You can also download a second recording of the same statue captured from a different trajectory: [gandhi_statue_peer_2.tgz](https://storage.googleapis.com/nianticweb-epos-web-staging/gandhi_statue_peer_2.tgz). Use the second recording to simulate a second user or test alignment consistency across sessions.
+
+- To make your own Playback dataset, see [How to Create Datasets for Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/).
+  - NSDK produces two formats of scan recordings, [Raw Scan format and Playback format](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/#recording-formats).
+  - Ensure that your scan recording is exported to **Playback format** (extracted from a .tgz archive, and metadata is contained in capture.json). Playback feature does not accept Raw Scan recordings, where metadata is contained in `*.pb` files.
+
+### Verify that Niantic SDK is selected on the PC platform
+
+- In Unity, open the **Edit** top menu, then select **Project Settings**.
+- Select XR Plug-in Management from the left-hand menu.
+- In the XR Plug-in Management window, select the **Desktop** tab.
+- Enable the `Niantic Spatial Development Kit for Unity Editor` checkbox.
+
+(image: XR Plug In Management)
+
+### Enable Playback
+
+- Open the **NSDK** top menu, then select Settings to open the Niantic SDK Settings menu.
+- Under the **Playback** header, with the **Editor** tab selected, check the **Enabled** box.
+- Click the button to the right of the Dataset Path field to browse to the location of your Playback dataset. This can be located anywhere in your file system when using Playback in the Unity Editor. However, if you want to run Playback in a build, the files must be located inside your project's StreamingAssets folder.
+- You can optionally choose to play just a subset of the entire Playback by dragging the ends of the timeline scrubber. This will use only the selected portion of the overall Playback, with the chosen start and end frames highlighted.
+
+(image: Niantic SDK Settings)
+
+### Run Playback in the editor
+
+Press **Play**, and the footage you selected should start playing in the editor. This can be seen from the `Game` or `Simulator` window in Unity. If it is not working, double-check the steps above and make sure to have added the `ARSession` and `XROrigin` from the XR menu to your scene.
+
+(image: Game / Simulator Options)
+
+### Control Playback manually
+
+If your recording moves through the environment too quickly (maybe you want to keep a point of interest on screen for longer), select the checkbox next to **Run Manually** to enable controls the next time you start Playback. Note that this does not stop Unity from running and updating `MonoBehaviours`.
+
+Run Manually mode controls:
+
+- **Spacebar**: step forward one frame
+- **Tap left arrow key:** rewind one frame
+- **Hold left arrow key:** scroll backward
+- **Tap right arrow key:** advance one frame
+- **Hold right arrow key:** scroll forward
+
+## Collect datasets for testing
+
+Different recordings can be used to test different scenarios for your project, so you should maintain a variety of recordings at your disposal. See [How to Create Datasets for Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/) for more information.
+
+Consider recording the following:
+
+- Outdoors
+- Indoors
+- Large open space
+- [Activated VPS Wayspot](https://www.nianticspatial.com/docs/nsdk/features/lightship_vps/)
+- Different sequences of the same location to help debug multiplayer
+
+(image: Playback Recording Of Statue Angle 1)
+
+(image: Playback Recording Of Statue Angle 2)
+
+## Using location services with Playback
+
+Wherever you would use the `UnityEngine.Input` API normally, instead use NSDK's implementation by adding `using Input = NianticSpatial.NSDK.AR.Input;` to the top of your C
+
+# file. NSDK's implementation uses the same API as Unity's. When not running in Playback mode, it passes through to Unity's APIs. When in Playback mode, it'll supply the location data from the active dataset.
+
+### Platform: swift
+
+## Description
+
+This guide explains how to set up Playback in a Swift application so you can run NSDK using a prerecorded dataset instead of a live AR session. Playback uses recorded AR session data to simulate device input, allowing you to test and iterate without needing to move a physical device.
+
+When a dataset is provided, NSDK runs against the playback session. If no dataset is available, the app falls back to a live ARKit session.
+
+## Prerequisites
+
+You will need an Xcode project with the NSDK Swift package integrated. For more information, see [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+## Steps
+
+To set up Playback in your Swift app, complete the following steps:
+
+1. [Add your dataset to the app bundle](#add-your-dataset-to-the-app-bundle) -- Include the dataset as a folder reference so its structure is preserved.
+2. [Load the dataset from the app bundle](#load-the-dataset-from-the-app-bundle) -- Use `BundlePlaybackDatasetLoader` to load the dataset.
+3. [Initialize NSDKView with the dataset](#initialize-nsdkview-with-the-dataset) -- Create an `NSDKView` using the dataset or fall back to a live ARKit session.
+4. [Use PlaybackSessionDataSource for the NSDK session](#use-playbacksessiondatasource-for-the-nsdk-session) -- Connect the playback session to `NSDKSession`.
+5. [Drive the NSDK session from frame callbacks](#drive-the-nsdk-session-from-frame-callbacks) -- Call `nsdkSession.update()` from `NSDKViewDelegate` to process each frame.
+
+### Add your dataset to the app bundle
+
+Add your playback dataset folder to your app target as a folder reference so its directory structure is preserved in the app bundle. The dataset folder must contain a `capture.json` file along with the recorded frame images.
+
+In Xcode:
+
+1. Select your app target.
+2. Open the **Build Phases** tab.
+3. Expand **Copy Bundle Resources**.
+4. Select **Add Items (+)**.
+5. Select **Add Other...** from the bottom of the pop-up window.
+6. Choose your dataset folder.
+7. Select **Open**.
+8. When prompted, select the checkbox next to **Copy items if needed** and the radio button next to **Create folder references**.
+9. Select **Finish**.
+
+Adding the dataset as a folder reference preserves the directory structure required by `BundlePlaybackDatasetLoader`.
+
+### Load the dataset from the app bundle
+
+Use `BundlePlaybackDatasetLoader` to load the dataset by the folder name you added in step 1. This assumes the dataset was added as a folder reference and is preserved as a directory in the app bundle:
+
+```swift
+let loader = BundlePlaybackDatasetLoader(directory: "YourDatasetFolderName")
+let dataset = loader.loadDataset()
+```
+
+`BundlePlaybackDatasetLoader` looks for the named folder inside the main bundle. It returns `nil` if the folder is not found or the `capture.json` is missing.
+
+> **Note:**
+>
+> If Xcode flattens the folder contents into the app bundle root, playback may still work if you pass an empty string to `BundlePlaybackDatasetLoader(directory: "")`. However, preserving the dataset as a folder reference is the recommended setup.
+
+### Initialize NSDKView with the dataset
+
+Pass the loaded dataset to `NSDKView`. If the dataset is `nil`, `NSDKView` falls back to a live ARKit session:
+
+```swift
+let arView: NSDKView
+if let dataset = dataset {
+    arView = NSDKView(dataset: dataset)
+} else {
+    arView = NSDKView() // live ARKit session
+}
+```
+
+### Use PlaybackSessionDataSource for the NSDK session
+
+When running with a playback dataset, `arView.session` is a `PlaybackSession`. Create a `PlaybackSessionDataSource` and assign it to `NSDKSession.dataSource`. For a live session, use `DefaultSessionDataSource` instead:
+
+```swift
+let nsdkSession = NSDKSession(accessToken: accessToken, refreshToken: refreshToken, useLidar: ARUtils.isLidarAvailable())
+
+if let playbackSession = arView.session as? PlaybackSession {
+    nsdkSession.dataSource = PlaybackSessionDataSource(session: playbackSession)
+} else {
+    nsdkSession.dataSource = DefaultSessionDataSource(session: arView.session, orientationReporter: self)
+}
+```
+
+All NSDK features (Depth, Scene Segmentation, Object Detection) work the same as in a live session.
+
+### Drive the NSDK session from frame callbacks
+
+Conform your view controller to `NSDKViewDelegate` and call `nsdkSession.update()` from both the live and playback frame callbacks. Implementing both allows the same view controller to handle either mode.
+
+```swift
+extension MyARViewController: NSDKViewDelegate {
+
+    // Called on each live ARKit frame
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        nsdkSession?.update()
+    }
+
+    // Called on each playback frame
+    func playbackSession(_ session: PlaybackSession, didUpdate frame: PlaybackFrame) {
+        nsdkSession?.update()
+    }
+}
+```
+
+### Platform: kotlin
+
+## Description
+
+This guide explains how to set up Playback in an Android application so you can run NSDK using a prerecorded dataset instead of a live AR session. Playback uses recorded AR session data to simulate device input, allowing you to test and iterate without needing to move a physical device.
+
+When a dataset is loaded, frames are fed into the NSDK session from the playback pipeline. If no dataset is available, your app can run using a live AR session instead.
+
+## Prerequisites
+
+You will need an Android project with the NSDK Kotlin library integrated. For more information, see [Set up the NSDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-kotlin).
+
+## Steps
+
+To set up Playback in your Android app, complete the following steps:
+
+1. [Add your dataset to the Android assets directory](#add-your-dataset-to-the-android-assets-directory) -- Include the dataset in your app's assets so it can be loaded at runtime.
+2. [Load the dataset with AssetPlaybackDatasetLoader](#load-the-dataset-with-assetplaybackdatasetloader) -- Parse the dataset metadata and prepare it for playback.
+3. [Create a PlaybackSessionDataSource and assign it to NSDKSession](#create-a-playbacksessiondatasource-and-assign-it-to-nsdksession) -- Wire up the pull-based data source so the SDK can read frames, camera data, and sensors.
+4. [Create a PlaybackSession and drive the frame loop](#create-a-playbacksession-and-drive-the-frame-loop) -- Feed playback frames into the data source and call `NSDKSession.update()` each frame.
+5. [Start and stop playback](#start-and-stop-playback) -- Control the playback lifecycle and release resources when finished.
+
+### Add your dataset to the Android assets directory
+
+Copy your playback dataset folder into `src/main/assets/` in your Android module. The folder must contain a `capture.json` file along with the recorded frame images (for example, `src/main/assets/playback/MyDataset/`).
+
+(image: Android Studio Project view shows assets under module root though it is located in src/main/assets.)
+
+> **Note:**
+>
+> In Android Studio's project view, `src/main/assets/` is displayed as `assets/` directly under your module root, for example `app/assets/playback/MyDataset/`). This is a display alias reflecting how the directory is presented in the UI. The actual on-disk path remains `src/main/assets/playback/MyDataset/`.
+
+### Load the dataset with AssetPlaybackDatasetLoader
+
+Construct an `AssetPlaybackDatasetLoader` with the path under `assets/`, then call `loadDataset()` to parse the capture JSON and get a `PlaybackDataset`. Call `hasDepth()` on the result to determine whether the recording contains depth data, and pass that to `NSDKSession`:
+
+```kotlin
+import com.nianticspatial.nsdk.playback.AssetPlaybackDatasetLoader
+
+val loader = AssetPlaybackDatasetLoader(context, "playback/MyDataset")
+val dataset = loader.loadDataset()  // null if capture.json is missing or invalid
+
+val nsdkSession = NSDKSession(
+    accessToken = accessToken,
+    refreshToken = refreshToken,
+    useLidar = dataset?.hasDepth() ?: false
+)
+```
+
+`AssetPlaybackDatasetLoader` loads frame images on-demand, so only metadata is read upfront.
+
+### Create a PlaybackSessionDataSource and assign it to NSDKSession
+
+`PlaybackSessionDataSource` implements the pull-based data source interface. It prepares the YUV camera image for the SDK on a background thread and exposes it via `NsdkSessionDataSource`. Assign it to `NSDKSession.dataSource` so `update()` can read from it each frame.
+
+The `frameProvider` lambda is how the latest available `PlaybackFrame` is injected into the data source -- it is called by the data source when it is time to process a new frame.
+
+The `orientationProvider` lambda should return the **current device display orientation**, not the orientation recorded in the dataset. This is required for ML-based features such as depth and scene segmentation to work correctly during playback.
+
+`PlaybackSessionDataSource` implements `DefaultLifecycleObserver`, so registering it with your `Lifecycle` handles resource cleanup automatically when the component is destroyed.
+
+The following code example configures a playback data source and connects it to the SDK session:
+
+```kotlin
+import com.nianticspatial.nsdk.helpers.PlaybackSessionDataSource
+import com.nianticspatial.nsdk.Orientation
+import com.nianticspatial.nsdk.playback.PlaybackFrame
+
+var latestFrame: PlaybackFrame? = null
+
+val dataSource = PlaybackSessionDataSource(
+    frameProvider = { latestFrame },
+    orientationProvider = { deviceOrientation }  // current device display orientation
+)
+
+lifecycle.addObserver(dataSource)  // cleans up image resources in onDestroy
+nsdkSession.dataSource = dataSource
+```
+
+### Create a PlaybackSession and drive the frame loop
+
+Create a `PlaybackSession` from the loaded dataset and register a frame listener. In the listener, update `latestFrame` and call `dataSource.prepareFrame()` followed by `nsdkSession.update()`.
+
+The following code example processes each playback frame and forwards it to the SDK session:
+
+```kotlin
+import com.nianticspatial.nsdk.playback.PlaybackSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+
+val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+val playbackSession = PlaybackSession(dataset)
+playbackSession.setOnFrameListener { frame ->
+    scope.launch {
+        latestFrame = frame
+        dataSource.prepareFrame()  // bitmap -> YUV on background thread
+        nsdkSession.update()       // pulls from dataSource and sends to native
+    }
+}
+```
+
+### Start and stop playback
+
+Call `play()` to begin the frame loop and `pause()` to stop it. During teardown, call `dispose()` to release all held references and cancel the listener, and `cancel()` on your coroutine scope:
+
+```kotlin
+playbackSession.play()      // start
+
+// when pausing:
+playbackSession.pause()
+
+// in teardown (e.g. onDestroy):
+playbackSession.dispose()
+scope.cancel()
+```
+
+All NSDK features (Depth, Scene Segmentation, Object Detection) work the same as in a live session.

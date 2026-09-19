@@ -1,0 +1,429 @@
+# How to Convert a Screen Point to Real-World Position Using Depth
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/convert_point_world_position/
+
+Niantic Spatial SDK's depth map output allows for dynamically placing objects in an AR scene without the use of planes or a mesh. This guide covers the process of choosing a point on the screen and placing an object in 3D space by using the depth output.
+
+(image: Placing Cubes with Depth)
+
+### Platform: unity
+
+## Prerequisites
+
+You will need a Unity project with Niantic Spatial AR enabled. For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity).
+
+> **Tip:**
+>
+> If this is your first time using depth, [Accessing and Displaying Depth Information](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/display_depth/) provides a simpler use case for depth and is easier to start with.
+
+## Steps
+
+If the main scene is not AR-ready, set it up:
+
+1. Remove the **Main Camera**.
+
+2. Add an **ARSession** and **XROrigin** to the Hierarchy, then add an **AR Occlusion Manager** Component to **XROrigin**. If you want higher quality occlusions, see [How to Set Up Real-World Occlusion](https://www.nianticspatial.com/docs/nsdk/how-to/ar/setup_real_world_occlusion/) to learn how to use the `NsdkOcclusionExtension`.
+
+   (image: AR Session and XR Origin)
+
+   (image: AR Occlusion Manager)
+
+3. Create a `MonoBehaviour` script that will handle depth picking and placing prefabs. Name it `Depth_ScreenToWorldPosition`.
+
+4. Add required namespaces to your script
+   ```cs
+   using NianticSpatial.NSDK.AR.Utilities;
+   using UnityEngine;
+   using UnityEngine.InputSystem;
+   using UnityEngine.XR.ARFoundation;
+   using UnityEngine.XR.ARSubsystems;
+   ```
+
+5. Collect Depth Images on Update
+   1. Add a serialized `AROcclusionManager` and a private `XRCpuImage` field.
+      ```cs
+      [SerializeField]
+      private AROcclusionManager _occlusionManager;
+
+      private XRCpuImage? _depthImage;
+      ```
+
+   2. Create a new method called `UpdateImage`:
+
+      1. Check that the `XROcclusionSubsystem` is valid and running.
+      2. Call `_occlusionManager.TryAcquireEnvironmentDepthCpuImage` to retrieve the latest depth image form the `AROcclusionManager`.
+      3. Dispose the old depth image and cache the new value.
+
+      ```cs
+      private void UpdateImage()
+      {
+          if (!_occlusionManager.subsystem.running)
+          {
+              return;
+          }
+
+          if (_occlusionManager.TryAcquireEnvironmentDepthCpuImage(out var image))
+          {
+              // Dispose the old image
+              _depthImage?.Dispose();
+
+              // Cache the new image
+              _depthImage = image;
+          }
+      }
+      ```
+
+   3. Invoke the `UpdateImage` method within the `Update` callback:
+      ```cs
+      private void Update()
+      {
+          UpdateImage();
+      }
+      ```
+
+6. Calculate the display matrix:
+   Because depth images are oriented towards the sensor when surfaced from the Machine Learning model, they need to be sampled with respect to the current screen orientation. The display transform provides a mapping to convert from screen space to the image coordinate system. We use `XRCpuImage` instead of a GPU Texture so that the `Sample(Vector2 uv, Matrix4x4 transform)` method can be used on the CPU.
+
+   1. Add a private `Matrix4x4` and a `ScreenOrientation` field.
+      ```cs
+      private Matrix4x4 _displayMatrix;
+      private ScreenOrientation? _latestScreenOrientation;
+      ```
+   2. Create a new method called `UpdateDisplayMatrix`.
+   3. Check that the script has a valid `XRCpuImage` cached.
+   4. Check if the matrix needs to be recalculated by testing whether the screen orientation has changed.
+   5. Call `CalculateDisplayMatrix` to calculate a matrix that transforms the screen coordinates to image coordinates.
+
+   ```cs
+   private void UpdateDisplayMatrix()
+   {
+       // Make sure we have a valid depth image
+       if (_depthImage is {valid: true})
+       {
+           // The display matrix only needs to be recalculated if the screen orientation changes
+           if (!_latestScreenOrientation.HasValue ||
+               _latestScreenOrientation.Value != Screen.orientation)
+           {
+               _latestScreenOrientation = Screen.orientation;
+               _displayMatrix = CalculateDisplayMatrix(
+                   _depthImage.Value.width,
+                   _depthImage.Value.height,
+                   Screen.width,
+                   Screen.height,
+                   _latestScreenOrientation.Value);
+           }
+       }
+   }
+
+   private static Matrix4x4 CalculateDisplayMatrix(
+       int imageWidth, int imageHeight,
+       int screenWidth, int screenHeight,
+       ScreenOrientation orientation,
+       bool invertVertically = false)
+   {
+       bool rotate = orientation == ScreenOrientation.Portrait
+                  || orientation == ScreenOrientation.PortraitUpsideDown;
+
+       float iw = rotate ? imageHeight : imageWidth;
+       float ih = rotate ? imageWidth  : imageHeight;
+       float screenAspect = (float)screenWidth / screenHeight;
+       float imageAspect  = iw / ih;
+       float scale = screenAspect / imageAspect;
+
+       float scaleX = scale < 1f ? 1f : 1f / scale;
+       float scaleY = scale < 1f ? -scale : -1f;
+
+       if (invertVertically)
+           scaleX = -scaleX;
+
+       float angle = orientation switch
+       {
+           ScreenOrientation.Portrait           =>  90f,
+           ScreenOrientation.PortraitUpsideDown => -90f,
+           ScreenOrientation.LandscapeRight     => 180f,
+           _                                    =>   0f,
+       };
+
+       return Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0f))
+            * Matrix4x4.Scale(new Vector3(scaleX, scaleY, 1f))
+            * Matrix4x4.Rotate(Quaternion.Euler(0f, 0f, angle))
+            * Matrix4x4.Translate(new Vector3(-0.5f, -0.5f, 0f));
+   }
+   ```
+
+   1. Invoke the `UpdateDisplayMatrix` method within the `Update` callback:
+
+   ```cs
+   private void Update()
+   {
+       ...
+       UpdateDisplayMatrix();
+   }
+   ```
+
+7. Set up code to Handle Touch Inputs:
+   1. Create a private Method named "HandleTouch".
+   2. In editor, we'll use `Mouse.current.leftButton.wasPressedThisFrame` to detect mouse clicks.
+   3. On device, we'll use `Touchscreen.current.primaryTouch.press.wasPressedThisFrame` to detect taps.
+   4. Then, get the 2D screenPosition Coordinates from the device.
+   ```cs
+   private void HandleTouch()
+   {
+       // In the editor we want to use mouse clicks, on phones we want touches.
+   #if UNITY_EDITOR
+       if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+       {
+           var screenPosition = Mouse.current.position.ReadValue();
+   #else
+       var touchscreen = Touchscreen.current;
+       if (touchscreen == null || !touchscreen.primaryTouch.press.wasPressedThisFrame)
+           return;
+       {
+           var screenPosition = touchscreen.primaryTouch.position.ReadValue();
+   #endif
+           // do something with touches
+       }
+   }
+   ```
+
+8. Convert touch points from the screen to 3D Coordinates using Depth
+   1. In the HandleTouch method, check for a valid depth image when a touch is detected.
+      ```cs
+          // do something with touches
+          if (_depthImage.HasValue)
+          {
+              // 1. Sample eye depth
+
+              // 2. Get world position
+
+              // 3. Spawn a thing on the depth map
+          }
+      ```
+
+   2. Sample the depth image at the screenPosition to get the z-value
+      ```cs
+      // 1. Sample eye depth
+      var uv = new Vector2(screenPosition.x / Screen.width, screenPosition.y / Screen.height);
+      var eyeDepth = _depthImage.Value.Sample<float>(uv, _displayMatrix);
+      ```
+
+   3. Add a `Camera` field to the top of script:
+
+      ```cs
+      [SerializeField]
+      private Camera _camera;
+      ```
+
+   4. This will use Unity's [`Camera.ScreenToWorldPoint`](https://docs.unity3d.com/ScriptReference/Camera.ScreenToWorldPoint.html) function. Call the method in "HandleTouch" to convert screenPosition and eyeDepth to worldPositions.
+
+      ```cs
+      // 2. Get world position
+      var worldPosition =
+          _camera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, eyeDepth));
+      ```
+
+   5. Spawn a GameObject at this location in world space:
+
+   6. Add a `GameObject` field to the top of the script:
+
+      ```cs
+      [SerializeField]
+      private GameObject _prefabToSpawn;
+      ```
+
+   7. Instantiate a copy of this prefab at this position:
+
+      ```cs
+      // 3. Spawn a thing on the depth map
+      Instantiate(_prefabToSpawn, worldPosition, Quaternion.identity);
+      ```
+
+9. Add `HandleTouch` to the end of the `Update` method.
+
+   ```cs
+   private void HandleTouch()
+   {
+       // In the editor we want to use mouse clicks, on phones we want touches.
+   #if UNITY_EDITOR
+       if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+       {
+           var screenPosition = Mouse.current.position.ReadValue();
+   #else
+       var touchscreen = Touchscreen.current;
+       if (touchscreen == null || !touchscreen.primaryTouch.press.wasPressedThisFrame)
+           return;
+       {
+           var screenPosition = touchscreen.primaryTouch.position.ReadValue();
+   #endif
+           if (_depthImage is {valid: true})
+           {
+               // Sample eye depth
+               var uv = new Vector2(screenPosition.x / Screen.width, screenPosition.y / Screen.height);
+               var eyeDepth = _depthImage.Value.Sample<float>(uv, _displayMatrix);
+
+               // Get world position
+               var worldPosition =
+                   _camera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, eyeDepth));
+
+               // Spawn a thing on the depth map
+               Instantiate(_prefabToSpawn, worldPosition, Quaternion.identity);
+           }
+       }
+   }
+   ```
+
+10. Add the `Depth_ScreenToWorldPosition` script as a Component of the `XROrigin` in the **Hierarchy**:
+    1. In the **Hierarchy** window, select the `XROrigin`, then click **Add Component** in the **Inspector**.
+    2. Search for the `Depth_ScreenToWorldPosition` script, then select it.
+
+11. Create a **Cube** to use as the object that will spawn into the scene:
+    1. In the **Hierarchy**, right-click, then, in the **Create** menu, mouse over **3D Object** and select **Cube**.
+    2. In the **Inspector**, scale the **Cube** object down from (1, 1, 1) to (0.75, 0.75, 0.75).
+    3. Drag the new **Cube** object from the **Hierarchy** to the **Assets** window to create a prefab of it, then delete it from the **Hierarchy**. (The **Cube** in the **Assets** window should remain.)
+
+12. Assign the fields in the `Depth_ScreenToWorldPosition` script:
+
+    1. In the **Hierarchy** window, select the `XROrigin`, then expand the `Depth_ScreenToWorldPosition` Component in the **Inspector** window.
+    2. Assign the `XROrigin` to the **AROcclusionManager** field.
+    3. Assign the **Main Camera** to the **Camera** field.
+    4. Assign your new **Cube** prefab to the **Prefab to Spawn** field.
+
+    (image: Depth_ScreenToWorldPosition editor properties)
+
+13. Try running the scene in-editor using [Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/) or open **Build Settings**, then click **Build and Run** to build to device.
+
+    (image: Placing Cubes with Depth)
+
+14. If something did not work, double check the steps above and compare your script to the one below.
+
+#### Click to show the Depth_ScreenToWorldPosition script
+
+```csharp
+using NianticSpatial.NSDK.AR.Utilities;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+
+public class Depth_ScreenToWorldPosition : MonoBehaviour
+{
+    [SerializeField]
+    private AROcclusionManager _occlusionManager;
+
+    [SerializeField]
+    private Camera _camera;
+
+    [SerializeField]
+    private GameObject _prefabToSpawn;
+
+    private Matrix4x4 _displayMatrix;
+    private XRCpuImage? _depthImage;
+    private ScreenOrientation? _latestScreenOrientation;
+
+    private void Update()
+    {
+        UpdateImage();
+        UpdateDisplayMatrix();
+        HandleTouch();
+    }
+
+    private void OnDestroy()
+    {
+        _depthImage?.Dispose();
+    }
+
+    private void UpdateImage()
+    {
+        if (!_occlusionManager.subsystem.running)
+            return;
+
+        if (_occlusionManager.TryAcquireEnvironmentDepthCpuImage(out var image))
+        {
+            _depthImage?.Dispose();
+            _depthImage = image;
+        }
+    }
+
+    private void UpdateDisplayMatrix()
+    {
+        if (_depthImage is {valid: true})
+        {
+            if (!_latestScreenOrientation.HasValue ||
+                _latestScreenOrientation.Value != Screen.orientation)
+            {
+                _latestScreenOrientation = Screen.orientation;
+                _displayMatrix = CalculateDisplayMatrix(
+                    _depthImage.Value.width,
+                    _depthImage.Value.height,
+                    Screen.width,
+                    Screen.height,
+                    _latestScreenOrientation.Value);
+            }
+        }
+    }
+
+    private void HandleTouch()
+    {
+#if UNITY_EDITOR
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            var screenPosition = Mouse.current.position.ReadValue();
+#else
+        var touchscreen = Touchscreen.current;
+        if (touchscreen == null || !touchscreen.primaryTouch.press.wasPressedThisFrame)
+            return;
+        {
+            var screenPosition = touchscreen.primaryTouch.position.ReadValue();
+#endif
+            if (_depthImage is {valid: true})
+            {
+                var uv = new Vector2(screenPosition.x / Screen.width, screenPosition.y / Screen.height);
+                var eyeDepth = _depthImage.Value.Sample<float>(uv, _displayMatrix);
+                var worldPosition =
+                    _camera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, eyeDepth));
+                Instantiate(_prefabToSpawn, worldPosition, Quaternion.identity);
+            }
+        }
+    }
+
+    private static Matrix4x4 CalculateDisplayMatrix(
+        int imageWidth, int imageHeight,
+        int screenWidth, int screenHeight,
+        ScreenOrientation orientation,
+        bool invertVertically = false)
+    {
+        bool rotate = orientation == ScreenOrientation.Portrait
+                   || orientation == ScreenOrientation.PortraitUpsideDown;
+
+        float iw = rotate ? imageHeight : imageWidth;
+        float ih = rotate ? imageWidth  : imageHeight;
+        float screenAspect = (float)screenWidth / screenHeight;
+        float imageAspect  = iw / ih;
+        float scale = screenAspect / imageAspect;
+
+        float scaleX = scale < 1f ? 1f : 1f / scale;
+        float scaleY = scale < 1f ? -scale : -1f;
+
+        if (invertVertically)
+            scaleX = -scaleX;
+
+        float angle = orientation switch
+        {
+            ScreenOrientation.Portrait           =>  90f,
+            ScreenOrientation.PortraitUpsideDown => -90f,
+            ScreenOrientation.LandscapeRight     => 180f,
+            _                                    =>   0f,
+        };
+
+        return Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0f))
+             * Matrix4x4.Scale(new Vector3(scaleX, scaleY, 1f))
+             * Matrix4x4.Rotate(Quaternion.Euler(0f, 0f, angle))
+             * Matrix4x4.Translate(new Vector3(-0.5f, -0.5f, 0f));
+    }
+}
+```
+
+## More Information
+
+- [Depth Feature page](https://www.nianticspatial.com/docs/nsdk/features/depth/)
+- [Occlusion Feature page](https://www.nianticspatial.com/docs/nsdk/features/occlusion/)

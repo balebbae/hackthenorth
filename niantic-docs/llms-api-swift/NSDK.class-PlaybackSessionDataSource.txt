@@ -1,0 +1,45 @@
+# PlaybackSessionDataSource
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackSessionDataSource/
+
+PlaybackSessionDataSource
+
+---
+
+## Declaration
+
+final class PlaybackSessionDataSource
+
+---
+
+## Constructors
+
+init(session: PlaybackSession)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var isReady | Bool | Indicates whether the data source is currently able to providemeaningful sensor data. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| latestCameraSample | (image: CVPixelBuffer, intrinsics: NSDKCameraIntrinsics, pose: NSDKCameraExtrinsics, orientation: NSDKScreenOrientation, timestamp: UInt64)? | Returns the most recent camera sample, if available. |
+| latestCompassSample | NSDKFrameData.CompassData? | Returns the most recent compass (heading) sample, if available. |
+| latestDepthMapSample | (image: CVPixelBuffer, confidence: CVPixelBuffer?, intrinsics: NSDKCameraIntrinsics, pose: NSDKCameraExtrinsics, orientation: NSDKScreenOrientation, timestamp: UInt64)? | Returns the most recent platform depth sample, if available. |
+| latestGpsSample | NSDKFrameData.GpsData? | Returns the most recent GPS sample, if available. |
+| latestTrackingStateSample | NsdkTrackingState | Returns the most recent VIO tracking state report |
+
+---
+
+## Relationships
+
+conforms to:  NSDKSessionDataSource 
+
+conforms to:  Swift.Copyable

@@ -1,0 +1,18 @@
+# pause
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackSession.method-pause/
+
+pause
+Stops playback. The loop exits on its next iteration; the current frame index is preserved so a later `run()` resumes from the same frame.
+
+---
+
+## Declaration
+
+override func pause()
+
+#### Summary
+
+Stops playback. The loop exits on its next iteration; the current frame index is preserved so a later run() resumes from the same frame.
+
+---

@@ -1,0 +1,69 @@
+# NSDKMeshingSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKMeshingSession/
+
+NSDKMeshingSession
+
+---
+
+## Declaration
+
+final class NSDKMeshingSession
+
+## Summary
+
+A session for real-time 3D mesh generation from AR camera frames, with Combine publisher support.
+The meshing feature provides capabilities for processing AR session data and generating
+a triangle mesh representation of the physical environment in real-time. The mesh is
+divided into chunks that are individually tracked as they are inserted, updated, or removed.
+`meshUpdates` emits each frame a non-empty batch of chunk changes is available, driven by
+`NSDKSession.update()` while the session is active. Subscribe to it with Combine:
+
+```swift
+meshingSession.meshUpdates
+    .sink { updates in ... }
+    .store(in: &cancellables)
+```
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let meshUpdates | PassthroughSubject<[NSDKMeshingSession.MeshChunkUpdate], Never> | Emits incremental mesh updates each frame new changes are available.Each emission contains a non-empty array of chunk insertions, updates, and removalssince the previous frame. Frames with no mesh changes produce no emission. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configure | void | Configures the meshing feature with the specified settings.- Attention: If this method is called while meshing is running, the meshing feature will restart with the new configuration, and any mesh data that has been produced will be lost. |
+| featureStatus | NSDKFeatureStatus | Reports the current status of the meshing session.Check this periodically to see if any errors have occurred with processes runninginside this feature. Once an error has been flagged, it will remain flagged until theculprit process has been run again and completed successfully. |
+| start | void | Starts the meshing feature.The feature will begin processing AR frame data and building a mesh according to thecurrently applied configuration. |
+| stop | void | Stops the meshing feature. |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configuration | Configuration | The type of configuration used by this session |
+
+---
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| MeshChunkUpdate | MeshChunkUpdate | Describes a change to a specific mesh chunk.Each case represents how a chunk identified by `id` should be handled:- `insert`: A new chunk should be added.- `update`: An existing chunk has new mesh data.- `remove`: A chunk should be removed. |
+
+---
+
+## Relationships
+
+conforms to:  NSDKFeatureSession

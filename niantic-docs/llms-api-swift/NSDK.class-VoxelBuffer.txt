@@ -1,0 +1,25 @@
+# VoxelBuffer
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-VoxelBuffer/
+
+VoxelBuffer
+A read-only container for the voxel buffer information generated during scanning.
+
+---
+
+## Declaration
+
+class VoxelBuffer
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var colors | UnsafeMutableBufferPointer<UInt8> | The colors of the voxels.Array of 4 bytes per voxel.- Attention: These pointers are valid as long as this class does not go out of scope. |
+| var normals | UnsafeMutableBufferPointer<Float> | The normals of the voxels.Array of 3 floats per voxel.- Attention: These pointers are valid as long as this class does not go out of scope. |
+| var positions | UnsafeMutableBufferPointer<Float> | The positions of the voxels.Array of 3 floats per voxel.- Attention: These pointers are valid as long as this class does not go out of scope. |
+| var voxelSize | Float | The size of the voxels. |
+
+---

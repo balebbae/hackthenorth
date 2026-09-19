@@ -1,0 +1,23 @@
+# mapUpdate
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-mapUpdate/
+
+mapUpdate
+
+---
+
+## Declaration
+
+func mapUpdate() -> NSDKBuffer?
+
+#### Summary
+
+Gets the latest map update data.
+This method returns the incremental map changes (new nodes and edges) that have been added
+since the last update.
+
+#### Returns
+
+The serialized map update if available, nil if no updates exist.
+
+---

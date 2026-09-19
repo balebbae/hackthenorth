@@ -1,0 +1,36 @@
+# OrganizationInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-OrganizationInfo/
+
+OrganizationInfo
+Represents organization information from the Sites Manager service.
+
+---
+
+## Declaration
+
+struct OrganizationInfo
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_SitesManager_OrganizationInfo)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let createdTimestamp | Int64 | Timestamp when the organization was created (Unix timestamp in seconds). |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let id | String | Organization identifier. |
+| let name | String | Organization name. |
+| let status | String | Organization status. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible

@@ -1,0 +1,26 @@
+# MapMetadata
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-MapMetadata/
+
+MapMetadata
+Structure representing the metadata of a device map for visualization and processing.
+
+---
+
+## Declaration
+
+struct MapMetadata
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var errors | [Float | - |
+| let owner | ResourceOwner? | The owner of the map metadata.- Attention: The owner must be released when the map metadata is no longer needed. |
+| var points | [Float | - |
+| let pointsCount | UInt32 | The number of feature points in the map. |
+| let usesLearnedFeatures | Bool | Whether the map uses learned features. |
+
+---

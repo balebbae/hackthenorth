@@ -1,0 +1,28 @@
+# projectionMatrix
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.method-projectionMatrix/
+
+projectionMatrix
+
+---
+
+## Declaration
+
+func projectionMatrix(for orientation: UIInterfaceOrientation, viewportSize: CGSize, zNear: CGFloat, zFar: CGFloat) -> simd_float4x4
+
+#### Summary
+
+Returns a projection matrix for the given orientation and viewport size, with optional near/far clipping.
+Pass the same orientation and viewport size used for the view matrix so that 3D content projects correctly.
+zFar > 0 uses a finite far plane; zFar <= 0 yields an infinite far plane (e.g. for skyboxes).
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orientation | UIInterfaceOrientation | - |
+| viewportSize | CGSize | - |
+| zNear | CGFloat | - |
+| zFar | CGFloat | - |
+
+---

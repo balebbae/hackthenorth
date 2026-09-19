@@ -1,0 +1,18 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.method-start/
+
+start
+Starts the depth session, enabling depth data processing with the current configuration.
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts the depth session, enabling depth data processing with the current configuration.
+
+---

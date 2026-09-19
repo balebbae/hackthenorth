@@ -1,0 +1,32 @@
+# PlaybackBackgroundRenderer
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackBackgroundRenderer/
+
+PlaybackBackgroundRenderer
+
+---
+
+## Declaration
+
+@MainActor class PlaybackBackgroundRenderer
+
+---
+
+## Constructors
+
+@MainActor init(frame: CGRect)
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @MainActor setup | void | - |
+| @MainActor updateBackgroundImage | void | - |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable

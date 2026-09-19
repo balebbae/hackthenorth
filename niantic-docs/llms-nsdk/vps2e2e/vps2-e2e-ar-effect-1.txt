@@ -1,0 +1,1526 @@
+# Start VPS2 localization
+
+Source: https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-1/
+
+### Platform: kotlin
+
+# Start VPS2 localization
+
+This page implements the Start VPS2 localization step in the wayfinding workflow. In this workflow, the user has already selected a Site, passed its Production VPS anchor payload into the AR flow, and is ready to begin localization. This page shows how to start VPS2 tracking, listen for anchor and localization updates, and surface VPS2 state in the AR screen.
+
+In the standalone Kotlin app shown in this tutorial, `WayfindingVPS2View` is the Compose screen that hosts the AR flow, and `WayfindingVPS2Manager` owns the NSDK session objects and long-lived VPS2 state used during localization.
+
+(image: After initializing a wayfinding app, selecting a Scaniverse Site and anchor payload, start VPS2 localization.)
+
+*Figure:* Previous steps of the tutorial showed how to initialize the app and implement Site selection. This step shows VPS2 localization. The next step shows AR wayfinding.
+
+## Files Overview
+
+The Start VPS2 localization step has five steps:
+
+1. [Create the AR screen](#create-the-ar-screen).
+2. [Configure and start VPS2 tracking](#configure-and-start-vps2-tracking).
+3. [Listen for anchor and localization updates](#listen-for-anchor-and-localization-updates).
+4. [Start tracking from the UI](#start-tracking-from-the-ui).
+5. [Surface VPS2 state in the AR UI](#surface-vps2-state-in-the-ar-ui).
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone app shown in this tutorial, along with the names of the matching files in the public `vps2e2e` sample with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the AR screen | `WayfindingVPS2View.kt` Compose AR UI, payload display, and lifecycle wiring | `VPS2View.kt` |
+| Configure and start VPS2 tracking | `WayfindingVPS2Manager.kt` VPS2 session orchestration, payload sanitization, and tracking startup | `VPS2Manager.kt` |
+| Listen for anchor and localization updates | `WayfindingVPS2Manager.kt` anchor tracking state and localization status updates | `VPS2Manager.kt` |
+| Start tracking from the UI | `WayfindingVPS2View.kt` payload collection and tracking toggle UI | `VPS2View.kt` |
+| Surface VPS2 state in the AR UI | `WayfindingVPS2View.kt` localization indicators and tracked-anchor status UI | `VPS2View.kt` |
+
+## Create the AR screen
+
+This step creates the Compose screen that hosts VPS2 localization. In this step, you will keep the shared AR session active while the screen is visible and confirm that the selected anchor payload is reaching the VPS2 flow.
+
+- [Create the VPS2 screen](#create-the-vps2-screen): Create a dedicated Compose screen for the VPS2 flow.
+- [Open the VPS2 screen](#open-the-vps2-screen): Update navigation so the selected anchor payload reaches the new screen.
+
+### Create the VPS2 screen
+
+In an existing app, update your current VPS2 or AR screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Receive the shared `NSDKSessionManager`.
+- Receive the selected anchor payload from navigation.
+- Enable the AR session while the screen is visible.
+- Show which anchor payload was passed in from the Site-selection flow.
+
+In a new app, create `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` as shown in the following code example:
+
+#### Expand to view WayfindingVPS2View.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.app.Activity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun WayfindingVPS2View(
+    context: Activity,
+    // Receive the shared NSDKSessionManager.
+    nsdkManager: NSDKSessionManager,
+    helpContentState: MutableState<Any?>,
+    // Receive the selected anchor payload from navigation.
+    initialPayload: String?
+) {
+    // Enable the AR session while the screen is visible.
+    DisposableEffect(Unit) {
+        android.util.Log.i("WayfindingApp", "WayfindingVPS2View opened")
+        nsdkManager.arManager.setEnabled(true)
+        onDispose { nsdkManager.arManager.setEnabled(false) }
+    }
+
+    // Show which anchor payload was passed in from the Site-selection flow.
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("VPS2 screen")
+            Text(
+                text = if (initialPayload.isNullOrBlank()) {
+                    "No anchor payload selected"
+                } else {
+                    "Selected anchor payload:\n$initialPayload"
+                },
+                modifier = Modifier.padding(24.dp)
+            )
+        }
+    }
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/vps2/VPS2View.kt`.
+
+### Open the VPS2 screen
+
+In an existing app, update the route or screen transition that currently opens your placeholder VPS2 screen so it opens the new AR screen instead. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Decode the payload from navigation.
+- Open `WayfindingVPS2View(...)` from the payload-aware VPS2 route.
+- Remove the earlier placeholder VPS2 screen.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` with the following steps:
+
+1. Replace the payload-aware `composable(route = "$VPS2_ROUTE/{$VPS2_PAYLOAD_ARG}"...)` block for the `vps2` route so it opens `WayfindingVPS2View(...)` instead of `VPS2View` as shown in the following code example:
+
+   ```kotlin
+   composable(
+       route = "$VPS2_ROUTE/{$VPS2_PAYLOAD_ARG}",
+       arguments = listOf(
+           navArgument(VPS2_PAYLOAD_ARG) {
+               type = NavType.StringType
+               nullable = true
+               defaultValue = ""
+           }
+       )
+   ) { backStackEntry ->
+       // Read the encoded payload from navigation arguments.
+       val encodedPayload = backStackEntry.arguments?.getString(VPS2_PAYLOAD_ARG).orEmpty()
+       // Decode the payload before passing it into the AR screen.
+       val initialPayload = Uri.decode(encodedPayload)
+
+       // Open the new AR screen with the shared session manager and selected payload.
+       WayfindingVPS2View(
+           context = activity,
+           nsdkManager = nsdkSessionManager,
+           helpContentState = remember { mutableStateOf(null) },
+           initialPayload = initialPayload
+       )
+   }
+   ```
+
+2. Delete the placeholder `VPS2View(...)` stub after the closing `}` of `fun WayfindingApp(activity: Activity)`. `WayfindingVPS2View.kt` now owns that screen.
+
+Test this step to validate that the app opens the dedicated VPS2 screen and passes the selected payload into it:
+
+- Build and run the app on your device with a fresh developer token.
+- Tap **Login**, then tap **Browse Sites**.
+- Select a Site and tap **Localize in AR**.
+- Confirm that the AR screen shows `VPS2 screen` and the selected anchor payload.
+- In Logcat, filter by `WayfindingApp` and confirm that `WayfindingVPS2View opened` appears.
+- Tap Back and confirm that the app returns to the map without crashing.
+
+The next step creates the VPS2 manager and connects it to the new AR screen.
+
+## Configure and start VPS2 tracking
+
+This step creates the manager that prepares VPS2 tracking and keeps it alive for the lifetime of the AR screen. In this step, you will sanitize payloads, configure `Vps2Config`, start the VPS2 session, track selected anchors, and expose state the UI will render in later steps.
+
+- [Create a VPS2 manager](#create-a-vps2-manager): Create a shared manager that owns VPS2 session state outside the UI.
+- [Create the shared manager](#create-the-shared-manager): Create one shared `WayfindingVPS2Manager` for the lifetime of the AR screen.
+
+### Create a VPS2 manager
+
+In an existing app, update your current VPS2 manager or AR data layer. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Receive the shared `NSDKSessionManager` and a `Vps2Session`.
+- Store the tracked anchors and their current tracking states.
+- Configure `Vps2Config` once before tracking begins.
+- Start the VPS2 session.
+- Track each selected anchor payload.
+- Expose `startTracking()` and `stopTracking()` functions for the UI.
+
+In a new app, create `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` as shown in the following code example:
+
+#### Expand to view WayfindingVPS2Manager.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.example.wayfinding.auth.AuthRetryException
+import com.example.wayfinding.auth.AuthRetryHelper
+import com.nianticspatial.nsdk.AnchorTrackingState
+import com.nianticspatial.nsdk.NsdkInvalidArgumentStatusException
+import com.nianticspatial.nsdk.UUIDKey
+import com.nianticspatial.nsdk.Vps2Config
+import com.nianticspatial.nsdk.toKey
+import com.nianticspatial.nsdk.vps2.Vps2Session
+import com.nianticspatial.nsdk.vps2.Vps2TrackingState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+
+class WayfindingVPS2Manager(
+    private val nsdkManager: NSDKSessionManager,
+    private val vps2Session: Vps2Session,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+) : DefaultLifecycleObserver {
+
+    companion object {
+        private const val TAG = "WayfindingApp"
+    }
+
+    private val authRetryHelper = AuthRetryHelper(nsdkManager.session)
+    private var trackingCollectorsJob: Job? = null
+    private var configured = false
+
+    var trackingStarted by mutableStateOf(false)
+        private set
+
+    var localizationTrackingState by mutableStateOf(Vps2TrackingState.UNAVAILABLE)
+        private set
+
+    // Store every anchor returned by VPS2 and its current tracking state.
+    val anchors = mutableStateMapOf<UUIDKey, String?>()
+    val anchorStates = mutableStateMapOf<UUIDKey, AnchorTrackingState>()
+
+    // Configure VPS2 once before tracking begins.
+    fun configure(
+        config: Vps2Config = Vps2Config(
+            enableUniversalLocalization = true,
+            universalLocalizationRequestsPerSecond = 1.0f,
+            enableVpsMapLocalization = true,
+            initialVpsRequestsPerSecond = 1.0f,
+            continuousVpsRequestsPerSecond = 0.2f,
+        )
+    ) {
+        vps2Session.configure(config)
+        configured = true
+        android.util.Log.i(TAG, "Configured VPS2 session")
+    }
+
+    fun startTracking(payloads: List<String>) {
+        if (trackingStarted) return
+
+        // Remove blank payloads before sending them to VPS2.
+        val sanitizedPayloads = payloads.map { it.trim() }.filter { it.isNotEmpty() }
+        if (sanitizedPayloads.isEmpty()) {
+            android.util.Log.i(TAG, "Skipped VPS2 tracking because no payloads were provided")
+            return
+        }
+
+        if (!configured) {
+            configure()
+        }
+
+        // Start the session once, then begin listening for updates and tracking anchors.
+        vps2Session.start()
+        trackingStarted = true
+        startTrackingCollectors()
+        android.util.Log.i(TAG, "Started VPS2 tracking for ${sanitizedPayloads.size} payloads")
+
+        sanitizedPayloads.forEach { payload ->
+            coroutineScope.launch {
+                try {
+                    val anchorId = authRetryHelper.withRetry {
+                        vps2Session.trackAnchor(payload)
+                    }
+
+                    val anchorKey = anchorId.toKey()
+                    anchors[anchorKey] = payload
+                    anchorStates[anchorKey] = AnchorTrackingState.NOT_TRACKED
+                    android.util.Log.i(TAG, "Tracking anchor payload: $payload")
+                } catch (e: NsdkInvalidArgumentStatusException) {
+                    android.util.Log.e(TAG, "Invalid payload: $payload", e)
+                    stopTracking()
+                } catch (e: AuthRetryException) {
+                    android.util.Log.e(TAG, "Authorization timed out while tracking anchor", e)
+                    stopTracking()
+                }
+            }
+        }
+    }
+
+    private fun startTrackingCollectors() {
+        trackingCollectorsJob?.cancel()
+        val collectorsJob = SupervisorJob()
+        trackingCollectorsJob = collectorsJob
+        val trackingScope = CoroutineScope(coroutineScope.coroutineContext + collectorsJob)
+        android.util.Log.i(TAG, "Started VPS2 collectors")
+    }
+
+    fun stopTracking() {
+        trackingStarted = false
+        trackingCollectorsJob?.cancel()
+        trackingCollectorsJob = null
+        localizationTrackingState = Vps2TrackingState.UNAVAILABLE
+        anchors.clear()
+        anchorStates.clear()
+        runCatching { vps2Session.stop() }
+        android.util.Log.i(TAG, "Stopped VPS2 tracking")
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        stopTracking()
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        stopTracking()
+        coroutineScope.cancel()
+        runCatching { vps2Session.close() }
+    }
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/vps2/VPS2Manager.kt`.
+
+### Create the shared manager
+
+In an existing app, update your current AR screen so it acquires a `Vps2Session` from the shared `NSDKSession` and keeps one shared VPS2 manager for the lifetime of the screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Acquire a `Vps2Session` from the shared `NSDKSession`.
+- Create one shared VPS2 manager and keep it for the lifetime of the screen.
+- Attach the VPS2 manager to the screen lifecycle.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following steps:
+
+1. Add the following imports to the top of `WayfindingVPS2View.kt` as shown in the following code example:
+
+   ```kotlin
+   import androidx.compose.runtime.remember
+   import androidx.lifecycle.compose.LocalLifecycleOwner
+   ```
+
+2. Add the lifecycle owner and shared manager at the top of `WayfindingVPS2View(...)`, before the first `DisposableEffect(Unit)` block, as shown in the following code example:
+
+   ```kotlin
+   val lifecycleOwner = LocalLifecycleOwner.current
+
+   // Create one shared VPS2 manager for the lifetime of this AR screen.
+   val vps2Manager = remember {
+       WayfindingVPS2Manager(
+           nsdkManager = nsdkManager,
+           vps2Session = nsdkManager.session.vps2.acquire()
+       ).also {
+           android.util.Log.i("WayfindingApp", "WayfindingVPS2Manager created")
+       }
+   }
+   ```
+
+3. Add the following lifecycle block immediately after the existing `DisposableEffect(Unit)` block as shown in the following code example:
+
+   ```kotlin
+   // Keep the VPS2 manager attached to the screen lifecycle so it can stop and clean up correctly.
+   DisposableEffect(lifecycleOwner, vps2Manager) {
+       lifecycleOwner.lifecycle.addObserver(vps2Manager)
+       onDispose {
+           lifecycleOwner.lifecycle.removeObserver(vps2Manager)
+       }
+   }
+   ```
+
+Test this step to validate that the AR screen creates one shared VPS2 manager:
+
+- Build and run the app on your device with a fresh developer token.
+- Tap **Login**, then tap **Browse Sites**.
+- Select a Site, tap **Localize in AR**, and confirm that the AR screen still opens without crashing.
+- In Logcat, filter by `WayfindingApp` and confirm that `WayfindingVPS2Manager created` appears.
+
+The next step wires the VPS2 manager to anchor and localization updates so it can report tracking progress.
+
+## Listen for anchor and localization updates
+
+This step subscribes to anchor and localization updates after tracking starts. Anchor updates tell the app whether each requested anchor is currently tracked. Localization updates tell the app whether VPS2 is unavailable, coarse, or precise.
+
+- [Collect anchor updates](#collect-anchor-updates): Update each tracked anchor's current state.
+- [Collect localization updates](#collect-localization-updates): Track the current VPS2 localization quality.
+
+### Collect anchor updates
+
+In an existing app, update your current VPS2 manager or AR data layer. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Subscribe to anchor updates after tracking starts.
+- Update `anchorStates` whenever a tracked anchor changes state.
+- Print a unique checkpoint when anchor state updates begin.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` by adding the following anchor-updates collector inside `startTrackingCollectors()`, directly before `android.util.Log.i(TAG, "Started VPS2 collectors")`:
+
+```kotlin
+// Update the current tracking state for each anchor returned by VPS2.
+vps2Session.anchorUpdates
+    .filter { trackingStarted }
+    .filter { update -> anchors.containsKey(update.uuid.toKey()) }
+    .catch { e -> android.util.Log.e(TAG, "Error in anchor updates flow", e) }
+    .onEach { update ->
+        val anchorKey = update.uuid.toKey()
+        anchorStates[anchorKey] = update.trackingState
+        android.util.Log.i(TAG, "Anchor state updated: ${update.trackingState}")
+    }
+    .launchIn(trackingScope)
+```
+
+### Collect localization updates
+
+In an existing app, update your current VPS2 manager or AR data layer. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Subscribe to localization updates after tracking starts.
+- Keep the current `Vps2TrackingState` available to the UI.
+- Print a unique checkpoint when the collector wiring is ready.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` with the following steps:
+
+1. Add the following `init` block immediately below the `val anchorStates` declaration:
+
+   ```kotlin
+   init {
+       android.util.Log.i(TAG, "Anchor and localization collectors ready")
+   }
+   ```
+
+2. Add the following localization-updates collector inside `startTrackingCollectors()`, directly below the anchor-updates collector and directly above `android.util.Log.i(TAG, "Started VPS2 collectors")`:
+
+   ```kotlin
+   // Keep the current localization quality available to the UI.
+   vps2Session.localizationUpdates
+       .filter { trackingStarted }
+       .catch { e -> android.util.Log.e(TAG, "Error in localization updates flow", e) }
+       .onEach { localization ->
+           localizationTrackingState = localization.trackingState
+           android.util.Log.i(TAG, "Localization state: ${localization.trackingState}")
+       }
+       .launchIn(trackingScope)
+   ```
+
+Test this step to validate that the VPS2 manager starts listening for anchor and localization updates:
+
+- Build and run the app on your device with a fresh developer token.
+- Tap **Login**, then tap **Browse Sites**.
+- Select a Site, tap **Localize in AR**, and confirm that the AR screen opens without crashing.
+- In Logcat, filter by `WayfindingApp` and confirm that `Anchor and localization collectors ready` appears.
+
+The next step adds the UI control that starts and stops VPS2 tracking from the AR screen.
+
+## Start tracking from the UI
+
+This step adds a simple tracking button to the AR screen. The button builds a payload list from the selected Site payload and lets the user start or stop VPS2 tracking from one place.
+
+- [Build the payload list](#build-the-payload-list): Prepare the selected Site payload for VPS2 tracking.
+- [Add the tracking button](#add-the-tracking-button): Let the user start and stop VPS2 tracking from the screen.
+
+### Build the payload list
+
+In an existing app, update your current AR screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Build a payload list from the selected Site payload.
+- Exclude blank payload values before tracking starts.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` by adding the payload list immediately after the closing `}` of `val vps2Manager = remember { ... }`, which is the unique line to search for in this file, as shown in the following code example:
+
+```kotlin
+// Build a payload list from the selected Site payload.
+val payloads = remember(initialPayload) {
+    listOfNotNull(initialPayload?.takeIf { it.isNotBlank() })
+}
+```
+
+### Add the tracking button
+
+In an existing app, update your current AR screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Start tracking when the user taps the button the first time.
+- Stop tracking when the user taps the button again.
+- Show whether tracking is currently running.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following steps:
+
+1. Add the following import to the top of `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` if `Button` is unresolved in your project:
+
+   ```kotlin
+   import androidx.compose.material3.Button
+   ```
+
+2. Replace the current `Column(...)` contents in `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following code example:
+
+   ```kotlin
+   Column(
+       horizontalAlignment = Alignment.CenterHorizontally
+   ) {
+       Text("VPS2 screen")
+       Text(
+           text = if (initialPayload.isNullOrBlank()) {
+               "No anchor payload selected"
+           } else {
+               "Selected anchor payload:\n$initialPayload"
+           },
+           modifier = Modifier.padding(24.dp)
+       )
+
+       Button(
+           onClick = {
+               if (!vps2Manager.trackingStarted) {
+                   vps2Manager.startTracking(payloads)
+               } else {
+                   vps2Manager.stopTracking()
+               }
+           }
+       ) {
+           Text(if (vps2Manager.trackingStarted) "Stop Tracking" else "Start Tracking")
+       }
+   }
+   ```
+
+Test this step to validate that the AR screen starts and stops VPS2 tracking from the UI:
+
+- Build and run the app on your device with a fresh developer token.
+- Tap **Login**, then tap **Browse Sites**.
+- Select a Site, tap **Localize in AR**, and confirm that the AR screen shows a **Start Tracking** button.
+- Tap **Start Tracking** and confirm that the button text changes to **Stop Tracking**.
+- In Logcat, filter by `WayfindingApp` and confirm that `Started VPS2 tracking for 1 payloads` or a similar message appears.
+
+The next step surfaces the current VPS2 state in the AR UI so the user can see localization progress directly on screen.
+
+## Surface VPS2 state in the AR UI
+
+This step surfaces the current VPS2 state directly in Compose so the user can tell whether localization is unavailable, coarse, or precise and whether any anchors are currently tracked.
+
+- [Show localization status](#show-localization-status): Reflect the current VPS2 tracking quality in the UI.
+- [Show tracked anchors](#show-tracked-anchors): Show how many anchors are currently tracked.
+
+### Show localization status
+
+In an existing app, update your current AR UI. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show the current localization state in the UI.
+- Use color to distinguish unavailable, coarse, and precise localization.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following steps:
+
+1. Add the following imports to the top of `app/src/main/java/<your app package path>/WayfindingVPS2View.kt`:
+
+   ```kotlin
+   import androidx.compose.foundation.background
+   import androidx.compose.foundation.layout.size
+   import androidx.compose.foundation.shape.CircleShape
+   import androidx.compose.ui.graphics.Color
+   import com.nianticspatial.nsdk.AnchorTrackingState
+   import com.nianticspatial.nsdk.vps2.Vps2TrackingState
+   ```
+
+2. Add the localization indicator color immediately after the `payloads` block in `app/src/main/java/<your app package path>/WayfindingVPS2View.kt`:
+
+   ```kotlin
+   val indicatorColor = when (vps2Manager.localizationTrackingState) {
+       Vps2TrackingState.UNAVAILABLE -> Color.Red
+       Vps2TrackingState.COARSE -> Color.Yellow
+       Vps2TrackingState.PRECISE -> Color.Green
+   }
+   ```
+
+### Show tracked anchors
+
+In an existing app, update your current AR UI. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show how many anchors are currently being tracked.
+- Show the current localization state in text and color.
+- Keep the selected payload and tracking button visible.
+
+In a new app, replace the current `Column(...)` contents in `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following code example:
+
+```kotlin
+Column(
+    horizontalAlignment = Alignment.CenterHorizontally
+) {
+    val trackedAnchorCount = vps2Manager.anchorStates.values.count { state ->
+        state != AnchorTrackingState.NOT_TRACKED
+    }
+
+    Box(
+        modifier = Modifier
+            .size(16.dp)
+            .background(indicatorColor, CircleShape)
+    )
+
+    Text(
+        text = "Localization: ${vps2Manager.localizationTrackingState}",
+        modifier = Modifier.padding(top = 16.dp)
+    )
+    Text(
+        text = "Tracked anchors: $trackedAnchorCount",
+        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+    )
+    Text(
+        text = if (initialPayload.isNullOrBlank()) {
+            "No anchor payload selected"
+        } else {
+            "Selected anchor payload:\n$initialPayload"
+        },
+        modifier = Modifier.padding(24.dp)
+    )
+
+    Button(
+        onClick = {
+            if (!vps2Manager.trackingStarted) {
+                vps2Manager.startTracking(payloads)
+            } else {
+                vps2Manager.stopTracking()
+            }
+        }
+    ) {
+        Text(if (vps2Manager.trackingStarted) "Stop Tracking" else "Start Tracking")
+    }
+}
+```
+
+Test this step to validate that the AR screen shows VPS2 localization state and tracked-anchor state:
+
+- Build and run the app on your device with a fresh developer token.
+- Tap **Login**, then tap **Browse Sites**.
+- Select a Site, tap **Localize in AR**, then tap **Start Tracking**.
+- Confirm that the AR screen shows a colored localization indicator, a `Localization: ...` label, and a `Tracked anchors: ...` label.
+- Confirm that the tracking button is still visible.
+- In Logcat, filter by `WayfindingApp` and confirm that `Localization state: ...` appears while the on-screen label updates.
+
+The next page adds advanced AR effects and precise-localization visuals on top of this working VPS2 localization flow.
+
+### Platform: swift
+
+# Start VPS2 localization
+
+This page implements the Start VPS2 localization step in the wayfinding workflow. In this workflow, the user has already selected a Site, passed its Production VPS anchor payload into the AR flow, and is ready to begin localization. This page shows how to open the real VPS2 screen, configure the VPS2 session, listen for anchor and localization updates, and surface VPS2 state in the AR UI.
+
+In the standalone Swift app shown in this tutorial, `WayfindingVPS2View` is the SwiftUI screen that hosts the AR flow, `WayfindingVPS2ARViewController` owns the UIKit AR view, and `WayfindingARManager` owns the shared `NSDKView` and frame-delivery wiring that VPS2 needs.
+
+(image: After initializing a wayfinding app, selecting a Scaniverse Site and anchor payload, start VPS2 localization.)
+
+*Figure:* Previous steps of the tutorial showed how to initialize the app and implement Site selection. This step shows VPS2 localization. The next step shows AR wayfinding.
+
+## Files Overview
+
+The Start VPS2 localization step has five steps:
+
+1. [Create the AR screen](#create-the-ar-screen).
+2. [Configure and start VPS2 tracking](#configure-and-start-vps2-tracking).
+3. [Listen for anchor and localization updates](#listen-for-anchor-and-localization-updates).
+4. [Start tracking from the UI](#start-tracking-from-the-ui).
+5. [Surface VPS2 state in the AR UI](#surface-vps2-state-in-the-ar-ui).
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone app shown in this tutorial, along with the names of the matching files in the public `vps2-e2e-swift` sample with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the AR screen | `AR/WayfindingVPS2View.swift` hosts the VPS2 screen and `Landing/WayfindingLandingView.swift` opens it from the existing payload-aware route | `Landing/LandingView.swift` and `AR/VPS2ARViewControllerRepresentable.swift` |
+| Configure and start VPS2 tracking | `NSDK/WayfindingARManager.swift`, `AR/WayfindingVPS2ARViewController.swift`, and `AR/WayfindingVPS2ARViewControllerRepresentable.swift` configure NSDK, host the AR view, and own the VPS2 session | `NSDK/ARManager.swift`, `AR/VPS2ARViewController.swift`, and `AR/VPS2ARViewControllerRepresentable.swift` |
+| Listen for anchor and localization updates | `AR/WayfindingVPS2ViewModel.swift` subscribes to `anchorUpdated` and `$latestLocalization` | `AR/VPS2ViewModel.swift` |
+| Start tracking from the UI | `AR/WayfindingVPS2View.swift` builds the payload list and `AR/WayfindingVPS2ARViewController.swift` calls `trackAnchor(payload:)` | `AR/VPS2ARViewController.swift` |
+| Surface VPS2 state in the AR UI | `AR/WayfindingVPS2View.swift` and `AR/WayfindingVPS2ViewModel.swift` show localization text, tracked-anchor text, and anchor state | `AR/VPS2ARViewController.swift` and `AR/VPS2ViewModel.swift` |
+
+## Create the AR screen
+
+This step creates the SwiftUI VPS2 screen and replaces the placeholder VPS2 destination from the earlier pages. In this step, you will prove that the selected Site and selected anchor payload reach the AR flow.
+
+This step has two parts:
+
+1. [Create the VPS2 screen](#create-the-vps2-screen) so the selected Site opens a dedicated SwiftUI AR destination.
+2. [Open the VPS2 screen](#open-the-vps2-screen) so the existing payload-aware route uses `WayfindingVPS2View`.
+
+### Create the VPS2 screen
+
+In an existing app, update your current VPS2 or AR screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Receive the shared `NSDKSession`.
+- Receive the selected Site name and selected anchor payload.
+- Show that the VPS2 destination opened for the chosen Site.
+- Show which anchor payload was passed in from the Sites flow.
+
+In a new app, create an `AR` group, then create `AR/WayfindingVPS2View.swift` to show that the selected Site and payload reached the VPS2 flow:
+
+#### Expand to view WayfindingVPS2View.swift
+
+```swift
+import NSDK
+import SwiftUI
+
+struct WayfindingVPS2View: View {
+    let siteName: String
+    let initialPayload: String
+    let nsdkSession: NSDKSession
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Step 1: Confirm that the VPS2 screen opened.
+            Text("VPS2 screen")
+                .font(.title2.weight(.semibold))
+
+            // Step 2: Show which Site was selected on the map.
+            Text("Selected Site: \(siteName)")
+                .multilineTextAlignment(.center)
+
+            // Step 3: Show which anchor payload was passed into this screen.
+            Text("Selected anchor payload: \(initialPayload)")
+                .font(.footnote.monospaced())
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color.blue.opacity(0.45)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .foregroundStyle(.white)
+        .onAppear {
+            // Step 4: Log that the VPS2 screen opened.
+            print("WayfindingVPS2View opened")
+        }
+    }
+}
+```
+
+In the `vps2-e2e-swift` sample, the corresponding AR destination starts in `Vps2E2eSample/Vps2E2eSample/AR/VPS2ARViewControllerRepresentable.swift`.
+
+### Open the VPS2 screen
+
+In an existing app, update your current payload-aware VPS2 route so it opens the real AR screen instead of the earlier placeholder screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Keep using the existing payload-aware VPS2 route from the earlier pages.
+- Replace the earlier placeholder VPS2 destination builder.
+- Open `WayfindingVPS2View(...)` with the selected Site, selected payload, and shared `NSDKSession`.
+
+In a new app, update `Landing/WayfindingLandingView.swift` to route the selected Site into the real VPS2 screen:
+
+1. In the existing `.navigationDestination(for: WayfindingNavigationStep.self)` block, replace the placeholder VPS2 destination call to open the real VPS2 screen:
+
+   ```swift
+   self.destinationWayfindingVPS2PlaceholderView(
+       siteName: siteName,
+       payload: payload,
+       nsdkSession: nsdkSession
+   )
+   ```
+
+   with:
+
+   ```swift
+   self.destinationWayfindingVPS2View(
+       siteName: siteName,
+       payload: payload,
+       nsdkSession: nsdkSession
+   )
+   ```
+
+2. Replace the placeholder `private func destinationWayfindingVPS2PlaceholderView(...) -> some View` block to open `WayfindingVPS2View(...)` from the payload-aware route:
+
+   ```swift
+   private func destinationWayfindingVPS2View(
+       siteName: String,
+       payload: String,
+       nsdkSession: NSDKSession
+   ) -> some View {
+       // Step 1: Open the real VPS2 screen from the existing payload-aware route.
+       WayfindingVPS2View(
+           siteName: siteName,
+           initialPayload: payload,
+           nsdkSession: nsdkSession
+       )
+   }
+   ```
+
+Test this step to validate that the app opens the dedicated VPS2 screen and passes the selected Site and payload into it:
+
+- Build the app.
+- Run the app to reach `Browse Sites`.
+- Tap a Site, then tap `Localize in AR`.
+- Confirm that the VPS2 screen shows `Selected Site: ...` and `Selected anchor payload: ...`.
+- Confirm that `WayfindingVPS2View opened` appears in Xcode's console.
+
+The next step replaces this placeholder SwiftUI screen with the real AR host and VPS2 session wiring.
+
+## Configure and start VPS2 tracking
+
+This step creates the shared NSDK AR manager, the UIKit AR controller, and the SwiftUI bridge that hosts it. In this step, you will configure the VPS2 session and start the underlying AR and VPS2 sessions, but you will not yet start tracking the selected anchor payload from the UI.
+
+This step has two parts:
+
+1. [Create a VPS2 manager](#create-a-vps2-manager) to own the shared `NSDKView`, the VPS2 session, and the UIKit controller bridge.
+2. [Create the shared manager](#create-the-shared-manager) so one `WayfindingARManager` and one `WayfindingVPS2ViewModel` live for the full screen lifetime.
+
+### Create a VPS2 manager
+
+In an existing app, update your current AR manager, VPS2 controller, and SwiftUI bridge. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Create a shared `NSDKView` and attach it to `NSDKSession`.
+- Acquire and configure one `NSDKVps2Session` for the screen.
+- Start and stop the AR session with the view controller lifecycle.
+- Host the UIKit AR controller inside SwiftUI.
+
+In a new app, add the following files to create the shared AR host and VPS2 session wiring:
+
+1. Create `NSDK/WayfindingARManager.swift` to attach `NSDKView` to the shared `NSDKSession` and feed AR frames into NSDK:
+
+   #### Expand to view WayfindingARManager.swift
+
+   ```swift
+   import ARKit
+   import NSDK
+   import RealityKit
+   import UIKit
+
+   final class WayfindingARManager: NSObject, UIOrientationReporter {
+       let nsdkSession: NSDKSession
+       let nsdkView: NSDKView
+
+       var currentOrientation: NSDKScreenOrientation {
+           let orientation = nsdkView.window?.windowScene?.effectiveGeometry.interfaceOrientation ?? .unknown
+           return NSDKScreenOrientation(orientation)
+       }
+
+       private var dataSource: NSDKSessionDataSource?
+
+       init(nsdkSession: NSDKSession) {
+           self.nsdkSession = nsdkSession
+
+           // Step 1: Use playback data when the sample bundle contains it.
+           if let dataset = BundlePlaybackDatasetLoader(directory: "").loadDataset() {
+               self.nsdkView = NSDKView(dataset: dataset)
+           } else {
+               // Step 2: Otherwise use live camera data.
+               self.nsdkView = NSDKView()
+           }
+
+           super.init()
+
+           // Step 3: Bridge the AR session into NSDK.
+           self.setupDataSource()
+           self.nsdkView.delegate = self
+       }
+
+       private func setupDataSource() {
+           if let playbackSession = nsdkView.session as? PlaybackSession {
+               dataSource = PlaybackSessionDataSource(session: playbackSession)
+           } else {
+               dataSource = DefaultSessionDataSource(
+                   session: nsdkView.session,
+                   orientationReporter: self
+               )
+           }
+           nsdkSession.dataSource = dataSource
+       }
+
+       func startSession() {
+           // Step 4: Start the AR session that feeds frames into NSDK.
+           let config = ARWorldTrackingConfiguration()
+           config.planeDetection = [.horizontal, .vertical]
+           if ARUtils.isLidarAvailable() {
+               config.frameSemantics.insert(.sceneDepth)
+           }
+           nsdkView.session.run(config)
+           UIApplication.shared.isIdleTimerDisabled = true
+       }
+
+       func stopSession() {
+           // Step 5: Stop the AR session when the VPS2 screen closes.
+           nsdkView.session.pause()
+           UIApplication.shared.isIdleTimerDisabled = false
+       }
+
+       private func handleFrameUpdate() {
+           // Step 6: Feed every AR frame into NSDK.
+           nsdkSession.update()
+       }
+   }
+
+   extension WayfindingARManager: NSDKViewDelegate {
+       func session(_ session: ARSession, didUpdate frame: ARFrame) {
+           handleFrameUpdate()
+       }
+
+       func playbackSession(_ session: PlaybackSession, didUpdate frame: PlaybackFrame) {
+           handleFrameUpdate()
+       }
+   }
+   ```
+
+2. Create `AR/WayfindingVPS2ViewModel.swift` to hold the VPS2 status text that the AR overlay will render:
+
+   #### Expand to view WayfindingVPS2ViewModel.swift
+
+   ```swift
+   import Combine
+   import Foundation
+   import NSDK
+
+   @MainActor
+   final class WayfindingVPS2ViewModel: ObservableObject {
+       @Published var sessionStatusText = "Preparing VPS2..."
+       @Published var localizationStatusText = "Localization: UNAVAILABLE"
+       @Published var trackedAnchorsText = "Tracked anchors: 0"
+       @Published var trackedAnchorStateText = "Anchor state: NOT_TRACKED"
+
+       private var cancellables = Set<AnyCancellable>()
+       private var hasBoundSession = false
+
+       func bind(session: NSDKVps2Session) {
+           // Later steps add anchor and localization collectors here.
+       }
+
+       func setSessionStatus(_ text: String) {
+           sessionStatusText = text
+       }
+
+       func setTrackedAnchorCount(_ count: Int) {
+           trackedAnchorsText = "Tracked anchors: \(count)"
+       }
+
+       private func anchorStateText(from trackingState: VpsAnchorUpdate.AnchorTrackingState) -> String {
+           switch trackingState {
+           case .notTracked:
+               return "NOT_TRACKED"
+           case .limited:
+               return "LIMITED"
+           case .tracked:
+               return "TRACKED"
+           @unknown default:
+               return "UNKNOWN"
+           }
+       }
+   }
+   ```
+
+3. Create `AR/WayfindingVPS2ARViewController.swift` to host the shared AR view and configure one VPS2 session for the screen:
+
+   #### Expand to view WayfindingVPS2ARViewController.swift
+
+   ```swift
+   import NSDK
+   import UIKit
+
+   final class WayfindingVPS2ARViewController: UIViewController {
+       private let arManager: WayfindingARManager
+       private let viewModel: WayfindingVPS2ViewModel
+       private let siteName: String
+       private let anchorPayload: String
+
+       private var vps2Session: NSDKVps2Session!
+       private var retryHelper: AuthRetryHelper!
+       private var handledTrackingRequestID = 0
+       private var trackedAnchorIds: [NSDKVpsAnchorId] = []
+
+       init(
+           arManager: WayfindingARManager,
+           viewModel: WayfindingVPS2ViewModel,
+           siteName: String,
+           anchorPayload: String
+       ) {
+           self.arManager = arManager
+           self.viewModel = viewModel
+           self.siteName = siteName
+           self.anchorPayload = anchorPayload
+           super.init(nibName: nil, bundle: nil)
+       }
+
+       required init?(coder: NSCoder) {
+           fatalError("not supported")
+       }
+
+       override func viewDidLoad() {
+           super.viewDidLoad()
+           title = siteName
+
+           // Step 1: Render the shared NSDK view inside this controller.
+           arManager.nsdkView.setup(in: view)
+
+           // Step 2: Acquire and configure one VPS2 session for this screen.
+           retryHelper = AuthRetryHelper(session: arManager.nsdkSession)
+           vps2Session = arManager.nsdkSession.acquireVps2Session()
+
+           do {
+               try vps2Session.configure(
+                   with: NSDKVps2Session.Configuration(
+                       initialVpsRequestsPerSecond: 1,
+                       continuousVpsRequestsPerSecond: 0.2
+                   )
+               )
+               viewModel.bind(session: vps2Session)
+               viewModel.setSessionStatus("VPS2 session ready")
+               print("Configured VPS2 session")
+           } catch {
+               viewModel.setSessionStatus("Session error: \(error.localizedDescription)")
+               print("Failed to configure VPS2 session: \(error.localizedDescription)")
+           }
+       }
+
+       override func viewDidAppear(_ animated: Bool) {
+           super.viewDidAppear(animated)
+
+           // Step 3: Start both the VPS2 session and the AR session.
+           vps2Session.start()
+           arManager.startSession()
+           print("Started VPS2 session")
+       }
+
+       override func viewDidDisappear(_ animated: Bool) {
+           super.viewDidDisappear(animated)
+
+           // Step 4: Stop both sessions when the VPS2 screen closes.
+           vps2Session.stop()
+           arManager.stopSession()
+           print("Stopped VPS2 tracking")
+
+           if isMovingFromParent {
+               arManager.nsdkSession.destroy(vps2Session)
+           }
+       }
+
+       func updateTracking(anchorPayloads: [String], trackingRequestID: Int) {
+           // Later steps add payload tracking here.
+       }
+   }
+   ```
+
+4. Create `AR/WayfindingVPS2ARViewControllerRepresentable.swift` to host the UIKit AR controller inside SwiftUI:
+
+   #### Expand to view WayfindingVPS2ARViewControllerRepresentable.swift
+
+   ```swift
+   import SwiftUI
+
+   struct WayfindingVPS2ARViewControllerRepresentable: UIViewControllerRepresentable {
+       let arManager: WayfindingARManager
+       @ObservedObject var viewModel: WayfindingVPS2ViewModel
+       let siteName: String
+       let anchorPayload: String
+       let trackingPayloads: [String]
+       let trackingRequestID: Int
+
+       func makeUIViewController(context: Context) -> WayfindingVPS2ARViewController {
+           // Step 1: Create the UIKit AR controller once.
+           WayfindingVPS2ARViewController(
+               arManager: arManager,
+               viewModel: viewModel,
+               siteName: siteName,
+               anchorPayload: anchorPayload
+           )
+       }
+
+       func updateUIViewController(
+           _ uiViewController: WayfindingVPS2ARViewController,
+           context: Context
+       ) {
+           // Step 2: Forward later tracking requests into the UIKit controller.
+           uiViewController.updateTracking(
+               anchorPayloads: trackingPayloads,
+               trackingRequestID: trackingRequestID
+           )
+       }
+   }
+   ```
+
+### Create the shared manager
+
+In an existing app, update your current SwiftUI VPS2 screen so it creates one shared AR manager and one shared view model for the full screen lifetime. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Create one shared `WayfindingARManager`.
+- Create one shared `WayfindingVPS2ViewModel`.
+- Host the UIKit AR controller from SwiftUI.
+- Keep a small status card over the AR view.
+
+In a new app, replace the contents of `AR/WayfindingVPS2View.swift` to host the AR controller and keep a status card over it with the following:
+
+#### Expand to view WayfindingVPS2View.swift
+
+```swift
+import NSDK
+import SwiftUI
+
+struct WayfindingVPS2View: View {
+    let siteName: String
+    let initialPayload: String
+    let nsdkSession: NSDKSession
+
+    @State private var arManager: WayfindingARManager
+    @StateObject private var viewModel = WayfindingVPS2ViewModel()
+
+    init(siteName: String, initialPayload: String, nsdkSession: NSDKSession) {
+        self.siteName = siteName
+        self.initialPayload = initialPayload
+        self.nsdkSession = nsdkSession
+
+        // Step 1: Create one shared AR manager for this screen lifetime.
+        _arManager = State(initialValue: WayfindingARManager(nsdkSession: nsdkSession))
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            // Step 2: Host the UIKit AR controller inside SwiftUI.
+            WayfindingVPS2ARViewControllerRepresentable(
+                arManager: arManager,
+                viewModel: viewModel,
+                siteName: siteName,
+                anchorPayload: initialPayload,
+                trackingPayloads: [],
+                trackingRequestID: 0
+            )
+            .ignoresSafeArea()
+
+            // Step 3: Keep a small status card over the AR view.
+            VStack(spacing: 12) {
+                Text("Selected Site: \(siteName)")
+                    .font(.headline)
+
+                Text("Selected anchor payload: \(initialPayload)")
+                    .font(.footnote.monospaced())
+                    .multilineTextAlignment(.center)
+
+                Text(viewModel.sessionStatusText)
+                    .font(.footnote.weight(.medium))
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .navigationTitle(siteName)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Step 4: Log that the VPS2 screen opened.
+            print("WayfindingVPS2View opened")
+        }
+    }
+}
+```
+
+Test this step to validate that the app opens the AR host, configures VPS2, and keeps the AR view running while the screen is visible:
+
+- Build the app.
+- Run the app to reach `Browse Sites`, then tap `Localize in AR`.
+- Confirm that the camera view opens behind the status card.
+- Confirm that `Configured VPS2 session` and `Started VPS2 session` appear in Xcode's console.
+
+The next step keeps this same structure and adds the Combine collectors that watch VPS2 state.
+
+## Listen for anchor and localization updates
+
+This step adds the Combine collectors that listen for anchor and localization updates from `NSDKVps2Session`. In this step, you will start logging VPS2 state and update the text that the AR overlay will show later on this page.
+
+This step has two parts:
+
+1. [Collect anchor updates](#collect-anchor-updates) so the view model can reflect the current tracked-anchor state.
+2. [Collect localization updates](#collect-localization-updates) so the view model can reflect the current localization status.
+
+### Collect anchor updates
+
+In an existing app, update your current VPS2 view model. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Subscribe to `session.anchorUpdated`.
+- Update the tracked-anchor state text when VPS2 reports a new anchor state.
+- Log the anchor state for validation.
+
+In a new app, replace `func bind(session: NSDKVps2Session)` in `AR/WayfindingVPS2ViewModel.swift` to listen for anchor updates and log the current anchor state:
+
+```swift
+func bind(session: NSDKVps2Session) {
+    guard !hasBoundSession else { return }
+    hasBoundSession = true
+
+    // Step 1: Listen for anchor tracking updates.
+    session.anchorUpdated
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _, update in
+            guard let self else { return }
+            let stateText = self.anchorStateText(from: update.trackingState)
+            self.trackedAnchorStateText = "Anchor state: \(stateText)"
+            print("Anchor state updated: \(stateText)")
+        }
+        .store(in: &cancellables)
+
+    // Later steps add localization updates here.
+}
+```
+
+### Collect localization updates
+
+In an existing app, update your current VPS2 view model so it also listens for localization updates. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Subscribe to `session.$latestLocalization`.
+- Update the localization text when VPS2 reports a new localization state.
+- Log that the collectors are ready.
+
+In a new app, add the localization collector inside `func bind(session: NSDKVps2Session)` in `AR/WayfindingVPS2ViewModel.swift` immediately below the existing `session.anchorUpdated ... .store(in: &cancellables)` block:
+
+```swift
+// Step 2: Listen for localization updates.
+session.$latestLocalization
+    .receive(on: DispatchQueue.main)
+    .sink { [weak self] localization in
+        let trackingState = localization.map { String(describing: $0.trackingState).uppercased() } ?? "UNAVAILABLE"
+        self?.localizationStatusText = "Localization: \(trackingState)"
+        print("Localization state: \(trackingState)")
+    }
+    .store(in: &cancellables)
+
+print("Anchor and localization collectors ready")
+```
+
+Test this step to validate that the VPS2 collectors are active:
+
+- Build the app.
+- Run the app to reach the VPS2 screen.
+- Confirm that `Anchor and localization collectors ready` appears in Xcode's console.
+- Confirm that `Localization state: ...` appears in Xcode's console.
+
+The next step uses the selected payload from the map screen to start tracking from the AR UI.
+
+## Start tracking from the UI
+
+This step builds the payload list from the selected Site and lets the user start tracking directly from the VPS2 screen. In this step, you will still use one payload from the selected Site, but you will pass that payload through a list so the tracking flow stays aligned with the Kotlin tutorial structure.
+
+This step has two parts:
+
+1. [Build the payload list](#build-the-payload-list) so the AR screen normalizes the selected payload before tracking begins.
+2. [Add the tracking button](#add-the-tracking-button) so the user can start VPS2 tracking from the AR UI.
+
+### Build the payload list
+
+In an existing app, update your current VPS2 screen so it normalizes the selected payload before sending it to the AR controller. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Trim the selected payload.
+- Build a one-item payload list from the selected Site.
+- Keep the payload list empty if the selected payload is blank.
+
+In a new app, replace the contents of `AR/WayfindingVPS2View.swift` to normalize the selected payload before tracking begins:
+
+#### Expand to view WayfindingVPS2View.swift
+
+```swift
+import Foundation
+import NSDK
+import SwiftUI
+
+struct WayfindingVPS2View: View {
+    let siteName: String
+    let initialPayload: String
+    let nsdkSession: NSDKSession
+
+    @State private var arManager: WayfindingARManager
+    @StateObject private var viewModel = WayfindingVPS2ViewModel()
+    @State private var trackingRequestID = 0
+
+    init(siteName: String, initialPayload: String, nsdkSession: NSDKSession) {
+        self.siteName = siteName
+        self.initialPayload = initialPayload
+        self.nsdkSession = nsdkSession
+
+        // Step 1: Create one shared AR manager for this screen lifetime.
+        _arManager = State(initialValue: WayfindingARManager(nsdkSession: nsdkSession))
+    }
+
+    private var trackingPayloads: [String] {
+        // Step 2: Build one normalized payload list for the tracking button.
+        let payload = initialPayload.trimmingCharacters(in: .whitespacesAndNewlines)
+        return payload.isEmpty ? [] : [payload]
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            WayfindingVPS2ARViewControllerRepresentable(
+                arManager: arManager,
+                viewModel: viewModel,
+                siteName: siteName,
+                anchorPayload: initialPayload,
+                trackingPayloads: trackingPayloads,
+                trackingRequestID: trackingRequestID
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                Text("Selected Site: \(siteName)")
+                    .font(.headline)
+
+                Text("Selected anchor payload: \(initialPayload)")
+                    .font(.footnote.monospaced())
+                    .multilineTextAlignment(.center)
+
+                Text(viewModel.sessionStatusText)
+                    .font(.footnote.weight(.medium))
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .navigationTitle(siteName)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            print("WayfindingVPS2View opened")
+        }
+    }
+}
+```
+
+### Add the tracking button
+
+In an existing app, update your current VPS2 screen and controller so the user can start tracking from the UI. If you are unsure how to implement this step, use the following new app example as a reference.
+
+Before this step, the AR screen can open and show the selected Site and payload, but it cannot start VPS2 tracking yet. This step makes the screen interactive by sending a tracking request from SwiftUI into the UIKit controller and then into `trackAnchor(payload:)`.
+
+This step should:
+
+- Add a `Start Tracking` button to the AR overlay.
+- Forward the payload list into the UIKit controller.
+- Call `trackAnchor(payload:)` from the controller.
+- Log which payload was tracked.
+
+In a new app, update the following files to let the button start VPS2 tracking for the selected payload:
+
+1. Replace the tracking methods near the end of `AR/WayfindingVPS2ARViewController.swift` so each button tap starts tracking once and forwards the payload into `trackAnchor(payload:)`:
+
+   ```swift
+   func updateTracking(anchorPayloads: [String], trackingRequestID: Int) {
+       // Step 1: Ignore the initial zero-value render from SwiftUI.
+       guard trackingRequestID != 0 else { return }
+       // Step 2: Only handle each tracking request once.
+       guard trackingRequestID != handledTrackingRequestID else { return }
+
+       handledTrackingRequestID = trackingRequestID
+       startTracking(anchorPayloads: anchorPayloads)
+   }
+
+   private func startTracking(anchorPayloads: [String]) {
+       // Step 3: Do not start tracking if there is no payload to track.
+       guard !anchorPayloads.isEmpty else { return }
+
+       Task { @MainActor in
+           do {
+               trackedAnchorIds.removeAll()
+
+               for payload in anchorPayloads {
+                   try await retryHelper.withRetry { [weak self] in
+                       guard let self else { return }
+
+                       // Step 4: Track each selected payload through VPS2.
+                       let anchorId = try self.vps2Session.trackAnchor(payload: payload)
+                       self.trackedAnchorIds.append(anchorId)
+                       self.viewModel.setTrackedAnchorCount(self.trackedAnchorIds.count)
+                       print("Tracking anchor payload: \(payload)")
+                   }
+               }
+
+               print("Started VPS2 tracking for \(anchorPayloads.count) payloads")
+           } catch {
+               viewModel.setSessionStatus("Session error: \(error.localizedDescription)")
+               print("Failed to track anchor: \(error.localizedDescription)")
+           }
+       }
+   }
+   ```
+
+2. Open `AR/WayfindingVPS2View.swift`, the SwiftUI file that starts with `struct WayfindingVPS2View: View {`, then replace the `VStack(spacing: 12) { ... }` block inside `var body: some View` to add the `Start Tracking` button to the existing AR overlay:
+
+   ```swift
+   VStack(spacing: 12) {
+       Text("Selected Site: \(siteName)")
+           .font(.headline)
+
+       Text("Selected anchor payload: \(initialPayload)")
+           .font(.footnote.monospaced())
+           .multilineTextAlignment(.center)
+
+       // Step 3: Let the user start tracking from the AR screen.
+       Button {
+           trackingRequestID += 1
+       } label: {
+           Label("Start Tracking", systemImage: "scope")
+               .frame(maxWidth: .infinity)
+       }
+       .buttonStyle(.borderedProminent)
+       .disabled(trackingPayloads.isEmpty)
+
+       Text(viewModel.sessionStatusText)
+           .font(.footnote.weight(.medium))
+   }
+   ```
+
+Test this step to validate that the AR screen can start VPS2 tracking from the selected payload:
+
+- Build the app.
+- Run the app to reach the VPS2 screen.
+- Tap `Start Tracking`.
+- Confirm that `Tracking anchor payload: ...` appears in Xcode's console.
+- Confirm that `Started VPS2 tracking for 1 payloads` appears in Xcode's console.
+
+The next step surfaces the VPS2 state that those collectors are already updating.
+
+## Surface VPS2 state in the AR UI
+
+This step surfaces the current VPS2 state directly in SwiftUI so the user can tell whether localization is unavailable, coarse, or precise and whether any anchors are currently tracked.
+
+This step has two parts:
+
+1. [Show localization status](#show-localization-status) so the AR overlay reflects the current VPS2 localization state.
+2. [Show tracked anchors](#show-tracked-anchors) so the AR overlay reflects how many anchors are currently tracked and what state the selected anchor is in.
+
+### Show localization status
+
+In an existing app, update your current AR UI. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show the current localization state in the UI.
+- Keep the `Start Tracking` button visible.
+
+In a new app, replace the `VStack(spacing: 12) { ... }` block inside `var body: some View` in `AR/WayfindingVPS2View.swift` to show the current localization state in the AR overlay:
+
+```swift
+VStack(spacing: 12) {
+    Text("Selected Site: \(siteName)")
+        .font(.headline)
+
+    Text("Selected anchor payload: \(initialPayload)")
+        .font(.footnote.monospaced())
+        .multilineTextAlignment(.center)
+
+    // Step 1: Show the current localization state in the AR UI.
+    Text(viewModel.localizationStatusText)
+        .font(.subheadline.weight(.semibold))
+
+    Button {
+        trackingRequestID += 1
+    } label: {
+        Label("Start Tracking", systemImage: "scope")
+            .frame(maxWidth: .infinity)
+    }
+    .buttonStyle(.borderedProminent)
+    .disabled(trackingPayloads.isEmpty)
+
+    Text(viewModel.sessionStatusText)
+        .font(.footnote.weight(.medium))
+}
+```
+
+### Show tracked anchors
+
+In an existing app, update your current AR UI. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show how many anchors are currently tracked.
+- Show the current anchor state in text.
+- Keep the selected Site, selected payload, and localization status visible.
+
+In a new app, add the following two `Text(...)` views inside the same `VStack(spacing: 12) { ... }` block in `AR/WayfindingVPS2View.swift` immediately below `Text(viewModel.localizationStatusText)`:
+
+```swift
+// Step 2: Show how many anchors are currently tracked.
+Text(viewModel.trackedAnchorsText)
+    .font(.subheadline)
+
+// Step 3: Show the current state of the selected anchor.
+Text(viewModel.trackedAnchorStateText)
+    .font(.subheadline)
+```
+
+Test this step to validate that the AR screen shows VPS2 localization state and tracked-anchor state:
+
+- Build the app.
+- Run the app to reach the VPS2 screen, then tap `Start Tracking`.
+- Confirm that the AR overlay shows `Localization: ...`, `Tracked anchors: ...`, and `Anchor state: ...`.
+- Confirm that the `Start Tracking` button is still visible.
+- If you are not close to the selected Site or are not using playback, `Localization: UNAVAILABLE`, `Tracked anchors: 0`, and `Anchor state: NOT_TRACKED` are valid for this checkpoint.
+
+The next page adds advanced AR effects and precise-localization visuals on top of this working VPS2 localization flow.
+
+## Next step
+
+Continue to [advanced AR effects and precise localization](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-2/) to render tracked-anchor content, expose precise-mode behavior, and add mesh-aligned AR content.

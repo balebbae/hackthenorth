@@ -1,0 +1,53 @@
+# PlaybackDatasetLoader
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackDatasetLoader/
+
+PlaybackDatasetLoader
+
+---
+
+## Declaration
+
+class PlaybackDatasetLoader
+
+## Summary
+
+Base class for loading playback dataset data from various sources.
+This class provides a base implementation that must be subclassed. Subclasses must override
+`loadCaptureJSON()`, `loadImage(imageName:)`, `loadDepthData(depthFileName:)`, and
+`loadDepthConfidence(confidenceFileName:)` to provide concrete implementations.
+The loader uses on-demand loading - only the capture JSON is loaded upfront, and frame
+images/depth data are loaded when requested by `PlaybackDataset`.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: This class acts as an abstract base class. Do not instantiate directly.
+
+---
+
+## Constructors
+
+init()
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| info | String | Returns details about the loader configuration. |
+| loadCaptureJSON | Data? | Loads the capture JSON data from the data source.This method must be overridden by subclasses. The base implementation will crash if called. |
+| loadDataset | PlaybackDataset? | Loads a dataset from the data source.This method only loads the capture JSON metadata upfront. Frame images and depth dataare loaded on-demand when requested, reducing memory pressure for large datasets. |
+| loadDepthConfidence | Data? | Loads depth confidence data from the data source.This method must be overridden by subclasses. The base implementation will crash if called.Called on-demand when confidence data is requested. |
+| loadDepthData | Data? | Loads depth data from the data source.This method must be overridden by subclasses. The base implementation will crash if called.Called on-demand when depth data is requested. |
+| loadImage | CGImage? | Loads an image from the data source.This method must be overridden by subclasses. The base implementation will crash if called.Called on-demand when a frame image is requested. |
+
+---
+
+## Relationships
+
+conforms to:  PlaybackDatasetSource 
+
+derived:  BundlePlaybackDatasetLoader

@@ -1,0 +1,13 @@
+# Experimental
+
+Source: https://www.nianticspatial.com/docs/nsdk/experimental/
+
+# Experimental Features
+
+> **Caution:**
+>
+> Experimental features are unsupported and subject to change. Niantic provides experimental features as a preview of upcoming releases. If you have feedback on an experimental feature, join us in the [Niantic Spatial Developer Community](https://community.nianticspatial.com/) and share your feedback.
+>
+> Experimental features are not recommended for use in production-level applications!
+
+- [Windows Development](https://www.nianticspatial.com/docs/nsdk/experimental/windows/)

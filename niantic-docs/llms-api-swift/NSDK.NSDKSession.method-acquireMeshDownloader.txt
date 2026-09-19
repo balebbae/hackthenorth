@@ -1,0 +1,28 @@
+# acquireMeshDownloader
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireMeshDownloader/
+
+acquireMeshDownloader
+Creates a new Mesh Downloader instance.
+
+---
+
+## Declaration
+
+@MainActor func acquireMeshDownloader() -> NSDKMeshDownloader
+
+#### Summary
+
+Creates a new Mesh Downloader instance.
+
+#### Returns
+
+A new NSDKMeshDownloader attached to this NSDK session.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

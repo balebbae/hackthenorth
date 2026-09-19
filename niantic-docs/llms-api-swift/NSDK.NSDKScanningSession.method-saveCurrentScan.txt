@@ -1,0 +1,34 @@
+# saveCurrentScan
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-saveCurrentScan/
+
+saveCurrentScan
+
+---
+
+## Declaration
+
+func saveCurrentScan(timeout: Double = 10.0, pollingInterval: TimeInterval = 0.1) async throws -> NSDKScanningSession.SaveInfo
+
+#### Summary
+
+Stops recording and asynchronously saves the recording to the configured path.
+Calling this function will stop the active recording, but stop must still be called
+afterward to completely shut down this session.
+
+#### Returns
+
+Information about the saved scan, including it's id and file location.
+
+#### Throws
+
+  - CancellationError if the Task running this function was cancelled.   - TimeoutError if the function timed out before it could complete execution.   - NSDKScanningSession.SaveError if there was an error specific to the     save operation. - SeeAlso:   - stop   - configure(with:)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| timeout | Double | The maximum duration in seconds to wait for the save operation (default is 10 seconds). |
+| pollingInterval | TimeInterval | The interval in seconds to wait between progress checks (default is 0.1 seconds) |
+
+---

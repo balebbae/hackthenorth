@@ -1,0 +1,37 @@
+# Backing
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.enum-Backing/
+
+Backing
+
+---
+
+## Declaration
+
+enum Backing
+
+## Summary
+
+The underlying camera: either a live ARCamera or a playback PlaybackCamera.
+Switch on this when you need to call APIs that are specific to one type (e.g. `recordedOrientation` on PlaybackCamera).
+Example:
+
+```swift
+switch camera.backing {
+case .ar(let arCamera):
+    // ARCamera-specific APIs
+case .playback(let playbackCamera):
+    let orientation = playbackCamera.recordedOrientation
+}
+```
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case ar | ARCamera) | - |
+| case playback | PlaybackCamera) | - |
+
+---

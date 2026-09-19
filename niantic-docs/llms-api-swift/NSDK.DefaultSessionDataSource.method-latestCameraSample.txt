@@ -1,0 +1,27 @@
+# latestCameraSample
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.DefaultSessionDataSource.method-latestCameraSample/
+
+latestCameraSample
+Returns the most recent camera sample, if available.
+
+---
+
+## Declaration
+
+func latestCameraSample() -> (image: CVPixelBuffer, intrinsics: NSDKCameraIntrinsics, pose: NSDKCameraExtrinsics, orientation: NSDKScreenOrientation, timestamp: UInt64)?
+
+#### Summary
+
+Returns the most recent camera sample, if available.
+
+#### Returns
+
+A tuple containing:
+  - image: A retained CVPixelBuffer representing the captured image.
+  - intrinsics: Camera intrinsic parameters for the image.
+  - pose: The pose (extrinsics) of the camera associated with the image.
+  - orientation: The device orientation of the camera associated with the image.
+  - timestamp: Camera timestamp in milliseconds.
+
+---

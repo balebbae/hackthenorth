@@ -1,0 +1,40 @@
+# Vps2Pose
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2Pose/
+
+Vps2Pose
+Pose in AR coordinate space calculated by VPS2 from a geolocation.
+
+---
+
+## Declaration
+
+struct Vps2Pose
+
+---
+
+## Constructors
+
+init(transform: simd_float4x4, horizontalAccuracyMetres: Float, verticalAccuracyMetres: Float, rotationAccuracyDeg: Float)
+
+#### Summary
+
+Creates a Vps2Pose with explicit field values.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| var horizontalAccuracyMetres | Float | Horizontal accuracy in metres. |
+| var rotationAccuracyDeg | Float | Rotation accuracy in degrees. |
+| var transform | simd_float4x4 | Pose in the device's AR coordinate space, expressed in the OpenCV coordinate system. |
+| var verticalAccuracyMetres | Float | Vertical accuracy in metres. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible

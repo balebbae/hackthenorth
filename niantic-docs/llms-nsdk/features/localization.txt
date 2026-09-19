@@ -1,0 +1,21 @@
+# Localization
+
+Source: https://www.nianticspatial.com/docs/nsdk/features/localization/
+
+Anchor your experiences to the real world.
+
+## Features
+
+[Visual Positioning System 2 (VPS2)](https://www.nianticspatial.com/docs/nsdk/features/vps2): Understand your user's geographic position and orientation anywhere in the world.
+
+## Guides
+
+[VPS to VPS2 Migration](https://www.nianticspatial.com/docs/nsdk/features/vps2_migration)
+
+[How to Get Geoposition with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/getting_vps2_geoposition): Overview of APIs
+
+[First Localization](https://www.nianticspatial.com/docs/nsdk/first_localization): End to end guide of Sites sample scene
+
+### Platform: swift, kotlin
+
+[Create a wayfinding app](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started): Build a full VPS2 wayfinding app from project setup through advanced AR guidance and precise localization.

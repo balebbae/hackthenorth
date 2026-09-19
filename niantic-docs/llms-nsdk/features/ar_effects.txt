@@ -1,0 +1,47 @@
+# AR Effects
+
+Source: https://www.nianticspatial.com/docs/nsdk/features/ar_effects/
+
+Tools for grounding your virtual content in the real world
+
+NSDK provides real-time understanding of the physical world by computing depth & semantic data and generating meshes, which enables content to be **situated realistically** in the real world through occlusions.
+
+### Platform: unity
+
+Depth, Occlusion and Meshing work on any device, regardless of lidar capability, at greater distance than lidar-based AR.
+These systems override and extend the base **AR Foundation** managers seamlessly, with no integration work needed if you already have a Unity AR Foundation project.
+NSDK is also available natively for ARKit and ARCore.
+
+### Platform: swift
+
+Depth, Occlusion and Meshing work on any device, regardless of lidar capability, at greater distance than lidar-based AR.
+These systems integrate smoothly with **ARKit**, enhancing the capabilities and quality of your AR application.
+
+### Platform: kotlin
+
+Depth, Occlusion and Meshing work on any device, regardless of lidar capability, at greater distance than lidar-based AR.
+These systems integrate smoothly with **ARCore**, enhancing the capabilities and quality of your AR application.
+
+## Features
+
+[Depth](https://www.nianticspatial.com/docs/nsdk/features/depth): Bring your content to life in AR with these features.
+
+[Occlusion](https://www.nianticspatial.com/docs/nsdk/features/occlusion): Let your content realistically inhabit the world.
+
+[Meshing](https://www.nianticspatial.com/docs/nsdk/features/meshing): Anchor your AR experience to the real world.
+
+[Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics): Recognize the physical world.
+
+## Guides
+
+[Access and Display Depth Information as a Shader](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/display_depth)
+
+### Platform: unity
+
+[Add Physics to Meshes](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/meshing_physics_real_world)
+
+[Convert a Screen Point to a Real-World Position Using Depth](https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/convert_point_world_position)
+
+[How to Query Scene Segmentation and Highlight Semantic Channels](https://www.nianticspatial.com/docs/nsdk/how-to/ar/query_semantics_real_objects)
+
+[How to Exclude Semantic Channels with Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering)

@@ -1,0 +1,25 @@
+# featureStatus
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-featureStatus/
+
+featureStatus
+
+---
+
+## Declaration
+
+func featureStatus() -> NSDKFeatureStatus
+
+#### Summary
+
+Gets the current status of the VPS2 feature.
+This method reports any errors or warnings that have occurred within the VPS2 system.
+Check this periodically to monitor the health of localization operations.
+Once an error is flagged, it will remain flagged until the problematic process runs again
+and completes successfully.
+
+#### Returns
+
+Feature status flags indicating current state and any issues.
+
+---

@@ -1,0 +1,24 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.method-stop/
+
+stop
+Stops the meshing feature.
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stops the meshing feature.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: This will clear previously generated mesh data.
+
+---

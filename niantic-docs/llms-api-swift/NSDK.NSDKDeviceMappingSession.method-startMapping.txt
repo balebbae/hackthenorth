@@ -1,0 +1,22 @@
+# startMapping
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDeviceMappingSession.method-startMapping/
+
+startMapping
+
+---
+
+## Declaration
+
+func startMapping()
+
+#### Summary
+
+Begin a mapping sequence.
+This begins building an on-device map that can be used for VPS. Map data is accumulated
+in the session's NSDKMapStorage while mapping is running. Subscribe to $latestMapUpdate
+to retrieve incremental map updates reactively, or call NSDKMapStorage.mapData()
+after mapping completes to get the full map.
+- Attention: This method must be called after start() and before stop().
+
+---

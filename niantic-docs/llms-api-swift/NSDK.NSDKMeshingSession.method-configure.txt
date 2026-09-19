@@ -1,0 +1,30 @@
+# configure
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.method-configure/
+
+configure
+
+---
+
+## Declaration
+
+func configure(with config: Configuration) throws
+
+#### Summary
+
+Configures the meshing feature with the specified settings.
+- Attention: If this method is called while meshing is running, the meshing feature will
+  restart with the new configuration, and any mesh data that has been produced will
+  be lost.
+
+#### Throws
+
+NSDKError.invalidArgument if the configuration is invalid.   Check NSDK's C logs for more information.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| config | Configuration | - |
+
+---

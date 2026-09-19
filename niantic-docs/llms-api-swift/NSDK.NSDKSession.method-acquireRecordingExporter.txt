@@ -1,0 +1,30 @@
+# acquireRecordingExporter
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireRecordingExporter/
+
+acquireRecordingExporter
+
+---
+
+## Declaration
+
+@MainActor func acquireRecordingExporter() -> NSDKRecordingExporter
+
+#### Summary
+
+Creates a new Recording Exporter session.
+Recording Export enables the conversion and export of saved scan recordings
+to various formats for external processing or sharing. This session manages
+the export workflow from scan selection through format conversion and output.
+
+#### Returns
+
+A new Recording Exporter session attached to this NSDK session
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

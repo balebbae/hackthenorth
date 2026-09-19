@@ -1,0 +1,18 @@
+# toChannelSet
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.SceneSegmentationChannels.method-toChannelSet/
+
+toChannelSet
+Convert to an array of single-channel option sets (for iteration / display).
+
+---
+
+## Declaration
+
+func toChannelSet() -> [SceneSegmentationChannels]
+
+#### Summary
+
+Convert to an array of single-channel option sets (for iteration / display).
+
+---

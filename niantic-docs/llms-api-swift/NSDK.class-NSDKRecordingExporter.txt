@@ -1,0 +1,28 @@
+# NSDKRecordingExporter
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKRecordingExporter/
+
+NSDKRecordingExporter
+
+---
+
+## Declaration
+
+final class NSDKRecordingExporter
+
+## Summary
+
+A session for exporting scan recordings to various formats.
+`NSDKRecordingExporter` provides capabilities for converting saved scan data
+into recorderV2 format for use in Unity Playback or activating VPS.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| export | String | Exports a scan recording asynchronously.Starts the export process for a scan recording and suspends until the exportcompletes successfully, fails, or times out. |
+| exportSplitArchives | [String] | Exports a scan recording as multiple archive files asynchronously.Starts the export process for a scan recording and suspends until the exportcompletes successfully, fails, or times out. |
+
+---

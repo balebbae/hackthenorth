@@ -1,0 +1,101 @@
+# NSDKSceneSegmentationSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSceneSegmentationSession/
+
+NSDKSceneSegmentationSession
+
+---
+
+## Declaration
+
+final class NSDKSceneSegmentationSession
+
+## Summary
+
+A session for semantic segmentation and environmental understanding with Combine publisher support.
+`NSDKSceneSegmentationSession` provides capabilities for understanding the semantic structure
+of the environment by classifying pixels into different object categories. This enables
+applications to make intelligent decisions based on environmental context.
+
+## Overview
+
+Scene segmentation features include:
+
+- Real-time semantic segmentation of camera images
+- Multiple semantic categories (sky, ground, buildings, people, etc.)
+- Confidence maps for semantic classifications
+- Packed channel data for efficient processing
+- Suppression masks for filtering unwanted areas
+
+## Usage Pattern
+
+```swift
+// Acquire and configure the scene segmentation session
+let sceneSegmentationSession = nsdkSession.acquireSceneSegmentationSession()
+let config = NSDKSceneSegmentationSession.Configuration()
+try sceneSegmentationSession.configure(with: config)
+sceneSegmentationSession.start()
+// Set the channel to observe and subscribe to results
+sceneSegmentationSession.confidenceChannel = .person
+sceneSegmentationSession.$confidenceResult
+    .compactMap { if case .success(let result) = $0 { return result } else { return nil } }
+    .sink { result in
+        // Process semantic confidence data
+    }
+    .store(in: &cancellables)
+```
+
+`$confidenceResult`, `$packedChannels`, `$suppressionMask`, and `$imageParams` are all
+refreshed automatically each frame by `NSDKSession.update()` while the session is active.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var confidenceChannel | SceneSegmentationChannels | The channel polled on each `update()` call and published on `$confidenceResult`.Can be changed at any time; the next frame update will use the new value.Defaults to `.sky`. |
+| @Published var confidenceResult | NSDKAsyncState<SceneSegmentationResult, AwarenessError | The current confidence result for `confidenceChannel`. Updated each frame by `NSDKSession`while active. |
+| @Published var imageParams | NSDKAsyncState<AwarenessImageParams, AwarenessError | The current image parameters result. Updated each frame by `NSDKSession` while active. |
+| @Published var packedChannels | NSDKAsyncState<SceneSegmentationResult, AwarenessError | The current packed channels result. Updated each frame by `NSDKSession` while active. |
+| @Published var suppressionMask | NSDKAsyncState<SceneSegmentationResult, AwarenessError | The current suppression mask result. Updated each frame by `NSDKSession` while active. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configure | void | Configures the session with the specified settings.- Attention: This method must be called while the session is stopped, or else configuration will fail. In that case, while this function returns without throwing, configuration will still fail asynchronously. Use `featureStatus()` to check that configuration has not failed. |
+| featureStatus | NSDKFeatureStatus | Gets the current status of the Scene Segmentation feature.This method reports any errors or warnings that have occurred within the scene segmentation system.Check this periodically to monitor the health of semantic processing operations.Once an error is flagged, it will remain flagged until the problematic process runs againand completes successfully. |
+| latestConfidence | NSDKAsyncState<SceneSegmentationResult, AwarenessError> | Retrieves the latest confidence map for a specific semantic channel.This method returns a confidence map where each pixel value represents the confidencescore (0.0-1.0) that the pixel belongs to the specified semantic category. Higherconfidence values indicate stronger belief in the semantic classification. |
+| latestImageParams | NSDKAsyncState<AwarenessImageParams, AwarenessError> | Retrieves the latest camera intrinsic parameters for semantic processing.This method returns the camera intrinsic parameters that were used during semanticprocessing. These parameters are essential for coordinate transformations betweenimage coordinates and 3D world coordinates. |
+| latestPackedChannels | NSDKAsyncState<SceneSegmentationResult, AwarenessError> | Retrieves the latest packed semantic channels data.This method returns a multi-channel image where each channel represents a differentsemantic category. Packed channels provide an efficient way to access multiplesemantic classifications in a single image, reducing the need for multiple API calls. |
+| latestSuppressionMask | NSDKAsyncState<SceneSegmentationResult, AwarenessError> | Retrieves the latest suppression mask for semantic processing.This method returns a binary mask indicating areas that should be ignored or suppressedduring semantic processing. Suppression masks are useful for filtering out regionsthat are not relevant for semantic understanding, such as areas with poor image quality. |
+| start | void | Starts the Scene Segmentation system.After starting, Scene Segmentation will begin processing incoming frame data for semantic segmentation.The system must be configured before starting. |
+| stop | void | Stops the Scene Segmentation system.This halts all semantic processing. The session can be reconfigured and restarted afterstopping. All `@Published` properties are reset to `.inProgress(nil)`. |
+| unpackChannelsFromBitmask | SceneSegmentationChannels | Unpacks semantic channels from a packed channel bitmask.This method converts a bitmask value from a packed channel pixel into a `SceneSegmentationChannels`OptionSet, where each bit represents a semantic channel (bit 0 = Sky, bit 1 = Ground, etc.). |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configuration | Configuration | Configuration structure for the scene segmentation session. |
+
+---
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SceneSegmentationMode | SceneSegmentationMode | Options for different scene segmentation modes.These trade off between performance and accuracy. |
+
+---
+
+## Relationships
+
+conforms to:  NSDKFeatureSession
