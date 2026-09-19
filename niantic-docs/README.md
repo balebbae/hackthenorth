@@ -1,15 +1,16 @@
 # Niantic Spatial documentation mirror
 
 Offline mirror of https://www.nianticspatial.com/docs/ captured 2026-09-19 for the
-HTN navigation assistant. Nothing here is our code; it is reference material for
-the iOS localization work.
+HTN navigation assistant, trimmed to the Swift/iOS material plus Scaniverse.
+Unity and Kotlin API references and guides were removed. Nothing here is our
+code; it is reference material for the iOS localization work.
 
 ## Where to look first (Swift / iOS)
 
 The HTML guide pages render the **Unity** platform tab by default, so the
-`nsdk/` markdown mostly shows Unity content. The `llms-*` text files expand
-every platform tab under `### Platform: swift|kotlin|unity` headings, so use
-those for Swift:
+`nsdk/` markdown often shows Unity-flavoured prose. The `llms-*` text files
+expand every platform tab under `### Platform: swift|kotlin|unity` headings, so
+use those for Swift:
 
 | Need | File |
 | --- | --- |
@@ -25,14 +26,14 @@ those for Swift:
 
 | Folder | Contents |
 | --- | --- |
-| `index.md`, `nsdk/` | Guide pages converted from HTML (Unity tab shown) |
-| `nsdk/3.17.0/` | Older 3.17.0 guides and `apiref/` for all three platforms |
-| `api/swift/`, `api/unity/`, `api/kotlin/` | Current API reference converted from HTML |
+| `index.md`, `nsdk/` | Guide pages converted from HTML |
+| `nsdk/3.17.0/` | Older 3.17.0 guides and `apiref/swift/` |
+| `api/swift/` | Current Swift API reference converted from HTML |
 | `scaniverse/` | Scaniverse capture and publishing guides (HTML-derived) |
 | `llms-nsdk/` | Guides as plain text with all platform tabs expanded |
-| `llms-api-swift/`, `llms-api-unity/`, `llms-api-kotlin/` | One text file per API symbol |
+| `llms-api-swift/` | One text file per Swift API symbol |
 | `llms-scaniverse/` | Scaniverse guides as plain text |
-| `llms*.txt` | Index files linking the per-page text files |
+| `llms*.txt` | Index files from the site; links to Unity/Kotlin pages point at the live site only |
 
 Each markdown file starts with `source:` and `title:` frontmatter pointing at the
 original URL. Images were not downloaded.
