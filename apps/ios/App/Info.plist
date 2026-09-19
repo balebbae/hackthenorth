@@ -22,8 +22,15 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_htn-navaid._tcp</string>
+		<string>_htn-navaid._udp</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>The chest phone uses the camera and LiDAR to detect obstacles and localize against the mapped building.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>The four phones on the wearer talk to each other directly to share obstacle readings and buzz commands.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location helps Niantic localization pick the correct mapped site.</string>
 	<key>UILaunchScreen</key>

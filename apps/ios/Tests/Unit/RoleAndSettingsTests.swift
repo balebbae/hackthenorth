@@ -37,6 +37,7 @@ final class RoleAndSettingsTests: XCTestCase {
     func testDefaultsAreTwoHundredMillisecondsAndNoCredentials() {
         let s = CameraSettings.default
         XCTAssertEqual(s.captureIntervalMs, 200)
+        XCTAssertEqual(s.obstacleRangeMeters, 5.0)
         XCTAssertFalse(s.hasNianticCredentials)
         XCTAssertNil(s.validationError)
     }

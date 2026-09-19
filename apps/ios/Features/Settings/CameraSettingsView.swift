@@ -22,6 +22,22 @@ struct CameraSettingsView: View {
                 }
 
                 Section {
+                    HStack {
+                        Text("Detection range")
+                        Slider(value: $settingsStore.settings.obstacleRangeMeters, in: 1.0...5.0, step: 0.5)
+                            .accessibilityIdentifier("settings.obstacleRange")
+                        Text(String(format: "%.1f m", settingsStore.settings.obstacleRangeMeters))
+                            .font(.system(.body, design: .monospaced))
+                    }
+                    Toggle("Side phones sense obstacles", isOn: $settingsStore.settings.sidePhonesSenseObstacles)
+                        .accessibilityIdentifier("settings.sideSensing")
+                } header: {
+                    Text("Obstacles")
+                } footer: {
+                    Text("Obstacles beyond this distance are ignored. iPhone LiDAR is reliable to about 5 m. With side sensing on, the left and right phones report what they see so the front can pick the open side.")
+                }
+
+                Section {
                     Picker("Capture interval", selection: $settingsStore.settings.captureIntervalMs) {
                         ForEach([100, 200, 300, 500, 1000], id: \.self) { ms in
                             Text("\(ms) ms").tag(ms)

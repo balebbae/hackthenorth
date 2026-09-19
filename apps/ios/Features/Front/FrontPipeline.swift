@@ -10,10 +10,16 @@ final class FrontPipeline: ObservableObject {
     @Published private(set) var lastDecision: ObstacleCuePolicy.Decision = .clear
     @Published private(set) var isActive = false
     @Published private(set) var usingPlaceholderFrames = false
+    @Published private(set) var sideClearances: [DeviceRole: SideClearance] = [:]
 
     let arSession = ARSessionController()
     let speech = SpeechCoordinator()
     let queryLoop: LocalizationQueryLoop
+    let link = PeerLink(role: .front)
+    let haptics = HapticController()
+    private var lastSentHaptics: HapticCommand?
+    private var lastHapticSend: TimeInterval = 0
+    private var statusTask: Task<Void, Never>?
 
     private var detector = ObstacleDetector()
     private let policy = ObstacleCuePolicy()
@@ -57,31 +63,55 @@ final class FrontPipeline: ObservableObject {
         usingPlaceholderFrames = placeholder != nil
         arSession.addFrameHandler { [weak self] frame in self?.handle(frame) }
 
+        link.onMessage = { [weak self] message, _ in
+            guard case .clearance(let reading) = message else { return }
+            self?.sideClearances[reading.role] = reading
+        }
+
         // SwiftUI only observes this object, so republish the children's changes.
         for child in [arSession.objectWillChange.eraseToAnyPublisher(),
                       queryLoop.objectWillChange.eraseToAnyPublisher(),
-                      speech.objectWillChange.eraseToAnyPublisher()] {
+                      speech.objectWillChange.eraseToAnyPublisher(),
+                      link.objectWillChange.eraseToAnyPublisher()] {
             child.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &forwarding)
         }
     }
 
     func start(settings: CameraSettings) {
+        detector.maxRange = Float(settings.obstacleRangeMeters)
         arSession.start(settings: settings)
         queryLoop.reconfigure(settings: settings)
         queryLoop.start()
+        link.start()
         isActive = true
         UIApplication.shared.isIdleTimerDisabled = true
+        statusTask?.cancel()
+        statusTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self else { break }
+                let z = self.zones
+                let fmt: (Float?) -> String = { $0.map { String(format: "%.2f", $0) } ?? "-" }
+                let sides = self.sideClearances.map { "\($0.key.rawValue)=\(fmt($0.value.nearest))" }.joined(separator: ",")
+                print("[front] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) gap=\(String(format: "%.2f", z.gapDirection)) link=\(self.link.connectedRoles.map(\.rawValue)) sides=[\(sides)] haptics=\(self.lastDecision.haptics) query=\(self.queryLoop.stats.ticks)")
+            }
+        }
     }
 
     func stop() {
+        statusTask?.cancel()
+        haptics.stopPulsing()
+        link.send(.haptic(.none))
         queryLoop.stop()
         arSession.stop()
+        link.stop()
         speech.stop()
         isActive = false
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
     func applySettings(_ settings: CameraSettings) {
+        detector.maxRange = Float(settings.obstacleRangeMeters)
         queryLoop.reconfigure(settings: settings)
         if isActive, arSession.state == .running {
             arSession.stop()
@@ -93,8 +123,18 @@ final class FrontPipeline: ObservableObject {
         guard frame.timestamp - lastDetection >= detectionInterval, let depth = frame.depthMap else { return }
         lastDetection = frame.timestamp
         zones = detector.analyze(depthMap: depth)
-        let decision = policy.decide(zones)
+        let decision = policy.decide(zones, sides: sideClearances)
         lastDecision = decision
         if let cue = decision.cue { speech.speak(cue) }
+        haptics.setProximity(decision.haptics.front ? decision.haptics.distance : nil)
+
+        // Push buzz commands when they change, with a half-second keepalive so a
+        // dropped packet cannot leave a side phone pulsing forever.
+        let now = Date().timeIntervalSince1970
+        if decision.haptics != lastSentHaptics || now - lastHapticSend > 0.5 {
+            link.send(.haptic(decision.haptics))
+            lastSentHaptics = decision.haptics
+            lastHapticSend = now
+        }
     }
 }
