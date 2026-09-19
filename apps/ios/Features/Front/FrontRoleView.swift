@@ -18,6 +18,7 @@ struct FrontRoleView: View {
             VStack(spacing: AppTheme.s16) {
                 header
                 cameraCard
+                nianticCard
                 localizationCard
                 obstacleCard
                 controls
@@ -104,10 +105,45 @@ struct FrontRoleView: View {
         }
     }
 
+    private var nianticCard: some View {
+        VStack(alignment: .leading, spacing: AppTheme.s12) {
+            HStack {
+                Text("Localization")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.24)
+                Spacer()
+                PillTag(text: pipeline.usingNSDK ? "Niantic SDK" : "No SDK", fill: pipeline.usingNSDK ? AppTheme.marigold : AppTheme.skyTint,
+                        identifier: "front.nsdkMode")
+            }
+            let loc = pipeline.localizer
+            StatRow(label: "Site", value: settingsStore.settings.nianticSiteId.isEmpty ? "not set" : settingsStore.settings.nianticSiteId)
+            StatRow(label: "State", value: loc.phase.label, identifier: "front.nsdkState")
+            StatRow(label: "Authorized", value: loc.isAuthorized ? "yes" : "no")
+            StatRow(label: "Frames to SDK", value: "\(loc.framesSubmitted)")
+            StatRow(label: "Anchor updates", value: "\(loc.anchorUpdates)")
+            if let fix = loc.latestFix {
+                StatRow(label: "Site position", value: String(format: "%.2f, %.2f, %.2f", fix.pose.position.x, fix.pose.position.y, fix.pose.position.z))
+                StatRow(label: "Confidence", value: String(format: "%.2f", fix.confidence))
+            }
+            Divider()
+            let rep = pipeline.reporter
+            StatRow(label: "Backend", value: rep.isConfigured ? (rep.worldId ?? "resolving world") : "not configured")
+            StatRow(label: "Session", value: rep.sessionId.map { String($0.prefix(8)) } ?? "–")
+            StatRow(label: "Fixes / poses sent", value: "\(rep.fixesSent) / \(rep.posesSent)")
+            if let node = rep.lastResponse?.nearestNode {
+                StatRow(label: "Nearest node", value: String(format: "%@ · %.1f m", node.name ?? node.id, node.distanceMetres))
+            }
+            if let error = rep.lastError {
+                StatRow(label: "Last error", value: error)
+            }
+        }
+        .card()
+    }
+
     private var localizationCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.s12) {
             HStack {
-                Text("Niantic queries")
+                Text(pipeline.usingNSDK ? "REST fallback (off)" : "Niantic queries")
                     .font(.system(size: 22, weight: .bold))
                     .tracking(-0.24)
                 Spacer()
@@ -160,7 +196,7 @@ struct FrontRoleView: View {
                     .buttonStyle(GhostButtonStyle())
                     .accessibilityIdentifier("front.stop")
             } else {
-                Button("Start") { pipeline.start(settings: settingsStore.settings) }
+                Button("Start") { pipeline.start(settings: settingsStore.settings, deviceId: settingsStore.deviceId) }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("front.start")
             }

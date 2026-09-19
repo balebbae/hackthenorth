@@ -1,0 +1,15 @@
+{
+  "originHash" : "5c007e8a85bc15eaf066e1e5ba853fa1b5b70157dda6504ac005d3fb4027c6fa",
+  "pins" : [
+    {
+      "identity" : "nsdk-library-xcframework",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nianticspatial/nsdk-library-xcframework",
+      "state" : {
+        "revision" : "7b22900f8d38d732262897debc43986bda65c7aa",
+        "version" : "4.1.0-26051913"
+      }
+    }
+  ],
+  "version" : 3
+}

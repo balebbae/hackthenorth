@@ -24,6 +24,14 @@ struct CameraSettings: Codable, Equatable, Sendable {
     var nianticEndpoint: String = "https://api.nianticspatial.com/web/v1/localize"
     /// Developer token from Scaniverse web. Empty means queries are logged, not sent.
     var nianticToken: String = ""
+    /// Scaniverse Site the phone localizes against. Empty disables NSDK localization.
+    var nianticSiteId: String = ""
+    /// Wander backend (FastAPI on Modal). Fixes are posted here.
+    var backendURL: String = ""
+    /// Shared X-API-Key for the backend.
+    var backendAPIKey: String = ""
+    /// Backend world to localize into. Empty means look it up by Niantic site ID.
+    var worldId: String = ""
 
     static let `default` = CameraSettings()
 
@@ -40,6 +48,42 @@ struct CameraSettings: Codable, Equatable, Sendable {
 
     var hasNianticCredentials: Bool {
         !nianticToken.trimmingCharacters(in: .whitespaces).isEmpty && endpointURL != nil
+    }
+
+    /// NSDK localization needs a developer token and a Site.
+    var canLocalizeWithNSDK: Bool {
+        !nianticToken.trimmingCharacters(in: .whitespaces).isEmpty
+            && !nianticSiteId.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var backendBaseURL: URL? {
+        let trimmed = backendURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let url = URL(string: trimmed), url.host != nil else { return nil }
+        return url
+    }
+
+    var hasBackend: Bool { backendBaseURL != nil && !backendAPIKey.isEmpty }
+
+    /// Fills empty fields from Resources/LocalConfig.plist so secrets stay out of git.
+    mutating func seed(from config: [String: Any]) {
+        func take(_ key: String, _ path: WritableKeyPath<CameraSettings, String>) {
+            if self[keyPath: path].isEmpty, let value = config[key] as? String, !value.isEmpty {
+                self[keyPath: path] = value
+            }
+        }
+        take("NianticToken", \.nianticToken)
+        take("NianticSiteId", \.nianticSiteId)
+        take("BackendURL", \.backendURL)
+        take("BackendAPIKey", \.backendAPIKey)
+        take("WorldId", \.worldId)
+    }
+
+    static func localConfig(bundle: Bundle = .main) -> [String: Any] {
+        guard let url = bundle.url(forResource: "LocalConfig", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+        else { return [:] }
+        return dict
     }
 
     /// The single ARKit configuration every consumer runs against.
@@ -88,14 +132,25 @@ final class CameraSettingsStore: ObservableObject {
 
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, localConfig: [String: Any] = CameraSettings.localConfig()) {
         self.defaults = defaults
+        var loaded: CameraSettings
         if let data = defaults.data(forKey: Self.key),
            let decoded = try? JSONDecoder().decode(CameraSettings.self, from: data) {
-            settings = decoded
+            loaded = decoded
         } else {
-            settings = .default
+            loaded = .default
         }
+        loaded.seed(from: localConfig)
+        settings = loaded
+    }
+
+    /// Stable per-install identifier sent to the backend as `deviceId`.
+    var deviceId: String {
+        if let id = defaults.string(forKey: "deviceId") { return id }
+        let id = UUID().uuidString.lowercased()
+        defaults.set(id, forKey: "deviceId")
+        return id
     }
 
     func reset() { settings = .default }

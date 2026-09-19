@@ -13,6 +13,10 @@ settings:
     DEVELOPMENT_TEAM: DVX8YZ9GG9
     TARGETED_DEVICE_FAMILY: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+packages:
+  NSDK:
+    url: https://github.com/nianticspatial/nsdk-library-xcframework
+    exactVersion: 4.1.0-26051913
 targets:
   NavigationAssistant:
     type: application
@@ -21,7 +25,13 @@ targets:
       - App
       - Features
       - Services
-      - Resources
+      - path: Resources
+        excludes: [LocalConfig.plist]
+      - path: Resources/LocalConfig.plist
+        optional: true
+    dependencies:
+      - package: NSDK
+        embed: true
     info:
       path: App/Info.plist
       properties:

@@ -37,3 +37,6 @@ xcuserdata/
 
 # Local agent instructions
 CLAUDE.md
+
+# Per-developer iOS secrets (backend key, Niantic token)
+apps/ios/Resources/LocalConfig.plist
