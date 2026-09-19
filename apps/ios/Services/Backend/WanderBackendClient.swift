@@ -38,6 +38,14 @@ struct LocalizeResponse: Decodable, Equatable, Sendable {
     let offGraphMetres: Double?
 }
 
+/// Stored record the backend returns for an uploaded image query.
+struct LocalizationQueryResponse: Decodable, Equatable, Sendable {
+    let id: String
+    let worldId: String
+    let nearestNode: LocalizeResponse.NearestNode?
+    let offGraphMetres: Double?
+}
+
 struct WorldSummary: Decodable, Sendable {
     let id: String
     let name: String
@@ -96,6 +104,68 @@ struct WanderBackendClient: Sendable {
         let (data, response) = try await session.data(for: request("POST", "worlds/\(worldId)/localize", data: body))
         try Self.check(response, data)
         return try JSONDecoder().decode(LocalizeResponse.self, from: data)
+    }
+
+    /// Body for `POST /worlds/{id}/localize/query`, matching `localizationQueryUpload` in the contract:
+    /// the JPEG the SDK submitted, its request record, and the pose it produced.
+    static func queryBody(deviceId: String, role: DeviceRole, siteId: String, sessionId: String?,
+                          query: VPSImageQuery, jpeg: Data, imageWidth: Int, imageHeight: Int,
+                          currentPose: SitePose?) -> [String: Any] {
+        var request: [String: Any] = [
+            "identifier": query.id,
+            "frameId": Int(clamping: query.frameId),
+            "type": query.type.rawValue,
+            "status": query.status.rawValue,
+            "error": query.error,
+            "startedAt": Self.timestamp(query.startedAt),
+            "frameMatch": query.frameMatch.rawValue
+        ]
+        if let ended = query.endedAt { request["endedAt"] = Self.timestamp(ended) }
+        if let ms = query.latencyMs { request["latencyMs"] = max(0, ms) }
+
+        var result: [String: Any] = ["trackingState": query.trackingState.rawValue]
+        if let anchorState = query.anchorState { result["anchorState"] = anchorState }
+        if let confidence = query.confidence { result["confidence"] = max(0, min(1, confidence)) }
+        if let pose = query.sitePose { result["pose"] = ["position": pose.positionArray, "rotation": pose.rotationArray] }
+        if let currentPose { result["currentPose"] = ["position": currentPose.positionArray, "rotation": currentPose.rotationArray] }
+
+        // The encoder rotates the landscape sensor frame 90° CW into portrait, so the
+        // portrait image's horizontal FOV is the sensor's vertical one and vice versa.
+        var image: [String: Any] = ["width": imageWidth, "height": imageHeight, "orientation": "portrait"]
+        if let fov = Self.portraitFov(intrinsics: query.intrinsics, resolution: query.imageResolution) {
+            image["fovDeg"] = ["horizontal": fov.horizontal, "vertical": fov.vertical]
+        }
+
+        var body: [String: Any] = [
+            "deviceId": deviceId,
+            "role": role == .front ? "chest" : role.rawValue,
+            "nianticSiteId": siteId,
+            "capturedAt": Self.timestamp(query.capturedAt),
+            "imageBase64": jpeg.base64EncodedString(),
+            "image": image,
+            "request": request,
+            "result": result
+        ]
+        if let sessionId { body["sessionId"] = sessionId }
+        return body
+    }
+
+    /// Field of view of the portrait upload from ARKit's landscape intrinsics (column-major: fx = [0][0], fy = [1][1]).
+    static func portraitFov(intrinsics: simd_float3x3, resolution: CGSize) -> (horizontal: Double, vertical: Double)? {
+        let fx = Double(intrinsics.columns.0.x), fy = Double(intrinsics.columns.1.y)
+        guard fx > 1, fy > 1, resolution.width > 0, resolution.height > 0 else { return nil }
+        let sensorH = 2 * atan((Double(resolution.width) / 2) / fx) * 180 / .pi
+        let sensorV = 2 * atan((Double(resolution.height) / 2) / fy) * 180 / .pi
+        guard sensorH > 0, sensorV > 0, sensorH < 179, sensorV < 179 else { return nil }
+        return (horizontal: sensorV, vertical: sensorH)
+    }
+
+    func uploadQuery(worldId: String, body: Data) async throws -> LocalizationQueryResponse {
+        var request = request("POST", "worlds/\(worldId)/localize/query", data: body)
+        request.timeoutInterval = 12
+        let (data, response) = try await session.data(for: request)
+        try Self.check(response, data)
+        return try JSONDecoder().decode(LocalizationQueryResponse.self, from: data)
     }
 
     /// `POST /sessions/{id}/pose` for high-rate ARKit poses between VPS fixes.

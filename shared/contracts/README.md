@@ -23,6 +23,10 @@ worlds/
     ├── world.json           # manifest (schema above) — source of truth for the navigation graph
     ├── notes.json           # notes pinned in the web viewer (optional)
     ├── measurements.json    # web-viewer measurements (optional)
+    ├── vps-status.json      # last successful phone localization against the site
+    ├── localizations/       # VPS image queries mirrored by the phone (newest 50)
+    │   ├── index.json       # LocalizationQuery records, newest first
+    │   └── q-<id>.jpg       # the camera frame the SDK submitted for that query
     └── v1/
         ├── scene.spz        # Gaussian splat exported from Scaniverse
         ├── thumbnail.png    # optional 16:10 preview
@@ -54,9 +58,27 @@ Files stream end-to-end; nothing is held in memory. Note the Next.js proxy must 
 
 1. **Volume as the DB.** All reads/writes go through the API; nothing else mounts the volume. Writes to `world.json` are read-modify-write with a per-world lock; assets are write-once per version.
 2. **Auth.** Every request carries `X-API-Key` (below).
-3. **Niantic SDK bridge.** The SDK runs on the phone. The backend receives its localization results (`POST /worlds/{id}/localize`), checks the `nianticSiteId` matches the world, re-expresses poses in the world frame, and exposes site status (`GET /worlds/{id}/vps`). If a Lightship API key is configured, it also asks Niantic whether the location is activated.
+3. **Niantic SDK bridge.** The SDK runs on the phone. The backend receives its localization results (`POST /worlds/{id}/localize`), checks the `nianticSiteId` matches the world, re-expresses poses in the world frame, and exposes site status (`GET /worlds/{id}/vps`). If a Lightship API key is configured, it also asks Niantic whether the location is activated. The phone also mirrors every VPS *image query* the SDK issued (`POST /worlds/{id}/localize/query`: the submitted camera frame as JPEG, the SDK's `Vps2LocalizationRequestRecord`, and the camera pose at capture time in the site frame); the backend keeps the newest 50 under `localizations/` and the web viewer polls `GET /worlds/{id}/localizations` to draw the phone on the splat next to the image it sent.
 4. **Routing.** Dijkstra over the graph; turn instructions from leg headings; off-route / arrival detection on every `POST /sessions/{id}/pose`; live `SessionEvent`s over `/ws/sessions/{id}` for the dashboard.
 5. **CPU only.** Rendering happens in the browser.
+
+## Phone hand-off link (QR code)
+
+The world viewer shows a QR code that configures the front phone for that world. It encodes a custom-scheme URL the iOS app registers (`CFBundleURLTypes`) and can also scan in-app:
+
+```text
+wander://connect?v=1&world=<worldId>&site=<nianticSiteId>&backend=<https://…modal.run>&name=<display name>
+```
+
+| Query param | Required | Meaning |
+| --- | --- | --- |
+| `v` | yes | Link version, currently `1`. Unknown versions are ignored by the phone. |
+| `world` | yes | `world.json` id (`^[a-z0-9][a-z0-9._-]{0,63}$`). Becomes `CameraSettings.worldId`. |
+| `site` | no | `nianticSiteId` from the manifest. Becomes `CameraSettings.nianticSiteId`; omitted when the world is not published to Niantic yet. |
+| `backend` | no | Base URL of the worlds API (`WANDER_API_URL`; the Next.js origin + `/api` in local mode). Becomes `CameraSettings.backendURL`. |
+| `name` | no | Human-readable world name for the confirmation toast. |
+
+The link never carries secrets: the `X-API-Key` and the Niantic developer token stay in the phone's `LocalConfig.plist` / Settings. Scanning only fills in *which* world, site and backend to talk to.
 
 ## Authentication — API key
 

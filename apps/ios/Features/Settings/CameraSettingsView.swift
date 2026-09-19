@@ -5,10 +5,27 @@ struct CameraSettingsView: View {
     @EnvironmentObject private var settingsStore: CameraSettingsStore
     @EnvironmentObject private var roleStore: RoleStore
     @Environment(\.dismiss) private var dismiss
+    @State private var showScanner = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button {
+                        showScanner = true
+                    } label: {
+                        Label("Scan world QR code", systemImage: "qrcode.viewfinder")
+                    }
+                    .accessibilityIdentifier("settings.scanWorld")
+                    if !settingsStore.settings.worldId.isEmpty {
+                        LabeledContent("World", value: settingsStore.settings.worldId)
+                    }
+                } header: {
+                    Text("Connect to a world")
+                } footer: {
+                    Text("The world viewer shows a QR code per world (Live tab › Connect a phone). Scanning fills in the world, Niantic Site ID and backend URL below; tokens and keys stay on this phone.")
+                }
+
                 Section("ARKit session") {
                     Picker("Frame rate", selection: $settingsStore.settings.preferredFrameRate) {
                         Text("30 fps").tag(30)
@@ -99,6 +116,18 @@ struct CameraSettingsView: View {
                     Text(settingsStore.settings.hasBackend ? "Fixes are posted to the worlds API." : "Backend URL and key are needed to report position.")
                 }
 
+                Section {
+                    Toggle("Upload query images", isOn: $settingsStore.settings.uploadQueryImages)
+                        .accessibilityIdentifier("settings.uploadQueries")
+                    Toggle("Include failed queries", isOn: $settingsStore.settings.uploadFailedQueries)
+                        .disabled(!settingsStore.settings.uploadQueryImages)
+                        .accessibilityIdentifier("settings.uploadFailedQueries")
+                } header: {
+                    Text("Image queries")
+                } footer: {
+                    Text("Every camera frame the Niantic SDK sends to VPS is mirrored to the backend with the pose it produced, so the web viewer can show the image next to where the phone was localized on the splat. Uses the max image side and JPEG quality above.")
+                }
+
                 if let error = settingsStore.settings.validationError {
                     Section {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -124,6 +153,7 @@ struct CameraSettingsView: View {
             .background(AppTheme.canvas)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showScanner) { ConnectWorldSheet() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

@@ -1,3 +1,5 @@
+import base64
+import binascii
 import hashlib
 import json
 import logging
@@ -12,6 +14,10 @@ from ..services.worlds import check, now, segment, validate_graph, world_graph, 
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Newest image queries kept per world; older JPEGs are deleted with their records.
+LOCALIZATIONS_KEPT = 50
+QUERY_IMAGE_MAX_BYTES = 2 * 1024 * 1024
 
 
 async def body(request):
@@ -242,6 +248,75 @@ async def localize(world_id: str, request: Request):
     return {'sessionId': session['sessionId'], 'worldId': world_id, 'pose': data['pose'],
             'nearestNode': {**node_ref(nearest), 'distanceMetres': math.dist(data['pose']['position'], nearest['position'])},
             'snappedPosition': position, 'offGraphMetres': distance}
+
+
+def localizations_index(store, world_id):
+    if store.path('worlds', world_id, 'localizations', 'index.json').exists():
+        return check(store.read('worlds', world_id, 'localizations', 'index.json'),
+                     'navigation.schema.json', '#/$defs/localizationQueries')
+    return {'schema': 'wander.localizations/v1', 'worldId': world_id, 'queries': []}
+
+
+@router.post('/worlds/{world_id}/localize/query', status_code=201)
+async def localize_query(world_id: str, request: Request):
+    """One VPS image query mirrored from the phone: the frame the SDK sent, its request record, the pose it produced."""
+    data = check(await body(request), 'navigation.schema.json', '#/$defs/localizationQueryUpload')
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    if not world['nianticSiteId'] or data['nianticSiteId'] != world['nianticSiteId']:
+        raise HTTPException(409, 'Niantic site mismatch')
+    try:
+        image = base64.b64decode(data['imageBase64'], validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(400, 'imageBase64 is not valid base64')
+    if len(image) > QUERY_IMAGE_MAX_BYTES:
+        raise HTTPException(413, 'Query image exceeds 2 MiB')
+    if image[:3] != b'\xff\xd8\xff':
+        raise HTTPException(400, 'Query image must be a JPEG')
+    if 'sessionId' in data:
+        session = store.session(data['sessionId'])
+        if session['worldId'] != world_id or session['deviceId'] != data['deviceId']:
+            raise HTTPException(409, 'Session world/device mismatch')
+
+    query_id = 'q-' + uuid4().hex
+    record = {'schema': 'wander.localization-query/v1', 'id': query_id, 'worldId': world_id,
+              **{k: data[k] for k in ('sessionId', 'deviceId', 'role', 'nianticSiteId', 'capturedAt', 'request', 'result') if k in data},
+              'receivedAt': now(),
+              'image': {**data['image'], 'path': f'worlds/{world_id}/localizations/{query_id}.jpg'}}
+    pose = data['result'].get('pose')
+    if pose is not None and world.get('alignment', {}).get('frame') == 'niantic-vps':
+        try:
+            nearest, (distance, _, _, _) = snap(world_graph(world), pose['position'])
+            record['nearestNode'] = {**node_ref(nearest), 'distanceMetres': math.dist(pose['position'], nearest['position'])}
+            record['offGraphMetres'] = distance
+        except HTTPException as error:
+            if error.status_code != 409:  # a world without waypoints is fine here
+                raise
+    check(record, 'navigation.schema.json', '#/$defs/localizationQuery')
+
+    async with store.lock('localizations:' + world_id):
+        await store.write_bytes(image, 'worlds', world_id, 'localizations', query_id + '.jpg')
+        index = localizations_index(store, world_id)
+        kept, evicted = index['queries'][:LOCALIZATIONS_KEPT - 1], index['queries'][LOCALIZATIONS_KEPT - 1:]
+        for old in evicted:
+            store.path('worlds', world_id, 'localizations', old['id'] + '.jpg').unlink(missing_ok=True)
+        index.update(queries=[record] + kept, updatedAt=record['receivedAt'])
+        await store.write(index, 'worlds', world_id, 'localizations', 'index.json')
+    if data['result']['trackingState'] == 'localized':
+        async with store.lock('world:' + world_id):
+            await store.write({'lastLocalizedAt': data['capturedAt'], 'nianticSiteId': data['nianticSiteId']},
+                              'worlds', world_id, 'vps-status.json')
+    return record
+
+
+@router.get('/worlds/{world_id}/localizations')
+async def localizations(world_id: str, request: Request, limit: int = 20):
+    """Recent image queries, newest first. Images are served as `/worlds/{id}/localizations/{queryId}.jpg`."""
+    store = request.app.state.worlds
+    store.world(world_id)
+    index = localizations_index(store, world_id)
+    index['queries'] = index['queries'][:max(1, min(limit, LOCALIZATIONS_KEPT))]
+    return index
 
 
 @router.get('/worlds/{world_id}/vps')

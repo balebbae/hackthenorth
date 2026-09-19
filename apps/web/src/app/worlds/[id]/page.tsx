@@ -4,7 +4,14 @@ import { cache } from "react";
 import { WorldViewer } from "@/components/viewer/WorldViewer";
 import { assetUrl } from "@/lib/world-manifest";
 import { displayName, WORLDS, type WorldStatus } from "@/lib/worlds";
-import { getMeasurements, getNotes, getWorld, worldsSource } from "@/lib/worlds-api.server";
+import {
+  getLocalizations,
+  getMeasurements,
+  getNotes,
+  getWorld,
+  phoneBackendUrl,
+  worldsSource,
+} from "@/lib/worlds-api.server";
 
 /** Always read the volume at request time — new exports and saved stops must show up without a rebuild. */
 export const dynamic = "force-dynamic";
@@ -31,9 +38,13 @@ export default async function WorldPage({ params }: PageProps<"/worlds/[id]">) {
   const { id } = await params;
   const world = await resolveWorld(id);
   if (!world) notFound();
-  const [notes, measurements] = world.manifest
-    ? await Promise.all([getNotes(id).catch(() => []), getMeasurements(id).catch(() => [])])
-    : [[], []];
+  const [notes, measurements, localizations] = world.manifest
+    ? await Promise.all([
+        getNotes(id).catch(() => []),
+        getMeasurements(id).catch(() => []),
+        getLocalizations(id, 30).catch(() => []),
+      ])
+    : [[], [], []];
 
   return (
     <main className="flex flex-1 flex-col">
@@ -45,6 +56,8 @@ export default async function WorldPage({ params }: PageProps<"/worlds/[id]">) {
         splatUrl={world.manifest ? assetUrl(world.manifest.assets.splat) : null}
         initialNotes={notes}
         initialMeasurements={measurements}
+        initialLocalizations={localizations}
+        phoneBackendUrl={phoneBackendUrl}
         source={worldsSource}
       />
     </main>

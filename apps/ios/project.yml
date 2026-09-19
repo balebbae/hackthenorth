@@ -43,6 +43,10 @@ targets:
         NSLocalNetworkUsageDescription: The four phones on the wearer talk to each other directly to share obstacle readings and buzz commands.
         NSBonjourServices: [_htn-navaid._tcp, _htn-navaid._udp]
         ITSAppUsesNonExemptEncryption: false
+        # wander://connect?… links from the web viewer's QR code configure the phone for a world.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.hackthenorth.navassist.connect
+            CFBundleURLSchemes: [wander]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hackthenorth.navassist

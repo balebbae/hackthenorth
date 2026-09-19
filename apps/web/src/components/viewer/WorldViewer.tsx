@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/Icon";
 import { LogoMark } from "@/components/Logo";
+import { ConnectPhoneDialog, type ConnectPhoneInfo } from "@/components/worlds/ConnectPhoneQR";
 import { UploadSplatDialog } from "@/components/worlds/UploadSplatDialog";
+import {
+  formatAge,
+  queryImageUrl,
+  queryOutcome,
+  querySucceeded,
+  type LocalizationQuery,
+} from "@/lib/localization";
 import {
   EMPTY_GRAPH,
   formatSplatCount,
@@ -17,7 +25,8 @@ import {
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { InspectorPanel, type PanelTab } from "./InspectorPanel";
-import type { ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
+import type { LocalizationMarker, ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
+import { PHONE_ONLINE_MS, useLocalizationFeed, useNow } from "./useLocalizationFeed";
 import { useSplatViewer, type PickHandler } from "./useSplatViewer";
 import { ViewerOverlay } from "./ViewerOverlays";
 
@@ -30,9 +39,17 @@ type Props = {
   splatUrl: string | null;
   initialNotes: WorldNote[];
   initialMeasurements: Measurement[];
+  /** Recent VPS image queries from the phone, newest first (the client keeps polling for more). */
+  initialLocalizations: LocalizationQuery[];
+  /** Worlds API base URL for the connect QR code; null in local mode. */
+  phoneBackendUrl: string | null;
   /** Where the server is reading worlds from; only changes the empty-state hint. */
   source: "api" | "local";
 };
+
+/** A query newer than this at page load opens the Live tab first. */
+const RECENT_MS = 60_000;
+const TRAIL_LENGTH = 30;
 
 const MODES: { id: ViewerMode; label: string; icon: IconName }[] = [
   { id: "orbit", label: "Orbit", icon: "orbit" },
@@ -68,6 +85,8 @@ export function WorldViewer({
   splatUrl,
   initialNotes,
   initialMeasurements,
+  initialLocalizations,
+  phoneBackendUrl,
   source,
 }: Props) {
   /* ------------------------------------------------------------ edit state */
@@ -78,12 +97,61 @@ export function WorldViewer({
   const [pendingPoint, setPendingPoint] = useState<Vec3 | null>(null);
 
   const [panelOpen, setPanelOpen] = useState(true);
-  const [panelTab, setPanelTab] = useState<PanelTab>("notes");
+  const [panelTab, setPanelTab] = useState<PanelTab>(() =>
+    initialLocalizations[0] && Date.now() - Date.parse(initialLocalizations[0].capturedAt) < RECENT_MS ? "live" : "notes",
+  );
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
   const router = useRouter();
 
   const canSave = !!manifest;
+  /** What the connect QR encodes; only worlds with a manifest can be handed to a phone. */
+  const connectInfo = useMemo<ConnectPhoneInfo | null>(
+    () => (manifest ? { worldId, name, nianticSiteId: manifest.nianticSiteId, backendUrl: phoneBackendUrl } : null),
+    [manifest, worldId, name, phoneBackendUrl],
+  );
+
+  /* ---------------------------------------------------------- phone feed */
+  // Only worlds with a manifest can have a phone localizing into them.
+  const feed = useLocalizationFeed(worldId, initialLocalizations, !!manifest);
+  /** null = pin to the newest query as it arrives; an id = the user is inspecting an older one. */
+  const [selectedQueryId, setSelectedQueryId] = useState<string | null>(null);
+  const [followPhone, setFollowPhone] = useState(false);
+  const latestQuery = feed.queries[0] ?? null;
+  const selectedQuery = useMemo(
+    () => (selectedQueryId ? feed.queries.find((q) => q.id === selectedQueryId) ?? latestQuery : latestQuery),
+    [feed.queries, selectedQueryId, latestQuery],
+  );
+
+  // The marker is the selected query's pose — or, for a failed query without one, the
+  // newest localized pose so the phone never vanishes from the splat mid-walk.
+  const localization = useMemo<LocalizationMarker | null>(() => {
+    if (!selectedQuery) return null;
+    const outcome = queryOutcome(selectedQuery);
+    const poseSource = selectedQuery.result.pose
+      ? selectedQuery
+      : feed.queries.find((q) => q.result.pose && querySucceeded(q));
+    const pose = poseSource?.result.pose;
+    if (!pose) return null;
+    return {
+      position: pose.position,
+      rotation: pose.rotation,
+      imageUrl: queryImageUrl(selectedQuery),
+      orientation: selectedQuery.image.orientation ?? "portrait",
+      fovDeg: selectedQuery.image.fovDeg ?? { horizontal: 50, vertical: 65 },
+      tone: poseSource === selectedQuery ? outcome.tone : "bad",
+    };
+  }, [selectedQuery, feed.queries]);
+
+  const localizationTrail = useMemo<Vec3[]>(
+    () =>
+      feed.queries
+        .filter(querySucceeded)
+        .flatMap((q) => (q.result.pose ? [q.result.pose.position] : []))
+        .slice(0, TRAIL_LENGTH),
+    [feed.queries],
+  );
 
   /* -------------------------------------------------------------- autosave */
   const notesSave = useAutosave(`/api/worlds/${encodeURIComponent(worldId)}/notes`, { notes }, notes, canSave);
@@ -172,8 +240,16 @@ export function WorldViewer({
     measurements,
     selection,
     pendingPoint,
+    localization,
+    localizationTrail,
+    followPhone,
     onPick,
   });
+
+  const openLive = useCallback(() => {
+    setPanelOpen(true);
+    setPanelTab("live");
+  }, []);
 
   const pickTool = useCallback(
     (tool: ViewerTool) => {
@@ -255,6 +331,7 @@ export function WorldViewer({
               measureSave.retry();
             }}
           />
+          {latestQuery && <PhoneBadge query={latestQuery} onClick={openLive} />}
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
@@ -284,6 +361,9 @@ export function WorldViewer({
             ))}
           </div>
           <div className="flex items-center gap-0.5 rounded-lg border border-hairline bg-pure-white p-0.5">
+            {connectInfo && (
+              <ToolButton icon="phone" label="Connect a phone (QR code)" onClick={() => setConnectOpen(true)} />
+            )}
             <ToolButton icon="frame" label="Reset view" disabled={!interactive} onClick={api.resetView} />
             {graph.nodes.length > 0 && (
               <ToolButton
@@ -312,6 +392,26 @@ export function WorldViewer({
               tab={panelTab}
               onTab={setPanelTab}
               onClose={() => setPanelOpen(false)}
+              live={{
+                feed,
+                selected: selectedQuery,
+                pinnedToLatest: selectedQueryId === null,
+                onSelectQuery: setSelectedQueryId,
+                followPhone,
+                onFollowPhone: setFollowPhone,
+                onFocusPhone: () => {
+                  api.focusPhone();
+                  focusViewer();
+                },
+                onViewFromPhone: () => {
+                  setFollowPhone(false);
+                  api.viewFromPhone();
+                  focusViewer();
+                },
+                hasSplat: state.status === "ready",
+                connectInfo,
+                onConnectPhone: () => setConnectOpen(true),
+              }}
               name={name}
               status={status}
               manifest={manifest}
@@ -410,6 +510,8 @@ export function WorldViewer({
         onUpload={manifest ? () => setUploadOpen(true) : undefined}
       />
 
+      {connectInfo && <ConnectPhoneDialog open={connectOpen} info={connectInfo} onClose={() => setConnectOpen(false)} />}
+
       {manifest && (
         <UploadSplatDialog
           open={uploadOpen}
@@ -454,6 +556,25 @@ function SaveBadge({ save, canSave, onRetry }: { save: SaveState; canSave: boole
     default:
       return null;
   }
+}
+
+/** Header pill: is a phone localizing into this world right now, and how did its last query go? */
+function PhoneBadge({ query, onClick }: { query: LocalizationQuery; onClick: () => void }) {
+  const now = useNow(1000);
+  const online = now - Date.parse(query.capturedAt) < PHONE_ONLINE_MS;
+  const outcome = queryOutcome(query);
+  const tone = !online ? "bg-stellar-white text-void-black/60" : outcome.tone === "ok" ? "bg-sky-tint text-wander-blue" : "bg-pink-tint text-wander-pink";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`pill-sm ${tone} transition-colors duration-200`}
+      title={`${outcome.label} · ${formatAge(query.capturedAt, now)} · open Live tab`}
+    >
+      <Icon name="phone" size={11} />
+      {online ? outcome.label : `Phone · ${formatAge(query.capturedAt, now)}`}
+    </button>
+  );
 }
 
 function ToolButton({

@@ -237,6 +237,16 @@ class WorldStore:
         finally:
             temporary.unlink(missing_ok=True)
 
+    async def write_bytes(self, data, *parts):
+        path = self.path(*parts)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name('tmp-' + uuid4().hex)
+        try:
+            temporary.write_bytes(data)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
     async def flush(self):
         if self.commit:
             await asyncio.to_thread(self.commit)

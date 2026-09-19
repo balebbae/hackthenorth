@@ -32,8 +32,37 @@ struct CameraSettings: Codable, Equatable, Sendable {
     var backendAPIKey: String = ""
     /// Backend world to localize into. Empty means look it up by Niantic site ID.
     var worldId: String = ""
+    /// Mirror every VPS image query the SDK issues (frame + result) to the backend so the
+    /// dashboard can show what the phone saw and where it was localized.
+    var uploadQueryImages: Bool = true
+    /// Also upload queries that failed or were rejected, not just successful fixes.
+    var uploadFailedQueries: Bool = true
 
     static let `default` = CameraSettings()
+
+    init() {}
+
+    /// Tolerant decoding: settings persisted by an older build simply keep the defaults for new keys.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = CameraSettings()
+        preferredFrameRate = try c.decodeIfPresent(Int.self, forKey: .preferredFrameRate) ?? d.preferredFrameRate
+        sceneDepthEnabled = try c.decodeIfPresent(Bool.self, forKey: .sceneDepthEnabled) ?? d.sceneDepthEnabled
+        smoothedDepth = try c.decodeIfPresent(Bool.self, forKey: .smoothedDepth) ?? d.smoothedDepth
+        obstacleRangeMeters = try c.decodeIfPresent(Double.self, forKey: .obstacleRangeMeters) ?? d.obstacleRangeMeters
+        sidePhonesSenseObstacles = try c.decodeIfPresent(Bool.self, forKey: .sidePhonesSenseObstacles) ?? d.sidePhonesSenseObstacles
+        captureIntervalMs = try c.decodeIfPresent(Int.self, forKey: .captureIntervalMs) ?? d.captureIntervalMs
+        jpegQuality = try c.decodeIfPresent(Double.self, forKey: .jpegQuality) ?? d.jpegQuality
+        maxImageDimension = try c.decodeIfPresent(Int.self, forKey: .maxImageDimension) ?? d.maxImageDimension
+        nianticEndpoint = try c.decodeIfPresent(String.self, forKey: .nianticEndpoint) ?? d.nianticEndpoint
+        nianticToken = try c.decodeIfPresent(String.self, forKey: .nianticToken) ?? d.nianticToken
+        nianticSiteId = try c.decodeIfPresent(String.self, forKey: .nianticSiteId) ?? d.nianticSiteId
+        backendURL = try c.decodeIfPresent(String.self, forKey: .backendURL) ?? d.backendURL
+        backendAPIKey = try c.decodeIfPresent(String.self, forKey: .backendAPIKey) ?? d.backendAPIKey
+        worldId = try c.decodeIfPresent(String.self, forKey: .worldId) ?? d.worldId
+        uploadQueryImages = try c.decodeIfPresent(Bool.self, forKey: .uploadQueryImages) ?? d.uploadQueryImages
+        uploadFailedQueries = try c.decodeIfPresent(Bool.self, forKey: .uploadFailedQueries) ?? d.uploadFailedQueries
+    }
 
     var captureInterval: TimeInterval { Double(captureIntervalMs) / 1000 }
 

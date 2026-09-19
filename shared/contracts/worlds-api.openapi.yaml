@@ -299,6 +299,64 @@ paths:
         "409": { description: Site id mismatch, or the world has no navigation graph }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /worlds/{id}/localize/query:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    post:
+      tags: [navigation]
+      summary: Upload one VPS image query (camera frame + SDK request record + resulting pose)
+      description: |
+        The Niantic SDK submits camera frames to VPS itself; the phone mirrors
+        every `vpsLocalize` request it sees on `localizationRequestRecords`
+        here, with the JPEG of the frame that was submitted and the camera pose
+        at capture time expressed in the site frame (anchor⁻¹ · camera).
+        Failed and rejected queries are uploaded too so the dashboard can show
+        what the phone saw when localization did not work.
+
+        The backend stores the JPEG at `worlds/{id}/localizations/{queryId}.jpg`
+        (served by `GET /worlds/{id}/localizations/{queryId}.jpg`, immutable),
+        prepends the record to `localizations/index.json` (capped at 50, older
+        images are deleted), snaps a successful pose to the graph, and stamps
+        `vps-status.json` like `/localize` does.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "navigation.schema.json#/$defs/localizationQueryUpload" }
+      responses:
+        "201":
+          description: Stored record
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/localizationQuery" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Site id mismatch }
+        "413": { description: Image larger than 2 MiB }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/localizations:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [navigation]
+      summary: Recent VPS image queries for the world, newest first
+      description: |
+        Polled by the web viewer (≈1 Hz) to draw the phone's localized pose and
+        the query image on the splat. Image bytes are fetched separately from
+        `GET /worlds/{id}/localizations/{queryId}.jpg` (the versioned-asset
+        route; the files are write-once so they cache as immutable).
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/localizationQueries" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /worlds/{id}/route:
     parameters: [{ $ref: "#/components/parameters/worldId" }]
     post:

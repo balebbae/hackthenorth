@@ -21,6 +21,7 @@ final class FrontPipeline: ObservableObject {
     let reporter = LocalizationReporter()
     @Published private(set) var usingNSDK = false
     private var lastReportedFix: LocalizationFix?
+    private var lastCameraTransform = matrix_identity_float4x4
     private var lastSentHaptics: HapticCommand?
     private var lastHapticSend: TimeInterval = 0
     private var statusTask: Task<Void, Never>?
@@ -72,6 +73,16 @@ final class FrontPipeline: ObservableObject {
             self?.sideClearances[reading.role] = reading
         }
 
+        // Every VPS image query the SDK finishes goes to the backend with the pose
+        // it produced, plus where the phone is right now for the live marker.
+        localizer.onQueries = { [weak self] queries in
+            guard let self else { return }
+            let current = self.localizer.latestFix.map {
+                SitePose.deviceInAnchorFrame(anchor: $0.anchorTransform, device: self.lastCameraTransform)
+            }
+            self.reporter.report(queries: queries, currentPose: current)
+        }
+
         // SwiftUI only observes this object, so republish the children's changes.
         for child in [arSession.objectWillChange.eraseToAnyPublisher(),
                       queryLoop.objectWillChange.eraseToAnyPublisher(),
@@ -107,7 +118,8 @@ final class FrontPipeline: ObservableObject {
                 let z = self.zones
                 let fmt: (Float?) -> String = { $0.map { String(format: "%.2f", $0) } ?? "-" }
                 let sides = self.sideClearances.map { "\($0.key.rawValue)=\(fmt($0.value.nearest))" }.joined(separator: ",")
-                print("[front] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) gap=\(String(format: "%.2f", z.gapDirection)) link=\(self.link.connectedRoles.map(\.rawValue)) sides=[\(sides)] haptics=\(self.lastDecision.haptics) query=\(self.queryLoop.stats.ticks)")
+                let q = self.localizer.queryStats
+                print("[front] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) gap=\(String(format: "%.2f", z.gapDirection)) link=\(self.link.connectedRoles.map(\.rawValue)) sides=[\(sides)] haptics=\(self.lastDecision.haptics) query=\(self.queryLoop.stats.ticks) vps=\(self.localizer.phase.label) queries=\(q.issued)/\(q.succeeded)ok/\(q.failed)fail/\(q.rejected)rej uploaded=\(self.reporter.queriesSent)")
             }
         }
     }
@@ -137,8 +149,9 @@ final class FrontPipeline: ObservableObject {
     }
 
     private func handle(_ frame: FrameSnapshot) {
+        lastCameraTransform = frame.cameraTransform
         if usingNSDK {
-            localizer.update(cameraTransform: frame.cameraTransform)
+            localizer.update(frame: frame)
             if let fix = localizer.latestFix {
                 if fix != lastReportedFix {
                     lastReportedFix = fix

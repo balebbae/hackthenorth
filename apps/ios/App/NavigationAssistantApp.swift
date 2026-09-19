@@ -4,6 +4,9 @@ import SwiftUI
 struct NavigationAssistantApp: App {
     @StateObject private var roleStore = RoleStore()
     @StateObject private var settingsStore = CameraSettingsStore()
+    /// Set when a `wander://connect` link (the viewer's QR code) was opened from outside the app.
+    @State private var openedLink: WorldConnectLink?
+    @State private var openedChanges: [String] = []
 
     init() {
         LaunchArguments.applyOverrides()
@@ -15,6 +18,24 @@ struct NavigationAssistantApp: App {
                 .environmentObject(roleStore)
                 .environmentObject(settingsStore)
                 .preferredColorScheme(.light)
+                .onOpenURL { url in
+                    guard let link = WorldConnectLink(url: url) else { return }
+                    var settings = settingsStore.settings
+                    openedChanges = link.apply(to: &settings)
+                    settingsStore.settings = settings
+                    openedLink = link
+                }
+                .alert(
+                    "Connected to \(openedLink?.displayName ?? "world")",
+                    isPresented: Binding(get: { openedLink != nil }, set: { if !$0 { openedLink = nil } }),
+                    presenting: openedLink
+                ) { _ in
+                    Button("OK") {}
+                } message: { link in
+                    Text(openedChanges.isEmpty
+                         ? "Settings already matched \(link.worldId)."
+                         : "Updated " + openedChanges.joined(separator: ", ") + ". Tokens and keys are unchanged.")
+                }
         }
     }
 }

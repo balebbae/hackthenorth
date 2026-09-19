@@ -5,6 +5,7 @@ import type { Alignment, Measurement, NavigationGraph, Vec3, WorldNote } from "@
 import type {
   EngineEvent,
   LoadStatus,
+  LocalizationMarker,
   SplatViewerEngine,
   ViewerMode,
   ViewerSelection,
@@ -30,6 +31,10 @@ export type ViewerApi = {
   resetView: () => void;
   focusNode: (id: string) => void;
   focusNote: (id: string) => void;
+  /** Orbit the camera around the phone marker. */
+  focusPhone: () => void;
+  /** Walk mode with the camera placed exactly at the phone's pose. */
+  viewFromPhone: () => void;
   retry: () => void;
 };
 
@@ -51,6 +56,11 @@ type Options = {
   measurements: Measurement[];
   selection: ViewerSelection | null;
   pendingPoint: Vec3 | null;
+  /** Phone marker for the selected VPS image query; null hides it. */
+  localization: LocalizationMarker | null;
+  /** Recent localized positions, newest first. */
+  localizationTrail: Vec3[];
+  followPhone: boolean;
   onPick: PickHandler;
 };
 
@@ -79,6 +89,9 @@ export function useSplatViewer({
   measurements,
   selection,
   pendingPoint,
+  localization,
+  localizationTrail,
+  followPhone,
   onPick,
 }: Options) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -169,6 +182,15 @@ export function useSplatViewer({
   useEffect(() => {
     engineRef.current?.setPendingPoint(pendingPoint);
   }, [pendingPoint, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setLocalization(localization);
+  }, [localization, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setLocalizationTrail(localizationTrail);
+  }, [localizationTrail, engineReady]);
+  useEffect(() => {
+    engineRef.current?.setFollowPhone(followPhone);
+  }, [followPhone, engineReady]);
 
   const api = useMemo<ViewerApi>(
     () => ({
@@ -194,6 +216,16 @@ export function useSplatViewer({
       },
       focusNode: (id) => engineRef.current?.focusNode(id),
       focusNote: (id) => engineRef.current?.focusNote(id),
+      focusPhone: () => {
+        latest.current.mode = "orbit";
+        engineRef.current?.focusPhone();
+        setState((s) => ({ ...s, mode: "orbit" }));
+      },
+      viewFromPhone: () => {
+        latest.current.mode = "walk";
+        engineRef.current?.viewFromPhone();
+        setState((s) => ({ ...s, mode: "walk" }));
+      },
       retry: () => setAttempt((n) => n + 1),
     }),
     [],

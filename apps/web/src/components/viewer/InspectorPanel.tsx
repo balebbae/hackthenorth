@@ -13,9 +13,11 @@ import {
   type WorldNote,
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
+import { LiveTab, type LiveTabProps } from "./LiveTab";
 import { formatMetres, type ViewerSelection } from "./SplatViewerEngine";
+import { PHONE_ONLINE_MS, useNow } from "./useLocalizationFeed";
 
-export type PanelTab = "notes" | "measure" | "details";
+export type PanelTab = "live" | "notes" | "measure" | "details";
 
 export const NODE_TONE: Record<NavNodeKind, string> = {
   waypoint: "bg-wander-blue",
@@ -24,6 +26,7 @@ export const NODE_TONE: Record<NavNodeKind, string> = {
 };
 
 const TABS: { id: PanelTab; label: string }[] = [
+  { id: "live", label: "Live" },
   { id: "notes", label: "Notes" },
   { id: "measure", label: "Measure" },
   { id: "details", label: "Details" },
@@ -33,6 +36,8 @@ type Props = {
   tab: PanelTab;
   onTab: (t: PanelTab) => void;
   onClose: () => void;
+  /** Phone localization feed shown in the Live tab. */
+  live: LiveTabProps;
   name: string;
   status: WorldStatus;
   manifest: WorldManifest | null;
@@ -58,6 +63,7 @@ type Props = {
 
 /** Right-hand panel: write notes, review measurements, read the manifest and waypoints. */
 export function InspectorPanel(p: Props) {
+  const now = useNow(5000);
   return (
     <aside
       aria-label="World inspector"
@@ -67,6 +73,8 @@ export function InspectorPanel(p: Props) {
         <div role="tablist" aria-label="Inspector" className="flex flex-1 items-center gap-0.5">
           {TABS.map((t) => {
             const count = t.id === "notes" ? p.notes.length : t.id === "measure" ? p.measurements.length : 0;
+            const latest = t.id === "live" ? p.live.feed.queries[0] : undefined;
+            const phoneOnline = !!latest && now - Date.parse(latest.capturedAt) < PHONE_ONLINE_MS;
             return (
               <button
                 key={t.id}
@@ -74,12 +82,18 @@ export function InspectorPanel(p: Props) {
                 type="button"
                 aria-selected={p.tab === t.id}
                 onClick={() => p.onTab(t.id)}
-                className={`rounded-[6px] px-2.5 py-1 text-body-sm font-medium transition-colors duration-200 ${
+                className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-body-sm font-medium transition-colors duration-200 ${
                   p.tab === t.id ? "bg-sky-tint text-wander-blue" : "text-void-black/60 hover:text-void-black"
                 }`}
               >
+                {t.id === "live" && (
+                  <span
+                    aria-hidden="true"
+                    className={`inline-block size-1.5 rounded-full ${phoneOnline ? "bg-wander-blue" : "bg-void-black/20"}`}
+                  />
+                )}
                 {t.label}
-                {count > 0 && <span className="ml-1 text-caption text-void-black/40">{count}</span>}
+                {count > 0 && <span className="text-caption text-void-black/40">{count}</span>}
               </button>
             );
           })}
@@ -90,6 +104,7 @@ export function InspectorPanel(p: Props) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {p.tab === "live" && <LiveTab {...p.live} />}
         {p.tab === "notes" && <NotesTab {...p} />}
         {p.tab === "measure" && <MeasureTab {...p} />}
         {p.tab === "details" && <DetailsTab {...p} />}

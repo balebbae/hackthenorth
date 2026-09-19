@@ -23,6 +23,22 @@ export type EngineEvent =
 
 export type ViewerSelection = { kind: "node" | "note"; id: string };
 
+/**
+ * Where the phone was when it sent a VPS image query, in the world frame,
+ * plus the image itself so it can be drawn on the frustum's far plane.
+ */
+export type LocalizationMarker = {
+  /** Camera position (metres) and rotation (xyzw) — ARKit camera convention: −Z forward, +Y up, +X right. */
+  position: Vec3;
+  rotation: [number, number, number, number];
+  imageUrl: string | null;
+  /** portrait: image up = camera −X, image right = camera +Y. */
+  orientation: "portrait" | "landscape";
+  fovDeg: { horizontal: number; vertical: number };
+  /** ok = precise fix; anything else draws the marker dimmed. */
+  tone: "ok" | "warn" | "bad";
+};
+
 export type EngineOptions = {
   /** Fills this element with the canvas; it is also the keyboard focus target for walk mode. */
   container: HTMLElement;
@@ -57,6 +73,12 @@ const HOVER_THROTTLE_MS = 70;
 const X_FLIP = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
 const ORBIT_DIRECTION = new THREE.Vector3(0.65, 0.55, 0.85).normalize();
 const UP = new THREE.Vector3(0, 1, 0);
+/** Distance from the phone to the drawn image plane, and the size of the phone dot. */
+const FRUSTUM_DEPTH = 0.6;
+const PHONE_RADIUS = 0.06;
+const TRAIL_RADIUS = 0.035;
+/** Portrait phone: the three.js camera's +Y (up) must map to the device's −X (image up). */
+const PORTRAIT_ROLL = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
 
 const LABEL_CLASS =
   "absolute left-0 top-0 whitespace-nowrap rounded-full border border-hairline bg-pure-white/95 px-2 py-0.5 text-caption font-medium text-void-black will-change-transform";
@@ -128,6 +150,26 @@ export class SplatViewerEngine {
   private readonly hoverMarker: THREE.Mesh;
   private readonly previewLine: THREE.Mesh;
 
+  /** The phone: dot at the camera, frustum edges, and the query image on the far plane. */
+  private readonly phoneGroup = new THREE.Group();
+  private readonly phoneDot: THREE.Mesh;
+  private readonly frustumLines: THREE.LineSegments;
+  private readonly frustumMaterial = new THREE.LineBasicMaterial({
+    color: WHITE,
+    transparent: true,
+    opacity: 0.95,
+    depthTest: false,
+    depthWrite: false,
+  });
+  private readonly imagePlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  private readonly trailGroup = new THREE.Group();
+  private readonly trailMaterial = overlayMaterial(SKY);
+  private readonly textureLoader = new THREE.TextureLoader();
+  private imageTexture: THREE.Texture | null = null;
+  private imageTextureUrl: string | null = null;
+  private marker: LocalizationMarker | null = null;
+  private followPhone = false;
+
   private mesh: SplatMesh | null = null;
   private nodeMeshes = new Map<string, THREE.Mesh>();
   private nodePositions = new Map<string, THREE.Vector3>();
@@ -191,6 +233,29 @@ export class SplatViewerEngine {
     this.previewLine.renderOrder = 1002;
     this.previewLine.visible = false;
     this.scene.add(this.hoverMarker, this.previewLine);
+
+    // Phone marker: geometry is rebuilt per marker (FOV / orientation), the group carries the pose.
+    this.phoneDot = new THREE.Mesh(this.sphereGeo, overlayMaterial(WHITE));
+    this.phoneDot.scale.setScalar(PHONE_RADIUS);
+    this.phoneDot.renderOrder = 1005;
+    this.frustumLines = new THREE.LineSegments(new THREE.BufferGeometry(), this.frustumMaterial);
+    this.frustumLines.renderOrder = 1004;
+    this.imagePlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({
+        color: WHITE,
+        transparent: true,
+        opacity: 0.92,
+        side: THREE.DoubleSide,
+        depthTest: false,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+    this.imagePlane.renderOrder = 1004;
+    this.phoneGroup.add(this.phoneDot, this.frustumLines, this.imagePlane);
+    this.phoneGroup.visible = false;
+    this.scene.add(this.phoneGroup, this.trailGroup);
 
     this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbit.enableDamping = true;
@@ -429,6 +494,118 @@ export class SplatViewerEngine {
     if (p) this.focusPoint(p.clone());
   }
 
+  /* ------------------------------------------------------- localization */
+
+  /**
+   * Show where the phone was for a VPS image query (or hide the marker). The
+   * frustum is rebuilt from the image's FOV; the JPEG is textured onto its far
+   * plane so the query can be compared with the splat behind it.
+   */
+  setLocalization(marker: LocalizationMarker | null) {
+    this.marker = marker;
+    this.phoneGroup.visible = !!marker;
+    if (!marker) return;
+
+    this.phoneGroup.position.set(...marker.position);
+    this.phoneGroup.quaternion.set(...marker.rotation).normalize();
+
+    // Image axes in camera space (ARKit: −Z forward). Portrait phones hold the
+    // landscape sensor rotated 90° CW, so image-up is the camera's −X.
+    const portrait = marker.orientation === "portrait";
+    const right = portrait ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const up = portrait ? new THREE.Vector3(-1, 0, 0) : new THREE.Vector3(0, 1, 0);
+    const halfW = FRUSTUM_DEPTH * Math.tan(THREE.MathUtils.degToRad(clampFov(marker.fovDeg.horizontal)) / 2);
+    const halfH = FRUSTUM_DEPTH * Math.tan(THREE.MathUtils.degToRad(clampFov(marker.fovDeg.vertical)) / 2);
+    const centre = new THREE.Vector3(0, 0, -FRUSTUM_DEPTH);
+    const corner = (sx: number, sy: number) =>
+      centre.clone().addScaledVector(right, sx * halfW).addScaledVector(up, sy * halfH);
+    const c = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)];
+    const origin = new THREE.Vector3();
+    const segments: THREE.Vector3[] = [];
+    for (let i = 0; i < 4; i++) segments.push(origin, c[i], c[i], c[(i + 1) % 4]);
+    // A short tick on the top edge so the image's "up" is readable even without the texture.
+    segments.push(corner(0, 1), corner(0, 1).addScaledVector(up, halfH * 0.25));
+    this.frustumLines.geometry.dispose();
+    this.frustumLines.geometry = new THREE.BufferGeometry().setFromPoints(segments);
+
+    this.imagePlane.geometry.dispose();
+    this.imagePlane.geometry = new THREE.PlaneGeometry(halfW * 2, halfH * 2);
+    this.imagePlane.position.copy(centre);
+    // PlaneGeometry spans local X/Y facing +Z; roll it so local +X → image-right and local +Y → image-up.
+    this.imagePlane.quaternion.copy(portrait ? PORTRAIT_ROLL : new THREE.Quaternion());
+
+    const dim = marker.tone === "ok" ? 1 : 0.45;
+    this.frustumMaterial.opacity = 0.95 * dim;
+    (this.phoneDot.material as THREE.MeshBasicMaterial).opacity = 0.95 * dim;
+    this.imagePlane.material.opacity = 0.92 * dim;
+    this.loadImage(marker.imageUrl);
+  }
+
+  /** Recent phone positions (world frame, newest first) drawn as a thin trail. */
+  setLocalizationTrail(points: Vec3[]) {
+    this.clearGroup(this.trailGroup);
+    const list = points.map((p) => new THREE.Vector3(...p));
+    for (const p of list) {
+      const s = new THREE.Mesh(this.sphereGeo, this.trailMaterial);
+      s.scale.setScalar(TRAIL_RADIUS);
+      s.position.copy(p);
+      s.renderOrder = 1001;
+      this.trailGroup.add(s);
+    }
+    for (let i = 1; i < list.length; i++) {
+      if (list[i - 1].distanceTo(list[i]) > 0.02) this.trailGroup.add(this.tube(list[i - 1], list[i], 0.008, this.trailMaterial, 1000));
+    }
+  }
+
+  /** Keep the orbit pivot glued to the phone as new fixes arrive. */
+  setFollowPhone(on: boolean) {
+    this.followPhone = on;
+    if (on && this.marker) this.focusPhone();
+  }
+
+  /** Fly the orbit camera to look at the phone from a few metres away. */
+  focusPhone() {
+    if (!this.marker) return;
+    if (this.mode === "walk") this.setMode("orbit");
+    this.focusPoint(new THREE.Vector3(...this.marker.position));
+  }
+
+  /**
+   * Put the viewer camera exactly where the phone was, looking the way it
+   * looked, so the splat can be compared against the query image side by side.
+   */
+  viewFromPhone() {
+    if (!this.marker) return;
+    this.followPhone = false;
+    this.setMode("walk");
+    this.camera.position.set(...this.marker.position);
+    this.camera.quaternion.set(...this.marker.rotation).normalize();
+    if (this.marker.orientation === "portrait") this.camera.quaternion.multiply(PORTRAIT_ROLL);
+    this.keys.syncFromCamera();
+  }
+
+  private loadImage(url: string | null) {
+    if (url === this.imageTextureUrl) return;
+    this.imageTextureUrl = url;
+    this.imageTexture?.dispose();
+    this.imageTexture = null;
+    this.imagePlane.material.map = null;
+    this.imagePlane.material.needsUpdate = true;
+    if (!url) return;
+    this.textureLoader.load(url, (texture) => {
+      if (this.disposed || this.imageTextureUrl !== url) {
+        texture.dispose();
+        return;
+      }
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
+      this.imageTexture = texture;
+      this.imagePlane.material.map = texture;
+      this.imagePlane.material.needsUpdate = true;
+    });
+  }
+
   private focusPoint(target: THREE.Vector3) {
     if (this.mode === "walk") {
       this.camera.position.set(target.x, target.y + EYE_HEIGHT - 0.2, target.z);
@@ -463,8 +640,15 @@ export class SplatViewerEngine {
     this.spark.dispose();
     this.clearGroup(this.graphGroup);
     this.clearGroup(this.measureGroup);
-    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.measureMaterial, this.pendingMaterial])
+    this.clearGroup(this.trailGroup);
+    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.measureMaterial, this.pendingMaterial, this.trailMaterial])
       m.dispose();
+    this.imageTexture?.dispose();
+    this.imagePlane.geometry.dispose();
+    this.imagePlane.material.dispose();
+    this.frustumLines.geometry.dispose();
+    this.frustumMaterial.dispose();
+    (this.phoneDot.material as THREE.Material).dispose();
     this.sphereGeo.dispose();
     this.selectionRing.geometry.dispose();
     (this.selectionRing.material as THREE.Material).dispose();
@@ -716,9 +900,21 @@ export class SplatViewerEngine {
     const dt = this.lastTime ? (time - this.lastTime) / 1000 : 0;
     this.lastTime = time;
     if (this.keys.hasInput) this.applyMotion(dt);
+    if (this.followPhone && this.marker && this.mode === "orbit") this.glideToPhone(dt);
     if (this.mode === "orbit") this.orbit.update();
     this.renderer.render(this.scene, this.camera);
     this.updateLabels();
+  }
+
+  /** Ease the orbit pivot (and camera, keeping its offset) onto the phone's latest position. */
+  private glideToPhone(dt: number) {
+    const target = this.phoneGroup.position;
+    const delta = target.clone().sub(this.orbit.target);
+    if (delta.lengthSq() < 1e-6) return;
+    const t = 1 - Math.exp(-Math.min(dt, 0.1) * 6);
+    delta.multiplyScalar(t);
+    this.orbit.target.add(delta);
+    this.camera.position.add(delta);
   }
 
   /** Apply held keys: WASD moves, Q/E (R/F, Space/C) change height, arrows turn, Shift hurries. */
@@ -788,6 +984,11 @@ function overlayMaterial(color: number): THREE.MeshBasicMaterial {
 export function formatMetres(m: number): string {
   if (m < 1) return `${Math.round(m * 100)} cm`;
   return `${m.toFixed(m < 10 ? 2 : 1)} m`;
+}
+
+/** Keep a reported FOV drawable even if the phone sent something odd. */
+function clampFov(deg: number): number {
+  return Number.isFinite(deg) && deg > 5 && deg < 150 ? deg : 60;
 }
 
 /**

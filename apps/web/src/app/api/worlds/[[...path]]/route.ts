@@ -1,6 +1,7 @@
 import { parseGraph, parseMeasurements, parseNotes } from "@/lib/world-manifest";
 import {
   createWorld,
+  getLocalizations,
   getMeasurements,
   getNotes,
   getWorld,
@@ -8,6 +9,7 @@ import {
   listWorlds,
   openAsset,
   patchWorld,
+  postLocalizationQuery,
   saveGraph,
   saveMeasurements,
   saveNotes,
@@ -26,10 +28,12 @@ import {
  *   PATCH /api/worlds/:id                     → WorldManifest (partial update, e.g. switch version)
  *   GET   /api/worlds/:id/notes               → { notes }
  *   GET   /api/worlds/:id/measurements        → { measurements }
+ *   GET   /api/worlds/:id/localizations?limit → { schema, worldId, queries: LocalizationQuery[] } (newest first; polled by the viewer)
+ *   POST  /api/worlds/:id/localize/query      → LocalizationQuery (phone upload of one VPS image query; stored locally without a backend)
  *   PUT   /api/worlds/:id/graph               → WorldManifest (body: NavigationGraph)
  *   PUT   /api/worlds/:id/notes               → NotesFile (body: { notes })
  *   PUT   /api/worlds/:id/measurements        → MeasurementsFile (body: { measurements })
- *   GET   /api/worlds/:id/:version/:file      → streamed asset bytes (e.g. scene.spz)
+ *   GET   /api/worlds/:id/:version/:file      → streamed asset bytes (e.g. scene.spz, localizations/<queryId>.jpg)
  *   PUT   /api/worlds/:id/:version/:file      → { path, bytes } (streamed upload; 409 if the file exists)
  *
  * The browser only ever talks to this route; `WANDER_API_URL` and the API key
@@ -40,7 +44,7 @@ export const dynamic = "force-dynamic";
 const NO_STORE = { "cache-control": "no-store" };
 const RESOURCES = new Set(["notes", "measurements", "graph"]);
 
-export async function GET(_req: Request, ctx: RouteContext<"/api/worlds/[[...path]]">) {
+export async function GET(req: Request, ctx: RouteContext<"/api/worlds/[[...path]]">) {
   const { path = [] } = await ctx.params;
   if (path.some((s) => !isSafeSegment(s))) return Response.json({ error: "Invalid path" }, { status: 400 });
 
@@ -58,6 +62,11 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/worlds/[[...pat
     if (path.length === 2 && path[1] === "measurements") {
       return Response.json({ measurements: await getMeasurements(path[0]) }, { headers: NO_STORE });
     }
+    if (path.length === 2 && path[1] === "localizations") {
+      const limit = Number(new URL(req.url).searchParams.get("limit") ?? 20) || 20;
+      const queries = await getLocalizations(path[0], limit);
+      return Response.json({ schema: "wander.localizations/v1", worldId: path[0], queries }, { headers: NO_STORE });
+    }
     const asset = await openAsset(path);
     return asset ?? Response.json({ error: "Asset not found" }, { status: 404 });
   } catch (err) {
@@ -65,9 +74,27 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/worlds/[[...pat
   }
 }
 
-/** Create a world manifest (draft). The splat is uploaded separately with PUT. */
+/**
+ * `POST /api/worlds` creates a world manifest (draft; the splat is uploaded separately with PUT).
+ * `POST /api/worlds/:id/localize/query` stores one VPS image query from the phone.
+ */
 export async function POST(req: Request, ctx: RouteContext<"/api/worlds/[[...path]]">) {
   const { path = [] } = await ctx.params;
+  if (path.some((s) => !isSafeSegment(s))) return Response.json({ error: "Invalid path" }, { status: 400 });
+
+  if (path.length === 3 && path[1] === "localize" && path[2] === "query") {
+    const body = await readJson(req);
+    if (!isObject(body)) return Response.json({ error: "Body must be a JSON object" }, { status: 400 });
+    try {
+      const record = await postLocalizationQuery(path[0], body);
+      return record
+        ? Response.json(record, { status: 201, headers: NO_STORE })
+        : Response.json({ error: "World not found" }, { status: 404 });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
   if (path.length !== 0) return Response.json({ error: "Not found" }, { status: 404 });
   const body = await readJson(req);
   if (!isObject(body) || typeof body.id !== "string" || typeof body.name !== "string")

@@ -1,10 +1,21 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
+import {
+  LOCALIZATION_QUERY_SCHEMA,
+  LOCALIZATIONS_KEPT,
+  LOCALIZATIONS_SCHEMA,
+  parseQueries,
+  validateQueryUpload,
+  type LocalizationQueries,
+  type LocalizationQuery,
+  type LocalizationQueryUpload,
+} from "./localization";
 import {
   IDENTITY_ALIGNMENT,
   MEASUREMENTS_SCHEMA,
@@ -57,6 +68,13 @@ const ASSETS_DIR = resolve(
 const SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export const worldsSource = API_URL ? ("api" as const) : ("local" as const);
+
+/**
+ * Base URL the phone should post to, for the connect QR code. The API URL is
+ * public (every request still needs the key, which never leaves the server);
+ * null in local mode, where the viewer offers its own origin + /api instead.
+ */
+export const phoneBackendUrl: string | null = API_URL ?? null;
 
 /** Reject anything that could escape `worlds/` (dotfiles, `..`, separators). */
 export function isSafeSegment(s: string): boolean {
@@ -281,6 +299,98 @@ export async function saveNotes(id: string, notes: WorldNote[]): Promise<NotesFi
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, "notes.json"), `${JSON.stringify(file, null, 2)}\n`);
   return file;
+}
+
+/* ------------------------------------------------------------ localizations */
+
+/**
+ * Recent VPS image queries for a world, newest first (`localizations/index.json`).
+ * Images are plain versioned assets: `openAsset([id, "localizations", "<queryId>.jpg"])`.
+ */
+export async function getLocalizations(id: string, limit = 20): Promise<LocalizationQuery[]> {
+  if (!isSafeSegment(id)) return [];
+  const n = Math.max(1, Math.min(limit, LOCALIZATIONS_KEPT));
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/localizations?limit=${n}`, {
+      headers: apiHeaders(),
+      cache: "no-store",
+    });
+    if (res.status === 404) return [];
+    if (!res.ok) throw await apiError(res);
+    return parseQueries(await res.json());
+  }
+  return (await readLocalLocalizations(id)).queries.slice(0, n);
+}
+
+/**
+ * Store one image query. With a backend the body is forwarded untouched; in
+ * local mode the JPEG lands in `maps/assets/worlds/<id>/localizations/` and the
+ * record is prepended to `index.json`, so a phone pointed at the dev server
+ * works without Modal (graph snapping is skipped locally).
+ */
+export async function postLocalizationQuery(id: string, upload: unknown): Promise<LocalizationQuery | null> {
+  if (!isSafeSegment(id)) return null;
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/localize/query`, {
+      method: "POST",
+      headers: { ...apiHeaders(), "content-type": "application/json" },
+      body: JSON.stringify(upload),
+      cache: "no-store",
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw await apiError(res);
+    return (await res.json()) as LocalizationQuery;
+  }
+
+  const errs = validateQueryUpload(upload);
+  if (errs.length) throw new WorldsApiError(400, `Invalid query: ${errs.join("; ")}`);
+  const body = upload as LocalizationQueryUpload;
+  const manifest = await readLocalManifest(id);
+  if (!manifest) return null;
+  if (!manifest.nianticSiteId || manifest.nianticSiteId !== body.nianticSiteId)
+    throw new WorldsApiError(409, "Niantic site mismatch");
+  const image = Buffer.from(body.imageBase64, "base64");
+  if (image.length > 2 * 1024 * 1024) throw new WorldsApiError(413, "Query image exceeds 2 MiB");
+  if (image[0] !== 0xff || image[1] !== 0xd8 || image[2] !== 0xff) throw new WorldsApiError(400, "Query image must be a JPEG");
+
+  const queryId = `q-${randomUUID().replace(/-/g, "")}`;
+  const { imageBase64: _drop, ...rest } = body;
+  void _drop;
+  const record: LocalizationQuery = {
+    schema: LOCALIZATION_QUERY_SCHEMA,
+    id: queryId,
+    worldId: id,
+    ...rest,
+    receivedAt: new Date().toISOString(),
+    image: { ...body.image, path: `worlds/${id}/localizations/${queryId}.jpg` },
+  };
+  const dir = join(ASSETS_DIR, "worlds", id, "localizations");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, `${queryId}.jpg`), image);
+  const index = await readLocalLocalizations(id);
+  const kept = index.queries.slice(0, LOCALIZATIONS_KEPT - 1);
+  await Promise.all(
+    index.queries.slice(LOCALIZATIONS_KEPT - 1).map((old) => rm(join(dir, `${old.id}.jpg`), { force: true })),
+  );
+  const next: LocalizationQueries = {
+    schema: LOCALIZATIONS_SCHEMA,
+    worldId: id,
+    queries: [record, ...kept],
+    updatedAt: record.receivedAt,
+  };
+  await writeFile(join(dir, "index.json"), `${JSON.stringify(next)}\n`);
+  return record;
+}
+
+async function readLocalLocalizations(id: string): Promise<LocalizationQueries> {
+  const empty: LocalizationQueries = { schema: LOCALIZATIONS_SCHEMA, worldId: id, queries: [] };
+  try {
+    const raw = await readFile(join(ASSETS_DIR, "worlds", id, "localizations", "index.json"), "utf8");
+    const parsed = JSON.parse(raw) as Partial<LocalizationQueries>;
+    return { ...empty, queries: parseQueries(parsed.queries ?? []), updatedAt: parsed.updatedAt };
+  } catch {
+    return empty;
+  }
 }
 
 /* ------------------------------------------------------------ create / upload */
