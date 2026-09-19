@@ -17,6 +17,7 @@ the phone does:
 | `Features/Settings` | `CameraSettings`, the one ARKit configuration and capture settings shared by every consumer, plus its form |
 | `Features/Front` | `FrontPipeline` wiring and the front screen |
 | `Features/Connect` | `WorldConnectLink` (`wander://connect` parser) and the QR scanner sheet that configures the phone for a world |
+| `Features/Notes` | `WorldNotesStore` + `NoteGeometry` (notes ranked against the pose), the list sheet and the camera overlay |
 | `Features/Haptic` | Side and back phone screen |
 | `Services/AR` | `ARSessionController`, the single ARKit session |
 | `Services/Niantic` | `NianticLocalizer` (NSDK session + VPS2 anchor tracking) and `LocalizationQueryTracker` (pairs the SDK's image queries with the frames it sent) |
@@ -80,6 +81,28 @@ together with the SDK record and the device pose at capture time in the site fra
 Image queries) so the dashboard can show what the phone saw when it did not localize. The
 web viewer polls `GET /worlds/{id}/localizations` and draws the pose as a camera frustum on
 the splat with the query image on its far plane.
+
+### Notes pinned in the web viewer
+
+Notes placed on the scan in the web viewer (`worlds/<id>/notes.json`, contract
+`shared/contracts/notes.schema.json`) are read back on the phone through
+`GET /worlds/{id}/notes`. `WorldNotesStore` fetches them as soon as the world is
+known — loading never waits on localization, so the notes can be read before
+reaching the building — and re-ranks them against the pose about ten times a
+second. `NoteGeometry.bearings` turns each note into a distance, a signed bearing
+(negative left, positive right, flattened onto the horizontal plane so tilting the
+phone does not change "left") and a height delta; the store speaks the nearest one
+when the wearer comes within 5 m and re-arms it only past 8 m, so standing beside a
+note does not repeat it.
+
+Two surfaces show them. **Notes › Open notes** on the front screen lists them
+nearest-first with distance and direction, and works with no fix at all. The
+camera card additionally draws labels over the live feed (`NoteOverlay`),
+projecting each note back through the VPS anchor with `ARCamera.projectPoint`.
+The overlay appears **only while the anchor is `tracked`**: per the NSDK docs a
+`limited` anchor is a coarse GPS estimate, so pinning labels to the world with one
+would place them tens of metres from what they describe. The card's pill says
+which of the two you are getting — "On camera" or "List only".
 
 ### Connecting to a world by QR code
 

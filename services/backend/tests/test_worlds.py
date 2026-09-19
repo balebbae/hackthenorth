@@ -66,6 +66,23 @@ def test_graph_measurements_and_immutable_assets(client, world):
     assert updated.json()['assets']['splat'].endswith('/v2/scene.spz')
 
 
+def test_notes_round_trip(client, world):
+    url = '/worlds/demo-building/notes'
+    assert client.get(url).json()['notes'] == []
+    notes = {'schema': 'wander.notes/v1', 'worldId': 'demo-building', 'notes': [
+        {'id': 'n1', 'title': 'Broken handrail', 'location': 'Stairwell B',
+         'position': [1, 0, -2], 'createdAt': '2026-09-19T12:00:00Z'}]}
+    assert client.put(url, json=notes).status_code == 200
+    stored = client.get(url).json()
+    check(stored, 'notes.schema.json')
+    assert stored['notes'][0]['title'] == 'Broken handrail' and stored['updatedAt']
+    # worldId must match the path, and the payload must satisfy the contract.
+    assert client.put(url, json={**notes, 'worldId': 'other'}).status_code == 400
+    assert client.put(url, json={'schema': 'wander.notes/v1', 'worldId': 'demo-building',
+                                 'notes': [{'title': 'no id'}]}).status_code == 400
+    assert client.get('/worlds/missing/notes').status_code == 404
+
+
 def test_weighted_directed_routing_and_heading(world):
     world['navigationGraph'] = {'nodes': [
         {'id': 'a', 'position': [0,0,0]}, {'id': 'b', 'position': [0,0,-10]},

@@ -19,9 +19,18 @@ final class FrontPipeline: ObservableObject {
     let haptics = HapticController()
     let localizer = NianticLocalizer()
     let reporter = LocalizationReporter()
+    let notes = WorldNotesStore()
     @Published private(set) var usingNSDK = false
+    /// Notes projected into the camera preview; empty unless the anchor is tracked.
+    @Published private(set) var notePins: [NotePin] = []
+    /// Size of the preview the overlay draws into, reported by `NoteOverlay`.
+    var overlaySize: CGSize = .zero
     private var lastReportedFix: LocalizationFix?
     private var lastCameraTransform = matrix_identity_float4x4
+    private var lastNoteUpdate: TimeInterval = 0
+    /// Ranking and projecting notes is cheap but pointless at frame rate.
+    private let noteInterval: TimeInterval = 1.0 / 10
+    private var settings: CameraSettings?
     private var lastSentHaptics: HapticCommand?
     private var lastHapticSend: TimeInterval = 0
     private var statusTask: Task<Void, Never>?
@@ -89,6 +98,7 @@ final class FrontPipeline: ObservableObject {
                       speech.objectWillChange.eraseToAnyPublisher(),
                       link.objectWillChange.eraseToAnyPublisher(),
                       localizer.objectWillChange.eraseToAnyPublisher(),
+                      notes.objectWillChange.eraseToAnyPublisher(),
                       reporter.objectWillChange.eraseToAnyPublisher()] {
             child.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &forwarding)
         }
@@ -96,8 +106,10 @@ final class FrontPipeline: ObservableObject {
 
     func start(settings: CameraSettings, deviceId: String = "") {
         detector.maxRange = Float(settings.obstacleRangeMeters)
+        self.settings = settings
         arSession.start(settings: settings)
         reporter.configure(settings: settings, deviceId: deviceId, role: .front)
+        loadNotes()
         usingNSDK = settings.canLocalizeWithNSDK && NianticLocalizer.isAvailable && arSession.state == .running
         if usingNSDK {
             // The SDK submits frames itself at the configured rate; the REST loop stays off.
@@ -135,13 +147,17 @@ final class FrontPipeline: ObservableObject {
         arSession.stop()
         link.stop()
         speech.stop()
+        notePins = []   // the list stays readable with the camera stopped; the overlay cannot
         isActive = false
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
     func applySettings(_ settings: CameraSettings) {
+        let worldChanged = settings.worldId != self.settings?.worldId
+        self.settings = settings
         detector.maxRange = Float(settings.obstacleRangeMeters)
         queryLoop.reconfigure(settings: settings)
+        if worldChanged { loadNotes() }
         if isActive, arSession.state == .running {
             arSession.stop()
             arSession.start(settings: settings)
@@ -161,6 +177,9 @@ final class FrontPipeline: ObservableObject {
                 }
             }
         }
+        // Ahead of the depth guard: notes must keep updating on phones without
+        // LiDAR, and between the detector's slower ticks.
+        updateNotes(frame: frame)
         guard frame.timestamp - lastDetection >= detectionInterval, let depth = frame.depthMap else { return }
         lastDetection = frame.timestamp
         zones = detector.analyze(depthMap: depth)
@@ -177,5 +196,69 @@ final class FrontPipeline: ObservableObject {
             lastSentHaptics = decision.haptics
             lastHapticSend = now
         }
+    }
+
+    /* ------------------------------------------------------------- notes */
+
+    /// True while the VPS anchor is tracked against the map, which is the only
+    /// state where a note's distance or on-screen position means anything. A
+    /// `limited` anchor is a coarse GPS estimate (see the NSDK docs on anchor
+    /// tracking states), so it deliberately does not count.
+    var notesLocalized: Bool { localizer.latestFix?.state == .localized }
+
+    /// Pull the world's notes from the backend. Safe to call repeatedly; the
+    /// store cancels any fetch still in flight.
+    func loadNotes() {
+        guard let settings, let base = settings.backendBaseURL, !settings.backendAPIKey.isEmpty else {
+            notes.reset()
+            return
+        }
+        let client = WanderBackendClient(baseURL: base, apiKey: settings.backendAPIKey)
+        notes.load(client: client, worldId: reporter.worldId ?? settings.worldId)
+    }
+
+    private func updateNotes(frame: FrameSnapshot) {
+        guard !notes.isEmpty else {
+            if !notePins.isEmpty { notePins = [] }
+            return
+        }
+        guard frame.timestamp - lastNoteUpdate >= noteInterval else { return }
+        lastNoteUpdate = frame.timestamp
+
+        guard notesLocalized, let fix = localizer.latestFix else {
+            notes.update(pose: nil)
+            if !notePins.isEmpty { notePins = [] }
+            return
+        }
+        // Where the phone is now, not where it was at the last fix.
+        let pose = SitePose.deviceInAnchorFrame(anchor: fix.anchorTransform, device: frame.cameraTransform)
+        for due in notes.update(pose: pose) {
+            speech.speak(SpokenCue(text: due.spokenCue, priority: .route))
+        }
+        notePins = projectNotes(anchor: fix.anchorTransform)
+    }
+
+    /// Project each note into the camera preview. Site-frame positions go back
+    /// into ARKit space through the anchor, then through ARKit's own projection
+    /// so the labels line up with the aspect-filled preview.
+    private func projectNotes(anchor: simd_float4x4) -> [NotePin] {
+        guard overlaySize.width > 1, overlaySize.height > 1,
+              let camera = arSession.session.currentFrame?.camera else { return [] }
+        let view = camera.viewMatrix(for: .portrait)
+        var pins: [NotePin] = []
+        for bearing in notes.bearings {
+            let p = bearing.note.point
+            let world = anchor * SIMD4<Float>(p.x, p.y, p.z, 1)
+            let inCamera = view * world
+            // ARKit projects points behind the camera too; drop those and anything
+            // practically on the lens.
+            guard inCamera.z < -0.25 else { continue }
+            let point = camera.projectPoint(SIMD3<Float>(world.x, world.y, world.z),
+                                            orientation: .portrait, viewportSize: overlaySize)
+            guard point.x.isFinite, point.y.isFinite else { continue }
+            pins.append(NotePin(id: bearing.note.id, title: bearing.note.title,
+                                distance: bearing.distance, point: point))
+        }
+        return pins
     }
 }
