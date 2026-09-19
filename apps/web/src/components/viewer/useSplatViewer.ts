@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Alignment, Measurement, NavigationGraph, Vec3, WorldNote } from "@/lib/world-manifest";
 import type {
   EngineEvent,
+  FollowMode,
   LoadStatus,
   LocalizationMarker,
   SplatViewerEngine,
@@ -33,8 +34,6 @@ export type ViewerApi = {
   focusNote: (id: string) => void;
   /** Orbit the camera around the phone marker. */
   focusPhone: () => void;
-  /** Walk mode with the camera placed exactly at the phone's pose. */
-  viewFromPhone: () => void;
   retry: () => void;
 };
 
@@ -60,7 +59,10 @@ type Options = {
   localization: LocalizationMarker | null;
   /** Recent localized positions, newest first. */
   localizationTrail: Vec3[];
-  followPhone: boolean;
+  /** How the camera rides along with the phone on the Live tab. */
+  followMode: FollowMode;
+  /** The engine hands the camera back (drag / wheel / WASD) by reporting "off" here. */
+  onFollowModeChange: (mode: FollowMode) => void;
   onPick: PickHandler;
 };
 
@@ -91,7 +93,8 @@ export function useSplatViewer({
   pendingPoint,
   localization,
   localizationTrail,
-  followPhone,
+  followMode,
+  onFollowModeChange,
   onPick,
 }: Options) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -104,10 +107,17 @@ export function useSplatViewer({
   // so a router refresh doesn't tear down the renderer and re-download the splat.
   const alignmentKey = useMemo(() => JSON.stringify(alignment ?? null), [alignment]);
   // Latest UI toggles / callbacks, read by the engine when it (re)mounts and by event handlers.
-  const latest = useRef({ mode: INITIAL.mode, tool: INITIAL.tool, showGraph: INITIAL.showGraph, onPick });
+  const latest = useRef({
+    mode: INITIAL.mode,
+    tool: INITIAL.tool,
+    showGraph: INITIAL.showGraph,
+    onPick,
+    onFollowModeChange,
+  });
   useEffect(() => {
     latest.current.onPick = onPick;
-  }, [onPick]);
+    latest.current.onFollowModeChange = onFollowModeChange;
+  }, [onPick, onFollowModeChange]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -126,6 +136,8 @@ export function useSplatViewer({
           return setState((s) => ({ ...s, progress: { loaded: e.loaded, total: e.total } }));
         case "loaded":
           return setState((s) => ({ ...s, numSplats: e.numSplats }));
+        case "follow":
+          return latest.current.onFollowModeChange(e.mode);
         default:
           return latest.current.onPick(e);
       }
@@ -189,8 +201,10 @@ export function useSplatViewer({
     engineRef.current?.setLocalizationTrail(localizationTrail);
   }, [localizationTrail, engineReady]);
   useEffect(() => {
-    engineRef.current?.setFollowPhone(followPhone);
-  }, [followPhone, engineReady]);
+    engineRef.current?.setFollowMode(followMode);
+    // Following picks the camera mode itself; remember it for the next engine mount.
+    if (followMode !== "off") latest.current.mode = followMode === "firstPerson" ? "walk" : "orbit";
+  }, [followMode, engineReady]);
 
   const api = useMemo<ViewerApi>(
     () => ({
@@ -221,11 +235,6 @@ export function useSplatViewer({
         engineRef.current?.focusPhone();
         setState((s) => ({ ...s, mode: "orbit" }));
       },
-      viewFromPhone: () => {
-        latest.current.mode = "walk";
-        engineRef.current?.viewFromPhone();
-        setState((s) => ({ ...s, mode: "walk" }));
-      },
       retry: () => setAttempt((n) => n + 1),
     }),
     [],
@@ -233,5 +242,13 @@ export function useSplatViewer({
 
   const focusViewer = useCallback(() => containerRef.current?.focus({ preventScroll: true }), []);
 
-  return { containerRef, state, api, focusViewer };
+  // Chase orbits and first person walks, so the toolbar's Orbit/Walk toggle
+  // reads the follow mode rather than lagging a render behind it.
+  const view = useMemo<ViewerState>(() => {
+    if (followMode === "off") return state;
+    const mode = followMode === "firstPerson" ? "walk" : "orbit";
+    return state.mode === mode ? state : { ...state, mode };
+  }, [state, followMode]);
+
+  return { containerRef, state: view, api, focusViewer };
 }

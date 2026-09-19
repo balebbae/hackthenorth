@@ -23,13 +23,16 @@
 		4AC83AFE2BC36C46A10EE34D /* LocalizationQueryLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */; };
 		4CEF0C858E11D397B516D8E3 /* FrameEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */; };
 		4D51FDD4A783570BDF469EC8 /* FrontRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */; };
+		59DCC2E9D99905A2F164BDEB /* NoteOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09264DD19AF25B1A18A7D60 /* NoteOverlay.swift */; };
 		607EDDCA336D837FE6B76BD7 /* WanderBackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D87002D9631557521D63F0 /* WanderBackendClient.swift */; };
 		62A8D7AC7B86C3105211C7AD /* CameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */; };
+		63BB07191D7AA712F0F31589 /* WorldNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C51176A2E6622B7454D3D7 /* WorldNotesTests.swift */; };
 		64D8924B3F665C41D8922537 /* NSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E0ECD5DD7FA77A2E964C7AF7 /* NSDK */; };
 		665B394B19A699D68D3023AD /* PeerMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F07320DE3388D081660E2C3 /* PeerMessages.swift */; };
 		7268326D4637C3047B658226 /* RolePickerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F147AA26272D381D984C0 /* RolePickerUITests.swift */; };
 		75BB4A869C174F9EE83B250B /* LocalizationQueryTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25087AD0047A340FFE8DD15 /* LocalizationQueryTracker.swift */; };
 		7A447A2FE2C2B096B5F10056 /* NSDK in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E0ECD5DD7FA77A2E964C7AF7 /* NSDK */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7C8C710E59104B1A07B90D28 /* WorldNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E4553CA87BD55E6AEDDC92 /* WorldNotesView.swift */; };
 		7EACE619A6DD903864ECD99F /* HapticRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */; };
 		804402BDCFE628889A056F83 /* LocalizationReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4606211F130075940BD3BE2D /* LocalizationReporter.swift */; };
 		8B32FB82EBB1FEFD4EE4B8CF /* NianticLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC5B9010AED820AFDE4E03A0 /* NianticLocalizer.swift */; };
@@ -40,6 +43,7 @@
 		AA63353F19109B0EBF18A8C7 /* LocalConfig.example.plist in Resources */ = {isa = PBXBuildFile; fileRef = EF1A55667C24141837B748EF /* LocalConfig.example.plist */; };
 		AB00AEB7C13277269E469307 /* ObstacleDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */; };
 		B178CB8364E56EB2900F3123 /* PeerLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5092E4209F07998A1CE54A /* PeerLink.swift */; };
+		B7E65E59BA0CE8DBE14C70A8 /* WorldNotes.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFE9B2E868CA61D86A0DCD42 /* WorldNotes.swift */; };
 		BAF315B91597804E7CCD951C /* FrontPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73228F8110F3A379A989BA31 /* FrontPipeline.swift */; };
 		BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */; };
 		CDBDE6DA591478F0C50C23F3 /* ARSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031568815C5D0030A5C5CE41 /* ARSessionController.swift */; };
@@ -111,6 +115,7 @@
 		89D87002D9631557521D63F0 /* WanderBackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WanderBackendClient.swift; sourceTree = "<group>"; };
 		8F986D58B840F2AEC8BA69CC /* ObstacleCuePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleCuePolicy.swift; sourceTree = "<group>"; };
 		97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticRoleView.swift; sourceTree = "<group>"; };
+		98C51176A2E6622B7454D3D7 /* WorldNotesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldNotesTests.swift; sourceTree = "<group>"; };
 		9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationAssistantApp.swift; sourceTree = "<group>"; };
 		9B102DBDF9D441F5AB16955F /* RolePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerView.swift; sourceTree = "<group>"; };
 		A08F147AA26272D381D984C0 /* RolePickerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerUITests.swift; sourceTree = "<group>"; };
@@ -120,10 +125,12 @@
 		AD18387F5398887762E92DFA /* SidePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidePipeline.swift; sourceTree = "<group>"; };
 		B15A27278F3DD2A7D562BD0C /* LocalizationTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTransport.swift; sourceTree = "<group>"; };
 		B16C4873BEFA2E4085DA4132 /* ConnectWorldSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectWorldSheet.swift; sourceTree = "<group>"; };
+		C09264DD19AF25B1A18A7D60 /* NoteOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteOverlay.swift; sourceTree = "<group>"; };
 		C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationQueryLoopTests.swift; sourceTree = "<group>"; };
 		CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetector.swift; sourceTree = "<group>"; };
 		CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettingsView.swift; sourceTree = "<group>"; };
 		CD63F708294FDA82DA7347CD /* MapObstacleSensor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapObstacleSensor.swift; sourceTree = "<group>"; };
+		D8E4553CA87BD55E6AEDDC92 /* WorldNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldNotesView.swift; sourceTree = "<group>"; };
 		DC5B9010AED820AFDE4E03A0 /* NianticLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NianticLocalizer.swift; sourceTree = "<group>"; };
 		DDA7AF84926877DCF648BE7F /* LocalConfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = LocalConfig.plist; sourceTree = "<group>"; };
 		DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetectorTests.swift; sourceTree = "<group>"; };
@@ -132,6 +139,7 @@
 		F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NianticRESTTransportTests.swift; sourceTree = "<group>"; };
 		FCB92DC647C145228C0A590C /* StructureObstacleEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructureObstacleEstimator.swift; sourceTree = "<group>"; };
 		FF6B07030EF6C1772C97EECA /* ProximityHapticProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityHapticProfileTests.swift; sourceTree = "<group>"; };
+		FFE9B2E868CA61D86A0DCD42 /* WorldNotes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldNotes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +212,16 @@
 				C2ABE50378D51529DC343C44 /* Speech */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		6BC0BC484539EF9E48C03AC0 /* Notes */ = {
+			isa = PBXGroup;
+			children = (
+				C09264DD19AF25B1A18A7D60 /* NoteOverlay.swift */,
+				FFE9B2E868CA61D86A0DCD42 /* WorldNotes.swift */,
+				D8E4553CA87BD55E6AEDDC92 /* WorldNotesView.swift */,
+			);
+			path = Notes;
 			sourceTree = "<group>";
 		};
 		6C942BF45B44B5F3136CDF3F /* Haptic */ = {
@@ -326,6 +344,7 @@
 				AE0E3B63073386753282C477 /* Connect */,
 				20FF7B5C55F16A1990020D02 /* Front */,
 				6C942BF45B44B5F3136CDF3F /* Haptic */,
+				6BC0BC484539EF9E48C03AC0 /* Notes */,
 				22D056AB84847D34E32FF191 /* Roles */,
 				8884E04515CA5BB987FAD0EA /* Settings */,
 			);
@@ -363,6 +382,7 @@
 				781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */,
 				72CA0C84236854FB3473FB1D /* SideHapticTests.swift */,
 				5888FA0B460C342483D658D4 /* StructureObstacleEstimatorTests.swift */,
+				98C51176A2E6622B7454D3D7 /* WorldNotesTests.swift */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -502,6 +522,7 @@
 				909A791B211A73D9540814EF /* RoleAndSettingsTests.swift in Sources */,
 				0ED2EA9D54F7FBEAB3AE8587 /* SideHapticTests.swift in Sources */,
 				075C88091721733174E18F92 /* StructureObstacleEstimatorTests.swift in Sources */,
+				63BB07191D7AA712F0F31589 /* WorldNotesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -527,6 +548,7 @@
 				2FBB0D50F109EEDAFF3DA328 /* MapObstacleSensor.swift in Sources */,
 				F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */,
 				8B32FB82EBB1FEFD4EE4B8CF /* NianticLocalizer.swift in Sources */,
+				59DCC2E9D99905A2F164BDEB /* NoteOverlay.swift in Sources */,
 				2FC324B2B98E44A37AC5977C /* ObstacleCuePolicy.swift in Sources */,
 				BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */,
 				B178CB8364E56EB2900F3123 /* PeerLink.swift in Sources */,
@@ -538,6 +560,8 @@
 				940383006846C06A0122E31F /* StructureObstacleEstimator.swift in Sources */,
 				607EDDCA336D837FE6B76BD7 /* WanderBackendClient.swift in Sources */,
 				07F2EB57A28D0DF9C5025B5D /* WorldConnectLink.swift in Sources */,
+				B7E65E59BA0CE8DBE14C70A8 /* WorldNotes.swift in Sources */,
+				7C8C710E59104B1A07B90D28 /* WorldNotesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

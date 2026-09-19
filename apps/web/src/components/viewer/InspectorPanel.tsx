@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
+import { AssistantPanel } from "./AssistantPanel";
 import {
   formatSplatCount,
   graphLengthMetres,
@@ -17,7 +18,7 @@ import { LiveTab, type LiveTabProps } from "./LiveTab";
 import { formatMetres, type ViewerSelection } from "./SplatViewerEngine";
 import { PHONE_ONLINE_MS, useNow } from "./useLocalizationFeed";
 
-export type PanelTab = "live" | "notes" | "measure" | "details";
+export type PanelTab = "live" | "ask" | "notes" | "measure" | "details";
 
 export const NODE_TONE: Record<NavNodeKind, string> = {
   waypoint: "bg-wander-blue",
@@ -27,6 +28,7 @@ export const NODE_TONE: Record<NavNodeKind, string> = {
 
 const TABS: { id: PanelTab; label: string }[] = [
   { id: "live", label: "Live" },
+  { id: "ask", label: "Ask" },
   { id: "notes", label: "Notes" },
   { id: "measure", label: "Measure" },
   { id: "details", label: "Details" },
@@ -36,6 +38,7 @@ type Props = {
   tab: PanelTab;
   onTab: (t: PanelTab) => void;
   onClose: () => void;
+  worldId: string;
   /** Phone localization feed shown in the Live tab. */
   live: LiveTabProps;
   name: string;
@@ -105,6 +108,7 @@ export function InspectorPanel(p: Props) {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {p.tab === "live" && <LiveTab {...p.live} />}
+        {p.tab === "ask" && <AssistantPanel worldId={p.worldId} />}
         {p.tab === "notes" && <NotesTab {...p} />}
         {p.tab === "measure" && <MeasureTab {...p} />}
         {p.tab === "details" && <DetailsTab {...p} />}
