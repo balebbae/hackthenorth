@@ -10,6 +10,10 @@ struct CameraSettings: Codable, Equatable, Sendable {
     var sceneDepthEnabled: Bool = true
     /// Use ARKit's temporally smoothed depth instead of raw depth.
     var smoothedDepth: Bool = false
+    /// Farthest obstacle distance the detector reports, in metres. LiDAR is reliable to about 5 m.
+    var obstacleRangeMeters: Double = 5.0
+    /// Left and right phones run LiDAR and report clearance to the front phone.
+    var sidePhonesSenseObstacles: Bool = true
     /// How often the front phone snapshots a frame for Niantic, in milliseconds.
     var captureIntervalMs: Int = 200
     /// JPEG quality for uploaded frames, 0...1.
@@ -67,6 +71,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
         if captureIntervalMs < 50 { return "Capture interval must be at least 50 ms." }
         if !(0.1...1.0).contains(jpegQuality) { return "JPEG quality must be between 0.1 and 1.0." }
         if maxImageDimension < 160 { return "Image dimension must be at least 160 px." }
+        if !(1.0...5.0).contains(obstacleRangeMeters) { return "Obstacle range must be between 1 and 5 m." }
         if endpointURL == nil { return "Endpoint must be an http(s) URL." }
         return nil
     }

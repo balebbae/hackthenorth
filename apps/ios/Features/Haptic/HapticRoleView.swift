@@ -4,8 +4,15 @@ import SwiftUI
 struct HapticRoleView: View {
     let role: DeviceRole
     @EnvironmentObject private var roleStore: RoleStore
-    @StateObject private var haptics = HapticController()
+    @EnvironmentObject private var settingsStore: CameraSettingsStore
+    @StateObject private var pipeline: SidePipeline
+    private var haptics: HapticController { pipeline.haptics }
     @State private var showSettings = false
+
+    init(role: DeviceRole) {
+        self.role = role
+        _pipeline = StateObject(wrappedValue: SidePipeline(role: role))
+    }
     @State private var simulatedDistance: Float = 1.6
     @State private var simulating = false
 
@@ -51,9 +58,42 @@ struct HapticRoleView: View {
                 }
                 StatRow(label: "Buzzes", value: "\(haptics.buzzCount)")
                 StatRow(label: "Last buzz", value: haptics.lastBuzz.map { Self.time.string(from: $0) } ?? "–")
-                StatRow(label: "Link", value: "not connected")
+                StatRow(label: "Link", value: pipeline.link.connectedRoles.isEmpty ? "searching for front" : "front connected",
+                        identifier: "haptic.link")
+                StatRow(label: "Commands received", value: "\(pipeline.link.messagesReceived)")
+                StatRow(label: "Last command", value: pipeline.lastCommand.shouldBuzz(role)
+                        ? String(format: "buzz at %.1f m", pipeline.lastCommand.distance ?? 0) : "quiet")
             }
             .card(background: AppTheme.skyWash.opacity(0.35), bordered: false)
+
+            if role == .left || role == .right {
+                VStack(alignment: .leading, spacing: AppTheme.s12) {
+                    HStack {
+                        Text("Side LiDAR")
+                            .font(.system(size: 22, weight: .bold))
+                            .tracking(-0.24)
+                        Spacer()
+                        PillTag(text: sensingLabel,
+                                fill: pipeline.isSensing ? AppTheme.marigold : AppTheme.skyTint,
+                                identifier: "haptic.sensing")
+                    }
+                    Text("Reports the nearest obstacle in this phone's view to the front phone.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppTheme.graphite)
+                    HStack(spacing: AppTheme.s8) {
+                        SideZone(title: "L", distance: pipeline.zones.left)
+                        SideZone(title: "C", distance: pipeline.zones.center)
+                        SideZone(title: "R", distance: pipeline.zones.right)
+                    }
+                    StatRow(label: "Nearest", value: pipeline.zones.touching ? "touching"
+                            : pipeline.zones.closest.map { String(format: "%.2f m", $0) } ?? "clear",
+                            identifier: "haptic.nearest")
+                    StatRow(label: "Frames", value: "\(pipeline.arSession.frameCount)")
+                    StatRow(label: "Reports sent", value: "\(pipeline.reportsSent)")
+                    StatRow(label: "Sent to front", value: "\(pipeline.link.messagesSent)")
+                }
+                .card()
+            }
 
             VStack(alignment: .leading, spacing: AppTheme.s12) {
                 HStack {
@@ -102,10 +142,35 @@ struct HapticRoleView: View {
         }
         .background(AppTheme.canvas.ignoresSafeArea())
         .sheet(isPresented: $showSettings) { CameraSettingsView() }
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false
-            haptics.stopPulsing()
+        .onChange(of: settingsStore.settings) { _, new in pipeline.applySettings(new) }
+        .onAppear { pipeline.start(settings: settingsStore.settings) }
+        .onDisappear { pipeline.stop() }
+    }
+
+    private var sensingLabel: String {
+        if pipeline.isSensing { return pipeline.arSession.depthAvailable ? "Sensing · LiDAR" : "Sensing · no depth" }
+        if !ARSessionController.isSupported { return "No ARKit" }
+        if !settingsStore.settings.sidePhonesSenseObstacles { return "Off in settings" }
+        switch pipeline.arSession.state {
+        case .failed: return "Camera error"
+        case .running: return "Waiting for frames"
+        default: return "Idle"
+        }
+    }
+
+    private struct SideZone: View {
+        let title: String
+        let distance: Float?
+        var body: some View {
+            VStack(spacing: 2) {
+                Text(title).font(.system(size: 12, weight: .medium)).foregroundStyle(AppTheme.inkSecondary)
+                Text(distance.map { String(format: "%.1f", $0) } ?? "–")
+                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppTheme.s8)
+            .background(AppTheme.canvas)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.radiusButton, style: .continuous))
         }
     }
 

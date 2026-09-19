@@ -129,16 +129,26 @@ struct FrontRoleView: View {
 
     private var obstacleCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.s12) {
-            Text("Obstacles")
-                .font(.system(size: 22, weight: .bold))
-                .tracking(-0.24)
+            HStack {
+                Text("Obstacles")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.24)
+                Spacer()
+                PillTag(text: String(format: "Range %.1f m", settingsStore.settings.obstacleRangeMeters))
+            }
             HStack(spacing: AppTheme.s8) {
                 ZoneTile(title: "Left", distance: pipeline.zones.left, active: pipeline.lastDecision.haptics.left)
-                ZoneTile(title: "Center", distance: pipeline.zones.center, active: pipeline.lastDecision.haptics.back)
+                ZoneTile(title: "Center", distance: pipeline.zones.center, active: pipeline.lastDecision.haptics.front)
                 ZoneTile(title: "Right", distance: pipeline.zones.right, active: pipeline.lastDecision.haptics.right)
             }
             StatRow(label: "Clear path", value: String(format: "%+.2f", pipeline.zones.gapDirection))
+            StatRow(label: "Open side", value: pipeline.lastDecision.openSide?.rawValue ?? "–")
             StatRow(label: "Last cue", value: pipeline.speech.lastSpoken ?? "–")
+            Divider()
+            StatRow(label: "Linked phones", value: pipeline.link.connectedRoles.isEmpty ? "none" : pipeline.link.connectedRoles.map(\.rawValue).joined(separator: ", "),
+                    identifier: "front.link")
+            StatRow(label: "Left phone sees", value: sideReading(.left))
+            StatRow(label: "Right phone sees", value: sideReading(.right))
         }
         .card()
     }
@@ -160,6 +170,15 @@ struct FrontRoleView: View {
             .buttonStyle(GhostButtonStyle())
             .accessibilityIdentifier("front.testSpeech")
         }
+    }
+}
+
+extension FrontRoleView {
+    fileprivate func sideReading(_ side: DeviceRole) -> String {
+        guard let reading = pipeline.sideClearances[side] else { return "no reports" }
+        let age = Date().timeIntervalSince1970 - reading.timestamp
+        if age > 1 { return String(format: "stale %.0fs", age) }
+        return reading.nearest.map { String(format: "%.2f m", $0) } ?? "clear"
     }
 }
 
