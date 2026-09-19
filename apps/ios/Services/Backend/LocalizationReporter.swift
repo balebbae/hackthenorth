@@ -12,6 +12,13 @@ final class LocalizationReporter: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var fixesSent = 0
     @Published private(set) var posesSent = 0
+    /// Destination candidates from the world's navigation graph.
+    @Published private(set) var destinations: [GraphNode] = []
+    @Published private(set) var destination: GraphNode?
+    /// Newest `progressUpdate` from `POST /sessions/{id}/pose`.
+    @Published private(set) var lastProgress: ProgressUpdate?
+    /// Called on the main actor with every `speak` phrase the backend returns.
+    var onSpeak: ((String) -> Void)?
     /// Image queries mirrored to `POST /worlds/{id}/localize/query`.
     @Published private(set) var queriesSent = 0
     @Published private(set) var queriesFailed = 0
@@ -28,6 +35,9 @@ final class LocalizationReporter: ObservableObject {
     private var lastFixSend: TimeInterval = 0
     private var lastPoseSend: TimeInterval = 0
     private var inFlight = false
+    /// The chosen destination has been accepted for the current session.
+    private var destinationApplied = false
+    private var destinationInFlight = false
     var minInterval: TimeInterval = 0.2
 
     private var uploadQueryImages = true
@@ -49,9 +59,47 @@ final class LocalizationReporter: ObservableObject {
         encoder = FrameEncoder(maxDimension: settings.maxImageDimension, quality: settings.jpegQuality)
         if let base = settings.backendBaseURL, !settings.backendAPIKey.isEmpty {
             client = WanderBackendClient(baseURL: base, apiKey: settings.backendAPIKey)
-            if worldId == nil { Task { await resolveWorld() } }
+            Task {
+                if worldId == nil { await resolveWorld() }
+                await loadDestinations()
+            }
         } else {
             client = nil
+        }
+    }
+
+    private func loadDestinations() async {
+        guard let client, let worldId else { return }
+        do {
+            let nodes = try await client.graphNodes(worldId: worldId)
+            // Destinations first, then anything else that has a name.
+            destinations = nodes.filter { $0.kind == "destination" } + nodes.filter { $0.kind != "destination" && $0.name != nil }
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    /// Choose where to go. Applied to the current session now, and to any session the
+    /// backend hands back later, since `/localize` creates sessions without a destination.
+    func select(destination node: GraphNode?) {
+        destination = node
+        lastProgress = nil
+        destinationApplied = false
+        applyDestination()
+    }
+
+    private func applyDestination() {
+        guard let client, let sessionId, let destination, !destinationApplied, !destinationInFlight else { return }
+        destinationInFlight = true
+        Task {
+            defer { destinationInFlight = false }
+            do {
+                try await client.setDestination(sessionId: sessionId, nodeId: destination.id)
+                destinationApplied = self.destination == destination && self.sessionId == sessionId
+                lastError = nil
+            } catch {
+                lastError = error.localizedDescription
+            }
         }
     }
 
@@ -89,10 +137,14 @@ final class LocalizationReporter: ObservableObject {
             defer { inFlight = false }
             do {
                 let response = try await client.localize(worldId: worldId, body: body)
-                sessionId = response.sessionId
+                if sessionId != response.sessionId {
+                    sessionId = response.sessionId
+                    destinationApplied = false
+                }
                 lastResponse = response
                 lastError = nil
                 fixesSent += 1
+                applyDestination()
             } catch {
                 lastError = error.localizedDescription
             }
@@ -100,8 +152,10 @@ final class LocalizationReporter: ObservableObject {
     }
 
     /// An ARKit pose between fixes, converted with the last known anchor transform.
+    /// The backend answers with route progress and the phrase to speak, if any; it
+    /// rejects poses for a session without a destination, so those are not sent.
     func report(cameraTransform: simd_float4x4, using fix: LocalizationFix) {
-        guard let client, let sessionId else { return }
+        guard let client, let sessionId, destination != nil, destinationApplied else { return }
         let now = Date().timeIntervalSince1970
         guard now - lastPoseSend >= minInterval, !inFlight else { return }
         lastPoseSend = now
@@ -110,8 +164,11 @@ final class LocalizationReporter: ObservableObject {
         Task {
             defer { inFlight = false }
             do {
-                try await client.pose(sessionId: sessionId, pose: pose, state: fix.state, timestamp: Date())
+                let progress = try await client.pose(sessionId: sessionId, pose: pose, state: fix.state, timestamp: Date())
                 posesSent += 1
+                lastProgress = progress
+                lastError = nil
+                if let phrase = progress.speak { onSpeak?(phrase) }
             } catch {
                 lastError = error.localizedDescription
             }
@@ -188,6 +245,8 @@ final class LocalizationReporter: ObservableObject {
 
     func reset() {
         sessionId = nil
+        destinationApplied = false
+        lastProgress = nil
         lastResponse = nil
         lastError = nil
         lastQueryResponse = nil

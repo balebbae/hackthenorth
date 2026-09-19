@@ -77,7 +77,8 @@
           "description": "Defaults to the session's last known position when omitted."
         },
         "to": { "type": "string", "description": "Destination node id (usually kind = destination)." },
-        "avoid": { "type": "array", "items": { "type": "string" }, "description": "Node ids to route around (e.g. closed doors)." }
+        "avoid": { "type": "array", "items": { "type": "string" }, "description": "Node ids to route around (e.g. closed doors)." },
+        "headingDeg": { "type": "number", "minimum": 0, "exclusiveMaximum": 360, "description": "Traveller's heading at `from` (world convention: clockwise from above, 0 = -Z, 90 = +X). The first instruction turns relative to it; without it the first turn is 'straight'." }
       }
     },
 
@@ -163,7 +164,8 @@
         "remainingMetres": { "type": "number" },
         "instruction": { "$ref": "#/$defs/instruction" },
         "offRouteMetres": { "type": "number", "description": "Perpendicular distance from the route; > 3 m flips state to off-route." },
-        "speak": { "type": "string", "description": "Exact phrase the phone should say now, if any." }
+        "speak": { "type": "string", "description": "Exact phrase the phone should say now, if any." },
+        "headingDeg": { "type": "number", "description": "Traveller's heading derived from the pose rotation (0 = -Z, 90 = +X, clockwise). `instruction` is relative to it." }
       }
     },
 
