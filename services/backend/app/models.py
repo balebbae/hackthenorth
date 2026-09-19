@@ -49,6 +49,11 @@ class AnnotationEvidence(Model):
     verified_by: str
     verified_at: str
     notes: str
+    category: str | None = None
+    permanence: Literal['fixed', 'movable', 'temporary', 'unknown'] | None = None
+    navigation_role: Literal['destination', 'landmark', 'context', 'potential_hazard'] | None = None
+    visual_location: str | None = None
+    uncertainty: str | None = None
 
 
 class Destination(Model):

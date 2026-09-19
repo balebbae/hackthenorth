@@ -22,6 +22,15 @@ class EventArgs(Model):
     minutes: int = Field(ge=1, le=1440)
 
 
+class ContextArgs(Model):
+    query: str = Field(min_length=1, max_length=2000)
+    floor: int | None = None
+
+
+class HazardDensityArgs(Model):
+    hours: int = Field(ge=1, le=168)
+
+
 REGISTRY = {
     'search_building_knowledge': (SearchArgs, 'Search site building documents with hybrid retrieval; static evidence.'),
     'search_places': (SearchArgs, 'Search real mapped places, with backend distances where localized.'),
@@ -29,6 +38,11 @@ REGISTRY = {
     'get_navigation_state': (EmptyArgs, 'Read the current deterministic route, next waypoint and instruction.'),
     'set_destination': (DestinationArgs, 'Start deterministic navigation to an existing destination only when requested.'),
     'get_recent_events': (EventArgs, 'Read session event history; null type includes all event types.'),
+    'search_context': (ContextArgs, 'Search non-navigable context and hazard evidence (e.g. wet floors, '
+        'obstructions, informational notes) recorded near an area; not a live sensor feed and never a '
+        'destination. Returns matching evidence plus counts by category and role.'),
+    'get_obstacle_hotspots': (HazardDensityArgs, 'Aggregate recent obstacle reports by location to find '
+        'recurring trouble spots; historical pattern, never proof current conditions are unsafe.'),
 }
 TOOLS = [{'type': 'function', 'name': name, 'description': description,
           'parameters': model.model_json_schema(), 'strict': True}

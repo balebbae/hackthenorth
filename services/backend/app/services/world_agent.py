@@ -58,7 +58,11 @@ class WorldAgentTools:
                       'route': data.get('route'), 'progress': data.get('lastProgress'),
                       'localized': localized}
         elif name == 'search_places':
-            hits = await self.fallback.search.search('map_entities', data['worldId'], args.query)
+            near = None
+            if localized:
+                position = data['lastPose']['position']
+                near = {'x': position[0], 'y': position[1], 'z': position[2]}
+            hits = await self.fallback.search.search('map_entities', data['worldId'], args.query, near=near)
             result = []
             for hit in hits:
                 if hit['id'] not in nodes:

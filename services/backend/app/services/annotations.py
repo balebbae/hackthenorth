@@ -63,7 +63,7 @@ class AnnotationBatch(Model):
 
 class Review(Model):
     candidate_id: str
-    decision: Literal['approve', 'reject', 'duplicate']
+    decision: Literal['approve', 'reject', 'duplicate', 'note']
     waypoint_id: str | None = None
     duplicate_of: str | None = None
     verified_by: str = Field(min_length=1, max_length=200)
@@ -224,11 +224,29 @@ def publish(batch: AnnotationBatch, reviews: ReviewFile, graph: Graph, expected_
     approved = {r.candidate_id for r in reviews.reviews if r.decision == 'approve'}
     waypoints = {w.id for w in graph.waypoints}
     destinations = {d.id: d for d in graph.destinations}
+    context_notes = []
     for review in reviews.reviews:
         candidate = by_id[review.candidate_id]
         if review.decision == 'duplicate':
             if review.duplicate_of not in approved:
                 raise ValueError('Duplicates must reference an approved candidate in this batch')
+            destinations.pop(candidate.id, None)
+            continue
+        if review.decision == 'note':
+            # Non-navigable evidence (context/hazard/etc): kept as searchable evidence,
+            # never as a routing destination.
+            if review.waypoint_id not in waypoints:
+                raise ValueError('Noted findings require an existing, verified approach waypoint')
+            finding = review.corrected or candidate
+            point = graph.point(review.waypoint_id)
+            context_notes.append({'id': candidate.id, 'name': finding.name,
+                'category': finding.category, 'description': finding.description,
+                'sign_text': finding.sign_text, 'permanence': finding.permanence,
+                'navigation_role': finding.navigation_role, 'visual_location': finding.visual_location,
+                'uncertainty': finding.uncertainty, 'waypoint_id': review.waypoint_id,
+                'floor': batch.floor, 'x': point.x, 'y': point.y, 'z': point.z,
+                'verified_by': review.verified_by, 'verified_at': review.verified_at,
+                'notes': review.notes, 'frame': candidate.frame, 'frame_sha256': candidate.frame_sha256})
             destinations.pop(candidate.id, None)
             continue
         if review.decision != 'approve':
@@ -251,12 +269,15 @@ def publish(batch: AnnotationBatch, reviews: ReviewFile, graph: Graph, expected_
             description=description, aliases=[],
             annotation={'map_revision': batch.map_revision, 'frame': candidate.frame,
                         'frame_sha256': candidate.frame_sha256, 'verified_by': review.verified_by,
-                        'verified_at': review.verified_at, 'notes': review.notes},
+                        'verified_at': review.verified_at, 'notes': review.notes,
+                        'category': finding.category, 'permanence': finding.permanence,
+                        'navigation_role': finding.navigation_role,
+                        'visual_location': finding.visual_location, 'uncertainty': finding.uncertainty},
             tags=['reviewed_annotation', finding.designation] if finding.category == 'restroom'
                  else ['reviewed_annotation'])
     result = Graph.model_validate({**graph.model_dump(),
                                    'destinations': [d.model_dump() for d in destinations.values()]})
-    return result
+    return result, context_notes
 
 
 def world_digest(world):
@@ -275,7 +296,7 @@ def publish_world(batch, reviews, world):
         edges=[Edge(source=e['from'], target=e['to'], bidirectional=e.get('bidirectional', True)) for e in source['edges']],
         destinations=[])
     adapted_review = reviews.model_copy(update={'graph_sha256': hashlib.sha256(graph.model_dump_json().encode()).hexdigest()})
-    published = publish(batch, adapted_review, graph, world['version'])
+    published, context_notes = publish(batch, adapted_review, graph, world['version'])
     candidate_ids = {c.id for c in batch.candidates}
     nodes = [n for n in source['nodes'] if n['id'] not in candidate_ids]
     edges = [e for e in source['edges'] if e['from'] not in candidate_ids and e['to'] not in candidate_ids]
@@ -288,4 +309,4 @@ def publish_world(batch, reviews, world):
         edges.append({'from': destination.waypoint_id, 'to': destination.id, 'distance': 0, 'bidirectional': True})
     output = {**world, 'navigationGraph': {'frame': 'world', 'nodes': nodes, 'edges': edges}, 'updatedAt': now()}
     check(output, 'world.schema.json')
-    return output, [d.model_dump() for d in published.destinations]
+    return output, [d.model_dump() for d in published.destinations], context_notes

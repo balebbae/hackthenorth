@@ -59,7 +59,10 @@ async def navigation_socket(socket: WebSocket, session_id: str):
                     body = Obstacle.model_validate(message)
                     state.navigation.obstacle(session, body)
                     await broadcast(session, {'type': 'obstacle', **body.model_dump()})
-                    state.events.record(session, 'obstacle', body.model_dump())
+                    location = None
+                    if session.snapshot()['localization']['localized']:
+                        location = {'nearest_waypoint_id': state.navigation.graph.nearest(session.pose).id}
+                    state.events.record(session, 'obstacle', body.model_dump(), location=location)
                 else:
                     raise ValueError('Unknown message type')
             except (ValueError, ValidationError) as error:

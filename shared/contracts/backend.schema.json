@@ -88,6 +88,78 @@
         "notes": {
           "title": "Notes",
           "type": "string"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "permanence": {
+          "anyOf": [
+            {
+              "enum": [
+                "fixed",
+                "movable",
+                "temporary",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Permanence"
+        },
+        "navigation_role": {
+          "anyOf": [
+            {
+              "enum": [
+                "destination",
+                "landmark",
+                "context",
+                "potential_hazard"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Navigation Role"
+        },
+        "visual_location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Visual Location"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncertainty"
         }
       },
       "required": [
@@ -508,7 +580,8 @@
           "enum": [
             "approve",
             "reject",
-            "duplicate"
+            "duplicate",
+            "note"
           ],
           "title": "Decision",
           "type": "string"

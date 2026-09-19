@@ -183,25 +183,43 @@ async def annotations(world_id: str, request: Request):
     review = ReviewFile.model_validate(data['review'])
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
-        manifest, records = publish_world(batch, review, store.world(world_id))
+        manifest, records, notes = publish_world(batch, review, store.world(world_id))
+        ids = {c.id for c in batch.candidates}
         path = store.path('worlds', world_id, 'annotations.json')
         previous = store.read('worlds', world_id, 'annotations.json') if path.exists() else []
-        ids = {c.id for c in batch.candidates}
         records = [r for r in previous if r['id'] not in ids] + records
+        notes_path = store.path('worlds', world_id, 'context-notes.json')
+        previous_notes = store.read('worlds', world_id, 'context-notes.json') if notes_path.exists() else []
+        notes = [n for n in previous_notes if n['id'] not in ids] + notes
         await store.write(records, 'worlds', world_id, 'annotations.json')
+        await store.write(notes, 'worlds', world_id, 'context-notes.json')
         await store.write(manifest, 'worlds', world_id, 'world.json')
+        # Reindex inline so publishing and search availability never drift apart
+        # (a human previously had to remember a separate POST /index call). Best
+        # effort: a temporarily unavailable Elasticsearch must not block publishing,
+        # matching how live event indexing already degrades (events.py record()).
+        try:
+            await request.app.state.elastic.setup()
+            await request.app.state.ingestion.world(manifest, records)
+            await request.app.state.ingestion.context_notes(world_id, notes)
+        except Exception as error:
+            logger.warning('Reindex after publish failed (%s); retry with POST /worlds/%s/index',
+                          type(error).__name__, world_id)
     return manifest
 
 
 @router.post('/worlds/{world_id}/index')
 async def index_world(world_id: str, request: Request):
+    """Manual repair/backfill only; PUT /annotations already reindexes on publish."""
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
         manifest = store.world(world_id)
         records = store.read('worlds', world_id, 'annotations.json') if store.path('worlds', world_id, 'annotations.json').exists() else []
+        notes = store.read('worlds', world_id, 'context-notes.json') if store.path('worlds', world_id, 'context-notes.json').exists() else []
         await request.app.state.elastic.setup()
         await request.app.state.ingestion.world(manifest, records)
-    return {'indexed': len(world_graph(manifest)['nodes'])}
+        await request.app.state.ingestion.context_notes(world_id, notes)
+    return {'indexed': len(world_graph(manifest)['nodes']), 'context_notes': len(notes)}
 
 
 @router.post('/sessions', status_code=201)
@@ -270,6 +288,103 @@ async def localize(world_id: str, request: Request):
     return {'sessionId': session['sessionId'], 'worldId': world_id, 'pose': data['pose'],
             'nearestNode': {**node_ref(nearest), 'distanceMetres': math.dist(data['pose']['position'], nearest['position'])},
             'snappedPosition': position, 'offGraphMetres': distance}
+
+
+@router.post('/worlds/{world_id}/localize/self-hosted')
+async def localize_self_hosted(world_id: str, request: Request):
+    """Additive alternative to Niantic VPS: runs our own hloc/COLMAP-based
+    localization on Modal (services/backend/deployment/modal_localization.py)
+    instead of Niantic's cloud. Existing /localize and /localize/query endpoints
+    are untouched; this never runs unless the world opts in via
+    alignment.frame == 'self-hosted-vps'."""
+    import modal
+
+    data = await body(request)
+    required = {'deviceId', 'capturedAt', 'imageBase64', 'width', 'height'}
+    if not required <= set(data):
+        raise HTTPException(400, f'Expected {sorted(required)} and optional sessionId/role')
+    store, navigation = request.app.state.worlds, request.app.state.world_navigation
+    world = store.world(world_id)
+    if world.get('alignment', {}).get('frame') != 'self-hosted-vps':
+        raise HTTPException(409, "Self-hosted localization requires alignment.frame='self-hosted-vps'")
+    try:
+        image = base64.b64decode(data['imageBase64'], validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(400, 'imageBase64 is not valid base64')
+    if len(image) > QUERY_IMAGE_MAX_BYTES:
+        raise HTTPException(413, 'Query image exceeds 2 MiB')
+    if image[:3] != b'\xff\xd8\xff':
+        raise HTTPException(400, 'Query image must be a JPEG')
+    if 'sessionId' in data:
+        session = store.session(data['sessionId'])
+        if session['worldId'] != world_id or session['deviceId'] != data['deviceId']:
+            raise HTTPException(409, 'Session world/device mismatch')
+    else:
+        session = await navigation.create(world_id, data['deviceId'])
+
+    localizer = modal.Cls.from_name('htn-visual-localization', 'Localizer')()
+    result = await localizer.localize.remote.aio(world_id, world['version'], image, data['width'], data['height'])
+
+    query_id = 'q-' + uuid4().hex
+    record = {'id': query_id, 'worldId': world_id, 'sessionId': session['sessionId'],
+              'deviceId': data['deviceId'], 'role': data.get('role', 'chest'),
+              'capturedAt': data['capturedAt'], 'receivedAt': now(),
+              'trackingState': result['trackingState'], 'confidence': result.get('confidence'),
+              'numInliers': result.get('numInliers'),
+              'pose': {'position': result['position'], 'rotation': result['rotation']}
+                      if result['trackingState'] != 'lost' else None}
+    if result['trackingState'] != 'lost':
+        try:
+            nearest, (distance, position, _, _) = snap(world_graph(world), result['position'])
+            record['nearestNode'] = {**node_ref(nearest), 'distanceMetres': math.dist(result['position'], nearest['position'])}
+            record['offGraphMetres'] = distance
+        except HTTPException as error:
+            if error.status_code != 409:  # a world without waypoints is fine here
+                raise
+        await navigation.pose(session['sessionId'], {'pose': {'position': result['position'], 'rotation': result['rotation']},
+                              'timestamp': data['capturedAt'], 'trackingState': result['trackingState']},
+                              allow_no_destination=True)
+        if result['trackingState'] == 'localized':
+            await store.emit(store.session(session['sessionId']), 'localized')
+
+    # A separate file, not the Niantic-shaped worlds/{id}/localizations/index.json:
+    # that schema is additionalProperties:false and requires nianticSiteId/request,
+    # so a differently-shaped self-hosted record would break its own GET endpoint.
+    path = ('worlds', world_id, 'localizations-self-hosted.json')
+    async with store.lock('localizations-self-hosted:' + world_id):
+        previous = store.read(*path) if store.path(*path).exists() else []
+        await store.write(([record] + previous)[:LOCALIZATIONS_KEPT], *path)
+
+    return {'sessionId': session['sessionId'], 'worldId': world_id, **result,
+            'nearestNode': record.get('nearestNode'), 'offGraphMetres': record.get('offGraphMetres')}
+
+
+@router.get('/worlds/{world_id}/localizations/self-hosted')
+async def localizations_self_hosted(world_id: str, request: Request, limit: int = 20):
+    store = request.app.state.worlds
+    store.world(world_id)
+    path = ('worlds', world_id, 'localizations-self-hosted.json')
+    records = store.read(*path) if store.path(*path).exists() else []
+    return {'worldId': world_id, 'queries': records[:max(1, min(limit, LOCALIZATIONS_KEPT))]}
+
+
+@router.get('/worlds/{world_id}/localization-map/points.ply')
+async def localization_map_ply(world_id: str, request: Request, revision: str | None = None):
+    """Sparse point cloud from build_map, for the /map-viewer test page."""
+    import modal
+    world = request.app.state.worlds.world(world_id)
+    get_ply = modal.Function.from_name('htn-visual-localization', 'get_map_ply')
+    data = await get_ply.remote.aio(world_id, revision or world['version'])
+    return Response(content=data, media_type='application/octet-stream')
+
+
+@router.get('/worlds/{world_id}/localization-map/cameras')
+async def localization_map_cameras(world_id: str, request: Request, revision: str | None = None):
+    """Registered camera poses from build_map, rendered as frustums in /map-viewer."""
+    import modal
+    world = request.app.state.worlds.world(world_id)
+    get_cameras = modal.Function.from_name('htn-visual-localization', 'get_map_cameras')
+    return await get_cameras.remote.aio(world_id, revision or world['version'])
 
 
 def localizations_index(store, world_id):

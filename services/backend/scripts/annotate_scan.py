@@ -42,9 +42,10 @@ async def run(args):
         if raw.get('schema') == 'wander.world/v1':
             if args.revision != raw['version']:
                 raise ValueError('Revision must equal the active world version')
-            manifest, records = publish_world(batch, reviews, raw)
+            manifest, records, context_notes = publish_world(batch, reviews, raw)
             write_json(args.output, manifest)
             write_json(args.output.with_suffix('.annotations.json'), records)
+            write_json(args.output.with_suffix('.context-notes.json'), context_notes)
             if args.api_url:
                 settings = Settings()
                 async with httpx.AsyncClient(base_url=args.api_url.rstrip('/'), timeout=120,
@@ -64,7 +65,7 @@ async def run(args):
             return
         if args.api_url:
             raise ValueError('--api-url publication requires a world.json manifest')
-        graph = publish(batch, reviews, Graph.model_validate(raw), args.revision)
+        graph, _ = publish(batch, reviews, Graph.model_validate(raw), args.revision)
         # Save the local artifact before indexing. Retry indexing safely if the provider fails.
         write_json(args.output, graph.model_dump())
         if args.index:

@@ -1,15 +1,36 @@
 import asyncio
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from pathlib import Path
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Query as QueryParam
+from fastapi.responses import HTMLResponse
 from ..models import SessionRequest, DestinationRequest, Query, Document
 from ..integrations.elastic.ingestion import extract_text
 from ..services.sessions import broadcast
 
 router = APIRouter()
+STATIC_DIR = Path(__file__).resolve().parents[1] / 'static'
+LOCALIZE_TEST_PAGE = (STATIC_DIR / 'localize_test.html').read_text(encoding='utf-8')
+MAP_VIEWER_PAGE = (STATIC_DIR / 'map_viewer.html').read_text(encoding='utf-8')
 
 
 @router.get('/health')
 async def health():
     return {'status': 'ok'}
+
+
+@router.get('/localize-test', response_class=HTMLResponse)
+async def localize_test_page():
+    """Disposable dev harness for services/backend/deployment/modal_localization.py.
+    Reachable via ?key=... (see APIKeyMiddleware) since a plain browser navigation
+    can't set a custom header; the page's own API calls use the header normally."""
+    return LOCALIZE_TEST_PAGE
+
+
+@router.get('/map-viewer', response_class=HTMLResponse)
+async def map_viewer_page():
+    """Disposable dev harness: renders a build_map point cloud + registered
+    camera positions with Three.js. See app/api/worlds.py's
+    GET /worlds/{id}/localization-map/points.ply and .../cameras."""
+    return MAP_VIEWER_PAGE
 
 
 @router.post('/legacy/sessions', status_code=201)
@@ -65,6 +86,14 @@ async def upload(request: Request, site_id: str = Form(...), document_id: str = 
     except Exception:
         raise ValueError('Could not extract text; use valid UTF-8 text/Markdown or a text PDF')
     return await document(Document(site_id=site_id, id=document_id, title=file.filename or document_id, text=text), request)
+
+
+@router.get('/sites/{site_id}/obstacle-hotspots')
+async def obstacle_hotspots(site_id: str, request: Request, hours: int = QueryParam(default=24, ge=1, le=168)):
+    """Operator-facing view of the same ES|QL STATS aggregation the assistant's
+    get_obstacle_hotspots tool uses, without going through the LLM."""
+    rows = await request.app.state.events.hazard_density(site_id, hours)
+    return {'site_id': site_id, 'hours': hours, 'hotspots': rows}
 
 
 @router.get('/elastic/status')

@@ -21,7 +21,12 @@ class ElasticClient:
     async def setup(self):
         client = self.require()
         for name, mapping in mappings(self.settings.elastic_embedding_dims).items():
-            if not await client.indices.exists(index=name):
+            if await client.indices.exists(index=name):
+                # Adding new fields to an existing mapping is safe; this keeps an
+                # index created before a schema addition (e.g. category/permanence)
+                # in sync without a manual migration step.
+                await client.indices.put_mapping(index=name, properties=mapping['properties'])
+            else:
                 await client.indices.create(index=name, mappings=mapping)
 
     async def embed(self, texts, input_type):
