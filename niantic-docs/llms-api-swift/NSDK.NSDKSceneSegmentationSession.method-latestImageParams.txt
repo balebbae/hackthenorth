@@ -1,0 +1,25 @@
+# latestImageParams
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-latestImageParams/
+
+latestImageParams
+
+---
+
+## Declaration
+
+func latestImageParams() -> NSDKAsyncState<AwarenessImageParams, AwarenessError>
+
+#### Summary
+
+Retrieves the latest camera intrinsic parameters for semantic processing.
+This method returns the camera intrinsic parameters that were used during semantic
+processing. These parameters are essential for coordinate transformations between
+image coordinates and 3D world coordinates.
+
+#### Returns
+
+An NSDKAsyncState containing either the latest AwarenessImageParams,
+  or an AwarenessError.
+
+---

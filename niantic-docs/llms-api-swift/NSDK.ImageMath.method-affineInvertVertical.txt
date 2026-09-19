@@ -1,0 +1,18 @@
+# affineInvertVertical
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineInvertVertical/
+
+affineInvertVertical
+Returns an (u, v) -> (u', v') transformation that represents a vertical mirroring, i.e. (u, v) -> (u, 1 - v).
+
+---
+
+## Declaration
+
+static func affineInvertVertical() -> CGAffineTransform
+
+#### Summary
+
+Returns an (u, v) -> (u', v') transformation that represents a vertical mirroring, i.e. (u, v) -> (u, 1 - v).
+
+---

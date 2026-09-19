@@ -1,0 +1,24 @@
+# displayOrientedTransform
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackCamera.method-displayOrientedTransform/
+
+displayOrientedTransform
+
+---
+
+## Declaration
+
+func displayOrientedTransform(orientation: UIInterfaceOrientation) -> simd_float4x4
+
+#### Summary
+
+Returns the camera transform with a Z-axis rotation applied so it matches the given screen orientation.
+Sensor frame is landscape-right; portrait adds π/2, portrait-upside-down adds -π/2, landscape-left adds π.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orientation | UIInterfaceOrientation | - |
+
+---

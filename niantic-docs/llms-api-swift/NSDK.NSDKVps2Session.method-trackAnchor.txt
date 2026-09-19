@@ -1,0 +1,37 @@
+# trackAnchor
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-trackAnchor/
+
+trackAnchor
+
+---
+
+## Declaration
+
+func trackAnchor(payload: String) throws -> NSDKVpsAnchorId
+
+#### Summary
+
+Requests to start tracking an anchor specified by a payload.
+A VPS payload contains all the data needed to localize at a VPS-activated location.
+A default payload for a VPS-activated location can be obtained from the "blob" field
+in the details view of an entry in the Geospatial Browser, or via
+anchorPayload(anchorId:) for user-generated anchors.
+The returned anchor ID is automatically polled each frame via update(), and updates
+are published on anchorUpdated.
+
+#### Returns
+
+The unique identifier of the anchor encoded in the payload.
+
+#### Throws
+
+NSDKError.invalidArgument if the payload is not valid.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| payload | String | Base64-encoded anchor payload. |
+
+---

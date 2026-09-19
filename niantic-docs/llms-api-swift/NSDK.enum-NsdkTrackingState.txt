@@ -1,0 +1,93 @@
+# NsdkTrackingState
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NsdkTrackingState/
+
+NsdkTrackingState
+The general quality of position tracking available when the camera captured a frame.
+
+---
+
+## Declaration
+
+@frozen enum NsdkTrackingState
+
+---
+
+## Constructors
+
+### Constructor
+
+init?(rawValue: Int)
+
+#### Summary
+
+Creates a new instance with the specified raw value.
+If there is no value of the type that corresponds with the specified raw
+value, this initializer returns nil. For example:
+    enum PaperSize: String {
+        case A4, A5, Letter, Legal
+    }
+    print(PaperSize(rawValue: "Legal"))
+    // Prints "Optional(PaperSize.Legal)"
+    print(PaperSize(rawValue: "Tabloid"))
+    // Prints "nil"
+
+---
+
+### Overload
+
+init(_ arkitState: ARCamera.TrackingState)
+
+#### Summary
+
+Convert ARKit ARCamera.TrackingState -> NsdkTrackingState
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case failed | failed | - |
+| case normal | normal | - |
+| case poor | poor | - |
+| case unknown | unknown | - |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var hashValue | Int | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| convertToCArdk | ARDK_TrackingState | - |
+| hash | void | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.RawRepresentable 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.BitwiseCopyable

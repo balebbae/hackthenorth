@@ -1,0 +1,24 @@
+# setFileLogLevel
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-setFileLogLevel/
+
+setFileLogLevel
+Sets the log level for file logging.
+
+---
+
+## Declaration
+
+func setFileLogLevel(logLevel: NSDKLogLevel)
+
+#### Summary
+
+Sets the log level for file logging.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| logLevel | NSDKLogLevel | The desired log level for file logging |
+
+---

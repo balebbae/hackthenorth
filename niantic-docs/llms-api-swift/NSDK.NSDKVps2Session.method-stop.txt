@@ -1,0 +1,19 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-stop/
+
+stop
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stops the VPS2 session.
+This halts all VPS2 processing and anchor tracking. The session can be reconfigured
+and restarted after stopping. $latestLocalization is reset to nil.
+
+---

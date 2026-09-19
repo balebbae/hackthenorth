@@ -1,0 +1,18 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.method-stop/
+
+stop
+Stops the depth session, halting depth data processing.
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stops the depth session, halting depth data processing.
+
+---

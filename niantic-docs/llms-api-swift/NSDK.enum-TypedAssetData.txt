@@ -1,0 +1,45 @@
+# TypedAssetData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-TypedAssetData/
+
+TypedAssetData
+
+---
+
+## Declaration
+
+enum TypedAssetData
+
+## Summary
+
+Discriminated union for typed asset data.
+One of mesh, splat, or vps will be set based on the asset type.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case mesh | AssetMeshData) | - |
+| case none | none | - |
+| case splat | AssetSplatData) | - |
+| case vps | AssetVpsData) | - |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

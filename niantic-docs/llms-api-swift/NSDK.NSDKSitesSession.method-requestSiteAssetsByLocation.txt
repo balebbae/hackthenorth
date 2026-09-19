@@ -1,0 +1,37 @@
+# requestSiteAssetsByLocation
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSitesSession.method-requestSiteAssetsByLocation/
+
+requestSiteAssetsByLocation
+
+---
+
+## Declaration
+
+func requestSiteAssetsByLocation(lat: Double, lng: Double, radiusMeters: Double, assetType: AssetType = .vpsInfo, pollingInterval: TimeInterval = 0.5, timeout: TimeInterval = 60.0) async throws -> SiteAssetsResult
+
+#### Summary
+
+Requests sites and their assets near a GPS coordinate and waits for the result.
+Results are ordered by distance from the query coordinate.
+
+#### Returns
+
+A SiteAssetsResult containing site-assets entries ordered by distance.
+
+#### Throws
+
+  - CancellationError if the Task running this function was cancelled.   - TimeoutError if the function timed out before it could complete execution.   - SitesResult.Error if there was an error specific to the network query.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| lat | Double | Latitude of the query coordinate. |
+| lng | Double | Longitude of the query coordinate. |
+| radiusMeters | Double | Search radius in meters. |
+| assetType | AssetType | The type of assets to fetch (default: `.vpsInfo`). |
+| pollingInterval | TimeInterval | The interval between status checks (default: 0.5 seconds). |
+| timeout | TimeInterval | Maximum time to wait for completion (default: 60 seconds). |
+
+---

@@ -1,0 +1,22 @@
+# getAccessAuthInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-getAccessAuthInfo/
+
+getAccessAuthInfo
+
+---
+
+## Declaration
+
+func getAccessAuthInfo() -> AuthInfo?
+
+#### Summary
+
+Gets access token authentication information.
+Returns authentication information containing information about the current access token.
+
+#### Returns
+
+AuthInfo containing access token claims, or nil if the operation fails
+
+---

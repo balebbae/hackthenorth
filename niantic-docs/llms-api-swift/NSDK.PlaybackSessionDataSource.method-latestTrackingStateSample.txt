@@ -1,0 +1,18 @@
+# latestTrackingStateSample
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackSessionDataSource.method-latestTrackingStateSample/
+
+latestTrackingStateSample
+Returns the most recent VIO tracking state report
+
+---
+
+## Declaration
+
+func latestTrackingStateSample() -> NsdkTrackingState
+
+#### Summary
+
+Returns the most recent VIO tracking state report
+
+---

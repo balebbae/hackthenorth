@@ -1,0 +1,19 @@
+# disable
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKTelemetry.method-disable/
+
+disable
+
+---
+
+## Declaration
+
+static func disable()
+
+#### Summary
+
+Disables telemetry for the current process.
+Clears any buffered events and stops the telemetry sink from accepting new ones.
+Call this before initializing ARDK if you want to opt out of telemetry entirely.
+
+---

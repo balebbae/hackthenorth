@@ -1,0 +1,25 @@
+# affineTranslation
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineTranslation/
+
+affineTranslation
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine translation.
+
+---
+
+## Declaration
+
+static func affineTranslation(tx: Float, ty: Float) -> CGAffineTransform
+
+#### Summary
+
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine translation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| tx | Float | - |
+| ty | Float | - |
+
+---

@@ -1,26 +1,239 @@
 @import "tailwindcss";
 
+/* Design tokens — see FRONTEND_STYLE.md (Wander style reference) */
+@theme {
+  /* Colors — Wander palette */
+  --color-wander-blue: #2e4885;
+  --color-wander-pink: #d85598;
+  --color-wander-sky: #60baf4;
+  --color-wander-navy: #1e293b;
+  --color-stellar-white: #f8fafc;
+  --color-pure-white: #ffffff;
+  --color-void-black: #0f172a;
+  --color-charcoal: #1e293b;
+  --color-stone: #64748b;
+  --color-graphite: #475569;
+  --color-slate: #5b6b85;
+  --color-sky-tint: #e9f4fe;
+  --color-pink-tint: #fbe4f0;
+  --color-hairline: rgba(15, 23, 42, 0.08);
+
+  /* Brand gradient — logo orb; reserved for brand surfaces (CTA band, login panel), never content cards */
+  --background-image-wander: linear-gradient(
+    45deg,
+    #60baf4 0%,
+    #2e4885 38%,
+    #d85598 66%,
+    #1e293b 100%
+  );
+
+  /* Typography — families (Inter substitutes NotionInter, Source Serif 4 substitutes Lyon Text) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, "Times New Roman",
+    serif;
+
+  /* Typography — scale */
+  --text-caption: 12px;
+  --text-caption--line-height: 1.33;
+  --text-caption--letter-spacing: 0.12px;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.43;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-editorial: 18px;
+  --text-editorial--line-height: 1.56;
+  --text-subheading: 20px;
+  --text-subheading--line-height: 1;
+  --text-heading-sm: 22px;
+  --text-heading-sm--line-height: 1.27;
+  --text-heading-sm--letter-spacing: -0.242px;
+  --text-heading: 40px;
+  --text-heading--line-height: 1.5;
+  --text-heading-lg: 48px;
+  --text-heading-lg--line-height: 1.5;
+  --text-display-sm: 54px;
+  --text-display-sm--line-height: 1.04;
+  --text-display-sm--letter-spacing: -1.89px;
+  --text-display: 72px;
+  --text-display--line-height: 1.21;
+  --text-display--letter-spacing: -2.016px;
+  --text-display-lg: 96px;
+  --text-display-lg--line-height: 1.04;
+  --text-display-lg--letter-spacing: -4.608px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* Elevation — only the sticky nav and product mockups cast shadows */
+  --shadow-nav: 0px 0.7px 1.462px 0px rgb(15 23 42 / 0.02),
+    0px 3px 9px 0px rgb(15 23 42 / 0.04);
+  --shadow-mockup: 0px 4px 12px rgba(15, 23, 42, 0.1);
+
+  /* Layout */
+  --container-page: 1440px;
+
+  /* Motion */
+  --ease-notion: ease;
+  --default-transition-duration: 200ms;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --page-max-width: 1440px;
+  --section-gap: 80px;
+  --card-padding: 24px;
+  --nav-height: 64px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-stellar-white);
+  color: var(--color-void-black);
+  font-family: var(--font-sans);
+  font-feature-settings: "lnum", "locl" 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-wander-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: var(--color-sky-tint);
+}
+
+/* Component utilities (Tailwind v4 `@utility` so they compose with variants and @apply) */
+
+/* Buttons — 8px radius, 14px / 500, 6px 15px padding */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-[15px] py-[6px] text-body-sm font-medium whitespace-nowrap transition-colors duration-200 select-none disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-wander-blue text-pure-white hover:bg-[#273f76] active:bg-[#213666];
+}
+@utility btn-ghost {
+  @apply btn bg-sky-tint text-wander-blue hover:bg-[#d9ecfc] active:bg-[#c9e3fa];
+}
+/* Inverted primary — only on brand-gradient or navy surfaces */
+@utility btn-inverted {
+  @apply btn bg-pure-white text-wander-blue hover:bg-sky-tint active:bg-[#d9ecfc];
+}
+@utility btn-text {
+  @apply btn bg-transparent text-void-black/95 hover:bg-void-black/5 active:bg-void-black/10;
+}
+@utility btn-outline {
+  @apply inline-flex items-center justify-center gap-2 rounded-sm border border-void-black/90 bg-transparent px-[10px] py-[5px] text-body-sm font-medium text-void-black/90 transition-colors duration-200 hover:bg-void-black/5 active:bg-void-black/10;
+}
+@utility btn-lg {
+  @apply px-5 py-[10px] text-body;
+}
+@utility btn-icon {
+  @apply inline-flex size-8 items-center justify-center rounded-lg text-void-black/60 transition-colors duration-200 hover:bg-void-black/5 hover:text-void-black;
+}
+
+/* Navigation */
+@utility nav-link {
+  @apply rounded-lg px-4 py-3 text-body-sm font-medium text-void-black/[0.54] transition-colors duration-200 hover:text-void-black;
+}
+
+/* Surfaces */
+@utility card {
+  @apply rounded-xl border border-hairline bg-pure-white p-6;
+}
+@utility card-accent {
+  @apply rounded-xl p-6;
+}
+@utility card-dark {
+  @apply rounded-xl bg-wander-navy p-6 text-pure-white;
+}
+@utility card-brand {
+  @apply rounded-xl bg-wander p-6 text-pure-white;
+}
+
+/* Pills */
+@utility pill {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-caption font-medium;
+}
+@utility pill-sm {
+  @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-medium;
+}
+@utility highlight-pill {
+  @apply inline-block rounded-full px-6 py-2 leading-none;
+}
+
+/* Form controls */
+@utility input {
+  @apply w-full rounded-lg border border-hairline bg-pure-white px-3 py-2 text-body text-void-black placeholder:text-void-black/40 transition-[border-color,box-shadow] duration-200 hover:border-void-black/20 focus:border-wander-blue focus:outline-none focus:ring-2 focus:ring-wander-blue/20;
+}
+@utility label {
+  @apply block text-body-sm font-medium text-void-black/90;
+}
+
+/* Section rhythm */
+@utility section {
+  @apply py-10 md:py-20;
+}
+@utility container-page {
+  @apply mx-auto w-full max-w-[var(--page-max-width)] px-6 md:px-10 xl:px-16;
+}
+
+/* Editorial serif — reserved for intros and pull-quotes only */
+@utility editorial {
+  @apply font-serif text-editorial text-graphite;
+}
+
+/* Springy entrance for hero character marks; disabled under reduced motion */
+@keyframes mark-pop {
+  0% {
+    transform: translateY(8px) scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.mark-pop {
+  animation: mark-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: var(--mark-delay, 0ms);
+}
+
+/* Indeterminate progress bar (viewer boot / unknown content length) */
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.progress-indeterminate {
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

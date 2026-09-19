@@ -1,0 +1,64 @@
+# NSDKDeviceMappingSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKDeviceMappingSession/
+
+NSDKDeviceMappingSession
+
+---
+
+## Declaration
+
+final class NSDKDeviceMappingSession
+
+## Summary
+
+A session for creating VPS maps from AR data on the local device, with Combine publisher support.
+The device mapping feature provides capabilities for locally building persistent maps that
+can be used for Visual Positioning System (VPS) localization. These maps capture the visual
+features and spatial structure of an environment.
+`$latestMapUpdate` is refreshed automatically each frame by `NSDKSession.update()` while the
+session is active. Subscribe to it with Combine:
+
+```swift
+mappingSession.$latestMapUpdate
+    .compactMap { $0 }
+    .sink { mapUpdate in ... }
+    .store(in: &cancellables)
+```
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @Published var latestMapUpdate | NSDKBuffer | The latest incremental map update from the mapping session. Updated each frame by `NSDKSession` while active.`nil` until the first map update becomes available after mapping starts.Each non-nil value represents new nodes and edges added to the map since the last update. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configure | void | Configures the session with the specified settings.- Attention: This method must be called while the session is stopped, or else configuration will fail. In that case, while this function returns without throwing, configuration will still fail asynchronously. Use `featureStatus()` to check that configuration has not failed. |
+| featureStatus | NSDKFeatureStatus | Reports the current status of the mapping session.Check this periodically to see if any errors have occurred with processes runninginside this feature. Once an error has been flagged, it will remain flagged until theculprit process has been run again and completed successfully. |
+| start | void | Starts the mapping session and initializes required processes.Downloads the mapping algorithm model and prepares the session for mapping operations.Does not begin map building; call `startMapping()` to start building a map. |
+| startMapping | void | Begin a mapping sequence.This begins building an on-device map that can be used for VPS. Map data is accumulatedin the session's `NSDKMapStorage` while mapping is running. Subscribe to `$latestMapUpdate`to retrieve incremental map updates reactively, or call `NSDKMapStorage.mapData()`after mapping completes to get the full map.- Attention: This method must be called after `start()` and before `stop()`. |
+| stop | void | Stop all mapping processes. |
+| stopMapping | void | Stop the current mapping sequence.This stops adding new frames to the current on-device VPS Map. |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configuration | Configuration | Configuration settings for the mapping process.This structure defines various parameters that control how the mapping algorithmbehaves during map creation, including feature detection, tracking edges, andnode splitting criteria. |
+
+---
+
+## Relationships
+
+conforms to:  NSDKFeatureSession

@@ -1,0 +1,72 @@
+name: NavigationAssistant
+options:
+  bundleIdPrefix: com.hackthenorth
+  deploymentTarget:
+    iOS: "26.4"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: DVX8YZ9GG9
+    TARGETED_DEVICE_FAMILY: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  NavigationAssistant:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Features
+      - Services
+      - Resources
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Nav Assistant
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSCameraUsageDescription: The chest phone uses the camera and LiDAR to detect obstacles and localize against the mapped building.
+        NSLocationWhenInUseUsageDescription: Location helps Niantic localization pick the correct mapped site.
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hackthenorth.navassist
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+  NavigationAssistantTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests/Unit]
+    dependencies:
+      - target: NavigationAssistant
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/NavigationAssistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NavigationAssistant
+        BUNDLE_LOADER: $(TEST_HOST)
+  NavigationAssistantUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests/UI]
+    dependencies:
+      - target: NavigationAssistant
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: NavigationAssistant
+schemes:
+  NavigationAssistant:
+    build:
+      targets:
+        NavigationAssistant: all
+        NavigationAssistantTests: [test]
+        NavigationAssistantUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - NavigationAssistantTests
+        - NavigationAssistantUITests

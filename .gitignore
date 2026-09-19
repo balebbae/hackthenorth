@@ -34,3 +34,6 @@ xcuserdata/
 # Private scan evidence, annotation caches and generated review artifacts
 /artifacts/
 **/.annotation-cache/
+
+# Local agent instructions
+CLAUDE.md

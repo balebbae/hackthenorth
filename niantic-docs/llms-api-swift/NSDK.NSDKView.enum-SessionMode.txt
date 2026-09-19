@@ -1,0 +1,22 @@
+# SessionMode
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKView.enum-SessionMode/
+
+SessionMode
+
+---
+
+## Declaration
+
+enum SessionMode
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case live | ARSession) | - |
+| case playback | PlaybackSession) | - |
+
+---

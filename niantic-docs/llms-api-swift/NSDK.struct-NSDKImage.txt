@@ -1,0 +1,54 @@
+# NSDKImage
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKImage/
+
+NSDKImage
+
+---
+
+## Declaration
+
+struct NSDKImage
+
+## Summary
+
+Provides a view into the data buffer of an image output by the NSDK.
+`NSDKImage` provides access to image data in various formats (RGB, grayscale,
+depth, etc.) used by NSDK features like depth processing, semantic segmentation,
+and image analysis.
+
+## Memory Management
+
+The image provides a non-copying view into native image data managed by NSDK.
+Access to the pixel buffer is only valid for the duration of `withUnsafeBytes(_:)`.
+The raw pointer passed to the closure must not be stored or used outside its scope.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let height | UInt | Height of the image in pixels.This represents the number of rows in the image. |
+| let type | ImageType | Format and type of the image data.This indicates how the pixel data should be interpreted, includingthe number of channels, data type, and color space. |
+| let width | UInt | Width of the image in pixels.This represents the number of pixels in each row of the image. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| withUnsafeBytes<R>(_ body | R | Provides temporary, read-only access to the raw pixel buffer backing the image. |
+
+---
+
+## Nested Types
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ImageType | ImageType | Enum representing various image types supported by NSDK. |
+
+---

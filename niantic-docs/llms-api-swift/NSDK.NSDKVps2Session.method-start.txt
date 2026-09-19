@@ -1,0 +1,19 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-start/
+
+start
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts the VPS2 session.
+This begins collecting local device sensor data required for localization. To actually
+localize, call trackAnchor(payload:) with a valid VPS payload.
+
+---

@@ -1,0 +1,30 @@
+# destroy
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-destroy/
+
+destroy
+
+---
+
+## Declaration
+
+@MainActor func destroy(_ session: AnyObject)
+
+#### Summary
+
+Destroys a specific session, stopping it and releasing its native resources.
+After this call the session is removed from disposables and must not be used again.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| session | AnyObject | The session to destroy. Must have been created by this `NSDKSession`. |
+
+---

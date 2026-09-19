@@ -1,0 +1,29 @@
+# Configuration
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDepthSession.struct-Configuration/
+
+Configuration
+The type of configuration used by this session
+
+---
+
+## Declaration
+
+struct Configuration
+
+---
+
+## Constructors
+
+init(mode: DepthMode = .unspecified, frameRate: UInt32 = 0)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var frameRate | UInt32 | The desired frame rate for depth sensing. |
+| var mode | DepthMode | The desired depth sensing mode. |
+
+---

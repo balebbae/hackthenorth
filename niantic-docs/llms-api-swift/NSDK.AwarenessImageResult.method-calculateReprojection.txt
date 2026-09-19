@@ -1,0 +1,28 @@
+# calculateReprojection
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.AwarenessImageResult.method-calculateReprojection/
+
+calculateReprojection
+
+---
+
+## Declaration
+
+func calculateReprojection(to targetPose: matrix_float4x4) -> matrix_float3x3?
+
+#### Summary
+
+A helper function that computes a 3x3 homography to reproject the image
+into the coordinate frame of the given target pose.
+
+#### Returns
+
+A 3x3 homography matrix, or nil if the computation fails.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| targetPose | matrix_float4x4 | - |
+
+---

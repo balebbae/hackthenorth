@@ -1,0 +1,21 @@
+# UIOrientationReporter
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-UIOrientationReporter/
+
+UIOrientationReporter
+
+---
+
+## Declaration
+
+protocol UIOrientationReporter : AnyObject
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var currentOrientation | NSDKScreenOrientation | - |
+
+---

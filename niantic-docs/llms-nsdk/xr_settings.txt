@@ -1,0 +1,90 @@
+# Niantic SDK Settings
+
+Source: https://www.nianticspatial.com/docs/nsdk/xr_settings/
+
+### Platform: unity
+
+# Niantic SDK Settings
+
+## Prerequisites
+
+You will need a Unity project with NSDK enabled. For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity).
+
+To navigate to **NSDK Settings**, select **NSDK** > **Settings** from the top menu bar.
+
+## SDK Status Indicators
+
+At the top of the Settings window, there are three indicators which show whether NSDK is enabled for development in the editor, Android deployment, and iOS deployment. If the plug-in is not enabled for a specific platform, the corresponding indicator will become a button leading to the **Project Validation** window where you can see more details and enable NSDK.
+
+## Credentials
+
+You can find our guide to walk you through creating an account [here](https://www.nianticspatial.com/docs/nsdk/create_account/). Logging in with Developer Authentication is required to build and run the project. For more details refer [here](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+## Feature Toggles
+
+These settings allow you to enable and disable individual NSDK features in your project.
+
+(image: SDK Feature Toggles)
+
+For more on each feature, see their documentation pages:
+
+- [Depth](https://www.nianticspatial.com/docs/nsdk/features/depth/)
+- [Scene Segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/)
+- [Meshing](https://www.nianticspatial.com/docs/nsdk/features/meshing/)
+- [Persistent Anchors](https://www.nianticspatial.com/docs/nsdk/features/lightship_vps/)
+
+### Prefer LiDAR If Available
+
+When the depth toggle is enabled, the depth information returned by the ARFoundation API will come from NSDK's depth prediction algorithms. This option overrides that information and replaces it with depth data received directly from the mobile device's lidar sensor (if it has one).
+
+## Playback
+
+This section contains controls for configuring Playback. For more information on this feature, see the [Playback feature page](https://www.nianticspatial.com/docs/nsdk/features/playback/).
+
+For developers who want to use playback during development but use a live camera feed when deployed, NSDK provides two sets of Playback settings; one for the Unity Editor, the other for physical devices.
+
+(image: SDK Playback Settings)
+
+### Dataset Path
+
+Use the **Browse** button to select a dataset on your computer. The path must be to a directory that contains a `capture.json` file. It can exist anywhere in your file system, not just within the Unity project folder.
+
+### Run Manually
+
+For debugging purposes, it may be useful to step through a recording one frame at a time. When this setting is enabled, your simulated camera feed will start before the first frame on a blank screen. From there, press the space bar to advance the recording one frame at a time.
+
+> **Note:**
+>
+> If using Playback on device, use a two-finger tap instead of space bar to step through the frames.
+
+### Loop Infinitely
+
+Enabling this makes the dataset loop forever to facilitate sessions that last longer than the recording. To prevent instantaneous teleportation from the end to the start, the recording will play back in reverse until it reaches the beginning, then play forwards again.
+
+## Logging
+
+For debugging purposes, you may want more or less visibility from NSDK logs. We recommend leaving these settings on **Warn**, **Error**, or **Off** to prevent noisiness in the console.
+
+(image: SDK Logging Settings)
+
+## Simulation
+
+The bottom section of the Settings window is relevant only when **NSDK Simulation** is enabled. For more information, see the [Simulation feature page](https://www.nianticspatial.com/docs/nsdk/features/simulation/).
+
+(image: SDK Simulation Settings)
+
+Like the main SDK status indicators, the first section of the Simulation settings shows whether the **NSDK Simulation** loader is enabled. If it is not, the indicator will link to the **XR Plug-in Management** window where it can be turned on.
+
+### Z-Buffer Depth
+
+Using Simulation enables you to develop in-editor with all of the NSDK prediction algorithms running in realtime on the simulated frames. However, depth prediction may struggle with simpler environments, or you may want to more closely emulate the behavior on a lidar-equipped device. Enabling **Z-Buffer Depth** allows you to work with the "true" or "perfect" depth data of objects in the environment relative to the simulated device.
+
+### Persistent Anchors
+
+When using Simulation with VPS, **Simulation Persistent Anchors** makes development easier by replacing the live **Persistent Anchors** system with a mock one that behaves in a predetermined way.
+
+(image: SDK Simulation Persistent Anchor Parameters)
+
+Use the **Simulation Persistent Anchor Parameters** to dictate how a mock localization attempt should resolve. Simulation can be configured to localize within a specified amount of time, track with a random offset, or surface a failure to help simulate real-world scenarios.
+
+See [Simulation Settings](https://www.nianticspatial.com/docs/nsdk/how-to/unity/simulation_mocking/#nsdk-simulation-settings) for more information.

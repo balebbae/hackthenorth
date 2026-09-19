@@ -1,0 +1,43 @@
+# NSDKLogCallback
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKLogCallback/
+
+NSDKLogCallback
+
+---
+
+## Declaration
+
+protocol NSDKLogCallback : AnyObject
+
+## Summary
+
+Protocol for receiving log messages from NSDK.
+Implement this protocol to receive NSDK log messages in your application.
+The callback will be invoked on background threads, so ensure your implementation
+is thread-safe.
+
+## Example Usage
+
+```swift
+class MyLogCallback: NSDKLogCallback {
+    func onLog(level: NSDKLogLevel, message: String, fileName: String?, fileLine: Int, funcName: String?) {
+        let levelStr = level.description
+        let location = fileName.map { "\($0):\(fileLine)" } ?? ""
+        let funcInfo = funcName.map { " \($0)" } ?? ""
+        print("[NSDK-\(levelStr)] \(location)\(funcInfo): \(message)")
+    }
+}
+let callback = MyLogCallback()
+let session = NSDKSession(apiKey: "your-key", logCallback: callback)
+```
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| onLog | void | Called when NSDK generates a log message. |
+
+---

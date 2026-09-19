@@ -1,0 +1,49 @@
+# MeshDownloaderResults
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-MeshDownloaderResults/
+
+MeshDownloaderResults
+
+---
+
+## Declaration
+
+final class MeshDownloaderResults
+
+## Summary
+
+Contains the downloaded mesh geometry data for a VPS location.
+This object holds an array of mesh results, where each result includes mesh geometry,
+texture data (if requested), and the transform matrix that positions the mesh in world space.
+
+---
+
+## Constructors
+
+init(fromC cResults: ARDK_MeshDownloader_Results, owner: ResourceOwner?)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let results | [MeshDownloaderResult] | The array of mesh results for the requested location. |
+
+---
+
+## Nested Types
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Error | Error | Possible errors from Mesh Downloader network operations. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

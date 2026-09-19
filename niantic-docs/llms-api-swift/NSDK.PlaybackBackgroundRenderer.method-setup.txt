@@ -1,0 +1,19 @@
+# setup
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackBackgroundRenderer.method-setup/
+
+setup
+
+---
+
+## Declaration
+
+@MainActor func setup(in view: UIView)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| view | UIView | - |
+
+---

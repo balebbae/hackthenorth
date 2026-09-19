@@ -1,0 +1,81 @@
+# SceneSegmentationMode
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.enum-SceneSegmentationMode/
+
+SceneSegmentationMode
+
+---
+
+## Declaration
+
+enum SceneSegmentationMode
+
+## Summary
+
+Options for different scene segmentation modes.
+These trade off between performance and accuracy.
+
+---
+
+## Constructors
+
+init?(rawValue: Int)
+
+#### Summary
+
+Creates a new instance with the specified raw value.
+If there is no value of the type that corresponds with the specified raw
+value, this initializer returns nil. For example:
+    enum PaperSize: String {
+        case A4, A5, Letter, Legal
+    }
+    print(PaperSize(rawValue: "Legal"))
+    // Prints "Optional(PaperSize.Legal)"
+    print(PaperSize(rawValue: "Tabloid"))
+    // Prints "nil"
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case custom | custom | - |
+| case fast | fast | - |
+| case medium | medium | - |
+| case smooth | smooth | - |
+| case unspecified | unspecified | - |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var hashValue | Int | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| hash | void | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.RawRepresentable

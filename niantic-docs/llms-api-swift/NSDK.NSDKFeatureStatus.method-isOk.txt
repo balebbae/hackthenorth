@@ -1,0 +1,13 @@
+# isOk
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFeatureStatus.method-isOk/
+
+isOk
+
+---
+
+## Declaration
+
+func isOk() -> Bool
+
+---

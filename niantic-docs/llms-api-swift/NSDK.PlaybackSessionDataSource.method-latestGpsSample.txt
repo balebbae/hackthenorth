@@ -1,0 +1,18 @@
+# latestGpsSample
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackSessionDataSource.method-latestGpsSample/
+
+latestGpsSample
+Returns the most recent GPS sample, if available.
+
+---
+
+## Declaration
+
+func latestGpsSample() -> NSDKFrameData.GpsData?
+
+#### Summary
+
+Returns the most recent GPS sample, if available.
+
+---

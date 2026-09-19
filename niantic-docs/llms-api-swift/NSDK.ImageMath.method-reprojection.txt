@@ -1,0 +1,35 @@
+# reprojection
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-reprojection/
+
+reprojection
+
+---
+
+## Declaration
+
+static func reprojection(aspect: Float, fovRadians: Float, zNear: Float, zFar: Float, referenceView: matrix_float4x4, targetView: matrix_float4x4, backProjectionDistance: Float = 0.9) -> matrix_float3x3
+
+#### Summary
+
+Returns a 3x3 homography matrix as matrix_float3x3 that reprojects
+image coordinates from a reference camera view into a target camera view.
+The image coordinates are expected to be normalized [0..1].
+
+#### Returns
+
+A 3x3 homography matrix in column-major order.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| aspect | Float | The aspect ratio of the image (width / height). |
+| fovRadians | Float | The vertical field of view in radians. |
+| zNear | Float | Near clipping plane distance. |
+| zFar | Float | Far clipping plane distance. |
+| referenceView | matrix_float4x4 | The reference camera view. |
+| targetView | matrix_float4x4 | The target camera view. |
+| backProjectionDistance | Float | Depth at which to reproject, normalized between clipping planes near (0) and far (1). Recommended: 0.9. |
+
+---

@@ -1,0 +1,19 @@
+# getCamera
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKView.method-getCamera/
+
+getCamera
+
+---
+
+## Declaration
+
+@MainActor func getCamera() -> NSDKCamera?
+
+#### Summary
+
+Returns a unified camera (NSDKCamera) for the current frame when one is available.
+In live mode uses the current ARFrame's camera; in playback uses the current playback frame's camera.
+Returns nil if no frame is ready. Use this so callers do not need to branch on session mode for view/projection/viewport.
+
+---

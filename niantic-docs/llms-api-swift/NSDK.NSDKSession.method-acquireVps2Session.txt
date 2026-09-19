@@ -1,0 +1,26 @@
+# acquireVps2Session
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireVps2Session/
+
+acquireVps2Session
+
+---
+
+## Declaration
+
+@MainActor func acquireVps2Session() -> NSDKVps2Session
+
+#### Summary
+
+Returns the shared VPS2 session, creating it on first call.
+Subsequent calls return the same instance. The session is inactive until start() is
+called. NSDKSession.update() will call update() on it automatically each frame once
+it is started.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

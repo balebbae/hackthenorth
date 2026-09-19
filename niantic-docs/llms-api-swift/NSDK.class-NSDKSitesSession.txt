@@ -1,0 +1,30 @@
+# NSDKSitesSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSitesSession/
+
+NSDKSitesSession
+
+---
+
+## Declaration
+
+final class NSDKSitesSession
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| requestAssetInfo | AssetResult | Requests asset info and waits for the result. |
+| requestAssetsForSite | AssetResult | Requests assets for a site and waits for the result. |
+| requestOrganizationInfo | OrganizationResult | Requests organization info and waits for the result. |
+| requestOrganizationsForUser | OrganizationResult | Requests organizations for a user and waits for the result.This is an async wrapper that combines request initiation and polling.It automatically handles polling until the request completes or times out. |
+| requestSelfOrganizationInfo | OrganizationResult | Requests organizations for the current authenticated session and waits for the result. |
+| requestSelfUserInfo | UserResult | Requests self user info and waits for the result.Uses the user ID from the authenticated session's metadata.To fetch organizations, consider using`requestSelfOrganizationInfo(pollingInterval:timeout:)` instead. |
+| requestSiteAssetsByLocation | SiteAssetsResult | Requests sites and their assets near a GPS coordinate and waits for the result.Results are ordered by distance from the query coordinate. |
+| requestSiteInfo | SiteResult | Requests site info and waits for the result. |
+| requestSitesForOrganization | SiteResult | Requests sites for an organization and waits for the result. |
+| requestUserInfo | UserResult | Requests user info and waits for the result. |
+
+---

@@ -1,0 +1,13 @@
+# DeviceInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-DeviceInfo/
+
+DeviceInfo
+
+---
+
+## Declaration
+
+struct DeviceInfo
+
+---

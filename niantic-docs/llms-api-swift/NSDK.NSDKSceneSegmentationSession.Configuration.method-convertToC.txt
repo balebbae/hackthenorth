@@ -1,0 +1,13 @@
+# convertToC
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.Configuration.method-convertToC/
+
+convertToC
+
+---
+
+## Declaration
+
+func convertToC() -> ARDK_Semantics_Config
+
+---

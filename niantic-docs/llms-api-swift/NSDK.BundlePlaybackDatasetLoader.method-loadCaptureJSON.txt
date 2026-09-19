@@ -1,0 +1,28 @@
+# loadCaptureJSON
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.BundlePlaybackDatasetLoader.method-loadCaptureJSON/
+
+loadCaptureJSON
+
+---
+
+## Declaration
+
+override func loadCaptureJSON() -> Data?
+
+#### Summary
+
+Loads the capture JSON data from the data source.
+This method must be overridden by subclasses. The base implementation will crash if called.
+
+#### Returns
+
+The JSON data as Data, or nil if loading fails
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Subclasses must override this method. Do not call the base implementation.
+
+---

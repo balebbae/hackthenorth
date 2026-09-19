@@ -1,0 +1,48 @@
+# Vps2LocalizationError
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-Vps2LocalizationError/
+
+Vps2LocalizationError
+Possible errors from VPS localization operations.
+
+---
+
+## Declaration
+
+enum Vps2LocalizationError
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case authFailure | authFailure | The API gateway rejected the request due to an authentication or authorization failure. |
+| case badCameraAngle | badCameraAngle | The frame was rejected because the camera is pointing at the ground or sky (no horizon crossing). |
+| case badNetworkConnection | badNetworkConnection | The device cannot connect to the server. |
+| case badTracking | badTracking | The frame was rejected because tracking state is not normal. |
+| case internalClient | internalClient | The server response could not be parsed by the client. |
+| case internalServer | internalServer | The server encountered an internal error while processing the request. |
+| case localizationFailed | localizationFailed | The server processed the request but localization failed. |
+| case noMapFound | noMapFound | The server could not find a map near the request GPS location. |
+| case none | none | No error has occurred. |
+| case permissionDenied | permissionDenied | The server denied permission for the request. |
+| case quotaExceeded | quotaExceeded | The API gateway rejected the request because the account or project quota was exceeded (HTTP 429). |
+| case requestsLimitExceeded | requestsLimitExceeded | The request rate limit has been exceeded. |
+| case unknown | unknown | An unknown error occurred. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable

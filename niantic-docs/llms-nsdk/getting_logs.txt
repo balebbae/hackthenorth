@@ -1,0 +1,293 @@
+# Getting Logs
+
+Source: https://www.nianticspatial.com/docs/nsdk/getting_logs/
+
+This guide explains how to access logs for your NSDK application on Kotlin and Swift platforms.
+
+### Platform: kotlin
+
+## Viewing Logs in Logcat
+
+For Android applications using NSDK with Kotlin, you can view logs in **Logcat**, Android Studio's built-in log viewer. To view logs:
+
+1. Open your project in **Android Studio**
+2. Connect your Android device or start an emulator
+3. Run your application
+4. Open the **Logcat** window (usually at the bottom of Android Studio)
+5. Filter logs by your app's package name or use the tag filter to find NSDK-related logs
+
+Logcat will display real-time logs from your application, including NSDK debug and error messages.
+
+## Log File Location
+
+In addition to Logcat, NSDK also writes logs to a file on the device:
+
+**Path:** `/sdcard/Android/data/{app.package.name}/files/log.txt`
+
+Replace `{app.package.name}` with your application's package name (e.g., `com.example.myapp`).
+
+You can access this file by:
+
+- Using Android Studio's **Device File Explorer**
+- Using `adb pull` command: `adb pull /sdcard/Android/data/{app.package.name}/files/log.txt`
+- Using a file manager app on the device (if it has access to app-specific directories)
+
+### Platform: swift
+
+## Viewing Logs in Xcode Console
+
+For iOS applications using NSDK with Swift, you can view logs in **Xcode's Console** during development and debugging. To view logs:
+
+1. Open your project in **Xcode**
+2. Connect your iOS device or start the iOS Simulator
+3. Run your application
+4. Open the **Console** window (View -> Debug Area -> Activate Console, or press `⌘⇧Y`)
+5. The console will display real-time logs from your application, including NSDK debug and error messages
+
+You can filter the console output by typing keywords in the filter box at the bottom of the console window.
+
+## Log File Location
+
+In addition to the Xcode console, NSDK also writes logs to a file on the device:
+
+**Path:** `{App Files}/log.txt`
+
+The `{App Files}` directory refers to your application's documents directory. You can access this file by:
+
+- Using Xcode's **Window -> Devices and Simulators** -> Select your device -> Select your app -> Download Container
+- Programmatically accessing the file through your app's file system APIs
+- Using a file manager app on the device (if your app shares files or uses iCloud Drive)
+
+## Custom Logging Callbacks
+
+You can implement a custom logging callback to reroute NSDK logs to your own logging system. This is useful for integrating NSDK logs with your existing logging infrastructure or sending logs to remote services.
+
+Create a class that conforms to the `NsdkLogCallback` protocol:
+
+```swift
+import Foundation
+import NSDK
+import os.log
+
+class MyCustomLogCallback: NsdkLogCallback {
+    private let logger = Logger(subsystem: "com.yourapp.nsdk", category: "NSDK")
+    
+    func onLog(level: NsdkLogLevel, message: String, fileName: String?, fileLine: Int, funcName: String?) {
+        // Format the log message with location information
+        var locationInfo = ""
+        if let fileName = fileName, let funcName = funcName {
+            locationInfo = "[\(fileName):\(fileLine)] \(funcName)"
+        } else if let fileName = fileName {
+            locationInfo = "[\(fileName):\(fileLine)]"
+        }
+        
+        let logMessage = locationInfo.isEmpty ? message : "\(locationInfo): \(message)"
+        
+        // Route to your logging system
+        switch level {
+        case .all, .debug:
+            logger.debug("[NSDK] [DEBUG] \(logMessage)")
+        case .info:
+            logger.info("[NSDK] [INFO] \(logMessage)")
+        case .warn:
+            logger.warning("[NSDK] [WARN] \(logMessage)")
+        case .error:
+            logger.error("[NSDK] [ERROR] \(logMessage)")
+        case .off:
+            break
+        }
+    }
+}
+```
+
+Pass your callback when creating the `NsdkSession`:
+
+```swift
+// Create your custom callback
+let logCallback = MyCustomLogCallback()
+
+// Initialize session with callback
+let nsdk = NsdkSession(apiKey: "your-api-key", logCallback: logCallback)
+
+// Or with other initializers
+let nsdk = NsdkSession(withJson: configPath, logCallback: logCallback)
+```
+
+## Configuring Log Levels
+
+You can control the verbosity of NSDK logs by setting log levels for different output destinations. Log levels follow a hierarchical structure where higher levels include all messages from lower levels.
+
+Available log levels:
+
+- `.all` - Logs all messages regardless of level (most verbose, useful for debugging)
+- `.debug` - Logs debug messages and all higher priority messages
+- `.info` - Logs informational messages and all higher priority messages
+- `.warn` - Logs warning messages and all higher priority messages
+- `.error` - Logs error messages and fatal messages only
+- `.off` - Disables all logging output
+
+Configure log levels on your `NsdkSession` instance:
+
+```swift
+// Set log level for console output (Xcode console)
+nsdk.setStdoutLogLevel(logLevel: NsdkLogLevel.all)
+
+// Set log level for file output (log.txt)
+nsdk.setFileLogLevel(logLevel: NsdkLogLevel.all)
+
+// Set log level for callback output (if using custom callback)
+nsdk.setCallbackLogLevel(logLevel: NsdkLogLevel.all)
+```
+
+Example usage:
+
+```swift
+// Initialize your NSDK session
+let nsdk = NsdkSession(apiKey: "your-api-key")
+
+// Enable verbose logging for debugging
+nsdk.setStdoutLogLevel(logLevel: .debug)
+nsdk.setFileLogLevel(logLevel: .debug)
+nsdk.setCallbackLogLevel(logLevel: .debug)
+
+// Or use different levels for different outputs
+nsdk.setStdoutLogLevel(logLevel: .info)  // Less verbose in console
+nsdk.setFileLogLevel(logLevel: .all)     // Full logs in file
+nsdk.setCallbackLogLevel(logLevel: .warn) // Only warnings and errors to callback
+
+// For production, reduce verbosity
+nsdk.setStdoutLogLevel(logLevel: .warn)
+nsdk.setFileLogLevel(logLevel: .error)
+nsdk.setCallbackLogLevel(logLevel: .error)
+```
+
+### Platform: kotlin
+
+## Custom Logging Callbacks
+
+You can implement a custom logging callback to reroute NSDK logs to your own logging system. This is useful for integrating NSDK logs with your existing logging infrastructure or sending logs to remote services.
+
+Create a function that implements the `NsdkLogCallback` functional interface:
+
+```kotlin
+import android.util.Log
+import com.nianticspatial.nsdk.NsdkLogCallback
+
+fun createCustomLogCallback(): NsdkLogCallback {
+    return NsdkLogCallback { level, message, fileName, fileLine, funcName ->
+        // Convert numeric level to string
+        val levelStr = when (level) {
+            0 -> "ALL"
+            1 -> "DEBUG"
+            2 -> "INFO"
+            3 -> "WARN"
+            4 -> "ERROR"
+            5 -> "OFF"
+            else -> "UNKNOWN($level)"
+        }
+
+        // Build location info string
+        val locationInfo = if (fileName != null && funcName != null) {
+            "[$fileName:$fileLine] $funcName"
+        } else if (fileName != null) {
+            "[$fileName:$fileLine]"
+        } else {
+            ""
+        }
+
+        // Format the log message
+        val logMessage = if (locationInfo.isNotEmpty()) {
+            "[Custom-logging-callback] [$levelStr] $locationInfo: $message"
+        } else {
+            "[Custom-logging-callback] [$levelStr] $message"
+        }
+
+        // Route to your logging system (Android Logcat example)
+        when (level) {
+            1 -> Log.d("ARDK", logMessage)  // DEBUG
+            2 -> Log.i("ARDK", logMessage)  // INFO
+            3 -> Log.w("ARDK", logMessage)  // WARN
+            4 -> Log.e("ARDK", logMessage)  // ERROR
+            else -> Log.d("ARDK", logMessage)  // Default to DEBUG
+        }
+    }
+}
+```
+
+Pass your callback when creating the `NSDKSession`:
+
+```kotlin
+// Create your custom callback
+val logCallback = createCustomLogCallback()
+
+// Initialize session with callback
+val nsdkSession = NSDKSession(
+    apiKey = "your-api-key",
+    useLidar = false,
+    logCallback = logCallback
+)
+
+// Or with other constructors
+val nsdkSession = NSDKSession(
+    configFilePath = configPath,
+    logCallback = logCallback
+)
+
+// Or with auth tokens
+val nsdkSession = NSDKSession(
+    accessToken = "your-access-token",
+    logCallback = logCallback
+)
+```
+
+## Configuring Log Levels
+
+You can control the verbosity of NSDK logs by setting log levels for different output destinations. Log levels follow a hierarchical structure where higher levels include all messages from lower levels.
+
+Available log levels:
+
+- `LogLevel.All` - Logs all messages regardless of level (most verbose, useful for debugging)
+- `LogLevel.Debug` - Logs debug messages and all higher priority messages
+- `LogLevel.Info` - Logs informational messages and all higher priority messages
+- `LogLevel.Warn` - Logs warning messages and all higher priority messages
+- `LogLevel.Error` - Logs error messages and fatal messages only
+- `LogLevel.Off` - Disables all logging output
+
+Configure log levels on your `NSDKSession` instance:
+
+```kotlin
+import com.nianticspatial.nsdk.logging.LogLevel
+
+// Set log level for console output (Logcat)
+nsdkSession.setStdoutLogLevel(LogLevel.All)
+
+// Set log level for file output (log.txt)
+nsdkSession.setFileLogLevel(LogLevel.All)
+
+// Set log level for callback output (if using custom callback)
+nsdkSession.setCallbackLogLevel(LogLevel.All)
+```
+
+Example usage:
+
+```kotlin
+import com.nianticspatial.nsdk.logging.LogLevel
+
+// Initialize your NSDK session
+val nsdkSession = NSDKSession(apiKey = "your-api-key")
+
+// Enable verbose logging for debugging
+nsdkSession.setStdoutLogLevel(LogLevel.Debug)
+nsdkSession.setFileLogLevel(LogLevel.Debug)
+nsdkSession.setCallbackLogLevel(LogLevel.Debug)
+
+// Or use different levels for different outputs
+nsdkSession.setStdoutLogLevel(LogLevel.Info)  // Less verbose in console
+nsdkSession.setFileLogLevel(LogLevel.All)     // Full logs in file
+nsdkSession.setCallbackLogLevel(LogLevel.Warn) // Only warnings and errors to callback
+
+// For production, reduce verbosity
+nsdkSession.setStdoutLogLevel(LogLevel.Warn)
+nsdkSession.setFileLogLevel(LogLevel.Error)
+nsdkSession.setCallbackLogLevel(LogLevel.Error)
+```

@@ -1,0 +1,70 @@
+# PlaybackSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackSession/
+
+PlaybackSession
+> inherits from ARKit.ARSession
+
+---
+
+## Declaration
+
+class PlaybackSession
+
+## Summary
+
+Drives playback. **Subclasses ARSession** so it can be assigned to `ARView.session` and the app can use
+the same delegate pattern. Runs a loop on a background queue, builds **PlaybackFrame** per frame from
+the PlaybackDataset, dispatches to the main queue, and notifies the delegate and **PlaybackRenderer**.
+Relation to Apple AR: **Replaces** the behavior of ARSession (no real device frames); API-compatible so
+ARView and delegate code don't need to know it's playback.
+
+---
+
+## Constructors
+
+init(dataset: PlaybackDataset)
+
+#### Summary
+
+Initializes a new playback session with an existing dataset.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var currentPlaybackFrame | PlaybackFrame | The most recently delivered playback frame. Set on the main queue when each frame is delivered.Use this to get camera or frame data outside the delegate (e.g. in a render loop). |
+| weak var playbackDelegate | ( PlaybackSessionDelegate)? | Delegate that receives frame updates during playback |
+| var playbackRenderer | PlaybackRenderer? | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| hasDepth | Bool | Returns whether the dataset contains LiDAR depth (depthSource == "lidar"). Used by NSDKView.hasDepth and feature checks. |
+| override pause | void | Stops playback. The loop exits on its next iteration; the current frame index is preserved so a later `run()` resumes from the same frame. |
+| override run | void | Starts playback. The playback loop runs asynchronously on a background queue; frames are delivered on the main queue.Configuration and options are ignored (playback uses the dataset's frame rate and content). Call `pause()` to stop. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  ObjectiveC.NSObjectProtocol
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.CVarArg 
+
+conforms to:  Swift.CustomStringConvertible 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.SendableMetatype

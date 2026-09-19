@@ -1,0 +1,26 @@
+# ==
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.GeolocationData.operator-op_Equality/
+
+\==
+
+---
+
+## Declaration
+
+static func == (lhs: GeolocationData, rhs: GeolocationData) -> Bool
+
+#### Summary
+
+Returns a Boolean value indicating whether two values are equal.
+Equality is the inverse of inequality. For any values a and b,
+a == b implies that a != b is false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| lhs | GeolocationData | A value to compare. |
+| rhs | GeolocationData | Another value to compare. |
+
+---

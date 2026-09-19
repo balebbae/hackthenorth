@@ -1,0 +1,59 @@
+# Recording and Playback
+
+Source: https://www.nianticspatial.com/docs/nsdk/features/playback/
+
+The Playback feature allows you to import pre-recorded AR sessions and re-run them during a new AR runtime session. Using Playback supplies the application with frames from an AR session recording along with other relevant data such as GPS coordinates and device pose. Developers can use this feature to create recordings of locations where they expect their users to interact with their app, then develop and test using real-world data entirely from the editor.
+
+> **Note:**
+>
+> **Playback datasets are not standard video files**
+>
+> Playback requires an AR session recording that contains tracking data, device poses, timestamps, and location information. Standard videos captured from external cameras don't include this metadata, so they can't be used as Playback datasets.
+
+### Platform: unity
+
+To test NSDK features against a real-world location, first record a dataset on a supported device using NSDK Recording methods, then use Playback to iterate on your application.
+
+## Integration
+
+NSDK Playback functionality integrates seamlessly into ARFoundation's subsystems, allowing developers to use it without writing any new code. All features such as **Depth**, and **Scene Segmentation** should work the same as if the session was occurring in real time on a device.
+
+After selecting NSDK as the active loader in **XR Plug-in Management**, you can use Playback-supported Unity subsystems during Play Mode in the Unity Editor. If your dataset includes location data, it's exposed through Unity's [LocationService API](https://docs.unity3d.com/ScriptReference/LocationService.html).
+
+## Recording and Using Playback Datasets
+
+NSDK 4.0 supports the creation of datasets from real-world environments for playback in the Unity Editor. For more information, see [How to Create Datasets for Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/).
+
+To get started developing with a playback dataset, see [How to Set Up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).
+
+## Example
+
+(image: Playback in Action)
+
+### Platform: swift
+
+To test NSDK features against a real-world location, first record a dataset on a supported iOS device using the NSDK Capture sample, then use Playback to iterate on your application.
+
+## Integration
+
+The Swift SDK supports playback through `NSDKView`, which accepts a `PlaybackDataset` at initialization instead of using a live ARKit session. `BundlePlaybackDatasetLoader` loads the dataset from the app bundle; when a playback session is detected, `PlaybackSessionDataSource` is used in place of `DefaultSessionDataSource`. The delegate pattern is identical in both modes, so the rest of the app code does not need to change.
+
+## Recording and Using Playback Datasets
+
+To create a playback dataset, see [How to Create Datasets for Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/).
+
+To get started using a playback dataset in your project, see [How to Set Up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).
+
+### Platform: kotlin
+
+To test NSDK features against a real-world location, first record a dataset on a supported Android device using the NSDK Capture sample, then use Playback to iterate on your application.
+
+## Integration
+
+The Kotlin SDK supports playback through `AssetPlaybackDatasetLoader`, `PlaybackDataset`, and `PlaybackSession`. Load a pre-recorded dataset from the Android assets directory, create a `PlaybackSession` to drive the frame loop, and use `buildFrameData()` to convert each `PlaybackFrame` into a `FrameData` object for `NSDKSession.sendFrame()`. All NSDK features (Depth, Scene Segmentation, etc...) work the same as in a live session.
+
+## Recording and Using Playback Datasets
+
+To create a dataset, see [How to Create Datasets for Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/).
+
+To get started using a playback dataset in your project, see [How to Set Up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).

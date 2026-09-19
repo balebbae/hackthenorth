@@ -1,0 +1,37 @@
+# displayTransform
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-displayTransform/
+
+displayTransform
+
+---
+
+## Declaration
+
+static func displayTransform(for orientation: UIInterfaceOrientation, viewportSize: CGSize, imageSize: CGSize) -> CGAffineTransform
+
+#### Summary
+
+Returns an affine transform that maps normalized image coordinates
+into a coordinate space suitable for rendering the camera image
+in the given viewport and orientation.
+This method replicates ARKit's displayTransform(for:viewportSize:)
+by computing a transform that accounts for the camera image's
+aspect ratio, the device's interface orientation, and the desired
+viewport size.
+
+#### Returns
+
+A CGAffineTransform that converts normalized image coordinates
+  (with origin at top-left, ranging from 0.0 to 1.0) into the coordinate
+  space of the viewport, accounting for orientation and aspect ratio.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orientation | UIInterfaceOrientation | - |
+| viewportSize | CGSize | The size of the viewport in which the image will be rendered. |
+| imageSize | CGSize | The dimensions of the camera image. |
+
+---

@@ -1,0 +1,69 @@
+# CameraIntrinsics
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-CameraIntrinsics/
+
+CameraIntrinsics
+
+---
+
+## Declaration
+
+struct CameraIntrinsics
+
+## Summary
+
+Camera intrinsic parameters for geometric calibration.
+This structure contains the internal geometric properties of the camera,
+including focal length, principal point, and resolution. These parameters
+are essential for accurate 3D reconstruction and AR tracking.
+
+---
+
+## Constructors
+
+### Constructor
+
+init(intrinsics: simd_float3x3, resolution: CGSize)
+
+#### Summary
+
+Creates camera intrinsics from a 3x3 intrinsic matrix and resolution.
+
+---
+
+### Overload
+
+init(intrinsics: simd_float3x3, width: UInt32, height: UInt32)
+
+#### Summary
+
+Creates camera intrinsics from a 3x3 intrinsic matrix and dimensions.
+The intrinsic matrix should be in the standard computer vision format:
+`</code> <br />[fx  0  cx] <br />[ 0 fy  cy] <br />[ 0  0   1] <br /><code>`
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var focalLengthX | Float | Focal length in the X direction (in pixels).This represents the camera's focal length scaled by the horizontalpixel density. Used for projecting 3D points to 2D image coordinates. |
+| var focalLengthY | Float | Focal length in the Y direction (in pixels).This represents the camera's focal length scaled by the verticalpixel density. May differ from focalLengthX if pixels are not square. |
+| var principalPointX | Float | Principal point X coordinate (in pixels).The X coordinate of the principal point, which is the intersectionof the optical axis with the image plane. Ideally at the image center. |
+| var principalPointY | Float | Principal point Y coordinate (in pixels).The Y coordinate of the principal point, which is the intersectionof the optical axis with the image plane. Ideally at the image center. |
+| var resolutionX | UInt32 | Image width in pixels. |
+| var resolutionY | UInt32 | Image height in pixels. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable

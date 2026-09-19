@@ -1,0 +1,37 @@
+# ImageMath
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-ImageMath/
+
+ImageMath
+
+---
+
+## Declaration
+
+struct ImageMath
+
+## Summary
+
+Provides affine transformation utilities for image processing.
+All affine matrices returned by this class operate in **normalized coordinates**,
+where image space is mapped to the [0, 1] range in both axes with origin at top-left.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static affineCrop | CGAffineTransform | Returns an affine transformation that crops the source size to match the aspect ratio of the target size. |
+| static affineFit | CGAffineTransform | Returns an affine transformation that maps normalized coordinates in the source frame to normalized coordinates in the target frame. |
+| static affineInvertHorizontal | CGAffineTransform | Returns an (u, v) -> (u', v') transformation that represents a horizontal mirroring, i.e. (u, v) -> (1 - u, v). |
+| static affineInvertVertical | CGAffineTransform | Returns an (u, v) -> (u', v') transformation that represents a vertical mirroring, i.e. (u, v) -> (u, 1 - v). |
+| static affineRotation | CGAffineTransform | Returns an (u, v) -> (u', v') transformation that represents a 2D affine rotation. |
+| static affineScaling | CGAffineTransform | Returns an (u, v) -> (u', v') transformation that represents a 2D affine scaling. |
+| static affineTranslation | CGAffineTransform | Returns an (u, v) -> (u', v') transformation that represents a 2D affine translation. |
+| static deviceRotation | CGAffineTransform | Returns an affine transform that rotates between two interface orientations around the center.This method models physical device rotation.For example, rotating from `.landscapeRight` to `.portrait` results in a clockwise transform. |
+| static displayTransform | CGAffineTransform | Returns an affine transform that maps normalized image coordinatesinto a coordinate space suitable for rendering the camera imagein the given viewport and orientation.This method replicates ARKit's `displayTransform(for:viewportSize:)`by computing a transform that accounts for the camera image'saspect ratio, the device's interface orientation, and the desiredviewport size. |
+| static reprojection | matrix_float3x3 | Returns a 3x3 homography matrix as `matrix_float3x3` that reprojectsimage coordinates from a reference camera view into a target camera view.The image coordinates are expected to be normalized [0..1]. |
+| static viewRotation | CGAffineTransform | Returns an affine transform that rotates between two interface orientations around the center.This method models UI rotation (opposite to physical device rotation).For example, rotating from `.landscapeRight` to `.portrait` results in a counter-clockwise transform. |
+
+---

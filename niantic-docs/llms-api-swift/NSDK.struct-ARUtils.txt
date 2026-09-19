@@ -1,0 +1,27 @@
+# ARUtils
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-ARUtils/
+
+ARUtils
+
+---
+
+## Declaration
+
+struct ARUtils
+
+## Summary
+
+Utility functions for AR and device capability detection.
+`ARUtils` provides helper methods for detecting device capabilities
+and AR features that are relevant to NSDK functionality.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static isLidarAvailable | Bool | Checks if LiDAR depth is available on the current device.LiDAR depth data significantly improves the accuracy of NSDK featuressuch as device mapping, scanning, and localization. |
+
+---

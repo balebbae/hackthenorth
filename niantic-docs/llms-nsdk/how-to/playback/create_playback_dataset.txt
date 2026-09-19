@@ -1,0 +1,4000 @@
+# Create playback datasets
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/
+
+### Platform: unity
+
+## Introduction
+
+Use NSDK Recording to capture camera, motion, and sensor data from an AR session.
+Export the recording as a playback dataset for repeatable testing in the Unity
+Editor.
+
+The Unity sample project is Niantic's working C
+
+# reference app. Its Recording
+scene demonstrates a complete capture and export flow, and it provides a
+runnable AR scene for the API tutorial.
+
+Start by [getting the sample project](#unity-get-the-sample-project), then choose
+one of these independent workflows:
+
+- **[Recording sample](#unity-record-with-the-sample):** Use Niantic's existing
+  Recording scene to create a dataset quickly.
+- **[Recording API](#unity-record-with-the-api):** Build a separate tutorial
+  component when you need control over the UI, capture state, archive creation,
+  or sharing behavior.
+
+You do not need to complete the Recording sample workflow before using the
+Recording API workflow.
+
+In the Unity instructions:
+
+- **Sample project** means Niantic's downloaded `nsdk-samples-csharp` project.
+- **Recording sample** means the `Recording.unity` scene and its existing
+  `RecordingDemo` component.
+- **Tutorial component** means the `PlaybackCaptureController` you create.
+- **Your app** means the Unity application where you will integrate the
+  completed recording flow.
+
+NSDK first saves a raw scan in the scan store. `ScanArchiveBuilder` then packages
+that saved scan into one or more `.tgz` playback archives. The raw scan is the
+source recording; the exported archives are the files you load with Playback.
+
+(image: The first view of a statue recorded in a playback dataset)
+
+(image: A second view of the same statue recorded in the playback dataset)
+
+## Get the sample project
+
+Both workflows use the public
+[`nsdk-samples-csharp`](https://github.com/nianticspatial/nsdk-samples-csharp)
+repository. The published sample project is configured for Unity `6000.0.58f2`;
+install that Unity version with the Android or iOS build support module for
+your target device when you want to validate the sample without changing it.
+
+Use the Unity editor version declared by the sample project when you want to run
+the downloaded sample without upgrading it first. Opening a Unity project with a
+newer editor can update project metadata, package files, or generated settings.
+Upgrade the project only when you intend to validate against that newer editor.
+
+Get and open the sample source:
+
+1. In Terminal, clone the repository:
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-csharp.git
+   ```
+
+   Alternatively, select **Code > Download ZIP** on GitHub, then extract the
+   ZIP.
+
+2. In Unity Hub, select **Add > Add project from disk**.
+
+3. Select `<download-location>/nsdk-samples-csharp/NsdkSamples`. The Unity
+   project is in the `NsdkSamples` subdirectory, not at the repository root.
+
+4. Open the project with Unity `6000.0.58f2` and wait for package resolution and
+   script compilation to finish.
+
+5. Authenticate NSDK before building:
+   1. In Unity's menu bar, select **NSDK > Settings**.
+   2. Sign in to your Scaniverse account, or provide a developer token under
+      **Edit > Project Settings > XR Plug-in Management > Niantic Spatial
+      Development Kit > Credentials**.
+
+For more information about choosing and configuring an authentication method,
+see [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+## Record with the Recording sample
+
+The Recording sample is the fastest way to create a playback dataset in Unity
+without building another recording interface.
+
+### Prepare the Recording sample
+
+1. In the Project window, open
+   `Assets/Samples/Scanning/Scenes/Recording.unity`.
+2. Configure the project for Android or iOS by following
+   [Configure the build platform](https://www.nianticspatial.com/docs/nsdk/setup/#configure-the-build-platform).
+3. Select **File > Build Profiles** and confirm that `Recording` is enabled in
+   the scene list.
+4. Connect a supported physical device and select **Build and Run**.
+5. On the device, grant camera and location access when prompted.
+
+The first iOS recording requires an internet connection while NSDK downloads a
+resource used to convert altitude data. Wait for initialization to finish before
+starting capture.
+
+### Record the environment
+
+1. Tap **Start**.
+2. Move the device through the environment in portrait orientation. Hold it
+   steadily enough for AR tracking and record the area from several viewpoints.
+
+After tapping **Start**, record the environment for several seconds before
+tapping **Stop**. The Recording sample does not expose its recorded frame count
+in the UI. The API workflow adds an explicit frame-count gate before saving.
+
+### Stop and export
+
+1. Tap **Stop** after recording the environment.
+2. Wait for the save confirmation to appear, then tap **Save** to export the
+   recording.
+3. Wait for **Exporting Completed**. Keep each `.tgz` path displayed in the
+   export panel; a longer recording can produce more than one archive.
+4. Use [Retrieve and verify the recording](#unity-retrieve-and-verify-the-recording)
+   to copy every archive and inspect its contents.
+
+On iOS, you can also use **Share** to send a single exported archive to Files,
+AirDrop, or another app.
+
+## Record with the API
+
+The Unity API gives you control over the recording UI, capture state,
+frame-count gate, archive creation, and archive verification and sharing. This
+workflow uses a copy of Niantic's Recording scene as a runnable development
+environment. It creates a separate component and UI without replacing
+`RecordingDemo.cs`.
+
+The API walkthrough contains these sections:
+
+1. [Capture implementation overview](#unity-capture-implementation-overview)
+2. [Prepare the tutorial scene](#unity-prepare-the-tutorial-scene)
+3. [Create PlaybackCaptureController](#unity-create-playback-capture-controller)
+4. [Add capture controls](#unity-add-capture-controls)
+5. [Start capture](#unity-start-capture)
+6. [Stop and save](#unity-stop-and-save)
+7. [Export the archives](#unity-export-the-archives)
+8. [Verify and share archives](#unity-verify-and-share-archives)
+9. [Retrieve and verify the recording](#unity-retrieve-and-verify-the-recording)
+10. [View the complete PlaybackCaptureController](#unity-complete-playback-capture-controller)
+11. [Add to your app](#unity-add-to-your-app)
+
+---
+
+### Capture implementation overview
+
+The API walkthrough starts from Niantic's Recording sample scene. These sample
+assets provide the runtime environment and reference implementation for the
+tutorial component:
+
+| Sample asset | Responsibility |
+| --- | --- |
+| `Assets/Samples/Scanning/Scenes/Recording.unity` | Contains the configured AR Session, XR Origin, camera, NSDK settings, and Recording sample UI. |
+| `Assets/Samples/Scanning/Scripts/RecordingDemo.cs` | Owns the sample recording controls, save/export flow, and scan visualization. |
+| `ARScanningManager` on **AR Session** | Provides the Recording API entry point used by the tutorial controller. |
+| `IOSShare` | Provides the sample iOS share-sheet helper used after export. |
+
+The tutorial creates a separate scene and `PlaybackCaptureController.cs` so the
+Recording sample remains unchanged. When the finished controller moves into an
+app, that app must provide an AR Session with `ARScanningManager`, a valid
+authentication path, camera frames, location data, and app-specific archive
+handling.
+
+Standalone development or internal-test builds can use a developer token from
+**Credentials > Developer Tokens** in
+[Scaniverse web](https://scaniverse.nianticspatial.com/signin). Developer
+tokens should stay out of source control and public builds; see
+[Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/) for the production flow.
+
+### Prepare the tutorial scene
+
+Create a disposable scene beside Niantic's Recording sample so you can validate
+the API code without changing the reference implementation:
+
+1. In the Project window, select
+   `Assets/Samples/Scanning/Scenes/Recording.unity`, then select
+   **Edit > Duplicate**.
+2. Rename the copy `PlaybackCaptureTutorial.unity`, then open it.
+3. In the Hierarchy, select **RecordingDemo**. In the Inspector, clear the
+   checkbox beside the existing `RecordingDemo` component so it cannot control
+   the tutorial recording.
+4. Select the existing **Canvas** GameObject and deactivate it from the
+   Inspector so its controls do not overlap the tutorial UI.
+5. Create the tutorial UI:
+   1. Select **GameObject > UI > Canvas** and name it
+      `PlaybackCaptureCanvas`.
+
+   2. With `PlaybackCaptureCanvas` selected, configure its
+      **Canvas Scaler** component to match the sample Canvas:
+
+      | Canvas Scaler field | Value |
+      | --- | --- |
+      | **UI Scale Mode** | **Scale With Screen Size** |
+      | **Reference Resolution** | `2500` x `1440` |
+      | **Screen Match Mode** | **Match Width Or Height** |
+      | **Match** | `0.5` |
+
+   3. With `PlaybackCaptureCanvas` selected, use **GameObject > UI > Button - TextMeshPro**
+      to create a button. In the Hierarchy, rename the new button
+      `StartCaptureButton`.
+
+   4. In the Hierarchy, expand `StartCaptureButton` and select its
+      **Text (TMP)** child. In the Inspector, find the
+      **TextMeshPro - Text (UI)** component and set **Text Input** to
+      `Start Capture`. Set **Font Size** to `48`, and set **Alignment** to
+      center and middle.
+
+   5. Repeat the previous two actions to create the remaining buttons:
+      `StopCaptureButton` with **Text Input** set to `Stop Capture`, and
+      `ExportButton` with **Text Input** set to `Export`. Use **Font Size**
+      `48` and center-middle **Alignment** for both button labels.
+
+   6. With `PlaybackCaptureCanvas` selected, use
+      **GameObject > UI > Text - TextMeshPro** to create a text object. In the
+      Hierarchy, rename the new text object `CaptureStatus`.
+
+   7. Select `CaptureStatus`. In the Inspector, find the
+      **TextMeshPro - Text (UI)** component and set **Text Input** to
+      `Ready to capture`. Set **Font Size** to `56`, and set **Alignment** to
+      center and middle.
+
+   8. Arrange the controls in the lower center of the screen, based on the
+      disabled Recording sample controls. For each object, select the object in
+      the Hierarchy, find its **Rect Transform** component in the Inspector, and
+      enter the following values:
+
+      `CaptureStatus`
+
+      - Anchor Min: X `0.5`, Y `0`
+      - Anchor Max: X `0.5`, Y `0`
+      - Pivot: X `0.5`, Y `0.5`
+      - Pos: X `0`, Y `720`
+      - Width `1000`, Height `100`
+
+      `StartCaptureButton`
+
+      - Anchor Min: X `0.5`, Y `0`
+      - Anchor Max: X `0.5`, Y `0`
+      - Pivot: X `0.5`, Y `0.5`
+      - Pos: X `-360`, Y `550`
+      - Width `320`, Height `120`
+
+      `StopCaptureButton`
+
+      - Anchor Min: X `0.5`, Y `0`
+      - Anchor Max: X `0.5`, Y `0`
+      - Pivot: X `0.5`, Y `0.5`
+      - Pos: X `0`, Y `550`
+      - Width `320`, Height `120`
+
+      `ExportButton`
+
+      - Anchor Min: X `0.5`, Y `0`
+      - Anchor Max: X `0.5`, Y `0`
+      - Pivot: X `0.5`, Y `0.5`
+      - Pos: X `360`, Y `550`
+      - Width `320`, Height `120`
+6. Select **GameObject > Create Empty** and name the new GameObject
+   `PlaybackCaptureTutorial`.
+7. Select **File > Build Profiles**, then select **Open Scene List**. The sample
+   project includes several scenes and defaults to the `Home` scene, so configure
+   this tutorial build to include only the tutorial scene:
+   1. Clear the checkbox for each selected scene in the scene list.
+   2. Select **Add Open Scenes** to add `PlaybackCaptureTutorial`.
+   3. Confirm that `PlaybackCaptureTutorial` is the only selected scene in the
+      list.
+
+The copied scene continues to provide the configured AR Session, XR Origin,
+camera, NSDK settings, and build configuration. The new component owns only the
+recording flow and its controls.
+
+**Validate this step:**
+
+1. Select **Build and Run**.
+2. If Unity displays the **Unsupported Input Handling** dialog, select **Yes**.
+   Unity might restart after updating the input handling setting. After Unity
+   reopens the project, select **Build and Run** again.
+3. On the device, confirm that the app opens directly to
+   `PlaybackCaptureTutorial` instead of the sample app's `Home` scene.
+4. Confirm that **Start Capture**, **Stop Capture**, **Export**, and
+   **Ready to capture** are visible on the device.
+
+The next steps add the script that connects the buttons to recording behavior.
+
+### Create PlaybackCaptureController
+
+Create the component state and compiling placeholders used by the remaining
+steps:
+
+1. In the Project window, select
+   `Assets/Samples/Scanning/Scripts`, then select
+   **Assets > Create > Scripting > MonoBehaviour Script**.
+2. Name the file `PlaybackCaptureController.cs`.
+3. Open `Assets/Samples/Scanning/Scripts/PlaybackCaptureController.cs` and
+   replace its contents with the following code.
+
+#### Expand to create PlaybackCaptureController.cs with its initial state and placeholders
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using NianticSpatial.NSDK.AR.Scanning;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public sealed class PlaybackCaptureController : MonoBehaviour
+{
+    // Connect these fields to the AR Scanning Manager and tutorial controls in
+    // the Inspector. In your app, reuse the manager and controls in its AR scene.
+    [SerializeField] private ARScanningManager _arScanningManager;
+    [SerializeField] private Button _startButton;
+    [SerializeField] private Button _stopButton;
+    [SerializeField] private Button _exportButton;
+    [SerializeField] private TMP_Text _statusText;
+
+    // The exporter creates another archive after this many frames. Adjust the
+    // value for your storage or upload limits.
+    [SerializeField, Min(1)] private int _maxFramesPerChunk = 900;
+
+    private ScanStore _scanStore;
+    private ScanStore.SavedScan _savedScan;
+    private readonly List<string> _archivePaths = new();
+    private Coroutine _captureStartRoutine;
+    private Coroutine _frameMonitorRoutine;
+    private bool _isPreparing;
+    private bool _isCapturing;
+    private bool _canStopCapture;
+    private bool _isSaving;
+    private bool _isExporting;
+
+    private void Awake()
+    {
+        if (_arScanningManager == null ||
+            _startButton == null ||
+            _stopButton == null ||
+            _exportButton == null ||
+            _statusText == null)
+        {
+            Debug.LogError(
+                "PlaybackCaptureController: assign the manager and all controls."
+            );
+            enabled = false;
+            return;
+        }
+
+        // Reuse the manager's scan store for the lifetime of this screen.
+        _scanStore = _arScanningManager.GetScanStore();
+
+        // If your UI already owns these actions, call the matching methods from
+        // its existing handlers instead of registering another listener.
+        _startButton.onClick.AddListener(StartCapture);
+        _stopButton.onClick.AddListener(StopAndSaveCapture);
+        _exportButton.onClick.AddListener(ExportCapture);
+        UpdateControls();
+        Debug.Log("PlaybackCaptureController: initialized");
+    }
+
+    private void OnDestroy()
+    {
+        _startButton?.onClick.RemoveListener(StartCapture);
+        _stopButton?.onClick.RemoveListener(StopAndSaveCapture);
+        _exportButton?.onClick.RemoveListener(ExportCapture);
+
+        StopRoutine(ref _captureStartRoutine);
+        StopRoutine(ref _frameMonitorRoutine);
+
+        // Stop an unfinished recording when this tutorial screen is destroyed.
+        // Do not unload your production screen while SaveScan() is running.
+        if (_isCapturing && _arScanningManager != null)
+        {
+            _arScanningManager.enabled = false;
+        }
+    }
+
+    private void UpdateControls()
+    {
+        // Placeholder: replaced in "Add capture controls."
+    }
+
+    public void StartCapture()
+    {
+        // Placeholder: replaced in "Start capture."
+    }
+
+    private IEnumerator StartWhenLocationIsReady()
+    {
+        // Placeholder: replaced in "Start capture."
+        yield break;
+    }
+
+    private IEnumerator WaitForFirstFrame()
+    {
+        // Placeholder: replaced in "Start capture."
+        yield break;
+    }
+
+    public async void StopAndSaveCapture()
+    {
+        // Placeholder: replaced in "Stop and save."
+        await Task.CompletedTask;
+    }
+
+    public async void ExportCapture()
+    {
+        // Placeholder: replaced in "Export the archives."
+        await Task.CompletedTask;
+    }
+
+    private void HandleArchives()
+    {
+        // Placeholder: replaced in "Verify and share archives."
+    }
+
+    private void SetStatus(string message)
+    {
+        _statusText.text = message;
+        Debug.Log($"PlaybackCaptureController: {message}");
+    }
+
+    private void StopRoutine(ref Coroutine routine)
+    {
+        if (routine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(routine);
+        routine = null;
+    }
+}
+```
+
+4. Return to Unity and wait for script compilation to finish.
+5. Select **PlaybackCaptureTutorial** in the Hierarchy, then select
+   **Add Component > Playback Capture Controller**.
+6. Assign the component fields in the Inspector:
+   - Drag **AR Session** to **Ar Scanning Manager**.
+   - Drag `StartCaptureButton`, `StopCaptureButton`, and `ExportButton` to their
+     matching button fields.
+   - Drag `CaptureStatus` to **Status Text**.
+7. Select **AR Session** and confirm that **AR Scanning Manager** is disabled so
+   the tutorial component controls when recording starts.
+
+**Validate this step:**
+
+1. Select **Build and Run**.
+2. Confirm `PlaybackCaptureController: initialized` appears in the device log
+   for your platform:
+
+   - For Android, open **View > Tool Windows > Logcat** in Android Studio.
+     Select the connected device and app process, then search for
+     `PlaybackCaptureController: initialized`.
+
+     As a Terminal alternative, run:
+
+     ```bash
+     adb logcat | grep "PlaybackCaptureController: initialized"
+     ```
+
+     Press Control+C to stop watching the log.
+
+   - For iOS, build the iOS project from Unity, open the generated Xcode
+     project, and run the app on the connected device from Xcode. Select
+     **View > Debug Area > Activate Console**, then search the debug console for
+     `PlaybackCaptureController: initialized`.
+
+### Add capture controls
+
+In `Assets/Samples/Scanning/Scripts/PlaybackCaptureController.cs`, locate the
+placeholder `UpdateControls()` method and replace the entire method with the
+following implementation:
+
+```csharp
+private void UpdateControls()
+{
+    // Keep capture actions mutually exclusive. Preserve the frame-count gate
+    // if your app displays this state with different controls.
+    bool isBusy = _isPreparing || _isSaving || _isExporting;
+    _startButton.interactable = !isBusy && !_isCapturing;
+    _stopButton.interactable = !isBusy && _isCapturing && _canStopCapture;
+    _exportButton.interactable = !isBusy && !_isCapturing && _savedScan != null;
+    Debug.Log(
+        "PlaybackCaptureController: controls updated; " +
+        $"start={_startButton.interactable}, " +
+        $"stop={_stopButton.interactable}, " +
+        $"export={_exportButton.interactable}"
+    );
+}
+```
+
+The component derives every control state from the recording lifecycle. Stop
+remains disabled until NSDK reports a recorded frame, and Export remains
+disabled until a saved scan exists.
+
+**Validate this step:**
+
+1. Build and run the tutorial scene.
+2. Confirm the device log contains the initial control state:
+
+   ```text
+   PlaybackCaptureController: controls updated; start=True, stop=False, export=False
+   ```
+
+   For Android, use Android Studio Logcat to search for
+   `PlaybackCaptureController: controls updated`, or run:
+
+   ```bash
+   adb logcat | grep "PlaybackCaptureController: controls updated"
+   ```
+
+   For iOS, run the app from Xcode and search the debug console for
+   `PlaybackCaptureController: controls updated`.
+
+The next step adds the capture-start behavior.
+
+### Start capture
+
+In `Assets/Samples/Scanning/Scripts/PlaybackCaptureController.cs`, add the
+Android permission import with the other `using` directives. Keep the import
+inside the platform check so iOS builds do not depend on Android-only APIs:
+
+```csharp
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
+```
+
+Then replace the placeholder `StartCapture()`, `StartWhenLocationIsReady()`,
+and `WaitForFirstFrame()` methods with the following implementations. The
+Android build requests location permission when necessary. Both Android and iOS
+builds initialize Unity's location and compass services, enable the scanning
+manager, and open the stop gate only after NSDK records a frame:
+
+#### Expand to replace the Unity start-capture methods
+
+```csharp
+public void StartCapture()
+{
+    if (_isPreparing || _isCapturing || _isSaving || _isExporting)
+    {
+        return;
+    }
+
+    // Android requires runtime location permission before Unity can start its
+    // location service. Replace this block with your app's existing permission
+    // flow if permissions are requested somewhere else.
+#if UNITY_ANDROID && !UNITY_EDITOR
+    if (!Permission.HasUserAuthorizedPermission(Permission.FineLocation))
+    {
+        _isPreparing = true;
+        UpdateControls();
+        SetStatus("waiting for location permission");
+
+        var callbacks = new PermissionCallbacks();
+        callbacks.PermissionGranted += permissionName =>
+        {
+            if (permissionName == Permission.FineLocation)
+            {
+                // Permission is now available. Enter StartCapture() again so
+                // the shared Android/iOS startup path following this block runs.
+                _isPreparing = false;
+                StartCapture();
+            }
+        };
+        callbacks.PermissionDenied += permissionName =>
+        {
+            _isPreparing = false;
+            SetStatus("location permission is required for capture");
+            UpdateControls();
+        };
+        Permission.RequestUserPermission(Permission.FineLocation, callbacks);
+        return;
+    }
+#endif
+
+    // Shared Android/iOS setup: clear any previous tutorial recording state,
+    // update the controls, then wait for location before enabling recording.
+    // In your app, keep this reset near the code that owns the capture UI.
+    _isPreparing = true;
+    _savedScan = null;
+    _archivePaths.Clear();
+    UpdateControls();
+    _captureStartRoutine = StartCoroutine(StartWhenLocationIsReady());
+}
+
+private IEnumerator StartWhenLocationIsReady()
+{
+    // NSDK records location and compass data with the camera frames. Replace
+    // this startup block with your app's existing location-readiness signal if
+    // your app already owns location and compass initialization.
+    Input.compass.enabled = true;
+    if (Input.location.status == LocationServiceStatus.Stopped)
+    {
+        Input.location.Start();
+    }
+
+    const float timeoutSeconds = 20f;
+    float elapsedSeconds = 0f;
+    while (Input.location.status != LocationServiceStatus.Running &&
+           Input.location.status != LocationServiceStatus.Failed &&
+           elapsedSeconds < timeoutSeconds)
+    {
+        elapsedSeconds += Time.unscaledDeltaTime;
+        yield return null;
+    }
+
+    _captureStartRoutine = null;
+    if (Input.location.status != LocationServiceStatus.Running)
+    {
+        _isPreparing = false;
+        SetStatus("location initialization failed");
+        UpdateControls();
+        yield break;
+    }
+
+    _canStopCapture = false;
+    _isPreparing = false;
+    _isCapturing = true;
+
+    // Enabling ARScanningManager requests that recording begin. It is not safe
+    // to stop yet, so Stop Capture stays disabled until WaitForFirstFrame()
+    // observes GetFrameCount() > 0.
+    _arScanningManager.enabled = true;
+    SetStatus("capture start requested");
+    UpdateControls();
+    _frameMonitorRoutine = StartCoroutine(WaitForFirstFrame());
+}
+
+private IEnumerator WaitForFirstFrame()
+{
+    // Recording startup can lag behind the button tap. Poll the NSDK frame
+    // count until the recording contains at least one saved frame. If your app
+    // already exposes capture-readiness state, use that signal instead.
+    var pollingDelay = new WaitForSecondsRealtime(0.2f);
+    while (_isCapturing)
+    {
+        int frameCount = _arScanningManager.GetFrameCount();
+        if (frameCount > 0)
+        {
+            // From this point forward, SaveScan() has frame data to save, so
+            // the UI can enable Stop Capture.
+            _canStopCapture = true;
+            _frameMonitorRoutine = null;
+            SetStatus($"capture ready to stop; frameCount={frameCount}");
+            UpdateControls();
+            yield break;
+        }
+
+        yield return pollingDelay;
+    }
+
+    _frameMonitorRoutine = null;
+}
+```
+
+Enabling `ARScanningManager` requests that recording begin, but a scan cannot be
+saved until `GetFrameCount()` is greater than zero. The initialization interval
+can vary. Keep the stop action disabled until the SDK confirms that it has
+recorded a frame.
+
+**Validate this step:**
+
+1. Build and run the tutorial scene, then grant camera and location permissions
+   if the device requests them.
+
+2. Tap **Start Capture** and move the device through the environment.
+
+3. Confirm the device log contains both messages and that the second frame count is
+   greater than zero:
+
+   ```text
+   PlaybackCaptureController: capture start requested
+   PlaybackCaptureController: capture ready to stop; frameCount=
+   ```
+
+4. Confirm that **Stop Capture** is enabled after the second message appears.
+
+The next section replaces the placeholder stop method with the save behavior.
+
+### Stop and save
+
+Add the following imports to
+`Assets/Samples/Scanning/Scripts/PlaybackCaptureController.cs`:
+
+```csharp
+using System;
+using System.Linq;
+```
+
+Replace the placeholder `StopAndSaveCapture()` method with the following code.
+It rechecks the frame count, reads the scan ID while capture is active, keeps the
+scanning manager enabled throughout the asynchronous save, and then resolves the
+saved scan from the scan store:
+
+#### Expand to replace the Unity stop-and-save method
+
+```csharp
+public async void StopAndSaveCapture()
+{
+    // Save only after recording has started and the frame-count gate has opened.
+    // In your app, keep the same guard even if another UI element calls save.
+    if (!_isCapturing || !_canStopCapture || _isSaving)
+    {
+        return;
+    }
+
+    // Recheck at the save boundary so callers other than the button cannot
+    // ask SaveScan() to save an empty recording.
+    int frameCount = _arScanningManager.GetFrameCount();
+    if (frameCount <= 0)
+    {
+        _canStopCapture = false;
+        UpdateControls();
+        return;
+    }
+
+    // Read the ID while scanning is active; GetCurrentScanId() is only
+    // guaranteed to return it while a scan is in progress.
+    string scanId = _arScanningManager.GetCurrentScanId();
+    if (string.IsNullOrEmpty(scanId))
+    {
+        SetStatus("save failed: scan ID is unavailable");
+        return;
+    }
+
+    StopRoutine(ref _frameMonitorRoutine);
+    // Switch the tutorial UI into a saving state before awaiting SaveScan().
+    // Replace these flags with your app's own state model if needed.
+    _isCapturing = false;
+    _canStopCapture = false;
+    _isSaving = true;
+    SetStatus($"save started; frameCount={frameCount}");
+    UpdateControls();
+
+    try
+    {
+        // Keep ARScanningManager enabled until this asynchronous save
+        // completes. Disabling it earlier can interrupt the recording.
+        await _arScanningManager.SaveScan();
+        _arScanningManager.enabled = false;
+
+        // The exporter needs the SavedScan object. If your app stores scans in
+        // another model, replace this lookup with that source of truth.
+        _savedScan = _scanStore.GetSavedScans()
+            .FirstOrDefault(scan => scan.ScanId == scanId);
+        if (_savedScan == null)
+        {
+            throw new InvalidOperationException(
+                $"Saved scan {scanId} was not found in the scan store."
+            );
+        }
+
+        SetStatus($"save completed; scanId={scanId}");
+    }
+    catch (Exception exception)
+    {
+        _arScanningManager.enabled = false;
+        _savedScan = null;
+        Debug.LogException(exception);
+        // Replace this status text with your app's error surface.
+        SetStatus($"save failed: {exception.Message}");
+    }
+    finally
+    {
+        // Always leave the UI in a non-saving state after success or failure.
+        _isSaving = false;
+        UpdateControls();
+    }
+}
+```
+
+**Validate this step:**
+
+1. Build and run the tutorial scene.
+
+2. Start capture and wait for **Stop Capture** to become enabled.
+
+3. Tap **Stop Capture**.
+
+4. Confirm that tapping **Stop Capture** caused the device log to contain the
+   following messages in order. The first frame count must be greater than zero,
+   and the second message must contain a scan ID:
+
+   ```text
+   PlaybackCaptureController: save started; frameCount=
+   PlaybackCaptureController: save completed; scanId=
+   ```
+
+5. Confirm that **Start Capture** and **Export** are enabled after saving.
+
+Do not tap **Export** for this validation. At this point in the walkthrough,
+`ExportCapture()` is still a placeholder. The next section adds the export code
+and tells you when to tap **Export**.
+
+### Export the archives
+
+In `Assets/Samples/Scanning/Scripts/PlaybackCaptureController.cs`, replace the
+placeholder `ExportCapture()` method with the following implementation. It
+passes the `SavedScan` directly to `ScanArchiveBuilder`, disposes the builder's
+native resources, and stores every path returned by the exporter:
+
+#### Expand to replace the Unity export method
+
+```csharp
+public async void ExportCapture()
+{
+    // Export needs a saved scan. In your app, keep the export action disabled
+    // until the save flow has produced the SavedScan you want to package.
+    if (_savedScan == null || _isSaving || _isExporting)
+    {
+        return;
+    }
+
+    // Track export state for this tutorial UI. Replace this with your app's
+    // progress, loading, or job state if export runs from another layer.
+    _isExporting = true;
+    _archivePaths.Clear();
+    SetStatus($"export started; scanId={_savedScan.ScanId}");
+    UpdateControls();
+
+    try
+    {
+        // ScanArchiveBuilder converts the saved recording into one or more
+        // playback archives. It owns native resources, so always dispose it.
+        using var builder = new ScanArchiveBuilder(
+            _savedScan,
+            // Replace UploadUserInfo with your app's upload/user metadata if
+            // your backend expects it. Leave it empty for local validation.
+            new UploadUserInfo(),
+            // Tune this value for your storage, upload, or sharing limits.
+            _maxFramesPerChunk
+        );
+        if (!builder.IsValid())
+        {
+            throw new InvalidOperationException(
+                "The scan archive builder could not be created."
+            );
+        }
+
+        while (builder.HasMoreChunks())
+        {
+            // Each chunk task writes one .tgz archive. The returned value is
+            // the actual file path; use it instead of constructing a path from
+            // the scan ID.
+            Task<string> exportTask = builder.CreateTaskToGetNextChunk();
+            exportTask.Start();
+            string archivePath = await exportTask;
+            if (!string.IsNullOrEmpty(archivePath))
+            {
+                _archivePaths.Add(archivePath);
+                Debug.Log(
+                    $"PlaybackCaptureController: archive exported: {archivePath}"
+                );
+            }
+        }
+
+        if (_archivePaths.Count == 0)
+        {
+            throw new InvalidOperationException("No playback archives were exported.");
+        }
+
+        SetStatus($"export completed; archiveCount={_archivePaths.Count}");
+        // Replace HandleArchives() with your app's upload, storage, or sharing
+        // flow when you integrate the exporter outside this tutorial.
+        HandleArchives();
+    }
+    catch (Exception exception)
+    {
+        Debug.LogException(exception);
+        // Replace this status text with your app's error surface.
+        SetStatus($"export failed: {exception.Message}");
+    }
+    finally
+    {
+        // Always clear the exporting state so the UI does not stay disabled
+        // after a successful export or a handled failure.
+        _isExporting = false;
+        UpdateControls();
+    }
+}
+```
+
+The `maxFramesPerChunk` value controls the maximum number of frames in each
+output archive. A recording with more frames produces multiple `.tgz` files.
+`ScanArchiveBuilder` does not provide a fractional progress callback, so update
+your UI when each returned chunk finishes.
+
+**Validate this step:**
+
+1. Build and run the tutorial scene, then start and stop a recording.
+2. Tap **Export**.
+3. Confirm the device log contains `export started; scanId=`, followed by one
+   or more `archive exported:` messages containing `.tgz` paths.
+4. Confirm `export completed; archiveCount=` reports the number of exported
+   paths. Archive verification and sharing are still placeholders and are added
+   in the next section.
+
+### Verify and share archives
+
+Add the following import to
+`Assets/Samples/Scanning/Scripts/PlaybackCaptureController.cs`:
+
+```csharp
+using System.IO;
+```
+
+Replace the placeholder `HandleArchives()` method with the following code. It
+verifies every returned file and logs its path. On iOS, Niantic's sample project
+also provides `IOSShare`, which opens the system share sheet when the recording
+fits in one archive:
+
+#### Expand to replace the Unity archive verification and sharing method
+
+```csharp
+private void HandleArchives()
+{
+    foreach (string archivePath in _archivePaths)
+    {
+        if (!File.Exists(archivePath))
+        {
+            Debug.LogError(
+                $"PlaybackCaptureController: archive not found: {archivePath}"
+            );
+            continue;
+        }
+
+        Debug.Log($"PlaybackCaptureController: archive ready: {archivePath}");
+    }
+
+#if UNITY_IOS && !UNITY_EDITOR
+    // Niantic's sample app includes IOSShare. Replace it with your product's
+    // upload or storage flow if the archive should not use the share sheet.
+    if (_archivePaths.Count == 1 && File.Exists(_archivePaths[0]))
+    {
+        IOSShare.ShareFile(
+            _archivePaths[0],
+            "Sharing playback recording"
+        );
+        Debug.Log(
+            $"PlaybackCaptureController: share sheet opened: {_archivePaths[0]}"
+        );
+    }
+#endif
+}
+```
+
+The public Unity sample does not include an Android `FileProvider` sharing flow.
+On Android, use the logged archive paths for retrieval or replace
+`HandleArchives()` with your app's upload, storage, or sharing implementation.
+Do the same on iOS if your product should not use the system share sheet.
+
+**Validate this step:**
+
+1. Build and run the tutorial scene.
+2. Tap **Start Capture**, move the device through the environment, wait for
+   **Stop Capture** to become enabled, then tap **Stop Capture**.
+3. After the save completes and **Export** is enabled, tap **Export**.
+4. Confirm each `archive exported:` path has a matching `archive ready:` path.
+5. Confirm the device log does not contain `archive not found` or
+   `export failed`.
+
+Expected result by platform:
+
+- Android: no share sheet opens because the public Unity sample does not include
+  an Android sharing implementation.
+- iOS: a single-archive recording opens the share sheet, and
+  `share sheet opened:` contains the same path.
+
+### Retrieve and verify the recording
+
+Use the `archive ready:` log from the previous section to identify each `.tgz`
+file that export created. The `save completed; scanId=` log names the recording
+folder, but the `archive ready:` log gives the full archive path to retrieve.
+
+#### File locations
+
+If **Scan Path** is empty on `ARScanningManager`, Unity recordings use these
+default locations:
+
+| Platform | Default Unity recording directory |
+| --- | --- |
+| iOS | The app's `Documents/scankit/` directory |
+| Android | `/sdcard/Android/data/{app.package.name}/files/scankit/` |
+| macOS Editor | `/Users/{username}/Library/Application Support/{companyName}/{productName}/scankit/` |
+| Windows Editor | `C:\Users\{username}\AppData\LocalLow\{companyName}\{productName}\scankit\` |
+
+The saved location is also available from the
+ScanStore.SavedScan.ScanBasePath
+property. If your app configures **Scan Path**, use that location instead of the
+defaults.
+
+#### Retrieve from Android
+
+1. In the device log, copy each full path from `archive ready:`. The path should
+   end in `.tgz`, for example:
+
+   ```text
+   /sdcard/Android/data/com.nianticspatial.nsdk.nsdksamples/files/scankit/SCAN_ID/chunk_0.tgz
+   ```
+
+2. Copy the file with either Android Studio Device Explorer or `adb pull`:
+
+   - Android Studio Device Explorer is the most reliable option when the device
+     restricts direct command-line access to app-specific external storage:
+     1. In Android Studio, select **View > Tool Windows > Device Explorer**, then
+        select the connected device.
+     2. Navigate to the directory shown in the `archive ready:` path.
+     3. Select each `.tgz` file, then use **Save As** in the Device Explorer
+        toolbar to copy it to the development machine.
+
+   - `adb pull` is the direct command-line option when the path is accessible.
+     Replace the path in this command with the path from your device log:
+
+     ```bash
+     adb pull /sdcard/Android/data/com.nianticspatial.nsdk.nsdksamples/files/scankit/SCAN_ID/chunk_0.tgz .
+     ```
+
+     The final `.` copies the archive into the terminal's current directory.
+
+3. Repeat the copy action for each additional `archive ready:` path.
+
+For your own app, replace `com.nianticspatial.nsdk.nsdksamples` with its Android
+application ID.
+
+#### Retrieve from iOS
+
+On iOS, use the share sheet from the previous section when it opens. Save the
+archive to Files, send it with AirDrop, or share it with another app.
+
+If you need to retrieve the archive directly from the app container, use Finder.
+The public sample's `Assets/Editor/PostBuildProcess.cs` adds
+`UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` to the generated
+app. These keys expose the app's Documents directory in Finder.
+
+1. Keep the iOS device connected and unlocked.
+2. In Finder, select the device in the sidebar, then select **Files**.
+3. Expand **NSDK Unity Samples** and drag the `scankit` folder to the Mac.
+4. Open the scan-ID directory reported by `save completed; scanId=`.
+5. Locate the `.tgz` file named in the `archive ready:` path.
+
+When you integrate recording into your own Unity app, add the same keys in its
+iOS post-build processor:
+
+```csharp
+rootDict.SetBoolean("UIFileSharingEnabled", true);
+rootDict.SetBoolean("LSSupportsOpeningDocumentsInPlace", true);
+```
+
+#### Verify the exported files
+
+1. Extract each `.tgz` archive with the operating system's built-in archive
+   support:
+   - On macOS, select the file in Finder, then select **File > Open**.
+   - On Windows 11 version 24H2 or later, select the file in File Explorer, then
+     select **Extract All**.
+   - On Linux, select the file in the system file manager, then select its
+     **Extract** action. The action name depends on the desktop environment.
+2. In the extracted files, confirm that `capture.json` and `frame_*.jpg` are
+   present.
+3. Open `capture.json` in a text editor and locate its top-level `frameCount`
+   property. Confirm that the value is greater than zero.
+4. Confirm that frame numbering begins with `frame_00000000.jpg`. Across all
+   chunks, the number of frame images should correspond to the exported frame
+   count.
+5. Open several `frame_*.jpg` files and confirm that they show the environment
+   you recorded.
+
+Depth and confidence files are device- and configuration-dependent, so their
+absence does not by itself mean the playback dataset is invalid. To validate the
+recording by replaying it, continue with
+[Set up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).
+
+### View the complete PlaybackCaptureController
+
+The expandable section contains the complete
+`PlaybackCaptureController.cs` assembled in the preceding steps. Use it to
+check your completed component, recover a missed change, or copy the full
+implementation without repeating the walkthrough. Refer to this code for the
+tutorial's finished result; Niantic's existing `RecordingDemo.cs` is a separate
+sample implementation and does not correspond line-for-line with these steps.
+
+#### Expand to reveal PlaybackCaptureController.cs
+
+```csharp
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using NianticSpatial.NSDK.AR.Scanning;
+using TMPro;
+using UnityEngine;
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
+using UnityEngine.UI;
+
+public sealed class PlaybackCaptureController : MonoBehaviour
+{
+    // Connect these fields to the AR Scanning Manager and tutorial controls in
+    // the Inspector. In your app, reuse the manager and controls in its AR scene.
+    [SerializeField] private ARScanningManager _arScanningManager;
+    [SerializeField] private Button _startButton;
+    [SerializeField] private Button _stopButton;
+    [SerializeField] private Button _exportButton;
+    [SerializeField] private TMP_Text _statusText;
+
+    // The exporter creates another archive after this many frames. Adjust the
+    // value for your storage or upload limits.
+    [SerializeField, Min(1)] private int _maxFramesPerChunk = 900;
+
+    private ScanStore _scanStore;
+    private ScanStore.SavedScan _savedScan;
+    private readonly List<string> _archivePaths = new();
+    private Coroutine _captureStartRoutine;
+    private Coroutine _frameMonitorRoutine;
+    private bool _isPreparing;
+    private bool _isCapturing;
+    private bool _canStopCapture;
+    private bool _isSaving;
+    private bool _isExporting;
+
+    private void Awake()
+    {
+        if (_arScanningManager == null ||
+            _startButton == null ||
+            _stopButton == null ||
+            _exportButton == null ||
+            _statusText == null)
+        {
+            Debug.LogError(
+                "PlaybackCaptureController: assign the manager and all controls."
+            );
+            enabled = false;
+            return;
+        }
+
+        // Reuse the manager's scan store for the lifetime of this screen.
+        _scanStore = _arScanningManager.GetScanStore();
+
+        // If your UI already owns these actions, call the matching methods from
+        // its existing handlers instead of registering another listener.
+        _startButton.onClick.AddListener(StartCapture);
+        _stopButton.onClick.AddListener(StopAndSaveCapture);
+        _exportButton.onClick.AddListener(ExportCapture);
+        UpdateControls();
+        Debug.Log("PlaybackCaptureController: initialized");
+    }
+
+    private void OnDestroy()
+    {
+        _startButton?.onClick.RemoveListener(StartCapture);
+        _stopButton?.onClick.RemoveListener(StopAndSaveCapture);
+        _exportButton?.onClick.RemoveListener(ExportCapture);
+
+        StopRoutine(ref _captureStartRoutine);
+        StopRoutine(ref _frameMonitorRoutine);
+
+        // Stop an unfinished recording when this tutorial screen is destroyed.
+        // Do not unload your production screen while SaveScan() is running.
+        if (_isCapturing && _arScanningManager != null)
+        {
+            _arScanningManager.enabled = false;
+        }
+    }
+
+    private void UpdateControls()
+    {
+        // Keep capture actions mutually exclusive. Preserve the frame-count gate
+        // if your app displays this state with different controls.
+        bool isBusy = _isPreparing || _isSaving || _isExporting;
+        _startButton.interactable = !isBusy && !_isCapturing;
+        _stopButton.interactable = !isBusy && _isCapturing && _canStopCapture;
+        _exportButton.interactable = !isBusy && !_isCapturing && _savedScan != null;
+        Debug.Log(
+            "PlaybackCaptureController: controls updated; " +
+            $"start={_startButton.interactable}, " +
+            $"stop={_stopButton.interactable}, " +
+            $"export={_exportButton.interactable}"
+        );
+    }
+
+    public void StartCapture()
+    {
+        if (_isPreparing || _isCapturing || _isSaving || _isExporting)
+        {
+            return;
+        }
+
+        // Android requires runtime location permission before Unity can start its
+        // location service. Replace this block with your app's existing permission
+        // flow if permissions are requested somewhere else.
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (!Permission.HasUserAuthorizedPermission(Permission.FineLocation))
+        {
+            _isPreparing = true;
+            UpdateControls();
+            SetStatus("waiting for location permission");
+
+            var callbacks = new PermissionCallbacks();
+            callbacks.PermissionGranted += permissionName =>
+            {
+                if (permissionName == Permission.FineLocation)
+                {
+                    // Permission is now available. Enter StartCapture() again so
+                    // the shared Android/iOS startup path following this block runs.
+                    _isPreparing = false;
+                    StartCapture();
+                }
+            };
+            callbacks.PermissionDenied += permissionName =>
+            {
+                _isPreparing = false;
+                SetStatus("location permission is required for capture");
+                UpdateControls();
+            };
+            Permission.RequestUserPermission(Permission.FineLocation, callbacks);
+            return;
+        }
+#endif
+
+        // Shared Android/iOS setup: clear any previous tutorial recording state,
+        // update the controls, then wait for location before enabling recording.
+        // In your app, keep this reset near the code that owns the capture UI.
+        _isPreparing = true;
+        _savedScan = null;
+        _archivePaths.Clear();
+        UpdateControls();
+        _captureStartRoutine = StartCoroutine(StartWhenLocationIsReady());
+    }
+
+    private IEnumerator StartWhenLocationIsReady()
+    {
+        // NSDK records location and compass data with the camera frames. Replace
+        // this startup block with your app's existing location-readiness signal if
+        // your app already owns location and compass initialization.
+        Input.compass.enabled = true;
+        if (Input.location.status == LocationServiceStatus.Stopped)
+        {
+            Input.location.Start();
+        }
+
+        const float timeoutSeconds = 20f;
+        float elapsedSeconds = 0f;
+        while (Input.location.status != LocationServiceStatus.Running &&
+               Input.location.status != LocationServiceStatus.Failed &&
+               elapsedSeconds < timeoutSeconds)
+        {
+            elapsedSeconds += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        _captureStartRoutine = null;
+        if (Input.location.status != LocationServiceStatus.Running)
+        {
+            _isPreparing = false;
+            SetStatus("location initialization failed");
+            UpdateControls();
+            yield break;
+        }
+
+        _canStopCapture = false;
+        _isPreparing = false;
+        _isCapturing = true;
+
+        // Enabling ARScanningManager requests that recording begin. It is not safe
+        // to stop yet, so Stop Capture stays disabled until WaitForFirstFrame()
+        // observes GetFrameCount() > 0.
+        _arScanningManager.enabled = true;
+        SetStatus("capture start requested");
+        UpdateControls();
+        _frameMonitorRoutine = StartCoroutine(WaitForFirstFrame());
+    }
+
+    private IEnumerator WaitForFirstFrame()
+    {
+        // Recording startup can lag behind the button tap. Poll the NSDK frame
+        // count until the recording contains at least one saved frame. If your app
+        // already exposes capture-readiness state, use that signal instead.
+        var pollingDelay = new WaitForSecondsRealtime(0.2f);
+        while (_isCapturing)
+        {
+            int frameCount = _arScanningManager.GetFrameCount();
+            if (frameCount > 0)
+            {
+                // From this point forward, SaveScan() has frame data to save, so
+                // the UI can enable Stop Capture.
+                _canStopCapture = true;
+                _frameMonitorRoutine = null;
+                SetStatus($"capture ready to stop; frameCount={frameCount}");
+                UpdateControls();
+                yield break;
+            }
+
+            yield return pollingDelay;
+        }
+
+        _frameMonitorRoutine = null;
+    }
+
+    public async void StopAndSaveCapture()
+    {
+        // Save only after recording has started and the frame-count gate has opened.
+        // In your app, keep the same guard even if another UI element calls save.
+        if (!_isCapturing || !_canStopCapture || _isSaving)
+        {
+            return;
+        }
+
+        // Recheck at the save boundary so callers other than the button cannot
+        // ask SaveScan() to save an empty recording.
+        int frameCount = _arScanningManager.GetFrameCount();
+        if (frameCount <= 0)
+        {
+            _canStopCapture = false;
+            UpdateControls();
+            return;
+        }
+
+        // Read the ID while scanning is active; GetCurrentScanId() is only
+        // guaranteed to return it while a scan is in progress.
+        string scanId = _arScanningManager.GetCurrentScanId();
+        if (string.IsNullOrEmpty(scanId))
+        {
+            SetStatus("save failed: scan ID is unavailable");
+            return;
+        }
+
+        StopRoutine(ref _frameMonitorRoutine);
+        // Switch the tutorial UI into a saving state before awaiting SaveScan().
+        // Replace these flags with your app's own state model if needed.
+        _isCapturing = false;
+        _canStopCapture = false;
+        _isSaving = true;
+        SetStatus($"save started; frameCount={frameCount}");
+        UpdateControls();
+
+        try
+        {
+            // Keep ARScanningManager enabled until this asynchronous save
+            // completes. Disabling it earlier can interrupt the recording.
+            await _arScanningManager.SaveScan();
+            _arScanningManager.enabled = false;
+
+            // The exporter needs the SavedScan object. If your app stores scans in
+            // another model, replace this lookup with that source of truth.
+            _savedScan = _scanStore.GetSavedScans()
+                .FirstOrDefault(scan => scan.ScanId == scanId);
+            if (_savedScan == null)
+            {
+                throw new InvalidOperationException(
+                    $"Saved scan {scanId} was not found in the scan store."
+                );
+            }
+
+            SetStatus($"save completed; scanId={scanId}");
+        }
+        catch (Exception exception)
+        {
+            _arScanningManager.enabled = false;
+            _savedScan = null;
+            Debug.LogException(exception);
+            // Replace this status text with your app's error surface.
+            SetStatus($"save failed: {exception.Message}");
+        }
+        finally
+        {
+            // Always leave the UI in a non-saving state after success or failure.
+            _isSaving = false;
+            UpdateControls();
+        }
+    }
+
+    public async void ExportCapture()
+    {
+        // Export needs a saved scan. In your app, keep the export action disabled
+        // until the save flow has produced the SavedScan you want to package.
+        if (_savedScan == null || _isSaving || _isExporting)
+        {
+            return;
+        }
+
+        // Track export state for this tutorial UI. Replace this with your app's
+        // progress, loading, or job state if export runs from another layer.
+        _isExporting = true;
+        _archivePaths.Clear();
+        SetStatus($"export started; scanId={_savedScan.ScanId}");
+        UpdateControls();
+
+        try
+        {
+            // ScanArchiveBuilder converts the saved recording into one or more
+            // playback archives. It owns native resources, so always dispose it.
+            using var builder = new ScanArchiveBuilder(
+                _savedScan,
+                // Replace UploadUserInfo with your app's upload/user metadata if
+                // your backend expects it. Leave it empty for local validation.
+                new UploadUserInfo(),
+                // Tune this value for your storage, upload, or sharing limits.
+                _maxFramesPerChunk
+            );
+            if (!builder.IsValid())
+            {
+                throw new InvalidOperationException(
+                    "The scan archive builder could not be created."
+                );
+            }
+
+            while (builder.HasMoreChunks())
+            {
+                // Each chunk task writes one .tgz archive. The returned value is
+                // the actual file path; use it instead of constructing a path from
+                // the scan ID.
+                Task<string> exportTask = builder.CreateTaskToGetNextChunk();
+                exportTask.Start();
+                string archivePath = await exportTask;
+                if (!string.IsNullOrEmpty(archivePath))
+                {
+                    _archivePaths.Add(archivePath);
+                    Debug.Log(
+                        $"PlaybackCaptureController: archive exported: {archivePath}"
+                    );
+                }
+            }
+
+            if (_archivePaths.Count == 0)
+            {
+                throw new InvalidOperationException("No playback archives were exported.");
+            }
+
+            SetStatus($"export completed; archiveCount={_archivePaths.Count}");
+            // Replace HandleArchives() with your app's upload, storage, or sharing
+            // flow when you integrate the exporter outside this tutorial.
+            HandleArchives();
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            // Replace this status text with your app's error surface.
+            SetStatus($"export failed: {exception.Message}");
+        }
+        finally
+        {
+            // Always clear the exporting state so the UI does not stay disabled
+            // after a successful export or a handled failure.
+            _isExporting = false;
+            UpdateControls();
+        }
+    }
+
+    private void HandleArchives()
+    {
+        foreach (string archivePath in _archivePaths)
+        {
+            if (!File.Exists(archivePath))
+            {
+                Debug.LogError(
+                    $"PlaybackCaptureController: archive not found: {archivePath}"
+                );
+                continue;
+            }
+
+            Debug.Log($"PlaybackCaptureController: archive ready: {archivePath}");
+        }
+
+#if UNITY_IOS && !UNITY_EDITOR
+        // Niantic's sample app includes IOSShare. Replace it with your product's
+        // upload or storage flow if the archive should not use the share sheet.
+        if (_archivePaths.Count == 1 && File.Exists(_archivePaths[0]))
+        {
+            IOSShare.ShareFile(
+                _archivePaths[0],
+                "Sharing playback recording"
+            );
+            Debug.Log(
+                $"PlaybackCaptureController: share sheet opened: {_archivePaths[0]}"
+            );
+        }
+#endif
+    }
+
+    private void SetStatus(string message)
+    {
+        _statusText.text = message;
+        Debug.Log($"PlaybackCaptureController: {message}");
+    }
+
+    private void StopRoutine(ref Coroutine routine)
+    {
+        if (routine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(routine);
+        routine = null;
+    }
+}
+```
+
+### Add to your app
+
+The tutorial scene supplies several dependencies that your existing AR scene
+may already own:
+
+| Tutorial dependency | Use in your app |
+| --- | --- |
+| `ARScanningManager` on **AR Session** | Reuse the scanning manager in the scene that owns your AR session. |
+| Tutorial buttons and status label | Connect your existing controls, or move the state transitions into your UI layer. |
+| `Input.location` and `Input.compass` initialization | Keep your app's existing location and compass lifecycle if it already provides one. |
+| `IOSShare` | Replace this sample helper with your product's upload, storage, or sharing flow. |
+
+Move the completed recording flow into your Unity app:
+
+1. Confirm that the app has NSDK installed, an AR Session and XR Origin, a valid
+   authentication path, and **Scanning** enabled under
+   **Edit > Project Settings > XR Plug-in Management > Niantic Spatial
+   Development Kit**.
+2. Copy `PlaybackCaptureController.cs` into the app, or move its state and
+   methods into the component that already owns recording UI.
+3. Add or reuse an `ARScanningManager` on the app's **AR Session** GameObject.
+   Leave the component disabled until `StartCapture()` enables it.
+4. Connect the scanning manager and the app's start, stop, export, and status UI
+   to the serialized fields. If another component already registers the button
+   events, remove the listener registration from `Awake()` and call the
+   corresponding methods from the existing handlers.
+5. Replace the Android permission and Unity location initialization with the
+   app's existing permission flow if it has one. Preserve the requirement that
+   location and compass data are available before recording starts.
+6. Replace `HandleArchives()` with the app's upload, storage, or sharing
+   behavior. If the app does not include Niantic's `IOSShare` helper, remove or
+   replace that iOS-only call before building for iOS.
+7. Prevent scene navigation while `SaveScan()` is running. Keep
+   `ARScanningManager` enabled until the save completes, then stop it during the
+   AR screen's normal cleanup.
+8. Build and run the app on a supported physical device, then validate the
+   complete lifecycle:
+   1. Open the AR screen and its Android or iOS device log.
+   2. Start capture and confirm `capture start requested` appears.
+   3. Confirm `capture ready to stop; frameCount=` reports a value greater than
+      zero before Stop becomes available.
+   4. Stop capture and confirm the save-started and save-completed messages
+      appear in order.
+   5. Export the recording and confirm every `archive exported:` path has a
+      matching `archive ready:` path.
+   6. Retrieve the archives and confirm `capture.json` reports a frame count
+      greater than zero.
+   7. Leave and reopen the AR scene, then complete a second capture and export.
+      Confirm that the first component does not retain a coroutine or active
+      scanning manager.
+   8. Confirm the device log does not report `location initialization failed`,
+      `save failed`, `export failed`, or `archive not found`.
+
+Continue with [Set up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/) to load the exported
+recording in the Unity Editor.
+
+### Platform: swift
+
+## Introduction
+
+Use NSDK Recording to capture motion and sensor data from an AR session. You can export the recording as a playback dataset for testing and debugging.
+
+The sample app is Niantic's working Swift reference app. Its Capture screen demonstrates a complete recording and export flow, and its source files provide reference code for your own integration.
+
+Start by [getting the sample app](#swift-get-the-sample-source), then choose one of these independent workflows:
+
+- **[Capture](#swift-capture-sample):** Use the existing Capture screen to create a dataset quickly.
+- **[Recording API](#swift-api-record):** Build a tutorial controller when you need control over the UI, capture state, export progress, or sharing behavior.
+
+You do not need to complete the Capture workflow before using the Recording API workflow.
+
+In the Swift instructions:
+
+- **Sample app** means Niantic's downloaded `nsdk-samples-swift` project.
+- **Tutorial controller** means the `PlaybackCaptureViewController` you create.
+- **Your app** means the application where you will integrate the completed recording flow.
+
+Swift Capture sample recording and exporting a playback dataset.
+
+## Get the sample app
+
+Both workflows use the public [`nsdk-samples-swift`](https://github.com/nianticspatial/nsdk-samples-swift) repository. Use a Mac with Xcode 16 or later and a physical ARKit-capable device running iOS 18 or later.
+
+Get and open the sample source:
+
+1. In Terminal, clone the repository:
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-swift.git
+   ```
+
+   Alternatively, select **Code > Download ZIP** on GitHub, then extract the ZIP.
+
+2. In Xcode, select **File > Open**, then select
+   `<download-location>/nsdk-samples-swift/NsdkSamples/NsdkSamples.xcworkspace`.
+
+3. In Xcode, select the `NsdkSamples` scheme.
+
+4. Select the `NsdkSamples` target, open **Signing & Capabilities**, and choose your development team if Xcode requests one.
+
+5. Wait for package resolution and indexing to finish.
+
+## Record with Capture
+
+The Capture screen is the fastest way to create a playback dataset on iOS without building your own recording interface.
+
+### Run Capture
+
+1. Connect and select a physical iOS device in Xcode.
+2. Select **Product > Run**.
+3. On the device, grant camera and location access when prompted.
+4. Complete the sample app's sign-in flow.
+5. Open **Capture** from the sample list.
+6. Tap **Start Capture**.
+
+### Record the environment
+
+Move the device through the environment while keeping it in portrait orientation. Hold it steadily enough for the AR session to track and for capture frames to be saved.
+
+After tapping **Start Capture**, wait for the scan visualization to begin
+updating and record the environment for several seconds before tapping **Stop
+Capture**. This gives the sample time to begin saving frames.
+
+### Export the dataset
+
+1. Tap **Stop Capture** after the app has recorded the environment.
+2. Wait while the sample saves and exports the recording.
+3. In the iOS share sheet, save the resulting `.tgz` archive to Files, send it with AirDrop, or share it with another app.
+
+## Record with the API
+
+The Swift API gives you control over the recording UI, capture state, frame-count gate, export progress, and sharing behavior.
+
+This workflow uses the sample app as a runnable development environment. You will build a separate UIKit controller, validate each stage on a device, and then move the recording pieces into your own AR view controller.
+
+The API walkthrough contains these sections:
+
+1. [Capture implementation overview](#swift-capture-implementation-overview)
+2. [Prepare the sample app](#swift-prepare-the-sample-app)
+3. [Create the tutorial controller](#swift-create-the-tutorial-controller)
+4. [Add capture controls](#swift-add-capture-controls)
+5. [Start capture](#swift-start-capture)
+6. [Stop and save](#swift-stop-and-save)
+7. [Export the archive](#swift-export-the-archive)
+8. [Share the archive](#swift-share-the-archive)
+9. [Retrieve and verify the recording](#swift-retrieve-and-verify-the-recording)
+10. [View the complete PlaybackCaptureViewController](#swift-complete-api-example)
+11. [Add to your app](#swift-add-to-your-app)
+
+---
+
+### Capture implementation overview
+
+The API walkthrough starts from Niantic's Capture implementation in the sample
+app. These sample files provide the runtime environment and reference
+implementation for the tutorial controller:
+
+| Sample file | Responsibility |
+| --- | --- |
+| `NsdkSamples/ViewControllers/CaptureViewController.swift` | Owns the sample capture controls, recording state, save/export flow, and share sheet. |
+| `NsdkSamples/AR/ARManager.swift` | Provides the authenticated `NSDKSession`, camera view, AR-session lifecycle, and live frame updates. |
+| `NsdkSamples/ViewControllers/MainViewController.swift` | Routes from the sample list to each sample view controller. |
+
+The tutorial creates a separate `PlaybackCaptureViewController.swift` so
+Niantic's Capture reference implementation remains unchanged. When the finished
+controller moves into an app, that app must provide an authenticated
+`NSDKSession` that is already receiving live AR frames, camera and location
+permissions, and product-specific archive sharing or upload behavior.
+
+Standalone development or internal-test builds can use a developer token from
+**Credentials > Developer Tokens** in
+[Scaniverse web](https://scaniverse.nianticspatial.com/signin). Developer
+tokens should stay out of source control and public builds; see
+[Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/) for the production flow.
+
+### Prepare the sample app
+
+Prepare the device before adding the tutorial controller:
+
+1. Build and run `NsdkSamples` on a physical device.
+2. Grant camera and location access when prompted.
+3. Complete the sample app's sign-in flow.
+4. Open **Capture** and confirm that the camera view appears.
+5. Return to the sample list without starting a recording.
+
+The sample app retains these permissions and authentication for the
+implementation steps that follow.
+
+### Create the tutorial controller
+
+Create `PlaybackCaptureViewController.swift` in the sample app's `NsdkSamples/ViewControllers` folder. The project uses a synchronized folder, so Xcode includes the new file in the app target automatically.
+
+The tutorial controller uses `ARManager` from `NsdkSamples/AR/ARManager.swift` for the authenticated `NSDKSession`, camera view, AR-session lifecycle, and live frame updates. It creates its own recording flow instead of modifying Niantic's `CaptureViewController.swift` reference implementation.
+
+#### Expand to create PlaybackCaptureViewController.swift with its initial state and placeholders
+
+Add the following compiling skeleton to
+`NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`:
+
+```swift
+import NSDK
+import UIKit
+
+@MainActor
+final class PlaybackCaptureViewController: UIViewController {
+    // ARManager belongs to Niantic's sample app. It supplies the authenticated,
+    // frame-fed NSDKSession and the camera view used to validate this controller.
+    private let arManager: ARManager
+
+    // Keep recording resources and state with this screen. Move them to your
+    // app's model layer if that layer owns the recording lifecycle.
+    private var scanningSession: NSDKScanningSession?
+    private var isCapturing = false
+    private var canStopCapture = false
+    private var isSaving = false
+    private var isExporting = false
+    private var frameMonitorTask: Task<Void, Never>?
+    private var captureTask: Task<Void, Never>?
+
+    // Replace these UIKit controls with your design system while preserving the
+    // state checks that enable Stop and report export progress.
+    private let captureButton = UIButton(type: .system)
+    private let progressView = UIProgressView(progressViewStyle: .default)
+    private let statusLabel = UILabel()
+
+    // The sample app injects ARManager here. In your app, keep the AR
+    // dependencies already owned by the existing AR view controller.
+    init(arManager: ARManager) {
+        self.arManager = arManager
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Playback Capture"
+        view.backgroundColor = .black
+
+        // Keep the sample app's live camera view behind the tutorial controls.
+        // Your app should keep its existing AR view instead of copying NSDKView.
+        arManager.nsdkView.setup(in: view)
+        setupControls()
+        prepareCapture()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // Start the sample app's AR session when this screen becomes visible.
+        // Keep your app's existing AR-session start call where it already runs.
+        arManager.startSession()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        // Cancel this screen's work before stopping its scanning session.
+        frameMonitorTask?.cancel()
+        captureTask?.cancel()
+        scanningSession?.stop()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Stop the sample app's AR session after leaving this screen. Keep your
+        // app's existing AR-session stop call in its current lifecycle method.
+        arManager.stopSession()
+    }
+
+    private func prepareCapture() {
+        guard scanningSession == nil else { return }
+
+        // Acquire and configure once for this screen. Reuse your existing
+        // configuration here if your app already owns one.
+        // Replace arManager.nsdkSession with the authenticated, frame-fed
+        // NSDKSession already owned by your AR screen.
+        let session = arManager.nsdkSession.acquireScanningSession()
+
+        // Customize these values for your recording experience. Preserve your
+        // existing NSDKScanningSession configuration when integrating this flow.
+        var config = NSDKScanningSession.Configuration()
+        config.enableRaycastVisualization = true
+        config.enableVoxelVisualization = false
+        config.generateDepthsIfLidarUnavailable = true
+
+        do {
+            try session.configure(with: config)
+            scanningSession = session
+            print("PlaybackCaptureViewController: scanning session configured")
+        } catch {
+            statusLabel.text = "Could not configure capture: \(error.localizedDescription)"
+            captureButton.isEnabled = false
+            print("PlaybackCaptureViewController: configuration failed: \(error)")
+        }
+    }
+
+    private func setupControls() {
+        // Placeholder: replaced in "Add capture controls."
+    }
+
+    private func updateCaptureButton() {
+        // Placeholder: replaced in "Add capture controls."
+    }
+
+    @objc private func handleCaptureButtonTap() {
+        // Placeholder: replaced in "Add capture controls."
+    }
+
+    private func startCapture() {
+        // Placeholder: replaced in "Start capture."
+    }
+
+    private func stopAndSaveCapture() {
+        // Placeholder: replaced in "Stop and save."
+    }
+
+    private func resetCaptureUI() {
+        // Placeholder: replaced in "Stop and save."
+    }
+
+    private func exportCapture(
+        saveInfo: NSDKScanningSession.SaveInfo
+    ) async throws {
+        // Placeholder: replaced in "Export the archive."
+    }
+
+    private func presentShareSheet(for archivePath: String) {
+        // Placeholder: replaced in "Share the archive."
+    }
+
+}
+```
+
+Connect the tutorial controller to the sample app:
+
+1. Open `NsdkSamples/ViewControllers/MainViewController.swift`.
+2. In the `menuItems` array, replace only:
+
+   ```swift
+   MenuItem(title: "Capture") { CaptureViewController(arManager: $0) },
+   ```
+
+   with:
+
+   ```swift
+   // Temporarily route Capture to the tutorial-owned controller.
+   MenuItem(title: "Capture") {
+       PlaybackCaptureViewController(arManager: $0)
+   },
+   ```
+
+Keep this routing change through the remaining API steps. The original `CaptureViewController.swift` remains unchanged as reference code.
+
+**Validate this step:**
+
+1. Select **Product > Build** and confirm the app compiles.
+2. Run `NsdkSamples` and open **Capture**.
+3. Confirm the camera view opens with the title **Playback Capture**.
+4. In Xcode's debug console, confirm `PlaybackCaptureViewController: scanning session configured` appears.
+
+The screen does not display capture controls yet. The next step adds them.
+
+### Add capture controls
+
+In `NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`, locate these three placeholder methods:
+
+```swift
+private func setupControls() {
+    // Placeholder: replaced in "Add capture controls."
+}
+
+private func updateCaptureButton() {
+    // Placeholder: replaced in "Add capture controls."
+}
+
+@objc private func handleCaptureButtonTap() {
+    // Placeholder: replaced in "Add capture controls."
+}
+```
+
+In `NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`, replace all
+three placeholder method definitions with the following implementations:
+
+#### Expand to replace the Swift capture-control methods
+
+```swift
+private func setupControls() {
+    // Use the label for capture and export errors. Replace it with your app's
+    // alert, banner, or other status UI if needed.
+    statusLabel.textColor = .white
+    statusLabel.numberOfLines = 0
+    statusLabel.textAlignment = .center
+    statusLabel.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(statusLabel)
+
+    // Hide progress until export starts. Bind the export callback to your
+    // existing progress UI if your app does not use UIProgressView.
+    progressView.isHidden = true
+    progressView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(progressView)
+
+    // Connect your app's existing capture action to
+    // handleCaptureButtonTap() instead of creating a second button.
+    captureButton.setTitle("Start Capture", for: .normal)
+    captureButton.setTitleColor(.white, for: .normal)
+    captureButton.backgroundColor = .systemBlue
+    captureButton.layer.cornerRadius = 8
+    captureButton.titleLabel?.font = .boldSystemFont(ofSize: 16)
+    captureButton.addTarget(
+        self,
+        action: #selector(handleCaptureButtonTap),
+        for: .touchUpInside
+    )
+    captureButton.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(captureButton)
+
+    // These constraints are sample UI. Use your app's existing layout when
+    // moving the recording flow into its AR screen.
+    NSLayoutConstraint.activate([
+        captureButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        captureButton.bottomAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+            constant: -20
+        ),
+        captureButton.widthAnchor.constraint(equalToConstant: 200),
+        captureButton.heightAnchor.constraint(equalToConstant: 44),
+
+        progressView.leadingAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+            constant: 20
+        ),
+        progressView.trailingAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+            constant: -20
+        ),
+        progressView.bottomAnchor.constraint(
+            equalTo: captureButton.topAnchor,
+            constant: -16
+        ),
+
+        statusLabel.leadingAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+            constant: 20
+        ),
+        statusLabel.trailingAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+            constant: -20
+        ),
+        statusLabel.bottomAnchor.constraint(
+            equalTo: progressView.topAnchor,
+            constant: -12
+        ),
+    ])
+}
+
+private func updateCaptureButton() {
+    // Derive the control state from the recording lifecycle. Preserve the
+    // canStopCapture gate if your app renders this state elsewhere.
+    let title: String
+    if isSaving {
+        title = "Saving..."
+    } else if isExporting {
+        title = "Exporting..."
+    } else if !isCapturing {
+        title = "Start Capture"
+    } else if canStopCapture {
+        title = "Stop Capture"
+    } else {
+        title = "Starting Capture..."
+    }
+
+    captureButton.setTitle(title, for: .normal)
+    captureButton.isEnabled =
+        !isSaving && !isExporting && (!isCapturing || canStopCapture)
+}
+
+@objc private func handleCaptureButtonTap() {
+    // If your app already has a capture-button action, call the matching
+    // start or stop method from that action instead of copying this target.
+    if isCapturing {
+        stopAndSaveCapture()
+    } else {
+        startCapture()
+    }
+}
+```
+
+**Validate this step:**
+
+1. Build and run `NsdkSamples`.
+2. Open **Capture**.
+3. Confirm **Start Capture** appears and the progress indicator is not displayed.
+
+The button does not start recording yet because `startCapture()` is still a placeholder.
+
+### Start capture
+
+In `NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`, locate the
+placeholder `startCapture()` method and replace the entire method with the
+following code. It starts the scanning session, polls the recorded frame count,
+and enables the stop action only after NSDK has saved at least one frame:
+
+#### Expand to replace the Swift start-capture method
+
+```swift
+private func startCapture() {
+    // Ignore duplicate taps and requests made while save or export owns the
+    // session. Apply the same guard in your app's capture state owner.
+    guard let scanningSession, !isCapturing, !isSaving, !isExporting else {
+        return
+    }
+
+    // Clear messages and reset the frame gate before requesting a recording.
+    statusLabel.text = ""
+    canStopCapture = false
+    isCapturing = true
+    updateCaptureButton()
+
+    // start() requests capture, but capture is not ready to stop until
+    // recordingInfo() reports at least one saved frame.
+    scanningSession.start()
+    print("PlaybackCaptureViewController: capture start requested")
+
+    // Poll until NSDK confirms that it has saved a frame. Keep this work in
+    // your model layer instead if that layer owns capture state.
+    frameMonitorTask?.cancel()
+    frameMonitorTask = Task { @MainActor [weak self] in
+        guard let self else { return }
+
+        while isCapturing && !Task.isCancelled {
+            let frameCount = scanningSession.recordingInfo().frameCount
+            if frameCount > 0 {
+                canStopCapture = true
+                updateCaptureButton()
+                print(
+                    "PlaybackCaptureViewController: capture ready to stop; " +
+                    "frameCount=\(frameCount)"
+                )
+                return
+            }
+
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+    }
+}
+```
+
+Calling `scanningSession.start()` requests that capture begin, but capture is not ready to stop until NSDK confirms that it is saving frames. Initialization can be delayed while NSDK prepares the recording session. Treat capture as ready only after `recordingInfo().frameCount` is greater than zero. Until then, keep the stop action disabled.
+
+**Validate this step:**
+
+1. Build and run `NsdkSamples`, then open **Capture**.
+2. Tap **Start Capture**.
+3. Move the device until the button changes to **Stop Capture**.
+4. In Xcode's debug console, confirm:
+
+   ```text
+   PlaybackCaptureViewController: capture start requested
+   PlaybackCaptureViewController: capture ready to stop; frameCount=
+   ```
+
+   The second message must end with a value greater than zero.
+
+### Stop and save
+
+In `NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`, locate the
+placeholder `stopAndSaveCapture()` method and replace the entire method with the
+following code. It rechecks the frame count, saves the recording, and starts
+export after saving succeeds. The disabled button is the primary frame-count
+gate, but this method checks again immediately before `saveCurrentScan()` so
+other callers cannot submit an empty recording:
+
+#### Expand to replace the Swift stop-and-save methods
+
+```swift
+private func stopAndSaveCapture() {
+    // Accept Stop only after the frame monitor opens the gate. Preserve this
+    // guard even if your app exposes Stop through a different control.
+    guard let scanningSession, isCapturing, canStopCapture, !isSaving else {
+        return
+    }
+
+    // Recheck at the save boundary so callers other than the button cannot
+    // pass an empty recording to saveCurrentScan().
+    guard scanningSession.recordingInfo().frameCount > 0 else {
+        scanningSession.stop()
+        isCapturing = false
+        canStopCapture = false
+        statusLabel.text = "Capture stopped before any frames were recorded."
+        updateCaptureButton()
+        return
+    }
+
+    // Disable recording controls before beginning asynchronous save work.
+    frameMonitorTask?.cancel()
+    frameMonitorTask = nil
+    isCapturing = false
+    canStopCapture = false
+    isSaving = true
+    updateCaptureButton()
+    print("PlaybackCaptureViewController: save started")
+
+    captureTask?.cancel()
+    captureTask = Task { @MainActor [weak self] in
+        guard let self else { return }
+
+        do {
+            // Save the recording before creating its playback archive.
+            let saveInfo = try await scanningSession.saveCurrentScan(
+                timeout: 10,
+                pollingInterval: 0.1
+            )
+            scanningSession.stop()
+            isSaving = false
+            updateCaptureButton()
+            print(
+                "PlaybackCaptureViewController: save completed; " +
+                "scanId=\(saveInfo.scanId)"
+            )
+
+            try await exportCapture(saveInfo: saveInfo)
+        } catch is CancellationError {
+            scanningSession.stop()
+            resetCaptureUI()
+            print("PlaybackCaptureViewController: capture work cancelled")
+        } catch {
+            scanningSession.stop()
+            statusLabel.text = "Save or export failed: \(error.localizedDescription)"
+            resetCaptureUI()
+            print("PlaybackCaptureViewController: save or export failed: \(error)")
+        }
+    }
+}
+```
+
+Immediately after `stopAndSaveCapture()` in the same file, locate the placeholder
+`resetCaptureUI()` method and replace that entire method with the following code.
+It returns every capture and export flag to its idle state after cancellation or
+an error:
+
+```swift
+private func resetCaptureUI() {
+    // Return every transient flag to idle after cancellation or an error.
+    // Apply the equivalent reset to your app's capture state owner.
+    isCapturing = false
+    canStopCapture = false
+    isSaving = false
+    isExporting = false
+    progressView.isHidden = true
+    updateCaptureButton()
+}
+```
+
+**Validate this step:**
+
+1. Build and run `NsdkSamples`, then open **Capture**.
+2. Start capture and wait for **Stop Capture**.
+3. Tap **Stop Capture**.
+4. In Xcode's debug console, confirm `PlaybackCaptureViewController: save started` and `PlaybackCaptureViewController: save completed; scanId=` appear.
+5. Confirm the button returns to **Start Capture**. Export is still a placeholder and is added in the next step.
+
+### Export the archive
+
+In `NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`, locate the
+placeholder `exportCapture(saveInfo:)` method and replace the entire method with
+the following code. Use the path and scan ID returned by `saveCurrentScan()`
+rather than constructing a storage path:
+
+#### Expand to replace the Swift export method
+
+```swift
+private func exportCapture(saveInfo: NSDKScanningSession.SaveInfo) async throws {
+    // Pass the values returned by saveCurrentScan() to the exporter instead
+    // of constructing a scan ID or storage path.
+    // Replace arManager.nsdkSession with the same NSDKSession used by
+    // prepareCapture() when moving this code into your app.
+    let exporter = arManager.nsdkSession.acquireRecordingExporter()
+    isExporting = true
+    progressView.progress = 0
+    progressView.isHidden = false
+    updateCaptureButton()
+    print(
+        "PlaybackCaptureViewController: export started; " +
+        "scanId=\(saveInfo.scanId)"
+    )
+
+    // Keep exportAsVideo false for a playback dataset. Adjust the timeout
+    // for your product, and map progressCallback to its progress UI.
+    let archivePath = try await exporter.export(
+        scanDirPath: saveInfo.path,
+        scanId: saveInfo.scanId,
+        exportAsVideo: false,
+        pollingInterval: 0.1,
+        timeout: 300,
+        progressCallback: { [weak self] progress in
+            Task { @MainActor in
+                self?.progressView.setProgress(progress, animated: true)
+            }
+        }
+    )
+
+    isExporting = false
+    progressView.setProgress(1, animated: true)
+    progressView.isHidden = true
+    updateCaptureButton()
+    print("PlaybackCaptureViewController: export completed: \(archivePath)")
+
+    // Use the returned archive path for the next product-specific action.
+    presentShareSheet(for: archivePath)
+}
+```
+
+By default, NSDK saves recordings under the app container's `Documents/scankit/` directory. If you set `NSDKScanningSession.Configuration.path`, the saved scan and archive use that configured location instead. The successful export result contains the actual `.tgz` path; use that returned value for sharing or upload.
+
+**Validate this step:**
+
+1. Build and run `NsdkSamples` and complete a capture.
+2. In Xcode's debug console, confirm `PlaybackCaptureViewController: export started; scanId=` is followed by `PlaybackCaptureViewController: export completed:` and a `.tgz` path.
+3. Confirm no share sheet appears yet because `presentShareSheet(for:)` is still a placeholder.
+
+### Share the archive
+
+In `NsdkSamples/ViewControllers/PlaybackCaptureViewController.swift`, locate the
+placeholder `presentShareSheet(for:)` method and replace the entire method with
+the following code. It verifies the exporter result before presenting the
+standard iOS share sheet:
+
+#### Expand to replace the Swift share method
+
+```swift
+private func presentShareSheet(for archivePath: String) {
+    // Verify the exporter result before presenting it to another app.
+    guard FileManager.default.fileExists(atPath: archivePath) else {
+        statusLabel.text = "The archive was exported but could not be found."
+        print("PlaybackCaptureViewController: archive not found: \(archivePath)")
+        return
+    }
+
+    // Replace UIActivityViewController with your upload or storage flow if
+    // your product does not share archives through the system share sheet.
+    let fileURL = URL(fileURLWithPath: archivePath)
+    let shareController = UIActivityViewController(
+        activityItems: [fileURL],
+        applicationActivities: nil
+    )
+    present(shareController, animated: true)
+    print(
+        "PlaybackCaptureViewController: share sheet opened for archive: " +
+        archivePath
+    )
+}
+```
+
+**Validate this step:**
+
+1. Build and run `NsdkSamples` and complete a capture.
+2. Wait for export to finish and confirm the iOS share sheet opens.
+3. In Xcode's debug console, confirm `PlaybackCaptureViewController: share sheet opened for archive:` contains the same path reported by `export completed:`.
+4. Save the archive to Files or dismiss the share sheet, then confirm the app returns to Capture without an error message.
+
+### Retrieve and verify the recording
+
+Enable Finder access to the sample app's Documents directory, copy the exported
+archive to the Mac, and confirm that it contains recorded frames:
+
+1. In Xcode's project navigator, select
+   `NsdkSamples/NsdkSamples/Info.plist`. From the menu bar, select
+   **Editor > Open As > Source Code**.
+
+2. Before the closing `</dict>` element, confirm that both of the following keys
+   are present. The downloaded sample app already contains
+   `UIFileSharingEnabled`; add `LSSupportsOpeningDocumentsInPlace` if it is
+   missing. When you apply this workflow to your own app, add either missing key
+   so that its `Info.plist` contains both:
+
+   ```xml
+
+   <key>UIFileSharingEnabled</key>
+   <true/>
+
+
+   <key>LSSupportsOpeningDocumentsInPlace</key>
+   <true/>
+   ```
+
+3. Build and run `NsdkSamples` again so the installed app contains the updated
+   `Info.plist`.
+
+4. Keep the device connected and unlocked. In Finder, select the device in the
+   sidebar, select **Files**, expand **NSDK Samples**, and drag the `scankit`
+   folder to the Mac.
+
+5. In the copied `scankit` folder, open the scan-ID directory from the
+   `export completed:` path and locate `chunk_0.tgz`.
+
+6. Select `chunk_0.tgz`, then select **File > Open** from the Finder menu bar.
+   macOS Archive Utility extracts the recording beside the `.tgz` file.
+
+7. Open the extracted directory and confirm that it contains `capture.json` and
+   `frame_*.jpg` files.
+
+8. Select `capture.json`, then select **File > Open With > TextEdit** from the
+   Finder menu bar. In TextEdit, select **Edit > Find > Find**, then search for
+   `"frameCount"`. Confirm that the value of this top-level property is greater
+   than zero.
+
+9. Confirm that the frame image sequence starts at `frame_00000000.jpg` and
+   ends at `frameCount - 1`. For example, a `frameCount` of `23` corresponds to
+   `frame_00000000.jpg` through `frame_00000022.jpg`.
+
+10. Select several `frame_*.jpg` files and select **File > Open**. Confirm that
+    Preview displays the environment you recorded.
+
+Depth and confidence files are device- and configuration-dependent, so their
+absence does not by itself mean the playback dataset is invalid. To validate the
+dataset by replaying it, continue with [Set up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).
+
+### View the complete PlaybackCaptureViewController
+
+The expandable section contains the complete
+`PlaybackCaptureViewController.swift` assembled in the preceding steps. Use it
+to check your completed controller, recover a missed change, or copy the full
+implementation without repeating the walkthrough. Refer to this code for the
+tutorial's finished result; Niantic's existing `CaptureViewController.swift` is
+a separate sample-app implementation and does not correspond line-for-line with
+these steps.
+
+#### Expand to reveal PlaybackCaptureViewController.swift
+
+```swift
+import NSDK
+import UIKit
+
+@MainActor
+final class PlaybackCaptureViewController: UIViewController {
+    // ARManager belongs to Niantic's sample app. It supplies the authenticated,
+    // frame-fed NSDKSession and the camera view used to validate this controller.
+    private let arManager: ARManager
+
+    // Keep recording resources and state with this screen. Move them to your
+    // app's model layer if that layer owns the recording lifecycle.
+    private var scanningSession: NSDKScanningSession?
+    private var isCapturing = false
+    private var canStopCapture = false
+    private var isSaving = false
+    private var isExporting = false
+    private var frameMonitorTask: Task<Void, Never>?
+    private var captureTask: Task<Void, Never>?
+
+    // Replace these UIKit controls with your design system while preserving the
+    // state checks that enable Stop and report export progress.
+    private let captureButton = UIButton(type: .system)
+    private let progressView = UIProgressView(progressViewStyle: .default)
+    private let statusLabel = UILabel()
+
+    // The sample app injects ARManager here. In your app, keep the AR
+    // dependencies already owned by the existing AR view controller.
+    init(arManager: ARManager) {
+        self.arManager = arManager
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Playback Capture"
+        view.backgroundColor = .black
+
+        // Keep the sample app's live camera view behind the tutorial controls.
+        // Your app should keep its existing AR view instead of copying NSDKView.
+        arManager.nsdkView.setup(in: view)
+        setupControls()
+        prepareCapture()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // Start the sample app's AR session when this screen becomes visible.
+        // Keep your app's existing AR-session start call where it already runs.
+        arManager.startSession()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        // Cancel this screen's work before stopping its scanning session.
+        frameMonitorTask?.cancel()
+        captureTask?.cancel()
+        scanningSession?.stop()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Stop the sample app's AR session after leaving this screen. Keep your
+        // app's existing AR-session stop call in its current lifecycle method.
+        arManager.stopSession()
+    }
+
+    private func prepareCapture() {
+        guard scanningSession == nil else { return }
+
+        // Acquire and configure once for this screen. Reuse your existing
+        // configuration here if your app already owns one.
+        // Replace arManager.nsdkSession with the authenticated, frame-fed
+        // NSDKSession already owned by your AR screen.
+        let session = arManager.nsdkSession.acquireScanningSession()
+
+        // Customize these values for your recording experience. Preserve your
+        // existing NSDKScanningSession configuration when integrating this flow.
+        var config = NSDKScanningSession.Configuration()
+        config.enableRaycastVisualization = true
+        config.enableVoxelVisualization = false
+        config.generateDepthsIfLidarUnavailable = true
+
+        do {
+            try session.configure(with: config)
+            scanningSession = session
+            print("PlaybackCaptureViewController: scanning session configured")
+        } catch {
+            statusLabel.text = "Could not configure capture: \(error.localizedDescription)"
+            captureButton.isEnabled = false
+            print("PlaybackCaptureViewController: configuration failed: \(error)")
+        }
+    }
+
+    private func setupControls() {
+        // Use the label for capture and export errors. Replace it with your
+        // app's alert, banner, or other status UI if needed.
+        statusLabel.textColor = .white
+        statusLabel.numberOfLines = 0
+        statusLabel.textAlignment = .center
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(statusLabel)
+
+        // Hide progress until export starts. Bind the export callback to your
+        // existing progress UI if your app does not use UIProgressView.
+        progressView.isHidden = true
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(progressView)
+
+        // Connect your app's existing capture action to
+        // handleCaptureButtonTap() instead of creating a second button.
+        captureButton.setTitle("Start Capture", for: .normal)
+        captureButton.setTitleColor(.white, for: .normal)
+        captureButton.backgroundColor = .systemBlue
+        captureButton.layer.cornerRadius = 8
+        captureButton.titleLabel?.font = .boldSystemFont(ofSize: 16)
+        captureButton.addTarget(
+            self,
+            action: #selector(handleCaptureButtonTap),
+            for: .touchUpInside
+        )
+        captureButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(captureButton)
+
+        // These constraints are sample UI. Use your app's existing layout when
+        // moving the recording flow into its AR screen.
+        NSLayoutConstraint.activate([
+            captureButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            captureButton.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -20
+            ),
+            captureButton.widthAnchor.constraint(equalToConstant: 200),
+            captureButton.heightAnchor.constraint(equalToConstant: 44),
+
+            progressView.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+                constant: 20
+            ),
+            progressView.trailingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+                constant: -20
+            ),
+            progressView.bottomAnchor.constraint(
+                equalTo: captureButton.topAnchor,
+                constant: -16
+            ),
+
+            statusLabel.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+                constant: 20
+            ),
+            statusLabel.trailingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+                constant: -20
+            ),
+            statusLabel.bottomAnchor.constraint(
+                equalTo: progressView.topAnchor,
+                constant: -12
+            ),
+        ])
+    }
+
+    private func updateCaptureButton() {
+        // Derive the control state from the recording lifecycle. Preserve the
+        // canStopCapture gate if your app renders this state elsewhere.
+        let title: String
+        if isSaving {
+            title = "Saving..."
+        } else if isExporting {
+            title = "Exporting..."
+        } else if !isCapturing {
+            title = "Start Capture"
+        } else if canStopCapture {
+            title = "Stop Capture"
+        } else {
+            title = "Starting Capture..."
+        }
+
+        captureButton.setTitle(title, for: .normal)
+        captureButton.isEnabled =
+            !isSaving && !isExporting && (!isCapturing || canStopCapture)
+    }
+
+    @objc private func handleCaptureButtonTap() {
+        // If your app already has a capture-button action, call the matching
+        // start or stop method from that action instead of copying this target.
+        if isCapturing {
+            stopAndSaveCapture()
+        } else {
+            startCapture()
+        }
+    }
+
+    private func startCapture() {
+        // Ignore duplicate taps and requests made while save or export owns the
+        // session. Apply the same guard in your app's capture state owner.
+        guard let scanningSession, !isCapturing, !isSaving, !isExporting else {
+            return
+        }
+
+        // Clear messages and reset the frame gate before requesting a recording.
+        statusLabel.text = ""
+        canStopCapture = false
+        isCapturing = true
+        updateCaptureButton()
+
+        // start() requests capture, but capture is not ready to stop until
+        // recordingInfo() reports at least one saved frame.
+        scanningSession.start()
+        print("PlaybackCaptureViewController: capture start requested")
+
+        // Poll until NSDK confirms that it has saved a frame. Keep this work in
+        // your model layer instead if that layer owns capture state.
+        frameMonitorTask?.cancel()
+        frameMonitorTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            while isCapturing && !Task.isCancelled {
+                let frameCount = scanningSession.recordingInfo().frameCount
+                if frameCount > 0 {
+                    canStopCapture = true
+                    updateCaptureButton()
+                    print(
+                        "PlaybackCaptureViewController: capture ready to stop; " +
+                        "frameCount=\(frameCount)"
+                    )
+                    return
+                }
+
+                try? await Task.sleep(nanoseconds: 200_000_000)
+            }
+        }
+    }
+
+    private func stopAndSaveCapture() {
+        // Accept Stop only after the frame monitor opens the gate. Preserve this
+        // guard even if your app exposes Stop through a different control.
+        guard let scanningSession, isCapturing, canStopCapture, !isSaving else {
+            return
+        }
+
+        // Recheck at the save boundary so callers other than the button cannot
+        // pass an empty recording to saveCurrentScan().
+        guard scanningSession.recordingInfo().frameCount > 0 else {
+            scanningSession.stop()
+            isCapturing = false
+            canStopCapture = false
+            statusLabel.text = "Capture stopped before any frames were recorded."
+            updateCaptureButton()
+            return
+        }
+
+        // Disable recording controls before beginning asynchronous save work.
+        frameMonitorTask?.cancel()
+        frameMonitorTask = nil
+        isCapturing = false
+        canStopCapture = false
+        isSaving = true
+        updateCaptureButton()
+        print("PlaybackCaptureViewController: save started")
+
+        captureTask?.cancel()
+        captureTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                // Save the recording before creating its playback archive.
+                let saveInfo = try await scanningSession.saveCurrentScan(
+                    timeout: 10,
+                    pollingInterval: 0.1
+                )
+                scanningSession.stop()
+                isSaving = false
+                updateCaptureButton()
+                print(
+                    "PlaybackCaptureViewController: save completed; " +
+                    "scanId=\(saveInfo.scanId)"
+                )
+
+                try await exportCapture(saveInfo: saveInfo)
+            } catch is CancellationError {
+                scanningSession.stop()
+                resetCaptureUI()
+                print("PlaybackCaptureViewController: capture work cancelled")
+            } catch {
+                scanningSession.stop()
+                statusLabel.text = "Save or export failed: \(error.localizedDescription)"
+                resetCaptureUI()
+                print("PlaybackCaptureViewController: save or export failed: \(error)")
+            }
+        }
+    }
+
+    private func resetCaptureUI() {
+        // Return every transient flag to idle after cancellation or an error.
+        // Apply the equivalent reset to your app's capture state owner.
+        isCapturing = false
+        canStopCapture = false
+        isSaving = false
+        isExporting = false
+        progressView.isHidden = true
+        updateCaptureButton()
+    }
+
+    private func exportCapture(saveInfo: NSDKScanningSession.SaveInfo) async throws {
+        // Pass the values returned by saveCurrentScan() to the exporter instead
+        // of constructing a scan ID or storage path.
+        // Replace arManager.nsdkSession with the same NSDKSession used by
+        // prepareCapture() when moving this code into your app.
+        let exporter = arManager.nsdkSession.acquireRecordingExporter()
+        isExporting = true
+        progressView.progress = 0
+        progressView.isHidden = false
+        updateCaptureButton()
+        print(
+            "PlaybackCaptureViewController: export started; " +
+            "scanId=\(saveInfo.scanId)"
+        )
+
+        // Keep exportAsVideo false for a playback dataset. Adjust the timeout
+        // for your product, and map progressCallback to its progress UI.
+        let archivePath = try await exporter.export(
+            scanDirPath: saveInfo.path,
+            scanId: saveInfo.scanId,
+            exportAsVideo: false,
+            pollingInterval: 0.1,
+            timeout: 300,
+            progressCallback: { [weak self] progress in
+                Task { @MainActor in
+                    self?.progressView.setProgress(progress, animated: true)
+                }
+            }
+        )
+
+        isExporting = false
+        progressView.setProgress(1, animated: true)
+        progressView.isHidden = true
+        updateCaptureButton()
+        print("PlaybackCaptureViewController: export completed: \(archivePath)")
+
+        // Use the returned archive path for the next product-specific action.
+        presentShareSheet(for: archivePath)
+    }
+
+    private func presentShareSheet(for archivePath: String) {
+        // Verify the exporter result before presenting it to another app.
+        guard FileManager.default.fileExists(atPath: archivePath) else {
+            statusLabel.text = "The archive was exported but could not be found."
+            print("PlaybackCaptureViewController: archive not found: \(archivePath)")
+            return
+        }
+
+        // Replace UIActivityViewController with your upload or storage flow if
+        // your product does not share archives through the system share sheet.
+        let fileURL = URL(fileURLWithPath: archivePath)
+        let shareController = UIActivityViewController(
+            activityItems: [fileURL],
+            applicationActivities: nil
+        )
+        present(shareController, animated: true)
+        print(
+            "PlaybackCaptureViewController: share sheet opened for archive: " +
+            archivePath
+        )
+    }
+
+}
+```
+
+### Add to your app
+
+`ARManager` is part of Niantic's sample app; your app does not need to create an equivalent class. It supplies three concrete dependencies during tutorial validation:
+
+| Sample code | Use in your app |
+| --- | --- |
+| `arManager.nsdkSession` | Reuse the authenticated `NSDKSession` that your AR screen already updates with live frames. |
+| `arManager.nsdkView.setup(in: view)` | Keep your AR screen's existing camera or rendering view setup. |
+| `arManager.startSession()` and `stopSession()` | Keep your AR screen's existing AR-session lifecycle. |
+
+Move the completed recording flow into your existing UIKit AR view controller:
+
+1. Copy the recording state, controls, and methods from `PlaybackCaptureViewController` into the view controller that already owns your AR screen. Do not copy the `arManager` property, initializer, or AR-session lifecycle methods.
+
+2. In `prepareCapture()`, replace:
+
+   ```swift
+   let session = arManager.nsdkSession.acquireScanningSession()
+   ```
+
+   with:
+
+   ```swift
+   // Reuse the authenticated, frame-fed session already owned by this screen.
+   let session = nsdkSession.acquireScanningSession()
+   ```
+
+3. In `exportCapture(saveInfo:)`, replace:
+
+   ```swift
+   let exporter = arManager.nsdkSession.acquireRecordingExporter()
+   ```
+
+   with:
+
+   ```swift
+   let exporter = nsdkSession.acquireRecordingExporter()
+   ```
+
+4. Call `setupControls()` and `prepareCapture()` from your existing `viewDidLoad()` after its AR view is installed.
+
+5. Add the following cleanup to your existing `viewWillDisappear(_:)` while preserving its current AR-session cleanup:
+
+   ```swift
+   frameMonitorTask?.cancel()
+   captureTask?.cancel()
+   scanningSession?.stop()
+   ```
+
+6. Build and run the app on a supported physical device, then validate the complete lifecycle:
+   1. Open the AR screen and the Xcode debug console.
+   2. Tap **Start Capture** and confirm `capture start requested` appears.
+   3. Wait for **Stop Capture** and confirm `capture ready to stop; frameCount=` reports a value greater than zero.
+   4. Tap **Stop Capture** and confirm the save-started and save-completed messages appear.
+   5. Confirm the export-completed and share-sheet messages contain the same `.tgz` path.
+   6. Dismiss the share sheet, leave the AR screen, reopen it, and complete a second capture and export. This confirms the first controller cancelled its work and stopped its scanning session.
+   7. Confirm the console does not report `configuration failed`, `save or export failed`, or `archive not found`.
+
+### Platform: kotlin
+
+## Introduction
+
+Use NSDK Recording to capture motion and sensor data from an AR session. You can export the recording as a playback dataset for testing and debugging.
+
+Kotlin Capture sample recording and exporting a playback dataset.
+
+The sample app is Niantic's working Kotlin reference app. Its Capture screen demonstrates a complete recording and export flow, and its source files provide reference code for your own integration.
+
+Start by [getting the sample app](#kotlin-get-the-sample-source), then choose one of these independent workflows:
+
+- **[Capture](#kotlin-capture-sample):** Use the existing Capture screen to create a dataset quickly.
+- **[Recording API](#kotlin-api-record):** Build a tutorial screen when you need control over the UI, capture state, export progress, or sharing behavior.
+
+You do not need to complete the Capture workflow before using the Recording API workflow.
+
+In the Kotlin instructions:
+
+- **Sample app** means Niantic's downloaded `nsdk-samples-kotlin` project.
+- **Tutorial screen** means the `PlaybackCaptureScreen` you create.
+- **Your app** means the application where you will integrate the completed screen.
+
+## Get the sample app
+
+Both workflows use the public [`nsdk-samples-kotlin`](https://github.com/nianticspatial/nsdk-samples-kotlin) repository. After opening the repository, either run the existing Capture sample UI or use its Capture source files as reference code for your own app.
+
+Clone the repository:
+
+```bash
+git clone https://github.com/nianticspatial/nsdk-samples-kotlin.git
+```
+
+Alternatively, select **Code > Download ZIP** on GitHub, then extract the ZIP before opening it in Android Studio.
+
+The repository contains a nested Android Studio project:
+
+```text
+nsdk-samples-kotlin/
+└── NsdkSamples/          <- Open this directory in Android Studio
+    ├── settings.gradle.kts
+    ├── gradlew
+    └── NsdkSamples/      <- Application module; do not open this directory by itself
+```
+
+Open the sample source as follows:
+
+1. Launch Android Studio.
+2. Select **File > Open**.
+3. Select `<download-location>/nsdk-samples-kotlin/NsdkSamples`, the directory containing `settings.gradle.kts` and `gradlew`, then select **Open**.
+4. If Android Studio asks whether to trust the project, select **Trust Project**.
+5. Wait for Gradle sync and indexing to finish. If sync does not start automatically, select **File > Sync Project with Gradle Files**.
+
+## Record with Capture
+
+The Kotlin capture sample is the fastest way to create a playback dataset on Android without first building your own recording interface. Use it when you want to validate the workflow quickly, generate a dataset for testing, or compare your own implementation against a working sample.
+
+To record a playback dataset using the existing sample UI:
+
+1. [Run Capture](#kotlin-open-the-sample-and-start-recording)
+2. [Record the environment](#kotlin-record-the-environment)
+3. [Export the dataset](#kotlin-stop-and-export-the-dataset)
+
+### Run Capture
+
+1. Connect an ARCore-compatible Android device with USB debugging enabled, then select it in Android Studio's target-device menu.
+2. Select the `NsdkSamples` run configuration and select **Run**.
+3. On the device, grant the requested camera and location permissions and complete the sample app's sign-in flow.
+4. From the sample list, open **Capture**.
+5. Tap **Start Capture** and confirm the camera view opens and the recording controls respond.
+
+For more information about the other sample screens, see [Kotlin Sample Projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/#kotlin-sample-projects).
+
+### Record the environment
+
+Record the environment using your device's camera. Keep in mind the following:
+
+- Keep your device in **Portrait Mode**.
+- Hold your device as steadily as possible to reduce errors in the dataset.
+
+### Export the dataset
+
+Tap **Stop Capture** to finish recording.
+
+When you are ready, tap **Export Capture** to process your most recent recording into a Playback format dataset.
+
+With `ScannerConfig.basePath` unset, the sample stores scans under:
+
+`/sdcard/Android/data/{app.package.name}/files/scankit/`
+
+After the export is complete, the sample app opens Android's share sheet for the resulting `.tgz` archive. The available destinations depend on the apps installed on your device and can include services such as Google Drive, Gmail, Quick Share, or Bluetooth. The sample uses Android's `ACTION_SEND` intent, so it does not guarantee that the share sheet includes a **Save to device** option.
+
+To display the completed export path, connect the device and run:
+
+```bash
+adb logcat -d -s CaptureManager:I
+```
+
+Find the line containing `Export completed`, for example:
+
+```text
+I CaptureManager: Export completed: /storage/emulated/0/Android/data/com.example.app/files/scankit/SCAN_ID/chunk_0.tgz
+```
+
+Copy the full `.tgz` path from that line, then pass it to `adb pull`:
+
+```bash
+adb pull /storage/emulated/0/Android/data/com.example.app/files/scankit/SCAN_ID/chunk_0.tgz .
+```
+
+The final `.` copies the archive into the terminal's current directory.
+
+## Record with the API
+
+If the Recording sample is too limited for your project, you can create your own recording app instead.
+
+The Kotlin API gives you full control over the recording experience, including the UI, capture state, export progress, and sharing behavior. Use this approach when you want dataset creation to fit naturally into your app instead of relying on the sample screen.
+
+This workflow uses the sample app as a runnable development environment. The sample app shows how capture responsibilities are divided, and the tutorial builds a separate recording screen in the sample app before moving the finished integration into an app.
+
+The new screen gives you control over the Compose UI, recording and save state, the frame-count gate, export progress, and Android sharing. The sample app supplies the authenticated `NSDKSession`, ARCore frame delivery, and AR screen needed to run each stage.
+
+The API walkthrough contains these sections:
+
+1. [Capture implementation overview](#kotlin-capture-implementation-overview)
+2. [Prepare the sample app](#kotlin-grant-permissions-and-sign-in)
+3. [Create the tutorial screen](#kotlin-create-the-screen-and-its-state)
+4. [Add capture controls](#kotlin-connect-state-to-the-compose-controls)
+5. [Start capture](#kotlin-start-capture)
+6. [Stop and save](#kotlin-stop-and-save-safely)
+7. [Export the archive](#kotlin-export-the-archive-and-report-progress)
+8. [Share the archive](#kotlin-share-the-exported-archive)
+9. [Retrieve and verify the recording](#kotlin-retrieve-and-verify-the-recording)
+10. [View the complete PlaybackCaptureScreen](#kotlin-complete-api-example)
+11. [Add to your app](#kotlin-add-the-screen-to-your-app)
+
+---
+
+### Capture implementation overview
+
+The API walkthrough starts from Niantic's Capture implementation in the sample
+app. These sample files provide the runtime environment and reference
+implementation for the tutorial screen:
+
+| File | Responsibility |
+| --- | --- |
+| `NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/CaptureManager.kt` | Owns the scanning session, saved scan information, frame count, and recording exporter. |
+| `NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/CaptureView.kt` | Creates `CaptureManager` from the active NSDK session and renders the Compose capture, save, export, and progress controls. |
+
+The tutorial creates a separate `PlaybackCaptureScreen.kt` so Niantic's Capture
+reference implementation remains unchanged. When the finished screen moves into
+an app, that app must provide an authenticated `NSDKSession` that is already
+receiving live ARCore frames, camera and location permissions, and
+product-specific archive sharing or upload behavior.
+
+Apps without that runtime setup need the configuration described in
+[Setting Up the Niantic SDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/).
+
+Standalone development or internal-test builds can use a developer token from
+**Credentials > Developer Tokens** in
+[Scaniverse web](https://scaniverse.nianticspatial.com/signin):
+`NSDKSession(accessToken = "YOUR_DEVELOPER_TOKEN")`. Developer tokens should
+stay out of source control and public builds; see
+[Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/) for the production flow.
+
+### Prepare the sample app
+
+The sample app needs camera permission to supply AR frames and location permission to include device location data in the recording. It also needs an authenticated NSDK session before it can initialize the Recording APIs used by the tutorial.
+
+Prepare the sample app on the Android device before adding the new recording screen:
+
+1. Connect an ARCore-compatible Android device and select it in Android Studio's target-device menu.
+2. Select the `NsdkSamples` run configuration and select **Run**.
+3. On the device, grant camera and location access when prompted.
+4. Complete the sample app's sign-in flow.
+5. Return to the sample list after sign-in completes.
+
+**Validate this step:**
+
+1. Open **Capture** from the sample list.
+2. Confirm the camera view opens without another camera, location, or sign-in prompt.
+3. Return to the sample list without starting a capture.
+
+The sample app retains these permissions and authentication for the implementation steps that follow. When you move the completed screen into your own app, that app must provide the same permissions and an authenticated, frame-fed `NSDKSession`. See [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/) for more information about adding authentication to a new app.
+
+### Create the tutorial screen
+
+Build the recording integration in a new `PlaybackCaptureScreen.kt` file in the sample app. Use the sample app's existing `CaptureManager.kt` and `CaptureView.kt` files as references for the recording lifecycle and UI behavior; do not modify those two files. The new screen acquires its own scanning session and recording exporter from the sample app's `NSDKSession`.
+
+In the Android Studio project pane, create a new `PlaybackCaptureScreen.kt` file at the following path in the sample app module:
+
+```text
+NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt
+```
+
+#### Expand to create PlaybackCaptureScreen.kt with its initial state and placeholders
+
+Add the following compiling skeleton to
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`.
+It acquires the Recording API resources, creates the Compose state, registers
+lifecycle cleanup, and provides placeholders for the implementation added by
+each later section:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import com.nianticspatial.nsdk.AsyncResult
+import com.nianticspatial.nsdk.NSDKSession
+import com.nianticspatial.nsdk.ScanSaveInfo
+import com.nianticspatial.nsdk.ScannerConfig
+import java.io.File
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+fun PlaybackCaptureScreen(nsdkSession: NSDKSession) {
+    // Keep Android context, coroutine work, and acquired NSDK resources scoped to
+    // this screen. In your app, these resources can instead be owned by a ViewModel
+    // or another lifecycle-aware component.
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val scanningSession = remember { nsdkSession.scanning.acquire() }
+    val recordingExporter = remember { nsdkSession.recordingExporter.acquire() }
+
+    // These Compose values drive the button labels, enabled states, progress bar,
+    // saved-scan availability, and user-visible errors added in later steps.
+    var isRecording by remember { mutableStateOf(false) }
+    var canStopCapture by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    var exportProgress by remember { mutableStateOf(0f) }
+    var saveInfo by remember { mutableStateOf<ScanSaveInfo?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Cancel and join this screen's capture, save, and export work before closing
+    // native resources. If your app owns these resources elsewhere, perform the
+    // equivalent ordered cleanup in that lifecycle owner.
+    DisposableEffect(Unit) {
+        val screenJob = coroutineScope.coroutineContext[Job]
+        onDispose {
+            CoroutineScope(Dispatchers.IO).launch {
+                screenJob?.cancelAndJoin()
+                scanningSession.stop()
+                scanningSession.close()
+                recordingExporter.close()
+            }
+        }
+    }
+
+    fun startCapture() {
+        // Placeholder: replaced in "Start capture."
+    }
+
+    suspend fun stopAndSaveCapture() {
+        // Placeholder: replaced in "Stop and save."
+    }
+
+    suspend fun exportCapture() {
+        // Placeholder: replaced in "Export the archive."
+    }
+
+    // Placeholder: replaced in "Add capture controls."
+    Text("Playback capture controls")
+}
+
+private fun shareArchive(context: Context, archivePath: String): Boolean {
+    // Placeholder: replaced in "Share the archive."
+    return false
+}
+```
+
+Verify the skeleton before continuing:
+
+1. In Android Studio, select **Build > Assemble Project**.
+2. Open the **Build** tool window and confirm the build finishes without errors.
+
+`PlaybackCaptureScreen.kt` is a composable source file, not an Android application entry point, activity, or test. Android Studio therefore does not display a file-level Run icon for it. Do not try to run this file directly. After verifying the build, connect the screen to the sample app's Capture route by following the next instructions, then run the `NsdkSamples` application.
+
+Each following section replaces one identified placeholder with the next part of the working flow.
+
+The screen accepts the sample app's existing `NSDKSession`, acquires the two Recording API objects it needs, and keeps the state that drives its UI:
+
+| State | UI behavior |
+| --- | --- |
+| `isRecording` | Changes **Start Capture** to the recording state. |
+| `canStopCapture` | Keeps the stop action disabled until a frame has been recorded. |
+| `isSaving` | Disables the controls and displays **Saving...**. |
+| `isExporting` and `exportProgress` | Displays and updates the export progress bar. |
+| `saveInfo` | Makes **Export Capture** available after a successful save. |
+| `errorMessage` | Displays save, export, or sharing failures. |
+
+These values are Compose state, so changes made by the Recording API immediately update the controls. The skeleton also uses `DisposableEffect` to cancel its running work before stopping capture and closing the acquired native SDK resources when the screen leaves composition.
+
+Connect the new screen to the sample app now so you can validate every remaining step on a device:
+
+1. Open:
+
+   ```text
+   NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/NSDKDemoView.kt
+   ```
+
+2. Add the following import so `NSDKDemoView.kt` can render the tutorial screen:
+
+   ```kotlin
+   // Import the tutorial-owned screen so the Capture route can render it.
+   import com.nianticspatial.nsdk.externalsamples.capture.PlaybackCaptureScreen
+   ```
+
+3. Find the `composable<CaptureRoute> { ... }` block. Inside its
+   `BackHelpScaffold`, replace the existing `CaptureView(...)` call with code
+   that enables live AR frame updates and renders the tutorial screen. Replace
+   only:
+
+   ```kotlin
+   CaptureView(activity, nsdkSessionManager, helpContentState, overlayContentState)
+   ```
+
+   with:
+
+   ```kotlin
+   // In the unmodified sample, CaptureView owns this AR-session lifecycle.
+   // Preserve that behavior while the tutorial screen replaces CaptureView.
+   DisposableEffect(Unit) {
+       nsdkSessionManager.arManager.setEnabled(true)
+       onDispose { nsdkSessionManager.arManager.setEnabled(false) }
+   }
+
+   // Pass the sample app's authenticated session into the tutorial screen.
+   PlaybackCaptureScreen(nsdkSession = nsdkSession)
+   ```
+
+   In the unmodified sample, `CaptureView` enables the sample app's AR session.
+   Because this route now displays `PlaybackCaptureScreen` instead, the
+   `DisposableEffect` enables the AR session while the tutorial screen is open
+   and disables it when the screen closes. This supplies the live frames that
+   the scanning session records.
+
+Keep this temporary routing change in place through the remaining API steps. It lets the sample app provide authentication and live AR frames without changing `CaptureManager.kt` or `CaptureView.kt`.
+
+**Validate this step:**
+
+1. Select the `NsdkSamples` run configuration and a connected Android device, then select **Run**.
+2. Open **Capture** from the sample list.
+3. Confirm the screen displays **Playback capture controls**. This placeholder confirms the sample app is rendering the new file; capture controls are added in the next step.
+
+### Add capture controls
+
+The main button starts capture on its first tap and saves on its next enabled tap. `canStopCapture` is the frame-count gate: while it is false, the disabled button displays **Starting Capture...**. The export button appears only after `saveInfo` is available.
+
+In
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`,
+locate `Text("Playback capture controls")` and replace it with the following
+`Column`. This code connects the capture state to the start, stop, save, and
+export controls:
+
+#### Expand to replace the Kotlin capture controls
+
+```kotlin
+// Arrange the recording controls vertically. Replace this layout and styling with
+// your app's design system while preserving the following state checks.
+Column(
+    modifier = Modifier.fillMaxWidth(),
+    verticalArrangement = Arrangement.spacedBy(10.dp),
+    horizontalAlignment = Alignment.CenterHorizontally
+) {
+    Button(
+        // Disable the main action during save/export and until capture has written
+        // at least one frame.
+        enabled = !isSaving && !isExporting && (!isRecording || canStopCapture),
+        onClick = {
+            // The same control starts a new recording or saves the active one.
+            // Split these into separate controls if that better matches your UI.
+            if (!isRecording) {
+                startCapture()
+            } else {
+                coroutineScope.launch { stopAndSaveCapture() }
+            }
+        }
+    ) {
+        // Derive the label from capture state so the user can see when stopping is safe.
+        Text(
+            when {
+                isSaving -> "Saving..."
+                !isRecording -> "Start Capture"
+                canStopCapture -> "Stop Capture"
+                else -> "Starting Capture..."
+            }
+        )
+    }
+
+    // Show progress only while recordingExporter.export() is running.
+    if (isExporting) {
+        LinearProgressIndicator(
+            progress = { exportProgress },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+        )
+    }
+
+    // Offer export only after save() returns the path and ID of a saved scan.
+    if (saveInfo != null && !isRecording && !isExporting) {
+        Button(
+            enabled = !isSaving,
+            onClick = { coroutineScope.launch { exportCapture() } }
+        ) {
+            Text("Export Capture")
+        }
+    }
+
+    // Replace this inline text with your app's snackbar, dialog, or error component.
+    errorMessage?.let { message -> Text(message) }
+}
+```
+
+**Validate this step:**
+
+1. Select **Build > Assemble Project** and confirm the build finishes without errors.
+2. Run `NsdkSamples` and open **Capture**.
+3. Confirm **Start Capture** appears and **Export Capture** is not displayed.
+
+At this stage, `startCapture()` is still a placeholder. The next step implements the button's capture behavior.
+
+### Start capture
+
+In
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`,
+locate the placeholder `startCapture()` function and replace the entire function
+with the following code. It configures and starts the scanning session, polls the
+recorded frame count, and enables the stop action after NSDK saves the first
+frame:
+
+#### Expand to replace the Kotlin start-capture function
+
+```kotlin
+fun startCapture() {
+    // If your app already has a Start Capture handler, replace its existing
+    // configure/start block with this flow instead of starting a second session.
+    // Ignore duplicate taps while this screen is recording, saving, or exporting.
+    // If your app has a ViewModel or another capture-state owner, perform the
+    // equivalent state check there instead.
+    if (isRecording || isSaving || isExporting) return
+
+    // Clear results and messages from the previous capture before starting again.
+    // Reset any additional app-specific scan state here as well.
+    saveInfo = null
+    canStopCapture = false
+    errorMessage = null
+
+    // Customize these values for the capture experience in your app. For example,
+    // reuse your existing ScannerConfig or set basePath if scans should use a
+    // non-default location. Configure the session before calling start().
+    val config = ScannerConfig().apply {
+        useNsdkDepthsIfPlatformUnavailable = true
+        enableRaycastVisualization = true
+        enableVoxelVisualization = false
+    }
+    scanningSession.configure(config)
+    scanningSession.start()
+    Log.i("PlaybackCaptureScreen", "Capture start requested")
+
+    // Updating Compose state changes the button to the waiting-for-frames state.
+    // If capture state belongs to your ViewModel, update that state instead.
+    isRecording = true
+
+    // MultiDepth initialization or a GeographicLib download can delay the first
+    // saved frame, so starting the session does not make stopping safe yet.
+    // If your app owns background work in a ViewModel, move this polling coroutine
+    // there, but keep the frame-count check before enabling the stop action.
+    coroutineScope.launch {
+        while (isRecording) {
+            val frameCount = try {
+                scanningSession.getRecordingInfo().frameCount
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Log.e("PlaybackCaptureScreen", "Could not read frame count", exception)
+                0
+            }
+
+            if (frameCount > 0) {
+                // At least one frame is stored, so Stop Capture can now call save().
+                Log.i(
+                    "PlaybackCaptureScreen",
+                    "Capture ready to stop; frameCount=$frameCount"
+                )
+                canStopCapture = true
+                break
+            }
+
+            // Change the polling interval if your app needs a different UI cadence.
+            delay(200)
+        }
+    }
+}
+```
+
+Calling `scanningSession.start()` requests that capture begin, but capture is not ready to stop until NSDK confirms that it is saving frames. Initialization can be delayed while NSDK prepares the recording session. Treat capture as ready only after `getRecordingInfo().frameCount` is greater than zero. Until then, keep the stop action disabled because saving an empty recording can fail with `INVALID_OPERATION`.
+
+**Validate this step:**
+
+1. Select **Build > Assemble Project**, then run `NsdkSamples` and open **Capture**.
+2. Tap **Start Capture**.
+3. Confirm the button changes to **Starting Capture...** and remains disabled while `frameCount` is zero.
+4. Move the device until the button changes to **Stop Capture**, confirming that at least one frame was recorded.
+5. Open **View > Tool Windows > Logcat** in Android Studio and enter `tag:PlaybackCaptureScreen` in the Logcat query field.
+6. Confirm Logcat contains `Capture start requested` and `Capture ready to stop; frameCount=` with a value greater than zero.
+
+### Stop and save
+
+In
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`,
+locate the placeholder `stopAndSaveCapture()` function and replace the entire
+function with the following code. It rechecks the frame count, saves a valid
+recording, and restores the controls after every result. The disabled stop
+control is the primary frame-count gate, but the second check protects calls
+from somewhere other than the button. An empty capture is stopped and discarded
+instead of being passed to `save()`, which can fail with `INVALID_OPERATION`:
+
+#### Expand to replace the Kotlin stop-and-save function
+
+```kotlin
+suspend fun stopAndSaveCapture() {
+    // Ignore duplicate stop taps and calls made outside an active recording.
+    if (!isRecording || isSaving) return
+
+    // Recheck the frame count at the save boundary. This protects callers other
+    // than the button and prevents save() from receiving an empty recording.
+    val frameCount = try {
+        scanningSession.getRecordingInfo().frameCount
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        Log.e("PlaybackCaptureScreen", "Could not read frame count before save", exception)
+        0
+    }
+
+    if (frameCount == 0) {
+        // Discard the empty recording and restore the idle UI instead of saving it.
+        scanningSession.stop()
+        isRecording = false
+        canStopCapture = false
+        errorMessage = "Capture stopped before any frames were recorded."
+        return
+    }
+
+    // Enter the saving state before starting native work so the controls cannot
+    // submit another action. Move this state to your ViewModel if it owns capture.
+    isSaving = true
+    isRecording = false
+    canStopCapture = false
+
+    try {
+        // save() finalizes the dataset on device and returns the information
+        // required by the exporter.
+        when (val result = scanningSession.save()) {
+            is AsyncResult.Success -> saveInfo = result.value
+            is AsyncResult.Error -> errorMessage = "Save failed: ${result.code}"
+            is AsyncResult.Timeout -> errorMessage = "Save timed out."
+        }
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        Log.e("PlaybackCaptureScreen", "Save failed with an exception", exception)
+        errorMessage = "Save failed: ${exception.message ?: "Unknown error"}"
+    } finally {
+        // Stop the scanning session and restore the UI after every save outcome.
+        scanningSession.stop()
+        isSaving = false
+    }
+}
+```
+
+On success, `saveInfo` contains the scan ID and saved-scan path required by the exporter.
+
+**Validate this step:**
+
+1. Select **Build > Assemble Project**, then run `NsdkSamples` and open **Capture**.
+2. Tap **Start Capture** and wait for **Stop Capture** to become enabled.
+3. Tap **Stop Capture** and confirm the button displays **Saving...** while the scan is being saved.
+4. Confirm **Export Capture** appears after the save succeeds.
+
+At this stage, `exportCapture()` is still a placeholder. The next step implements the export behavior.
+
+### Export the archive
+
+In
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`,
+locate the placeholder `exportCapture()` function and replace the entire function
+with the following code. It passes the saved path and scan ID to the exporter,
+updates the progress state, and sends the returned archive path to the sharing
+helper:
+
+#### Expand to replace the Kotlin export function
+
+```kotlin
+suspend fun exportCapture() {
+    // Export requires the non-null path and scan ID returned by a successful save().
+    val scanInfo = saveInfo ?: return
+    val scanDirPath = scanInfo.savePath
+    val scanId = scanInfo.scanId
+    if (scanDirPath == null || scanId == null) {
+        Log.e("PlaybackCaptureScreen", "Saved scan information is incomplete")
+        errorMessage = "The saved scan is missing its path or scan ID."
+        return
+    }
+
+    // Reset export UI before starting. Replace these Compose assignments with
+    // updates to your app's state owner when appropriate.
+    isExporting = true
+    exportProgress = 0f
+    errorMessage = null
+    Log.i("PlaybackCaptureScreen", "Export started for scanId=$scanId")
+
+    try {
+        // Create a playback-compatible archive from the saved scan. Keep
+        // exportAsVideo false for playback datasets; adjust the timeout for your UX.
+        val result = recordingExporter.export(
+            scanDirPath = scanDirPath,
+            scanId = scanId,
+            exportAsVideo = false,
+            timeoutMillis = 300_000,
+            // The callback reports values from 0.0 to 1.0 for the progress indicator.
+            onProgress = { progress -> exportProgress = progress }
+        )
+
+        // Share the path returned by the exporter rather than constructing a path.
+        // Replace shareArchive() if your app uploads or manages archives itself.
+        when (result) {
+            is AsyncResult.Success -> {
+                Log.i("PlaybackCaptureScreen", "Export completed: ${result.value}")
+                if (!shareArchive(context, result.value)) {
+                    errorMessage = "The archive was exported but could not be shared."
+                }
+            }
+            is AsyncResult.Error -> {
+                Log.e("PlaybackCaptureScreen", "Export failed: ${result.code}")
+                errorMessage = "Export failed: ${result.code}"
+            }
+            is AsyncResult.Timeout -> {
+                Log.w("PlaybackCaptureScreen", "Export timed out")
+                errorMessage = "Export timed out."
+            }
+        }
+    } catch (exception: CancellationException) {
+        Log.i("PlaybackCaptureScreen", "Export cancelled")
+        throw exception
+    } catch (exception: Exception) {
+        Log.e("PlaybackCaptureScreen", "Export failed with an exception", exception)
+        errorMessage = "Export failed: ${exception.message ?: "Unknown error"}"
+    } finally {
+        // Restore the export controls after success, failure, timeout, or cancellation.
+        isExporting = false
+    }
+}
+```
+
+The successful result contains the actual `.tgz` archive path. Pass that path to the sharing helper instead of constructing a path from the default storage location.
+
+**Validate this step:**
+
+1. Select **Build > Assemble Project**, then run `NsdkSamples` and create and save a capture.
+2. Tap **Export Capture** and confirm the progress bar appears while the archive is created.
+3. Open **View > Tool Windows > Logcat** in Android Studio. In the Logcat toolbar, select the connected physical device and the `com.nianticspatial.nsdk.externalsamples` app process, then enter `tag:PlaybackCaptureScreen` in the query field.
+4. Confirm Logcat contains `Export started for scanId=` followed by `Export completed:` and the full `.tgz` archive path.
+5. Confirm the screen displays **The archive was exported but could not be shared.** This is expected because `shareArchive(...)` is still a placeholder.
+
+### Share the archive
+
+In
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`,
+locate the placeholder `shareArchive(...)` function and replace the entire
+function with the following code. It verifies the archive, creates a
+`FileProvider` content URI, grants temporary read access, and opens Android's
+share sheet:
+
+#### Expand to replace the Kotlin share function
+
+```kotlin
+private fun shareArchive(context: Context, archivePath: String): Boolean {
+    // Do not open the chooser if the exporter did not create the expected file.
+    val file = File(archivePath)
+    if (!file.exists()) {
+        Log.e("PlaybackCaptureScreen", "Archive not found: $archivePath")
+        return false
+    }
+
+    // Convert the private file path to a content URI that another app may read.
+    // The FileProvider authority must match the declaration in AndroidManifest.xml.
+    return runCatching {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        // Grant the selected destination temporary read access to the archive.
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/gzip"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // Replace Android's chooser here if your product has a custom upload flow.
+        context.startActivity(Intent.createChooser(shareIntent, "Share Capture"))
+        Log.i("PlaybackCaptureScreen", "Share sheet opened for archive: $archivePath")
+        true
+    }.onFailure { exception ->
+        Log.e("PlaybackCaptureScreen", "Could not open share sheet", exception)
+    }.getOrDefault(false)
+}
+```
+
+The sample app already declares a `FileProvider` with the matching authority, so no sharing configuration is required while you build and validate the screen there. The complete `PlaybackCaptureScreen` section explains what to add when you move the finished screen into your own app.
+
+**Validate this step:**
+
+1. Select **Build > Assemble Project**, then run `NsdkSamples` and create and save a capture.
+2. Tap **Export Capture** and wait for export to finish.
+3. Confirm Android's share sheet opens with the exported `.tgz` archive.
+4. Return to Android Studio and open **View > Tool Windows > Logcat**. The share sheet can change the selected process, so select the connected physical device and the `com.nianticspatial.nsdk.externalsamples` app process in the Logcat toolbar, then enter `tag:PlaybackCaptureScreen` in the query field.
+5. Confirm Logcat contains `Share sheet opened for archive:` followed by the same `.tgz` path reported by `Export completed:`.
+6. Select a sharing destination or dismiss the share sheet, then confirm the app returns to the Capture screen without an error message.
+
+### Retrieve and verify the recording
+
+Use Android Studio to copy the exported recording from the device, then use the
+operating system's built-in archive support to examine it. This workflow does
+not require `adb` on the terminal path or Unix shell utilities:
+
+1. In the Logcat validation from **Export the archive**, copy the scan ID from
+   the `Export completed:` path.
+
+2. In Android Studio, select **View > Tool Windows > Device Explorer**, then
+   select the connected device.
+
+3. In Device Explorer, navigate to:
+
+   ```text
+   sdcard/Android/data/com.nianticspatial.nsdk.externalsamples/files/scankit/
+   ```
+
+4. Open the directory whose name matches the scan ID from Logcat, then select
+   `chunk_0.tgz`.
+
+5. Select **Save As** in the Device Explorer toolbar and save the file to the
+   development machine.
+
+6. Extract `chunk_0.tgz` with the operating system's built-in archive support:
+
+   - On macOS, select the file in Finder, then select **File > Open**.
+   - On Windows 11 version 24H2 or later, select the file in File Explorer, then
+     select **Extract All**.
+   - On Linux, select the file in the system file manager, then select its
+     **Extract** action. The action name depends on the desktop environment.
+
+7. In the extracted directory, confirm that `capture.json` and
+   `frame_*.jpg` files are present.
+
+8. Open `capture.json` in a text editor and locate its top-level `frameCount`
+   property. Confirm that the value is greater than zero. Frame numbering starts
+   at zero, so a `frameCount` of `23` corresponds to files from
+   `frame_00000000.jpg` through `frame_00000022.jpg`.
+
+9. Open several `frame_*.jpg` files and confirm that they show the environment
+   you recorded.
+
+Depth and confidence files are device- and configuration-dependent, so their
+absence does not by itself mean the playback dataset is invalid. To validate the
+dataset by replaying it, continue with [Set up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).
+
+### View the complete PlaybackCaptureScreen
+
+The expandable section contains the complete `PlaybackCaptureScreen.kt`
+assembled in the preceding steps. Use it to check your completed screen,
+recover a missed change, or copy the full implementation without repeating the
+walkthrough. Refer to this code for the tutorial's finished result; Niantic's
+existing `CaptureView.kt` and `CaptureManager.kt` belong to a separate
+sample-app implementation and do not correspond line-for-line with these steps.
+
+#### Expand to reveal PlaybackCaptureScreen.kt
+
+Compare the completed
+`NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt`
+with the following code:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import com.nianticspatial.nsdk.AsyncResult
+import com.nianticspatial.nsdk.NSDKSession
+import com.nianticspatial.nsdk.ScanSaveInfo
+import com.nianticspatial.nsdk.ScannerConfig
+import java.io.File
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+fun PlaybackCaptureScreen(nsdkSession: NSDKSession) {
+    // Keep Android context, coroutine work, and acquired NSDK resources scoped to
+    // this screen. In your app, these resources can instead be owned by a ViewModel
+    // or another lifecycle-aware component.
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val scanningSession = remember { nsdkSession.scanning.acquire() }
+    val recordingExporter = remember { nsdkSession.recordingExporter.acquire() }
+
+    // These Compose values drive the button labels, enabled states, progress bar,
+    // saved-scan availability, and user-visible errors.
+    var isRecording by remember { mutableStateOf(false) }
+    var canStopCapture by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    var exportProgress by remember { mutableStateOf(0f) }
+    var saveInfo by remember { mutableStateOf<ScanSaveInfo?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Cancel and join this screen's capture, save, and export work before closing
+    // native resources. If your app owns these resources elsewhere, perform the
+    // equivalent ordered cleanup in that lifecycle owner.
+    DisposableEffect(Unit) {
+        val screenJob = coroutineScope.coroutineContext[Job]
+        onDispose {
+            CoroutineScope(Dispatchers.IO).launch {
+                screenJob?.cancelAndJoin()
+                scanningSession.stop()
+                scanningSession.close()
+                recordingExporter.close()
+            }
+        }
+    }
+
+    fun startCapture() {
+        // If your app already has a Start Capture handler, replace its existing
+        // configure/start block with this flow instead of starting a second session.
+        // Ignore duplicate taps while this screen is recording, saving, or exporting.
+        // If your app has a ViewModel or another capture-state owner, perform the
+        // equivalent state check there instead.
+        if (isRecording || isSaving || isExporting) return
+
+        // Clear results and messages from the previous capture before starting again.
+        // Reset any additional app-specific scan state here as well.
+        saveInfo = null
+        canStopCapture = false
+        errorMessage = null
+
+        // Customize these values for the capture experience in your app. For example,
+        // reuse your existing ScannerConfig or set basePath if scans should use a
+        // non-default location. Configure the session before calling start().
+        val config = ScannerConfig().apply {
+            useNsdkDepthsIfPlatformUnavailable = true
+            enableRaycastVisualization = true
+            enableVoxelVisualization = false
+        }
+        scanningSession.configure(config)
+        scanningSession.start()
+        Log.i("PlaybackCaptureScreen", "Capture start requested")
+
+        // Updating Compose state changes the button to the waiting-for-frames state.
+        // If capture state belongs to your ViewModel, update that state instead.
+        isRecording = true
+
+        // MultiDepth initialization or a GeographicLib download can delay the first
+        // saved frame, so starting the session does not make stopping safe yet.
+        // If your app owns background work in a ViewModel, move this polling coroutine
+        // there, but keep the frame-count check before enabling the stop action.
+        coroutineScope.launch {
+            while (isRecording) {
+                val frameCount = try {
+                    scanningSession.getRecordingInfo().frameCount
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (exception: Exception) {
+                    Log.e("PlaybackCaptureScreen", "Could not read frame count", exception)
+                    0
+                }
+
+                if (frameCount > 0) {
+                    // At least one frame is stored, so Stop Capture can now call save().
+                    Log.i(
+                        "PlaybackCaptureScreen",
+                        "Capture ready to stop; frameCount=$frameCount"
+                    )
+                    canStopCapture = true
+                    break
+                }
+
+                // Change the polling interval if your app needs a different UI cadence.
+                delay(200)
+            }
+        }
+    }
+
+    suspend fun stopAndSaveCapture() {
+        // Ignore duplicate stop taps and calls made outside an active recording.
+        if (!isRecording || isSaving) return
+
+        // Recheck the frame count at the save boundary. This protects callers other
+        // than the button and prevents save() from receiving an empty recording.
+        val frameCount = try {
+            scanningSession.getRecordingInfo().frameCount
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Log.e("PlaybackCaptureScreen", "Could not read frame count before save", exception)
+            0
+        }
+
+        if (frameCount == 0) {
+            // Discard the empty recording and restore the idle UI instead of saving it.
+            scanningSession.stop()
+            isRecording = false
+            canStopCapture = false
+            errorMessage = "Capture stopped before any frames were recorded."
+            return
+        }
+
+        // Enter the saving state before starting native work so the controls cannot
+        // submit another action. Move this state to your ViewModel if it owns capture.
+        isSaving = true
+        isRecording = false
+        canStopCapture = false
+
+        try {
+            // save() finalizes the dataset on device and returns the information
+            // required by the exporter.
+            when (val result = scanningSession.save()) {
+                is AsyncResult.Success -> saveInfo = result.value
+                is AsyncResult.Error -> errorMessage = "Save failed: ${result.code}"
+                is AsyncResult.Timeout -> errorMessage = "Save timed out."
+            }
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Log.e("PlaybackCaptureScreen", "Save failed with an exception", exception)
+            errorMessage = "Save failed: ${exception.message ?: "Unknown error"}"
+        } finally {
+            // Stop the scanning session and restore the UI after every save outcome.
+            scanningSession.stop()
+            isSaving = false
+        }
+    }
+
+    suspend fun exportCapture() {
+        // Export requires the non-null path and scan ID returned by a successful save().
+        val scanInfo = saveInfo ?: return
+        val scanDirPath = scanInfo.savePath
+        val scanId = scanInfo.scanId
+        if (scanDirPath == null || scanId == null) {
+            Log.e("PlaybackCaptureScreen", "Saved scan information is incomplete")
+            errorMessage = "The saved scan is missing its path or scan ID."
+            return
+        }
+
+        // Reset export UI before starting. Replace these Compose assignments with
+        // updates to your app's state owner when appropriate.
+        isExporting = true
+        exportProgress = 0f
+        errorMessage = null
+        Log.i("PlaybackCaptureScreen", "Export started for scanId=$scanId")
+
+        try {
+            // Create a playback-compatible archive from the saved scan. Keep
+            // exportAsVideo false for playback datasets; adjust the timeout for your UX.
+            val result = recordingExporter.export(
+                scanDirPath = scanDirPath,
+                scanId = scanId,
+                exportAsVideo = false,
+                timeoutMillis = 300_000,
+                // The callback reports values from 0.0 to 1.0 for the progress indicator.
+                onProgress = { progress -> exportProgress = progress }
+            )
+
+            // Share the path returned by the exporter rather than constructing a path.
+            // Replace shareArchive() if your app uploads or manages archives itself.
+            when (result) {
+                is AsyncResult.Success -> {
+                    Log.i("PlaybackCaptureScreen", "Export completed: ${result.value}")
+                    if (!shareArchive(context, result.value)) {
+                        errorMessage = "The archive was exported but could not be shared."
+                    }
+                }
+                is AsyncResult.Error -> {
+                    Log.e("PlaybackCaptureScreen", "Export failed: ${result.code}")
+                    errorMessage = "Export failed: ${result.code}"
+                }
+                is AsyncResult.Timeout -> {
+                    Log.w("PlaybackCaptureScreen", "Export timed out")
+                    errorMessage = "Export timed out."
+                }
+            }
+        } catch (exception: CancellationException) {
+            Log.i("PlaybackCaptureScreen", "Export cancelled")
+            throw exception
+        } catch (exception: Exception) {
+            Log.e("PlaybackCaptureScreen", "Export failed with an exception", exception)
+            errorMessage = "Export failed: ${exception.message ?: "Unknown error"}"
+        } finally {
+            // Restore the export controls after success, failure, timeout, or cancellation.
+            isExporting = false
+        }
+    }
+
+    // Render the capture, export, and progress UI for the full flow.
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(
+            // Disable the main action during save/export and until capture has
+            // written at least one frame.
+            enabled = !isSaving && !isExporting && (!isRecording || canStopCapture),
+            onClick = {
+                // The same control starts a new recording or saves the active one.
+                // Split these into separate controls if that better matches your UI.
+                if (!isRecording) {
+                    startCapture()
+                } else {
+                    coroutineScope.launch { stopAndSaveCapture() }
+                }
+            }
+        ) {
+            // Derive the label from capture state so the user can see when stopping is safe.
+            Text(
+                when {
+                    isSaving -> "Saving..."
+                    !isRecording -> "Start Capture"
+                    canStopCapture -> "Stop Capture"
+                    else -> "Starting Capture..."
+                }
+            )
+        }
+
+        // Show progress only while recordingExporter.export() is running.
+        if (isExporting) {
+            LinearProgressIndicator(
+                progress = { exportProgress },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+            )
+        }
+
+        // Offer export only after save() returns the path and ID of a saved scan.
+        if (saveInfo != null && !isRecording && !isExporting) {
+            Button(
+                enabled = !isSaving,
+                onClick = { coroutineScope.launch { exportCapture() } }
+            ) {
+                Text("Export Capture")
+            }
+        }
+
+        // Replace this inline text with your app's snackbar, dialog, or error component.
+        errorMessage?.let { message -> Text(message) }
+    }
+}
+
+private fun shareArchive(context: Context, archivePath: String): Boolean {
+    // Do not open the chooser if the exporter did not create the expected file.
+    val file = File(archivePath)
+    if (!file.exists()) {
+        Log.e("PlaybackCaptureScreen", "Archive not found: $archivePath")
+        return false
+    }
+
+    // Convert the private file path to a content URI that another app may read.
+    // The FileProvider authority must match the declaration in AndroidManifest.xml.
+    return runCatching {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        // Grant the selected destination temporary read access to the archive.
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/gzip"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // Replace Android's chooser here if your product has a custom upload flow.
+        context.startActivity(Intent.createChooser(shareIntent, "Share Capture"))
+        Log.i("PlaybackCaptureScreen", "Share sheet opened for archive: $archivePath")
+        true
+    }.onFailure { exception ->
+        Log.e("PlaybackCaptureScreen", "Could not open share sheet", exception)
+    }.getOrDefault(false)
+}
+```
+
+The key parts of this example are:
+
+- `startCapture()` configures the scanning session, starts recording, and waits until stopping becomes safe.
+- `stopAndSaveCapture()` saves the recording and stores the returned `ScanSaveInfo` for export.
+- `exportCapture()` creates the playback `.tgz` archive and updates the progress bar while export runs.
+- `shareArchive(...)` opens Android's share sheet after export succeeds.
+
+### Add to your app
+
+After validating the screen in the sample app:
+
+1. Copy `PlaybackCaptureScreen.kt` from the sample app:
+
+   ```text
+   NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/PlaybackCaptureScreen.kt
+   ```
+
+   into the package that contains your app's AR Compose UI. For example:
+
+   ```text
+   app/src/main/java/com/example/app/PlaybackCaptureScreen.kt
+   ```
+
+2. In the first line of the copied file, replace `com.nianticspatial.nsdk.externalsamples.capture` with the package that matches its new location, for example `com.example.app`.
+
+3. In the Kotlin file that renders your existing AR Compose UI, import the copied screen using your package name:
+
+   ```kotlin
+   // Replace this package with the package that contains your copied screen.
+   import com.example.app.PlaybackCaptureScreen
+   ```
+
+4. If your app does not already declare a `FileProvider`, add the following provider inside the `<application>` block in your app module's `src/main/AndroidManifest.xml`:
+
+   ```xml
+
+   <provider
+       android:name="androidx.core.content.FileProvider"
+       android:authorities="${applicationId}.fileprovider"
+       android:exported="false"
+       android:grantUriPermissions="true">
+       <meta-data
+           android:name="android.support.FILE_PROVIDER_PATHS"
+           android:resource="@xml/file_paths" />
+   </provider>
+   ```
+
+   If your app already has a provider, confirm that its authority matches `${context.packageName}.fileprovider` in `shareArchive(...)`. Otherwise, update the helper to use your existing authority.
+
+5. Create `src/main/res/xml/file_paths.xml` in your app module, if it does not exist, and allow sharing from NSDK's default recording directory:
+
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <paths xmlns:android="http://schemas.android.com/apk/res/android">
+       
+       <external-files-path name="scankit" path="scankit/" />
+   </paths>
+   ```
+
+   If your `ScannerConfig` sets a custom `basePath`, replace this entry with the narrowest matching path. Do not grant access to an entire storage root.
+
+6. In your existing AR UI content, render the screen with the authenticated, frame-fed `NSDKSession` already used by the AR view:
+
+   ```kotlin
+   // Reuse the authenticated NSDKSession that your AR screen already updates with
+   // live frames; do not create a second session only for recording.
+   PlaybackCaptureScreen(nsdkSession = nsdkSession)
+   ```
+
+7. Build and run your app on a physical ARCore-compatible device, then validate the complete lifecycle:
+   1. Open the AR screen that renders `PlaybackCaptureScreen`.
+   2. In Android Studio, open **View > Tool Windows > Logcat**, select the device and your app process, and enter `tag:PlaybackCaptureScreen` in the query field.
+   3. Tap **Start Capture** and confirm Logcat reports `Capture start requested`.
+   4. Move the device and wait until the control displays **Stop Capture**. Confirm Logcat reports `Capture ready to stop; frameCount=` with a value greater than zero.
+   5. Tap **Stop Capture** and confirm **Export Capture** appears after the save completes.
+   6. Tap **Export Capture** and confirm Logcat reports `Export started for scanId=`, followed by `Export completed:` with a `.tgz` path.
+   7. Confirm Android's share sheet opens and Logcat reports `Share sheet opened for archive:` with the same path.
+   8. Dismiss the share sheet, leave the AR screen, reopen it, and complete a second capture and export. This confirms that the first screen instance cancelled its work and released the acquired NSDK resources.
+   9. Confirm Logcat does not report `Could not read frame count`, `Save failed`, `Export failed`, or `Could not open share sheet`.

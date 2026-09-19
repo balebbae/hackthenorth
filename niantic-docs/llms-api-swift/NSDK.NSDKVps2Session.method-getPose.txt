@@ -1,0 +1,72 @@
+# getPose
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-getPose/
+
+getPose
+Converts a geolocation to an AR pose using the provided localization snapshot.
+
+---
+
+## Declaration
+
+func getPose(localization: Vps2Localization, location: GeolocationData) -> Vps2Pose?
+
+#### Summary
+
+Converts a geolocation to an AR pose using the provided localization snapshot.
+
+#### Returns
+
+The pose in ARKit coordinate space corresponding to the given geolocation,
+  or nil if unavailable.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| localization | Vps2Localization | The localization to use for the conversion. |
+| location | GeolocationData | The geolocation to convert. |
+
+---
+
+## Overload 1
+
+func getPose(localization: Vps2Localization, location: CLLocation) -> Vps2Pose?
+
+#### Summary
+
+Converts a CLLocation to an AR pose using the provided localization snapshot.
+
+#### Returns
+
+The pose in the device's AR coordinate space, or nil if unavailable.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| localization | Vps2Localization | The localization to use for the conversion. |
+| location | GeolocationData | The geolocation to convert. |
+
+---
+
+## Overload 2
+
+func getPose(localization: Vps2Localization, coordinate: CLLocationCoordinate2D, altitude: Double = 0) -> Vps2Pose?
+
+#### Summary
+
+Converts a coordinate and altitude to an AR pose using the provided localization snapshot.
+
+#### Returns
+
+The pose in the device's AR coordinate space, or nil if unavailable.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| localization | Vps2Localization | The localization to use for the conversion. |
+| location | GeolocationData | The geolocation to convert. |
+
+---

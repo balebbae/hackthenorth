@@ -1,0 +1,48 @@
+# PlaybackCamera
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-PlaybackCamera/
+
+PlaybackCamera
+
+---
+
+## Declaration
+
+final class PlaybackCamera
+
+## Summary
+
+Camera representation built from frame **metadata** (pose4x4, intrinsics, resolution). Exposes the same
+concepts as **ARCamera**: transform, viewMatrix, projectionMatrix, viewportRect, displayOrientedTransform.
+Relation to Apple AR: **Stands in for** ARCamera during playback. No Apple camera; we synthesize
+view/projection from recorded intrinsics and pose. Use `PlaybackFrame.camera` to obtain an instance.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var eulerAngles | simd_float3 | Euler angles (pitch, yaw, roll) in radians, extracted from the transform; order matches ARKit. |
+| var exposureDuration | TimeInterval | Exposure duration in seconds. Playback has no exposure data; returns a default. |
+| var exposureOffset | Float | Exposure offset in EV. Playback has no exposure data; returns 0. |
+| var imageResolution | CGSize | The camera's image resolution in pixels. |
+| var intrinsics | simd_float3x3 | The camera's intrinsic matrix (fx, fy, cx, cy layout). |
+| var projectionMatrix | simd_float4x4 | Default projection matrix (infinite far plane). Uses `metadata.projection` when available; otherwise built from intrinsics using orientation from metadata (`screenOrientation`), or inferred from image resolution (portrait if height > width, else landscape-right), or landscape-right as last resort.For display-time orientation or custom near/far, use `projectionMatrix(for:viewportSize:zNear:zFar:)`. |
+| var recordedOrientation | UIInterfaceOrientation | The interface orientation the frame was recorded in. Uses metadata `screenOrientation` when set; else inferred from image resolution (height > width -> portrait, else landscape-right); else landscape-right. |
+| var trackingState | ARCamera.TrackingState | Camera tracking state (from metadata.tracking). |
+| var transform | simd_float4x4 | The 4x4 camera-to-world transformation matrix from the frame metadata (pose4x4). |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| displayOrientedTransform | simd_float4x4 | Returns the camera transform with a Z-axis rotation applied so it matches the given screen orientation.Sensor frame is landscape-right; portrait adds π/2, portrait-upside-down adds -π/2, landscape-left adds π. |
+| projectionMatrix | simd_float4x4 | Returns a projection matrix for the given orientation and viewport, with the requested near/far planes.Built from intrinsics with orientation applied: portrait swaps fx/fy and dimensions; landscape-left flips principal point. |
+| projectPoint | CGPoint | Projects a 3D world-space point into 2D viewport pixel coordinates (origin top-left).Returns (-1, -1) if the point is behind the camera. Uses intrinsics and view for the given orientation. |
+| viewMatrix | simd_float4x4 | Returns the view matrix (world-to-camera) for the given interface orientation.Implemented as the inverse of the display-oriented transform so rendering matches the on-screen camera. |
+| viewportRect | CGRect | Viewport rect that covers the drawable via aspect-fill, matching how NSDKView renders the camera background.ARKit sensor images are always in landscape orientation. |
+
+---

@@ -1,0 +1,1426 @@
+# Place virtual content with VPS2
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/
+
+This guide explains how to place virtual content in an AR scene using an [anchor](https://www.nianticspatial.com/docs/core_concepts/#anchor-and-place-content).
+
+Virtual content is any digital object rendered in AR, such as a 3D model, label, or visual effect. To appear in the correct location and remain stable as the user moves, it must be attached to an anchor.
+
+An anchor defines a tracked position and orientation in the real world. Attaching virtual content to an anchor allows the AR system to keep that content aligned with the environment over time.
+
+With VPS2, anchors can be positioned relative to real-world locations, allowing you to place content consistently across sessions and devices.
+
+In this guide, you will:
+
+- Track an anchor in the AR scene
+- Attach virtual content to the anchor
+- Verify that the content remains stable as the AR session updates
+
+Different placement approaches define how content is created, what data is saved, and how that content is restored later. The next section helps you choose the approach that best fits your application.
+
+---
+
+## Prerequisites
+
+Before you start, make sure you already have:
+
+- a project with NSDK installed and a basic AR scene set up
+- a Site in Scaniverse for workflows that use a Site anchor or Site-derived content
+
+For setup details, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity), [Set up a basic AR scene](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-a-basic-ar-scene), and [First Localization with NSDK](https://www.nianticspatial.com/docs/nsdk/first_localization/).
+
+---
+
+## Choose how to place virtual content
+
+There are multiple ways to place virtual content in an AR scene. Each approach defines how **content is positioned**, how it **behaves over time**, and **what data is stored** so it can be reused.
+
+You can use one or more approaches in the same app, depending on your use case. For example, one feature might place persistent content at a real-world location, while another allows users to place temporary content during a session.
+
+**Key considerations**
+
+- **Using multiple approaches** - Different features in your app can use different placement approaches. You do not need to choose only one for the entire application.
+- **Persistence** - Each approach defines what data, if any, is stored for reuse, and whether that reuse is limited to the current session or can work across sessions and devices:
+  - **VPS-based placement** stores data relative to a real-world location, which can allow content to appear in the same place across sessions and devices.
+  - **Local placement** can keep content stable during the current session, including user-driven placement such as hit tests, but it does not necessarily restore to the same real-world position later unless your app persists additional data.
+
+Use the following table to compare the available approaches based on when to use them, what data they save, and how each one restores content later.
+
+### Platform: unity
+
+| Approach | Best for | Saved data | Restoration |
+| --- | --- | --- | --- |
+| [Place content relative to an anchor](#place-content-relative-to-an-anchor) | You localize to a Site from its Site anchor payload, then want content to stay attached to that tracked anchor across sessions. | The Site anchor payload plus each content item's anchor-local transform. | Re-localizes to the same Site anchor and reapplies the saved anchor-local transform. |
+| [Place content using geo coordinates](#place-content-using-geo-coordinates) | Content is authored at a known latitude, longitude, and altitude. | Geolocation data such as latitude, longitude, altitude, and optional heading. | Reconstructs placement from geospatial coordinates and reapplies the resulting pose. |
+
+### Platform: swift
+
+| Approach | Best for | Saved data | Restoration |
+| --- | --- | --- | --- |
+| [Place content relative to an anchor](#place-content-relative-to-an-anchor) | You localize to a Site from its Site anchor payload, then want content to stay attached to that tracked anchor across sessions. | The Site anchor payload plus each content item's anchor-local transform. | Re-localizes to the same Site anchor and reapplies the saved anchor-local transform. |
+| [Place content using geo coordinates](#place-content-using-geo-coordinates) | Content is authored at a known latitude, longitude, and altitude. | Geolocation data such as latitude, longitude, altitude, and optional heading. | Reconstructs placement from geospatial coordinates and reapplies the resulting pose. |
+
+### Platform: kotlin
+
+| Approach | Best for | Saved data | Restoration |
+| --- | --- | --- | --- |
+| [Place content relative to an anchor](#place-content-relative-to-an-anchor) | You localize to a Site from its Site anchor payload, then want content to stay attached to that tracked anchor across sessions. | The Site anchor payload plus each content item's anchor-local transform. | Re-localizes to the same Site anchor and reapplies the saved anchor-local transform. |
+| [Place content using geo coordinates](#place-content-using-geo-coordinates) | Content is authored at a known latitude, longitude, and altitude. | Geolocation data such as latitude, longitude, altitude, and optional heading. | Reconstructs placement from geospatial coordinates and reapplies the resulting pose. |
+
+**Best practices**
+
+- Use **Place content relative to an anchor** for content that should stay attached to a tracked Site anchor and be restored from anchor-local pose data.
+- Use **Place content using geo coordinates** for content authored at a known latitude, longitude, and altitude.
+
+---
+
+### Place content relative to an anchor
+
+Use this approach when the user decides where content should appear during a localized session. Save the content's local transform relative to the anchor, then apply that same local transform again the next time the anchor is tracked.
+
+### Platform: unity
+
+The primary VPS2 flow in NSDK 4.x is to track a Site anchor from its payload with [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager), keep the returned [ARVps2Anchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Anchor), and place content relative to that anchor.
+
+Follow this workflow to place, save, and later restore content relative to a tracked Site anchor:
+
+1. [Create a Site](https://www.nianticspatial.com/docs/first_localization/#create-a-private-site) in [Scaniverse](https://scaniverse.nianticspatial.com/signin), then get its Site anchor payload.
+   The payload identifies the Site anchor you will track again in later sessions.
+   You can get the anchor payload in either of these ways:
+   - Copy the Site's default anchor payload from Scaniverse when you are testing with a known Site.
+   - Alternatively, use the Sites API at runtime and let the user choose a Site.
+2. Track the Site anchor with [TryTrackAnchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryTrackAnchor).
+   Keep the returned [ARVps2Anchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Anchor), because your content will be attached relative to it.
+   This code is introduced in step 1 of the following runnable example.
+3. Wait until the anchor reaches `Tracking`.
+   This prevents you from placing content against an unstable anchor pose.
+   This check is introduced in step 1 of the following runnable example.
+4. When the user chooses a placement pose, instantiate the content and parent it under `anchor.transform`.
+   Parenting the content under the tracked anchor keeps it aligned as VPS2 updates the anchor pose.
+   This code is introduced in step 1 of the following runnable example.
+5. Save the Site anchor payload together with the content's `localPosition` and `localRotation`.
+   Those values are what let you restore the same content relative to the same Site anchor later.
+   This code is introduced in step 1 of the following runnable example.
+   Expand the following example if you want a runnable Unity component that implements this workflow end to end, including tracking the Site anchor, placing content under it, and saving the anchor-relative pose for later restoration.
+
+   #### Runnable example: Place content relative to a tracked Site anchor
+
+   The code comments in this example refer to the workflow steps in the previous list. To wire this example into a runnable scene, do the following:
+
+   This example already includes a small set of `Debug.Log` and `Debug.LogError` statements that you can use during testing. Open the Unity Console while the scene is running to confirm that tracking starts, the placement succeeds, and the pose is saved.
+
+   To keep this example runnable without authentication, use a valid Site anchor payload that you already obtained earlier, then paste that string into the `Anchor Payload` field on the `TrackSiteAnchorAndPlaceContent` component in the Unity Inspector.
+
+   1. Create a new Unity script file named `TrackSiteAnchorAndPlaceContent.cs`, then replace its contents with the following code:
+      The following example defines the component that tracks a Site anchor, places content under that anchor, and saves the anchor-relative pose:
+
+      ```cs
+      using System;
+      using NianticSpatial.NSDK.AR;
+      using NianticSpatial.NSDK.AR.PersistentAnchors;
+      using UnityEngine;
+      using UnityEngine.UI;
+      using UnityEngine.XR.ARSubsystems;
+
+      [Serializable]
+      public struct SavedTrackedContent
+      {
+          public string anchorPayload;
+          public Vector3 localPosition;
+          public Quaternion localRotation;
+      }
+
+      public class TrackSiteAnchorAndPlaceContent : MonoBehaviour
+      {
+          [SerializeField] private ARVps2Manager _arVps2Manager;
+          [SerializeField] private string _anchorPayload;
+          [SerializeField] private GameObject _contentPrefab;
+          [SerializeField] private Button _placeButton;
+          [SerializeField] private Camera _arCamera;
+
+          private ARVps2Anchor _trackedAnchor;
+          private string _trackedAnchorPayload;
+
+          private void OnEnable()
+          {
+              _placeButton.onClick.AddListener(OnPlaceButtonClicked);
+
+              if (!string.IsNullOrWhiteSpace(_anchorPayload))
+              {
+                  TryTrackSiteAnchor(_anchorPayload);
+              }
+          }
+
+          private void OnDisable()
+          {
+              _placeButton.onClick.RemoveListener(OnPlaceButtonClicked);
+          }
+
+          public bool TryTrackSiteAnchor(string anchorPayload)
+          {
+              // Workflow step 2: track the Site anchor from its payload.
+              if (!_arVps2Manager.TryTrackAnchor(anchorPayload, out _trackedAnchor))
+              {
+                  Debug.LogError("TrackSiteAnchorAndPlaceContent: TryTrackAnchor failed.");
+                  return false;
+              }
+
+              // Workflow step 2: keep the payload so you can save it with the content pose.
+              _trackedAnchorPayload = anchorPayload;
+               return true;
+           }
+
+          private void OnPlaceButtonClicked()
+          {
+              // Workflow step 3: wait until the tracked anchor is stable before placing content.
+              if (_trackedAnchor == null || _trackedAnchor.trackingState != TrackingState.Tracking)
+              {
+                  return;
+              }
+
+              // Workflow step 4: place the content in world space, then parent it under the tracked anchor.
+              var worldPosition = _arCamera.transform.position + _arCamera.transform.forward;
+              var worldRotation = Quaternion.LookRotation(_arCamera.transform.forward, Vector3.up);
+              var content = Instantiate(_contentPrefab, worldPosition, worldRotation);
+              content.transform.SetParent(_trackedAnchor.transform, true);
+
+              // Workflow step 5: save the Site anchor payload plus the content's anchor-local pose.
+              var savedPose = new SavedTrackedContent
+              {
+                  anchorPayload = _trackedAnchorPayload,
+                  localPosition = content.transform.localPosition,
+                  localRotation = content.transform.localRotation
+              };
+
+              SavePose(savedPose);
+          }
+
+          private void SavePose(SavedTrackedContent savedPose)
+          {
+              Debug.Log("TrackSiteAnchorAndPlaceContent: content placed and pose saved.");
+              // Store the anchor payload plus the local pose in PlayerPrefs, a file, or your backend.
+          }
+      }
+      ```
+
+   2. Create a clean test scene for this example.
+      In a fresh Unity scene, add the following objects from the `Hierarchy` menu:
+      - in the `Hierarchy` context menu, choose `XR > AR Session`
+      - in the `Hierarchy` context menu, choose `XR > XR Origin (Mobile AR)`
+      - create an empty `GameObject`, name it `AR Input Manager`, then use `Add Component` to add `AR Input Manager`
+      - in the `Hierarchy` context menu, choose `UI > Canvas`
+      - under `Canvas`, choose `UI > Button`
+      - an empty `GameObject` named `TrackedContentManager`
+        Then:
+      - add [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager) to `XR Origin`
+      - add `TrackSiteAnchorAndPlaceContent` to `TrackedContentManager`
+      - add your new scene to `Build Profiles > Scenes` and move it ahead of `Home` so the app opens directly into it on device
+
+   3. Select the `GameObject` that has the `TrackSiteAnchorAndPlaceContent` component, then assign the five serialized fields in the Inspector:
+      - Drag the object that has [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager) into the `ARVps2Manager` field. In the `nsdk-samples-csharp` project, drag `XR Origin` into the `ARVps2Manager` field.
+      - Paste a valid Site anchor payload into the `Anchor Payload` field. In the `nsdk-samples-csharp` project, paste it into the same field on `VPS2LocalizeDemoManager`.
+      - Drag your AR camera into the camera field. In the `nsdk-samples-csharp` project, drag `Main Camera` from `XR Origin > Camera Offset > Main Camera` into the camera field.
+      - Create or choose the UI button that should trigger placement, then drag it into the button field. In the `nsdk-samples-csharp` project, add `TrackSiteAnchorAndPlaceContent` to `VPS2LocalizeDemoManager`, create a `Button` under `Canvas`, and drag that new button into the button field.
+      - Drag the prefab asset you want to place into the content field. For a fast visible test object, create `Hierarchy > 3D Object > Cube`, then drag that `Cube` into your project to create a prefab asset.
+
+   4. Run the scene and wait for the anchor to reach `Tracking`.
+      `OnEnable()` calls `TryTrackSiteAnchor(_anchorPayload)` automatically when the `Anchor Payload` field is not empty:
+
+      ```cs
+      TryTrackSiteAnchor(_anchorPayload);
+      ```
+
+      View the anchor status in your device logs by logging `_trackedAnchor.trackingState` while testing.
+      Wait until the anchor status reaches `Tracking` before pressing the button you created in step 3.
+      The on-screen validation order for this runnable example is:
+
+      - launch the scene on device
+      - wait for the Site anchor to reach `Tracking`
+      - press the placement button once
+        Build to iPhone or Android to validate tracked-anchor placement with a real Site payload.
+6. Restore the content in a later session.
+   Track the same Site anchor again, then reapply the saved local transform so the content returns to the same real-world location.
+   This code is introduced in steps 1 through 6 of the following runnable example.
+   Expand the following example if you want a runnable Unity restore component for the same workflow. Test it in a second run after you already placed content once and captured the saved payload plus local transform values from step 5.
+
+   #### Runnable example: Restore content relative to a tracked Site anchor
+
+   The code in this example implements the restore phase from step 6 of the previous list. To wire it into the same scene and test it, do the following:
+
+   1. Create a new Unity script file named `ContentRestore.cs`, then replace its contents with the following code:
+      In the `nsdk-samples-csharp` project, place the script in `NsdkSamples/Assets/Samples/PersistentAR/Scripts`.
+      The following example defines the component that tracks the saved Site anchor again and reapplies the saved local pose when tracking is stable.
+      This script reuses the `SavedTrackedContent` struct that you already created in `TrackSiteAnchorAndPlaceContent.cs` in step 5:
+
+      ```cs
+      using NianticSpatial.NSDK.AR;
+      using NianticSpatial.NSDK.AR.PersistentAnchors;
+      using UnityEngine;
+      using UnityEngine.XR.ARSubsystems;
+
+      public class ContentRestore : MonoBehaviour
+      {
+          [SerializeField] private ARVps2Manager _arVps2Manager;
+          [SerializeField] private GameObject _contentPrefab;
+          [SerializeField] private SavedTrackedContent _savedContent;
+
+          private ARVps2Anchor _trackedAnchor;
+          private bool _contentRestored;
+
+          public bool BeginRestore()
+          {
+              var started = _arVps2Manager.TryTrackAnchor(_savedContent.anchorPayload, out _trackedAnchor);
+              Debug.Log($"ContentRestore: BeginRestore started = {started}");
+              return started;
+          }
+
+          private void Update()
+          {
+              if (_contentRestored || _trackedAnchor == null || _trackedAnchor.trackingState != TrackingState.Tracking)
+              {
+                  return;
+              }
+
+              var content = Instantiate(_contentPrefab, _trackedAnchor.transform);
+              content.transform.localPosition = _savedContent.localPosition;
+              content.transform.localRotation = _savedContent.localRotation;
+              _contentRestored = true;
+              Debug.Log("ContentRestore: content restored under tracked anchor.");
+          }
+      }
+      ```
+
+   2. Add `ContentRestore` to the same scene object that already stays active while VPS2 localization is running.
+      In a fresh Unity scene, add it to the same `TrackedContentManager` `GameObject` that already holds `TrackSiteAnchorAndPlaceContent`.
+      In the `nsdk-samples-csharp` project, the closest reference point is `VPS2LocalizeDemoManager` in `NsdkSamples/Assets/Samples/PersistentAR/Scenes/VPS2Localization.unity`.
+
+   3. Select the `GameObject` that has the `ContentRestore` component, then assign the three serialized fields in the Inspector:
+      - Drag the object that has [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager) into the `ARVps2Manager` field. In the `nsdk-samples-csharp` project, drag `XR Origin` into the `ARVps2Manager` field.
+      - Drag the same prefab asset you used during placement into the content field. In the `nsdk-samples-csharp` project, use the same prefab you assigned to `TrackSiteAnchorAndPlaceContent`.
+      - Enter the saved `anchorPayload`, `localPosition`, and `localRotation` into the `Saved Content` field. For a real restore test, use the values you captured from the successful placement run in step 5.
+
+   4. Add a small helper script that starts the restore flow when the scene loads.
+      Create a new Unity script file named `RestoreStarter.cs`, then place it on the same `TrackedContentManager` object as `ContentRestore`.
+
+      The following script example starts the restore flow automatically when the scene loads:
+
+      ```cs
+      using UnityEngine;
+
+      public class RestoreStarter : MonoBehaviour
+      {
+          [SerializeField] private ContentRestore _contentRestore;
+
+          private void Start()
+          {
+              _contentRestore.BeginRestore();
+          }
+      }
+      ```
+
+   5. Select the `GameObject` that has the `RestoreStarter` component, then drag the `ContentRestore` component into the `Content Restore` field.
+      For the restore run, disable `TrackSiteAnchorAndPlaceContent` so the scene does not place more content when it starts.
+
+   6. Build to iPhone or Android and run the scene again at the same Site.
+      Do not press the placement button in this run. Wait for the anchor to reach `Tracking`.
+      The on-screen validation order for this runnable example is:
+      - launch the restore scene on device
+      - wait for the Site anchor to reach `Tracking`
+      - do not press any placement button in this run, because `RestoreStarter` begins restore automatically
+        The expected result is that the content is recreated automatically under the tracked anchor and returns to the same real-world location.
+
+> **Note:**
+>
+> [TryCreateAnchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryCreateAnchor) is not the default flow for this workflow. The usual path is to track a Site anchor from its payload with [TryTrackAnchor](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryTrackAnchor) and place content relative to that anchor. Creating an additional anchor is a more advanced case, for example if you need a separate anchor far away from the default Site anchor.
+
+### Platform: swift
+
+The primary VPS2 flow in Swift is to track a Site anchor from its payload with [NSDKVps2Session](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NsdkVps2Session), keep the returned `NSDKVpsAnchorId`, and place content relative to a RealityKit `AnchorEntity` that follows that tracked anchor.
+
+Follow this workflow to place, save, and later restore content relative to a tracked Site anchor:
+
+1. [Create a Site](https://www.nianticspatial.com/docs/first_localization/#create-a-private-site) in [Scaniverse](https://scaniverse.nianticspatial.com/signin), then get its Site anchor payload.
+   The payload identifies the Site anchor you will track again in later sessions.
+   You can get the anchor payload in either of these ways:
+   - Copy the Site's default anchor payload from Scaniverse when you are testing with a known Site.
+   - Alternatively, use the Sites API at runtime and let the user choose a Site.
+2. Start anchor tracking and keep the returned anchor identifier.
+   Call [trackAnchor(payload:)](https://www.nianticspatial.com/docs/api/swift/NSDK.NsdkVps2Session.method-trackAnchor), then save the returned `NSDKVpsAnchorId` as the key for updates, placement, and restore.
+3. Process [VpsAnchorUpdate](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-VpsAnchorUpdate) for that identifier and keep a matching `AnchorEntity` updated.
+   When [trackingData?.targetAnchorTransform](https://www.nianticspatial.com/docs/api/swift/NSDK.VpsAnchorUpdate.struct-TrackingData) is available in the `VpsAnchorUpdate`, apply it to the matching `AnchorEntity` so content stays aligned as VPS2 refines tracking.
+4. Parent content under the tracked `AnchorEntity` using an anchor-local `Transform`.
+   Save that local transform together with the tracked anchor identifier (and payload if needed by your persistence layer).
+5. Restore in a later session by tracking the same Site anchor again, waiting for tracking data to become available, then reapplying the saved local `Transform` under the tracked `AnchorEntity`.
+
+The previous workflow steps describe what the anchor-relative flow does. The following runnable example shows one complete class with tracking, update, placement, save, and restore:
+
+#### Runnable example: Place and restore content relative to a tracked Site anchor
+
+Create a new file named `SiteAnchorContentController.swift` and add the following code:
+
+```swift
+import Combine
+import NSDK
+import RealityKit
+import simd
+import UIKit
+
+struct SavedAnchorRelativeContent {
+    let anchorPayload: String
+    let anchorId: NSDKVpsAnchorId
+    let localTransform: Transform
+}
+
+/// Core VPS2 anchor-relative placement flow.
+/// Trigger `startTracking`, `placeCubeNearAnchor`, and `restoreSavedContent`
+/// from your own UI actions or app lifecycle code.
+final class SiteAnchorContentController {
+    private let vps2Session: NSDKVps2Session
+    private weak var scene: Scene?
+
+    private var trackedAnchorId: NSDKVpsAnchorId?
+    private var trackedAnchorPayload: String?
+    private var anchorEntities: [NSDKVpsAnchorId: AnchorEntity] = [:]
+    private var cancellables = Set<AnyCancellable>()
+
+    private(set) var savedContent: SavedAnchorRelativeContent?
+
+    init(vps2Session: NSDKVps2Session, scene: Scene) {
+        self.vps2Session = vps2Session
+        self.scene = scene
+    }
+
+    func startTracking(anchorPayload: String) throws {
+        trackedAnchorPayload = anchorPayload
+        trackedAnchorId = try vps2Session.trackAnchor(payload: anchorPayload)
+    }
+
+    func beginAnchorUpdates() {
+        vps2Session.anchorUpdated
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (anchorId, update) in
+                self?.handleAnchorUpdate(anchorId: anchorId, update: update)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleAnchorUpdate(anchorId: NSDKVpsAnchorId, update: VpsAnchorUpdate) {
+        guard anchorId == trackedAnchorId else { return }
+        guard let matrix = update.trackingData?.targetAnchorTransform else { return }
+
+        let anchor = getOrCreateAnchorEntity(anchorId: anchorId)
+        anchor.transform = Transform(matrix: matrix)
+    }
+
+    @discardableResult
+    private func getOrCreateAnchorEntity(anchorId: NSDKVpsAnchorId) -> AnchorEntity {
+        guard let scene else {
+            fatalError("Scene is required before anchor-relative placement.")
+        }
+        if let existing = anchorEntities[anchorId] {
+            return existing
+        }
+
+        let anchor = AnchorEntity(world: .zero)
+        anchor.name = "tracked-site-anchor-\(anchorId)"
+        scene.addAnchor(anchor)
+        anchorEntities[anchorId] = anchor
+        return anchor
+    }
+
+    /// Call this from your placement UI action after localization is running.
+    func placeCubeNearAnchor() {
+        guard let anchorId = trackedAnchorId else { return }
+        let anchor = getOrCreateAnchorEntity(anchorId: anchorId)
+
+        let content = makeCubeEntity(size: 0.15, color: .green)
+        let localTransform = Transform(
+            scale: .one,
+            rotation: simd_quatf(),
+            translation: SIMD3<Float>(0, 0, -0.5)
+        )
+        content.transform = localTransform
+        anchor.addChild(content)
+
+        if let trackedAnchorPayload {
+            saveAnchorRelativeContent(
+                anchorPayload: trackedAnchorPayload,
+                anchorId: anchorId,
+                localTransform: localTransform
+            )
+        }
+    }
+
+    /// Call this from your persistence layer.
+    private func saveAnchorRelativeContent(
+        anchorPayload: String,
+        anchorId: NSDKVpsAnchorId,
+        localTransform: Transform
+    ) {
+        savedContent = SavedAnchorRelativeContent(
+            anchorPayload: anchorPayload,
+            anchorId: anchorId,
+            localTransform: localTransform
+        )
+    }
+
+    /// Call this in a later session after tracking the same Site payload again.
+    func restoreSavedContent() {
+        guard let savedContent else { return }
+        guard savedContent.anchorId == trackedAnchorId else { return }
+        guard let anchor = anchorEntities[savedContent.anchorId] else { return }
+
+        let restored = makeCubeEntity(size: 0.15, color: .yellow)
+        restored.transform = savedContent.localTransform
+        anchor.addChild(restored)
+    }
+
+    private func makeCubeEntity(size: Float, color: UIColor) -> ModelEntity {
+        ModelEntity(
+            mesh: .generateBox(size: size),
+            materials: [SimpleMaterial(color: color, isMetallic: false)]
+        )
+    }
+}
+```
+
+Expected result: after you save a local `Transform` and track the same Site anchor again, restored content returns to the same real-world location.
+
+### Platform: kotlin
+
+Place content relative to a tracked Site anchor by creating a `PoseNode` for that anchor, updating it from [Vps2Session](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session) anchor updates, and attaching your content under that node in the shared AR scene.
+
+- Use this pattern when you want content to follow the same Site anchor during localization and be restored later from saved local pose data.
+- Your app needs a stable Site anchor identifier before this flow starts. In practice, that identifier usually comes from the Site your app chose earlier, whether from a known test Site or from a Site-selection flow in your app.
+
+Follow this workflow to place content relative to a tracked Site anchor:
+
+1. Start from a localized Site so the app already has a tracked Site anchor identifier to use for placement.
+   [Create a Site](https://www.nianticspatial.com/docs/first_localization/#create-a-private-site) in [Scaniverse](https://scaniverse.nianticspatial.com/signin), then get its Site anchor payload.
+   In a Kotlin app, that payload can come from a known test Site that you already chose earlier or from a Site-selection flow that stores the current Site for VPS2 localization.
+   In the sample app, `VPS2View.kt` already imports `com.nianticspatial.nsdk.externalsamples.BuildConfig` and uses `BuildConfig.DEFAULT_VPS_PAYLOAD` when it builds `payloadOptions`. If you copy that sample-only pattern into another file, add the same import there. In your own app, prefer passing the payload into this flow directly instead of adding a new `BuildConfig` dependency just for this step.
+   You can get the Site anchor payload in either of these ways:
+   - Copy the Site's anchor payload from Scaniverse when you are testing with a known Site.
+   - Alternatively, use the Sites API at runtime and let the user choose a Site.
+     In the sample app, the runnable example below starts after that localization flow has already run and `vps2Manager.anchors` contains tracked anchor keys.
+
+2. Create a helper/controller that listens for Site anchor updates and manages the `PoseNode` instances for tracked anchors.
+   This helper owns the `PoseNode` map and the logic that applies the latest anchor transform to the matching SceneView node.
+
+   The following code example shows the controller and helper types that manage tracked `PoseNode` instances:
+
+   ```kotlin
+   class AnchorRelativeContentPlacementController(...)
+
+   class AnchorRelativeContentPlacement(
+       private val engine: Engine,
+       private val arChildNodes: MutableList<Node>,
+   ) {
+       private val poseNodes = mutableMapOf<UUIDKey, PoseNode>()
+   }
+   ```
+
+   If you are using the sample app, this code is introduced in step i of the following runnable example.
+
+3. In the file or object that already owns your SceneView, [NSDKSession](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession), shared AR child-node list, and coroutine scope, resolve the tracked Site anchor identifier you want this placement flow to follow.
+   Your app uses that identifier to collect updates for the correct Site anchor and attach content under the matching `PoseNode`. In the release sample, `VPS2Manager` exposes tracked anchors as `vps2Manager.anchors`, so the simplest sample adaptation is to read a key from that map in the same placement action where you create content after localization has already started.
+
+   You can store the selected Site anchor identifier in any of these ways:
+
+   - assign it to a variable
+   - save it as a property on the object that manages VPS2
+   - pass it into the controller you create for placement
+
+   The following code resolves a Site anchor identifier in the same placement action that will create content:
+
+   ```kotlin
+   val siteAnchorKey = vps2Manager.anchors.keys.firstOrNull() ?: return@Button
+   ```
+
+   If you are using the sample app, this code is introduced in step iii of the following runnable example.
+
+4. Create the placement controller with that stored Site anchor identifier.
+
+   The following code example creates the placement controller for the selected Site anchor:
+
+   ```kotlin
+   val controller = AnchorRelativeContentPlacementController(
+       nsdkSession = nsdkSession,
+       targetAnchorKey = siteAnchorKey,
+       engine = engine,
+       arChildNodes = arChildNodes,
+       scope = coroutineScope,
+   )
+   ```
+
+   If you are using the sample app, this code is introduced in step iii of the following runnable example.
+
+5. Collect `anchorUpdates` and, when tracking state is not [NOT_TRACKED](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AnchorTrackingState), fill a column-major `FloatArray(16)` with `update.anchorToLocalTrackingTransform.toMatrix(matrix, 0)`.
+   This update collection listens for anchor updates from VPS2, ignores updates for other anchors, and prepares the latest anchor transform in the matrix format that SceneView expects.
+
+   The following code does that:
+
+   ```kotlin
+   vps2Session.anchorUpdates
+    .onEach { update ->
+        if (!targetAnchorKey.bytes.contentEquals(update.uuid) ||
+            update.trackingState == AnchorTrackingState.NOT_TRACKED) {
+            return@onEach
+        }
+
+        val matrix = FloatArray(16)
+        update.anchorToLocalTrackingTransform.toMatrix(matrix, 0)
+        placement.applyAnchorMatrix(targetAnchorKey, matrix)
+    }
+    .launchIn(scope)
+   ```
+
+   If you are using the sample app, this code is introduced in step i of the following runnable example.
+
+6. Ensure a `PoseNode` exists for that anchor's [UUIDKey](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.UUIDKey), add it to your scene's child-node list, and update its transform from the latest anchor matrix.
+   `getOrCreatePoseNode` makes sure your app has a SceneView node container for the selected Site anchor, and updating that `PoseNode` keeps your content aligned as VPS2 tracking changes.
+   If you are using the sample app, this code is introduced in step i of the following runnable example.
+
+   This update logic does two things:
+
+   - creates the `PoseNode` the first time your app receives an update for that Site anchor
+   - applies the latest tracked transform to that same `PoseNode` on later updates
+
+   The following code gets or creates the matching `PoseNode` and applies the latest tracked transform from VPS2:
+
+   ```kotlin
+   val poseNode = getOrCreatePoseNode(anchorKey)
+   poseNode.worldTransform = mat4
+   ```
+
+7. Add your content as a child node under that `PoseNode`.
+   Adding the content under the tracked `PoseNode` keeps it aligned as VPS2 updates the Site anchor. In the release sample, `VPS2View.kt` does not already have a placement action, so add a second button named `Place Content` in the same bottom `Column` that already contains the `Start Tracking` button, then put the content-creation code inside that new button's `onClick` block.
+
+   The following code example creates the content node and attaches it under the tracked `PoseNode`:
+
+   ```kotlin
+   val poseNode = controller.placement.getOrCreatePoseNode(siteAnchorKey)
+   val contentNode = CubeNode(
+       engine = engine,
+       size = Float3(0.2f, 0.2f, 0.2f),
+       center = Float3(0f, 0f, 0f),
+       materialInstance = refinedGreenMaterial,
+   )
+   poseNode.addChildNode(contentNode)
+   ```
+
+   If you are using the sample app, this code is introduced in step iii of the following runnable example.
+
+8. Persist the Site anchor identifier and the child node's local pose data so you can restore them later.
+   Save the Site anchor identifier together with the child node's local position and rotation because those are the values your app uses later to restore the content relative to the same Site anchor. In the sample app, store them in remembered state or another shared state holder that both the placement and restore buttons can read.
+
+   The following code example saves the anchor key and local pose data for later restore:
+
+   ```kotlin
+   savedAnchorKey = siteAnchorKey
+   savedLocalPosition = contentNode.position
+   savedLocalRotation = contentNode.rotation
+   ```
+
+   If you are using the sample app, this code is introduced in step iii of the following runnable example.
+
+   Expand the following example if you want a runnable Kotlin controller that covers steps 2 through 8 of this workflow in one place, including the helper file and the `VPS2View.kt` or `VPS2Manager.kt` wiring needed to run that flow in the sample app:
+
+   #### Runnable example: Place content relative to a tracked Site anchor
+
+   The code comments in this example refer to the workflow steps in the previous list. To wire this example into a runnable app and test it, do the following:
+
+   i. In your Kotlin app, create a new file named `AnchorRelativeContentPlacement.kt`.
+   If you are using the sample app, create it in `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/` next to `VPS2View.kt`, `VPS2Manager.kt`, and `VPS2Route.kt`. In another app, create it in the same source package as the file that currently defines your VPS2 localization screen or manager.
+   The following example defines the controller that listens for Site anchor updates and the helper that keeps the matching `PoseNode` updated:
+
+   ```kotlin
+   package com.nianticspatial.nsdk.externalsamples.vps2
+
+   import com.nianticspatial.nsdk.AnchorTrackingState
+   import com.nianticspatial.nsdk.NSDKSession
+   import com.nianticspatial.nsdk.UUIDKey
+   import com.nianticspatial.nsdk.vps2.Vps2Session
+   import io.github.sceneview.node.Node
+   import dev.romainguy.kotlin.math.Float4
+   import dev.romainguy.kotlin.math.Mat4
+   import io.github.sceneview.ar.node.PoseNode
+   import com.google.android.filament.Engine
+   import kotlinx.coroutines.CoroutineScope
+   import kotlinx.coroutines.Job
+   import kotlinx.coroutines.flow.launchIn
+   import kotlinx.coroutines.flow.onEach
+
+   class AnchorRelativeContentPlacementController(
+       nsdkSession: NSDKSession,
+       private val targetAnchorKey: UUIDKey,
+       engine: Engine,
+       arChildNodes: MutableList<Node>,
+       private val scope: CoroutineScope,
+   ) {
+       private val vps2Session: Vps2Session = nsdkSession.vps2
+       val placement = AnchorRelativeContentPlacement(engine, arChildNodes)
+
+       fun startTrackingTargetAnchor(): Job {
+           return vps2Session.anchorUpdates
+               .onEach { update ->
+                   if (!targetAnchorKey.bytes.contentEquals(update.uuid) ||
+                       update.trackingState == AnchorTrackingState.NOT_TRACKED) {
+                       return@onEach
+                   }
+
+                   val matrix = FloatArray(16)
+                   update.anchorToLocalTrackingTransform.toMatrix(matrix, 0)
+                   placement.applyAnchorMatrix(targetAnchorKey, matrix)
+               }
+               .launchIn(scope)
+       }
+   }
+
+   class AnchorRelativeContentPlacement(
+       private val engine: Engine,
+       private val arChildNodes: MutableList<Node>,
+   ) {
+       private val poseNodes = mutableMapOf<UUIDKey, PoseNode>()
+
+       fun getOrCreatePoseNode(anchorKey: UUIDKey): PoseNode {
+           return poseNodes.getOrPut(anchorKey) {
+               PoseNode(engine = engine).also { arChildNodes.add(it) }
+           }
+       }
+
+       fun applyAnchorMatrix(anchorKey: UUIDKey, matrix: FloatArray) {
+           val poseNode = getOrCreatePoseNode(anchorKey)
+           val mat4 = Mat4(
+               Float4(matrix[0], matrix[1], matrix[2], matrix[3]),
+               Float4(matrix[4], matrix[5], matrix[6], matrix[7]),
+               Float4(matrix[8], matrix[9], matrix[10], matrix[11]),
+               Float4(matrix[12], matrix[13], matrix[14], matrix[15])
+           )
+           poseNode.worldTransform = mat4
+       }
+   }
+   ```
+
+   ii. In `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2View.kt`, add a screen coroutine scope and the shared placement/restore state immediately after `val lifecycleOwner = LocalLifecycleOwner.current`:
+
+   The following code example adds the shared coroutine scope and saved placement state:
+
+   ```kotlin
+   import dev.romainguy.kotlin.math.Position
+   import dev.romainguy.kotlin.math.Rotation
+   import androidx.compose.runtime.rememberCoroutineScope
+
+   val coroutineScope = rememberCoroutineScope()
+   var placementController by remember { mutableStateOf<AnchorRelativeContentPlacementController?>(null) }
+   var savedAnchorKey by remember { mutableStateOf<UUIDKey?>(null) }
+   var savedLocalPosition by remember { mutableStateOf<Position?>(null) }
+   var savedLocalRotation by remember { mutableStateOf<Rotation?>(null) }
+   ```
+
+   iii. In `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2View.kt`, search for this exact line near the bottom of the file:
+
+   The following code example shows the existing `Start Tracking` button text you can search for:
+
+   ```kotlin
+   Text(if (vps2Manager.trackingStarted) "Stop Tracking" else "Start Tracking")
+   ```
+
+   Put the new `Place Content` button immediately after the `}` that closes the existing `Start Tracking` button containing that line, and before the `}` that closes the surrounding bottom `Column`. Keep the entire placement flow inside this one new button so every symbol stays in scope together:
+
+   The following code example adds the `Place Content` button and performs the placement flow:
+
+   ```kotlin
+   Button(
+       onClick = {
+           // Pick the first tracked anchor key in the sample.
+           val siteAnchorKey = vps2Manager.anchors.keys.firstOrNull() ?: return@Button
+           // Create the placement controller for that tracked anchor.
+           val controller = AnchorRelativeContentPlacementController(
+               nsdkSession = nsdkManager.session,
+               targetAnchorKey = siteAnchorKey,
+               engine = engine,
+               arChildNodes = arChildNodes,
+               scope = coroutineScope,
+           )
+           placementController = controller
+
+           // Start applying anchor updates to the matching PoseNode.
+           val trackingJob = controller.startTrackingTargetAnchor()
+
+           // Attach that content under the tracked PoseNode.
+           val poseNode = controller.placement.getOrCreatePoseNode(siteAnchorKey)
+           val contentNode = CubeNode(
+               engine = engine,
+               size = Float3(0.2f, 0.2f, 0.2f),
+               center = Float3(0f, 0f, 0f),
+               materialInstance = refinedGreenMaterial,
+           )
+           poseNode.addChildNode(contentNode)
+
+           // Save the anchor key and local pose for restore.
+           savedAnchorKey = siteAnchorKey
+           savedLocalPosition = contentNode.position
+           savedLocalRotation = contentNode.rotation
+       }
+   ) {
+       Text("Place Content")
+   }
+   ```
+
+   iv. Build to Android and validate the sample on a real device.
+   The on-screen validation order for this runnable example is:
+
+   - open `VPS2`
+   - tap `Start Tracking`
+   - wait until the Site mesh is visible and the tracked anchor cube turns green
+   - tap `Place Content`
+
+   The expected result is:
+
+   - on screen: a green cube appears near the tracked Site anchor and stays attached as tracking updates
+   - in app behavior: `savedAnchorKey`, `savedLocalPosition`, and `savedLocalRotation` are populated for restore
+
+9. Restore the content in a later session.
+   Recreate the same `PoseNode` when the Site anchor is tracked again, then reapply the saved local pose so the content returns to the same real-world location.
+   If you are using the sample app, this code is introduced in steps i and ii of the following runnable example.
+
+   If you are using the sample app, expand the following runnable example to wire restore into `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2View.kt`.
+
+   #### Runnable example: Restore content relative to a tracked Site anchor
+
+   The following example corresponds to step 9 of the same workflow. To wire it into a runnable app and test it, do the following:
+
+   i. In your Kotlin app, create a new file named `AnchorRelativeContentRestore.kt`.
+   If you are using the sample app, create it in `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/` next to `VPS2View.kt`, `VPS2Manager.kt`, and `VPS2Route.kt`. In another app, create it in the same source package as your anchor-relative placement helper.
+   The following example adds a restore helper that looks up the tracked `PoseNode`, reattaches saved content under it, and reapplies the saved local pose:
+
+   ```kotlin
+   import com.nianticspatial.nsdk.UUIDKey
+   import io.github.sceneview.node.Node
+
+   class AnchorRelativeContentRestore(
+       private val placement: AnchorRelativeContentPlacement,
+   ) {
+       fun restoreContent(anchorKey: UUIDKey, savedLocalNode: Node) {
+           val poseNode = placement.getOrCreatePoseNode(anchorKey)
+           poseNode.addChildNode(savedLocalNode)
+       }
+   }
+   ```
+
+   ii. In `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2View.kt`, the restore flow for this sample is a new `Restore Content` button that sits next to the `Place Content` button. Search for this exact line:
+
+   The following code example shows the existing `Place Content` button text you can search for:
+
+   ```kotlin
+   Text("Place Content")
+   ```
+
+   Add a new sibling `Restore Content` button immediately after the `}` that closes the `Place Content` button. Keep the entire restore flow inside that one new button so the shared saved state stays in scope together:
+
+   The following code example adds the `Restore Content` button and restores the saved node:
+
+   ```kotlin
+   Button(
+       onClick = {
+           // Make sure placement already ran and saved values are available.
+           val controller = placementController ?: return@Button
+           val anchorKey = savedAnchorKey ?: return@Button
+           val localPosition = savedLocalPosition ?: return@Button
+           val localRotation = savedLocalRotation ?: return@Button
+
+           // Reattach a new node under the same tracked PoseNode.
+           val restoreHelper = AnchorRelativeContentRestore(controller.placement)
+           val restoredNode = CubeNode(
+               engine = engine,
+               size = Float3(0.2f, 0.2f, 0.2f),
+               center = Float3(0f, 0f, 0f),
+               materialInstance = refinedGreenMaterial,
+           )
+           restoredNode.position = localPosition
+           restoredNode.rotation = localRotation
+           restoreHelper.restoreContent(anchorKey, restoredNode)
+       }
+   ) {
+       Text("Restore Content")
+   }
+   ```
+
+   The expected restore result is:
+
+   - on screen: after the Site anchor is tracked again, the restored node appears at the same real-world location as the original placed content
+   - in app behavior: the restored node continues following the same `PoseNode` as VPS2 updates that Site anchor
+
+   If the restore handler runs but the restored content is not visible, verify that the saved local position and rotation still match the values captured during placement, then temporarily restore a larger or more visually obvious node so the result is easier to spot.
+
+   The on-screen validation order for this runnable example is:
+
+   - open `VPS2`
+   - tap `Start Tracking`
+   - wait until the Site mesh is visible and the tracked anchor cube turns green
+   - tap `Place Content` once
+   - move the device enough to distinguish a newly restored cube from the current view
+   - tap `Restore Content`
+
+If you want to compare this explanation against a working implementation, review `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2View.kt` and `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2Manager.kt` in [nsdk-samples-kotlin](https://github.com/nianticspatial/nsdk-samples-kotlin).
+
+Expected result: after you save local pose data and track the same Site anchor again, the content should return to the same real-world location.
+
+### Platform: unity
+
+### Use a Site mesh with anchored content
+
+A Site mesh is a 3D model of the physical environment reconstructed from a scan. An app can
+render it, use it for collision or occlusion, or use it as a visual guide for placing
+content. The mesh itself does not track the Site.
+
+In the current VPS2 workflow, tracking and mesh geometry are requested separately using the
+same Site anchor payload:
+
+1. Get the Site's anchor payload from Scaniverse or the Sites API.
+2. Pass the payload to `ARVps2Manager.TryTrackAnchor` and wait for the returned anchor to
+   reach `Tracking`.
+3. Pass the same payload to `LocationMeshManager.GetLocationMeshForPayloadAsync` to download
+   the Site mesh.
+4. Add the downloaded mesh as a child of the tracked anchor without changing its local
+   transform.
+5. Add virtual content as a child of the tracked anchor. Use the mesh as a guide for its
+   local position, rotation, and scale.
+
+The following excerpt shows how the five steps connect. It is intentionally not a complete
+component: assign the manager and prefab references, and call the asynchronous portion from
+your app's tracking flow.
+
+```cs
+// 1. Get the payload for the Site you want to track.
+string anchorPayload = GetSelectedSiteAnchorPayload();
+
+// 2. Start tracking the Site anchor.
+if (!_arVps2Manager.TryTrackAnchor(anchorPayload, out ARVps2Anchor siteAnchor))
+    return;
+
+// Run the remaining code after siteAnchor.trackingState reaches Tracking.
+
+// 3. Download the Site mesh using the same payload.
+GameObject siteMesh = await _locationMeshManager
+    .GetLocationMeshForPayloadAsync(anchorPayload);
+
+// 4. Align the downloaded mesh with the tracked Site anchor.
+siteMesh.transform.SetParent(siteAnchor.transform, false);
+
+// 5. Place content relative to the same anchor, using the mesh as a visual guide.
+GameObject content = Instantiate(_contentPrefab, siteAnchor.transform);
+content.transform.localPosition = contentPositionOnMesh;
+content.transform.localRotation = contentRotationOnMesh;
+```
+
+See [Place content relative to an anchor](#place-content-relative-to-an-anchor) for the full
+tracked-anchor workflow and [Mesh Download API](https://www.nianticspatial.com/docs/nsdk/how-to/vps/mesh_download/) for mesh download
+options.
+
+### Place content using geo coordinates
+
+### Platform: unity
+
+Use this approach when content should appear at a fixed latitude, longitude, and altitude. Use the latest VPS2 localization snapshot to relate AR space to the real world, then convert your target geolocation into an AR pose with [TryGetPose()](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryGetPose).
+
+Follow this workflow to place content from geo coordinates:
+
+1. Get the known latitude, longitude, and altitude for the real-world location where the content should appear.
+   For example, these values might come from authored content data, a backend, or a fixed test location. For quick testing, use a known nearby coordinate from a maps app.
+2. Get the latest VPS2 localization from [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager) with [TryGetLatestLocalization](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryGetLatestLocalization).
+   The localization snapshot represents the current relationship between AR space and the real world.
+   This code is introduced in step 1 of the following runnable example.
+3. Call [TryGetPose](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryGetPose) with that localization, the target latitude, longitude, and altitude, and an EDN orientation quaternion (often [Quaternion.identity](https://docs.unity3d.com/ScriptReference/Quaternion-identity.html) when the target has no specific heading).
+   When localization is available and the pose conversion succeeds, it returns the pose for that real-world location in AR space.
+   This code is introduced in step 1 of the following runnable example.
+4. Apply the returned pose to your `GameObject` and keep updating it as VPS2 improves.
+   Repeating this conversion lets the content stay aligned to the latest VPS2 estimate.
+   This code is introduced in step 1 of the following runnable example.
+
+The following example converts a fixed geolocation into an AR pose and applies that pose to a Unity `GameObject` as VPS2 improves:
+
+#### Runnable example: Place content from geo coordinates
+
+The code comments in this example refer to the workflow steps in the previous list. To wire this example into a runnable scene and test it, do the following:
+
+1. Create a new Unity script file named `GeoPositionedObjectHelper.cs`.
+   In the `nsdk-samples-csharp` project, place the script in `NsdkSamples/Assets/Samples/PersistentAR/Scripts`.
+   The following example defines the component that converts a fixed geolocation into a `GameObject` pose.
+   It includes a small `Debug.Log` you can watch on device to confirm that the helper is applying updated poses:
+
+   ```cs
+   using NianticSpatial.NSDK.AR;
+   using UnityEngine;
+
+   public class GeoPositionedObjectHelper : MonoBehaviour
+   {
+       [SerializeField] private ARVps2Manager _vps2Manager;
+       [SerializeField] private double _latitude;
+       [SerializeField] private double _longitude;
+       [SerializeField] private double _altitude;
+
+       void Update()
+       {
+           // Workflow step 2: get the latest VPS2 localization snapshot.
+           if (!_vps2Manager.TryGetLatestLocalization(out var localization))
+           {
+               return;
+           }
+
+           // Workflow step 3: convert the target geolocation into an AR pose.
+           if (_vps2Manager.TryGetPose(
+                   localization,
+                   _latitude,
+                   _longitude,
+                   _altitude,
+                   Quaternion.identity,
+                   out var pose))
+           {
+               // Workflow step 4: apply the latest pose to the GameObject.
+               gameObject.transform.SetPositionAndRotation(
+                   pose.Pose.position,
+                   pose.Pose.rotation);
+               Debug.Log("GeoPositionedObjectHelper: applied latest pose to GameObject.");
+           }
+       }
+   }
+   ```
+
+2. Create a clean test scene for this example.
+   In a fresh Unity scene, add the following objects from the `Hierarchy` menu:
+   - in the `Hierarchy` context menu, choose `XR > AR Session`
+   - in the `Hierarchy` context menu, choose `XR > XR Origin (Mobile AR)`
+   - create an empty `GameObject`, name it `AR Input Manager`, then use `Add Component` to add `AR Input Manager`
+   - in the `Hierarchy` context menu, choose `3D Object > Cube`, then rename it `GeoContent`
+     Then:
+   - add [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager) to `XR Origin`
+   - add `GeoPositionedObjectHelper` to `GeoContent`
+     Add your new scene to `Build Profiles > Scenes` and move it ahead of `Home` so the app opens directly into it on device.
+
+3. Select the `GameObject` that has the `GeoPositionedObjectHelper` component, then assign the serialized fields in the Inspector:
+   - Drag the object that has [ARVps2Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager) into the `ARVps2Manager` field. In the `nsdk-samples-csharp` project, drag `XR Origin` into the `ARVps2Manager` field.
+   - Enter the target latitude in the `Latitude` field. In the `nsdk-samples-csharp` project, enter the latitude for the real-world location you want to test.
+   - Enter the target longitude in the `Longitude` field. In the `nsdk-samples-csharp` project, enter the longitude for the same real-world location.
+   - Enter the target altitude in the `Altitude` field. In the `nsdk-samples-csharp` project, enter the altitude for that same location. If the latitude and longitude are correct but `GeoContent` is not visible, the altitude may be placing it too high or too low. Start with a large visible cube and adjust altitude until it enters view.
+
+4. Build to iPhone or Android and run the scene while VPS2 is localizing.
+   This helper does not start VPS2 by itself. It only reads the latest localization after `ARVps2Manager` has started.
+   The on-screen validation order for this runnable example is:
+
+   - launch the scene on device
+   - let VPS2 localize normally
+   - do not press a placement button, because this helper updates automatically during `Update()`
+     Watch the device logs for:
+
+     The following text example shows the log message that confirms the helper applied an updated pose:
+
+     ```text
+     GeoPositionedObjectHelper: applied latest pose to GameObject.
+     ```
+
+   The expected result is that the visible `GeoContent` cube moves automatically into the AR pose for that real-world location and stays aligned as localization improves. Unlike the anchor-relative example, this flow does not use a placement button.
+
+### Platform: swift
+
+Use this approach when content should appear at a fixed latitude, longitude, and altitude. Use the latest VPS2 localization snapshot to relate AR space to the real world, then convert your target geolocation into an AR pose with [getPose()](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-getPose).
+
+The primary VPS2 flow for geo placement in Swift is to convert a known latitude, longitude, and altitude into an AR pose with [NSDKVps2Session](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NsdkVps2Session), then apply that pose to a RealityKit entity as localization improves.
+
+Follow this workflow to place content from geo coordinates:
+
+1. Define the target latitude, longitude, and altitude for the real-world location where content should appear.
+   These values can come from authored data, backend content, or a known test location.
+2. Keep those coordinates in the placement feature that already owns your VPS2 session and RealityKit scene objects.
+   For this workflow, altitude is part of the placement input and should be saved with latitude and longitude.
+3. Read the latest localization from [NSDKVps2Session](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NsdkVps2Session) while VPS2 is running.
+   Treat each localization update as a new chance to refine the content pose.
+4. Convert the target [GeolocationData](https://www.nianticspatial.com/docs/api/swift/NSDK.struct-GeolocationData) to an AR pose with [getPose(localization:location:)](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-getPose).
+   If pose conversion fails for the current frame, keep waiting for the next localization update.
+5. Apply the returned transform to your RealityKit entity.
+   Repeating this step keeps geo-positioned content aligned as VPS2 tracking quality improves.
+6. Save the target coordinates for restore.
+   In a later session, recreate content from those saved coordinates and resume the same update loop.
+
+The previous workflow steps describe what the geo-coordinate placement flow does. The following runnable example shows one complete class with placement updates and restore:
+
+#### Runnable example: Place and restore content from geo coordinates
+
+Create a new file named `GeoCoordinateContentController.swift` and add the following code:
+
+```swift
+import Combine
+import NSDK
+import RealityKit
+
+struct SavedGeoPlacement {
+    let latitude: Double
+    let longitude: Double
+    let altitude: Double
+}
+
+/// Core VPS2 geo-coordinate placement flow.
+/// Trigger `setTargetLocation` and `restoreSavedPlacement`
+/// from your own UI actions or app lifecycle code.
+final class GeoCoordinateContentController {
+    private let vps2Session: NSDKVps2Session
+    private weak var scene: Scene?
+    private let contentRootAnchor = AnchorEntity(world: .zero)
+    private let contentEntity: ModelEntity
+
+    private var targetLocation: GeolocationData?
+    private var cancellables = Set<AnyCancellable>()
+
+    private(set) var savedPlacement: SavedGeoPlacement?
+
+    init(vps2Session: NSDKVps2Session, scene: Scene) {
+        self.vps2Session = vps2Session
+        self.scene = scene
+        self.contentEntity = ModelEntity(
+            mesh: .generateBox(size: 0.75),
+            materials: [SimpleMaterial(color: .yellow, isMetallic: false)]
+        )
+
+        contentRootAnchor.addChild(contentEntity)
+        scene.addAnchor(contentRootAnchor)
+    }
+
+    func setTargetLocation(latitude: Double, longitude: Double, altitude: Double) {
+        targetLocation = GeolocationData(
+            latitude: latitude,
+            longitude: longitude,
+            altitude: altitude
+        )
+        savePlacement(latitude: latitude, longitude: longitude, altitude: altitude)
+        updateContentPose()
+    }
+
+    /// Call this after VPS2 starts to keep geo content updated.
+    func beginLocalizationUpdates() {
+        vps2Session.$latestLocalization
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateContentPose()
+            }
+            .store(in: &cancellables)
+    }
+
+    func updateContentPose() {
+        guard let targetLocation else { return }
+
+        let localization = vps2Session.getLatestLocalization()
+        guard localization.trackingState != .unavailable else { return }
+
+        guard let pose = vps2Session.getPose(
+            localization: localization,
+            location: targetLocation
+        ) else {
+            return
+        }
+
+        contentEntity.transform = Transform(matrix: pose.transform)
+    }
+
+    private func savePlacement(latitude: Double, longitude: Double, altitude: Double) {
+        savedPlacement = SavedGeoPlacement(
+            latitude: latitude,
+            longitude: longitude,
+            altitude: altitude
+        )
+    }
+
+    /// Call this in a later run after your app has started VPS2 again.
+    func restoreSavedPlacement() {
+        guard let savedPlacement else { return }
+        setTargetLocation(
+            latitude: savedPlacement.latitude,
+            longitude: savedPlacement.longitude,
+            altitude: savedPlacement.altitude
+        )
+    }
+}
+```
+
+For background on VPS2 geolocation and pose conversion, see [Use geoposition with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/getting_vps2_geoposition/).
+
+### Platform: kotlin
+
+Use this approach when content should appear at a fixed latitude, longitude, and altitude. Use the latest VPS2 localization snapshot to relate AR space to the real world, then convert your target geolocation into an AR pose with [getPose()](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.getPose).
+
+Place content from geo coordinates by converting a known latitude, longitude, and altitude into an AR `Pose`, then applying that pose to your content as [Vps2Session](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session) localization updates improve.
+
+Follow this workflow to place content from geo coordinates:
+
+1. Get the known latitude, longitude, and altitude for the real-world location where the content should appear.
+   For example, these values might come from authored content data, a backend, or a fixed test location.
+   If you are using the sample app, define these values in `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2Manager.kt` with the other stored properties so the sample has one clearly named test location for the geo-placement flow.
+
+   The following code example defines the target geo coordinates for the sample:
+
+   ```kotlin
+   private val targetLatitude = YOUR_LATITUDE_HERE
+   private val targetLongitude = YOUR_LONGITUDE_HERE
+   private val targetAltitude = YOUR_ALTITUDE_HERE
+   ```
+
+2. Create a helper that stores the target geolocation and converts it into an AR `Pose`.
+   This helper owns the target [GeolocationData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.GeolocationData) and the logic that converts it into the latest pose in AR space.
+
+   The following code example shows the helper shape that stores the session and target coordinates:
+
+   ```kotlin
+   class GeoPositionedObjectHelper(
+       private val vps2Session: Vps2Session,
+       latitude: Double,
+       longitude: Double,
+       altitude: Double,
+   )
+   ```
+
+   If you are using the sample app, this code is introduced in step i of the following runnable example.
+
+3. In the file or object that already owns [Vps2Session](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session), create a `GeoPositionedObjectHelper` with the target latitude, longitude, and altitude for that content.
+   In the sample app, create it in `VPS2Manager.kt` so the helper is in scope when localization updates arrive.
+
+   The following code example creates the geo-positioned helper with the target coordinates:
+
+   ```kotlin
+   private val geoHelper = GeoPositionedObjectHelper(
+       vps2Session = vps2Session,
+       latitude = targetLatitude,
+       longitude = targetLongitude,
+       altitude = targetAltitude,
+   )
+   ```
+
+   If you are using the sample app, this code is introduced in step ii of the following runnable example.
+
+4. Inside the helper, get the latest `Vps2Localization` from [Vps2Session](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session) with `getLatestLocalization()`.
+   The localization snapshot represents the current relationship between AR space and real-world geolocation.
+
+   The following code example gets the latest localization and returns early when tracking is unavailable:
+
+   ```kotlin
+   val localization = vps2Session.getLatestLocalization()
+   if (localization.trackingState == Vps2TrackingState.UNAVAILABLE) {
+       return
+   }
+   ```
+
+   If you are using the sample app, this code is introduced in step i of the following runnable example.
+
+5. Build a [GeolocationData](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.GeolocationData) object and convert it into an AR `Pose` with [getPose](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.getPose).
+   When the localization snapshot is available and the pose conversion succeeds, it returns the pose for that real-world location in AR space.
+
+   The following code example converts the target geolocation into an AR pose:
+
+   ```kotlin
+   val pose = vps2Session.getPose(localization, targetLocation)
+   ```
+
+   If you are using the sample app, this code is introduced in step i of the following runnable example.
+
+6. In the sample app, create a visible `PoseNode` in `VPS2View.kt`, then assign a callback that applies the latest geo-positioned pose to that node.
+   This keeps the rendered content in the view layer, where the sample already owns `engine`, `arChildNodes`, and the visible test content.
+   In the sample app, add this code after the existing `refinedGreenMaterial` declaration and before the existing `DisposableEffect(engine)` block, so the cube can reuse that material and the callback lifecycle stays local to the view.
+
+   The following code example creates a visible `PoseNode`, adds a cube under it, and applies each updated geo pose to that node:
+
+   ```kotlin
+   val geoPoseNode = remember(engine) {
+       PoseNode(engine = engine).also { poseNode ->
+           arChildNodes.add(poseNode)
+           poseNode.addChildNode(
+               CubeNode(
+                   engine = engine,
+                   size = Float3(0.2f, 0.2f, 0.2f),
+                   center = Float3(0f, 0f, 0f),
+                   materialInstance = refinedGreenMaterial,
+               )
+           )
+       }
+   }
+
+   DisposableEffect(vps2Manager, geoPoseNode) {
+       vps2Manager.onGeoPoseUpdated = { pose ->
+           val matrix = FloatArray(16)
+           pose.toMatrix(matrix, 0)
+           geoPoseNode.worldTransform = Mat4(
+               Float4(matrix[0], matrix[1], matrix[2], matrix[3]),
+               Float4(matrix[4], matrix[5], matrix[6], matrix[7]),
+               Float4(matrix[8], matrix[9], matrix[10], matrix[11]),
+               Float4(matrix[12], matrix[13], matrix[14], matrix[15]),
+           )
+       }
+
+       onDispose {
+           vps2Manager.onGeoPoseUpdated = null
+           geoPoseNode.destroyRecursively(arChildNodes)
+       }
+   }
+   ```
+
+   If you are using the sample app, this code is introduced in step iii of the following runnable example.
+
+7. In `VPS2Manager.kt`, call the helper from the existing localization updates block and forward the returned pose through a callback.
+   Repeating this conversion lets the content stay aligned to the latest VPS2 estimate.
+
+   The following code example refreshes the latest geo-positioned pose and forwards it to the view layer:
+
+   ```kotlin
+   geoHelper.updateContentPose { pose ->
+       onGeoPoseUpdated?.invoke(pose)
+   }
+   ```
+
+   If you are using the sample app, this code is introduced in step iv of the following runnable example.
+
+   The previous workflow steps describe what the geo-coordinate placement flow does. The following runnable example shows one concrete sample implementation, including the helper file and the `VPS2View.kt` and `VPS2Manager.kt` wiring needed to run that flow in the sample app:
+
+   #### Runnable example: Place content from geo coordinates
+
+   The code comments in this example refer to the workflow steps in the previous list. To wire this example into a runnable app and test it, do the following:
+
+   i. In your Kotlin app, create a new file named `GeoPositionedObjectHelper.kt`.
+   If you are using the sample app, create it in `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/` next to `VPS2View.kt`, `VPS2Manager.kt`, and `VPS2Route.kt`. In another app, create it in the same source package as the file that currently defines your VPS2 localization screen or manager.
+   The following example defines the helper that converts a fixed geolocation into an AR pose:
+
+   ```kotlin
+   import com.google.ar.core.Pose
+   import com.nianticspatial.nsdk.GeolocationData
+   import com.nianticspatial.nsdk.vps2.Vps2Localization
+   import com.nianticspatial.nsdk.vps2.Vps2Session
+   import com.nianticspatial.nsdk.vps2.Vps2TrackingState
+
+   class GeoPositionedObjectHelper(
+     private val vps2Session: Vps2Session,
+     latitude: Double,
+     longitude: Double,
+     altitude: Double,
+   ) {
+     private val targetLocation = GeolocationData(
+       latitude = latitude,
+       longitude = longitude,
+       altitude = altitude,
+       heading = 0.0,
+       orientationEdn = floatArrayOf(0f, 0f, 0f, 1f),
+     )
+
+     fun updateContentPose(onPoseUpdated: (Pose) -> Unit) {
+       // Workflow step 4: get the latest localization from VPS2.
+       val localization: Vps2Localization = vps2Session.getLatestLocalization()
+       if (localization.trackingState == Vps2TrackingState.UNAVAILABLE) {
+         return
+       }
+
+       // Workflow step 5: convert the target geolocation into an AR pose.
+       val pose = vps2Session.getPose(localization, targetLocation)
+
+       // Workflow step 6: return the latest pose so the app can apply it.
+       onPoseUpdated(pose)
+     }
+   }
+   ```
+
+   ii. In `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2Manager.kt`, define the target geo coordinates, add a callback for geo-pose updates, and create a `GeoPositionedObjectHelper` with the other stored properties, near `private var configured = false`:
+
+   The following code example defines the target geo coordinates, adds the geo-pose callback, and creates the geo-positioned helper in `VPS2Manager.kt`:
+
+   ```kotlin
+   private val targetLatitude = YOUR_LATITUDE_HERE
+   private val targetLongitude = YOUR_LONGITUDE_HERE
+   private val targetAltitude = YOUR_ALTITUDE_HERE
+
+   var onGeoPoseUpdated: ((Pose) -> Unit)? = null
+
+   private val geoHelper = GeoPositionedObjectHelper(
+     vps2Session = vps2Session,
+     latitude = targetLatitude,
+     longitude = targetLongitude,
+     altitude = targetAltitude,
+   )
+   ```
+
+   iii. In `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2View.kt`, create a visible `PoseNode`, add a cube under it, and assign the `onGeoPoseUpdated` callback after the existing `refinedGreenMaterial` declaration:
+
+   The following code example creates a visible geo-content node and updates it from the manager callback:
+
+   ```kotlin
+   val geoPoseNode = remember(engine) {
+     PoseNode(engine = engine).also { poseNode ->
+       arChildNodes.add(poseNode)
+       poseNode.addChildNode(
+         CubeNode(
+           engine = engine,
+           size = Float3(0.2f, 0.2f, 0.2f),
+           center = Float3(0f, 0f, 0f),
+           materialInstance = refinedGreenMaterial,
+         )
+       )
+     }
+   }
+
+   DisposableEffect(vps2Manager, geoPoseNode) {
+     vps2Manager.onGeoPoseUpdated = { pose ->
+       val matrix = FloatArray(16)
+       pose.toMatrix(matrix, 0)
+       geoPoseNode.worldTransform = Mat4(
+         Float4(matrix[0], matrix[1], matrix[2], matrix[3]),
+         Float4(matrix[4], matrix[5], matrix[6], matrix[7]),
+         Float4(matrix[8], matrix[9], matrix[10], matrix[11]),
+         Float4(matrix[12], matrix[13], matrix[14], matrix[15]),
+       )
+     }
+
+     onDispose {
+       vps2Manager.onGeoPoseUpdated = null
+       geoPoseNode.destroyRecursively(arChildNodes)
+     }
+   }
+   ```
+
+   iv. In `kotlin/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/vps2/VPS2Manager.kt`, add this call inside the existing `vps2Session.localizationUpdates ... .onEach { t: Vps2Localization -> ... }` block, immediately after `localizationTrackingState = t.trackingState` and before the `getDeviceGeolocation(...)` call:
+
+   The following code example refreshes the geo-positioned pose from the latest localization callback and forwards it to the view:
+
+   ```kotlin
+   geoHelper.updateContentPose { pose ->
+     onGeoPoseUpdated?.invoke(pose)
+   }
+   ```
+
+   v. Keep updating while VPS2 is running.
+   Build to Android to validate this flow with a real location.
+   The on-screen validation order for this runnable example is:
+
+   - open `VPS2`
+   - tap `Start Tracking`
+   - let localization continue running
+   - do not press a placement button, because this geo-coordinate flow updates automatically from localization callbacks.
+
+   The expected result is that the content moves automatically into the AR pose for that real-world location and stays aligned as localization improves. This flow does not use a placement button.
+
+For background on VPS2 geolocation and pose conversion, see [Use geoposition with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/getting_vps2_geoposition/).
+
+> **Note:**
+>
+> When trying this out, set the latitude and longitude in the script to a location close to you for live testing or the playback scan for remote testing.
+
+## Test Your Placement
+
+Use both Playback and on-location testing during development.
+
+- Playback runs NSDK against a prerecorded AR session dataset instead of live camera input.
+- Playback is useful when you want to iterate quickly, repeat the same test path, or debug placement behavior without traveling to the Site each time.
+- Playback can help you test geo-coordinate placement and the later placement or restore logic if you already have a valid Site anchor payload.
+- Playback does not provide a Site anchor or the default anchor payload, so it cannot validate the full tracked-anchor workflow by itself.
+- Playback is still a simulation of a recorded session, so it is best for iteration and debugging rather than final validation.
+- On-location device testing is still the most accurate way to confirm that content appears in the correct real-world place for the actual Site.
+
+A practical test flow is:
+
+1. Use Playback to verify geo-coordinate placement or later placement and restore logic that already has a valid Site anchor payload.
+2. Build to a device and test on location to confirm the full tracked-anchor workflow and the final real-world position of the content at the Site.
+
+To set up Playback, see [How to set up Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/).

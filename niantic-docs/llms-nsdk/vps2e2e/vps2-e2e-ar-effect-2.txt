@@ -1,0 +1,2721 @@
+# Advanced AR and localization
+
+Source: https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-2/
+
+### Platform: kotlin
+
+# Advanced AR effects and precise localization
+
+This page implements the Advanced AR effects and precise localization step in the wayfinding workflow. In this workflow, the user has already selected a Site, passed its Production VPS anchor payload into the AR flow, and started VPS2 localization. This page shows how to move the AR flow into a SceneView-based host, publish tracked-anchor transforms and geolocations, render tracked-anchor cubes plus destination guidance, and download and render mesh content only after an anchor reaches precise tracking.
+
+In the standalone Kotlin app shown in this tutorial, `WayfindingARSceneView` hosts the AR scene, `WayfindingVPS2Manager` publishes the tracked-anchor and mesh state, and `WayfindingVPS2View` renders the advanced AR guidance that responds to those updates.
+
+This page implements the following AR treatments:
+
+- Large orange cubes for coarse anchor tracking
+- Small green cubes for precise anchor tracking
+- Downloaded mesh content when an anchor reaches fully tracked mode
+
+(image: After initializing a wayfinding app, selecting a Scaniverse Site and anchor payload, starting VPS2 localization, render advanced AR effects and obtain precise localization.)
+
+*Figure:* Previous steps of the tutorial showed how to initialize the app, implement Site selection, and start VPS2 localization. This step shows AR wayfinding.
+
+## Files Overview
+
+The Advanced AR effects and precise localization step has four steps:
+
+1. [Create the AR scene host](#create-the-ar-scene-host).
+2. [Publish tracked anchor data](#publish-tracked-anchor-data).
+3. [Render advanced AR guidance](#render-advanced-ar-guidance).
+4. [Download and render precise meshes](#download-and-render-precise-meshes).
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone app shown in this tutorial, along with the names of the matching files in the `vps2e2e` sample with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the AR scene host | `WayfindingARSceneView.kt` `SceneView` host, Filament engine, AR child-node collection, and shared AR composition locals | `ARSceneView.kt` |
+| Publish tracked anchor data | `WayfindingVPS2Manager.kt` tracked-anchor transforms, geolocations, mesh-download state, and renderable-mesh callbacks | `VPS2Manager.kt` |
+| Render advanced AR guidance | `WayfindingVPS2View.kt`, `WayfindingDestinationMarkerNode.kt`, and `WayfindingChevronArrowNode.kt` tracked-anchor cubes, destination marker, and chevron guidance | `VPS2View.kt`, `DestinationMarkerNode.kt`, and `ChevronArrowNode.kt` |
+| Download and render precise meshes | `WayfindingVPS2Manager.kt` and `WayfindingMeshRenderer.kt` mesh download orchestration, chunk composition, and `SceneView` mesh nodes | `VPS2Manager.kt` and `MeshRenderer.kt` |
+
+## Create the AR scene host
+
+This step creates the SceneView-based AR host. It adds the AR rendering dependencies, creates the shared scene host, and provides the engine, material loader, and AR child-node collection that the later guidance and mesh steps need.
+
+- [Add AR rendering dependencies](#add-ar-rendering-dependencies): Add the SceneView and support libraries used by the AR host.
+- [Create the shared SceneView host](#create-the-shared-sceneview-host): Create the shared SceneView host and composition locals.
+
+### Add AR rendering dependencies
+
+In an existing app, update your app module so it includes the dependencies needed for SceneView-based AR rendering. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Include the SceneView AR dependency.
+- Include the CameraX and Fragment support libraries used by the AR host.
+- Include the AppCompat support library used by the SceneView flow.
+
+In a new app, update the `dependencies { ... }` block in `app/build.gradle.kts` by adding the following code example:
+
+```kotlin
+implementation("io.github.sceneview:arsceneview:2.3.1")
+implementation("androidx.fragment:fragment-ktx:1.8.6")
+implementation("androidx.camera:camera-lifecycle:1.4.1")
+implementation("androidx.camera:camera-camera2:1.4.1")
+implementation("androidx.appcompat:appcompat:1.7.0")
+```
+
+### Create the shared SceneView host
+
+In an existing app, update your current AR host so it provides a shared Filament engine, material loader, and AR child-node collection to the VPS2 screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Own the shared AR child-node collection.
+- Provide the Filament engine and material loader through composition locals.
+- Route live AR frames into `ARSessionManager`.
+- Publish the currently tracked horizontal planes for chevron placement.
+- Host the VPS2 screen inside the shared SceneView container.
+- Keep playback support available for projects that configure a playback dataset.
+
+In a new app, create `app/src/main/java/<your app package path>/WayfindingARSceneView.kt` as shown in the following code example:
+
+#### Expand to view WayfindingARSceneView.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import com.google.android.filament.Engine
+import io.github.sceneview.ar.ARScene
+import io.github.sceneview.ar.rememberARCameraNode
+import io.github.sceneview.ar.rememberARCameraStream
+import io.github.sceneview.loaders.MaterialLoader
+import io.github.sceneview.node.Node
+import io.github.sceneview.rememberEngine
+import io.github.sceneview.rememberMaterialLoader
+
+val arChildNodes = mutableStateListOf<Node>()
+
+// Provide the shared Filament engine to child composables.
+val LocalSceneEngine = compositionLocalOf<Engine> {
+    error("No SceneEngine provided")
+}
+
+// Provide the shared material loader to child composables.
+val LocalSceneMaterialLoader = compositionLocalOf<MaterialLoader> {
+    error("No SceneMaterialLoader provided")
+}
+
+@Composable
+fun WayfindingARSceneView(
+    modifier: Modifier = Modifier,
+    sessionManager: ARSessionManager,
+    content: @Composable BoxScope.(overlayContentState: MutableState<Any?>) -> Unit
+) {
+    val engine = rememberEngine()
+    val materialLoader = rememberMaterialLoader(engine)
+    val cameraStream = rememberARCameraStream(materialLoader)
+    val cameraNode = rememberARCameraNode(engine)
+    val overlayContentState = remember { mutableStateOf<Any?>(null) }
+
+    LaunchedEffect(Unit) {
+        android.util.Log.i("WayfindingApp", "Advanced AR scene host ready")
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        // Route live AR frames into ARSessionManager and keep all AR child nodes in one shared collection.
+        ARScene(
+            cameraStream = cameraStream,
+            cameraNode = cameraNode,
+            planeRenderer = false,
+            modifier = Modifier.fillMaxSize(),
+            engine = engine,
+            materialLoader = materialLoader,
+            onSessionCreated = { session -> sessionManager.setSession(session) },
+            onSessionUpdated = { _, frame -> sessionManager.updateFrame(frame) },
+            childNodes = arChildNodes,
+        )
+
+        // Expose the shared engine and material loader to the AR guidance composables.
+        CompositionLocalProvider(
+            LocalSceneEngine provides engine,
+            LocalSceneMaterialLoader provides materialLoader,
+        ) {
+            content(overlayContentState)
+        }
+    }
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/ARSceneView.kt`.
+
+Still in `Publish AR frame state`, update `app/src/main/java/<your app package path>/ARSessionManager.kt` with the following steps so the chevron guide can read the currently tracked horizontal planes:
+
+1. Add the following imports to the top of `app/src/main/java/<your app package path>/ARSessionManager.kt`:
+
+   ```kotlin
+   import com.google.ar.core.Plane
+   import com.google.ar.core.TrackingState
+   import kotlinx.coroutines.flow.MutableStateFlow
+   import kotlinx.coroutines.flow.StateFlow
+   import kotlinx.coroutines.flow.asStateFlow
+   ```
+
+2. Add the following state to `app/src/main/java/<your app package path>/ARSessionManager.kt` immediately after the `var currentLiveFrame: Frame? = null` property:
+
+   ```kotlin
+   // Publish the currently tracked horizontal planes for chevron placement.
+   private val _horizontalPlaneSet = mutableSetOf<Plane>()
+   private val _horizontalPlanes = MutableStateFlow<List<Plane>>(emptyList())
+   val horizontalPlanesFlow: StateFlow<List<Plane>> = _horizontalPlanes.asStateFlow()
+   ```
+
+3. Update `app/src/main/java/<your app package path>/ARSessionManager.kt` by adding the following code to `updateFrame(frame: Frame)` immediately before the `// Forward each live frame to listeners that will update NSDK.` comment:
+
+   ```kotlin
+   // Merge each frame's horizontal planes into the shared flow used by the chevron guide.
+   val updatedPlanes = frame.getUpdatedTrackables(Plane::class.java)
+       .filter { it.type != Plane.Type.VERTICAL }
+   if (updatedPlanes.isNotEmpty()) {
+       for (plane in updatedPlanes) {
+           if (plane.trackingState == TrackingState.STOPPED) {
+               _horizontalPlaneSet.remove(plane)
+           } else {
+               _horizontalPlaneSet.add(plane)
+           }
+       }
+       _horizontalPlanes.value = _horizontalPlaneSet
+           .filter { it.trackingState == TrackingState.TRACKING }
+           .toList()
+   }
+   ```
+
+4. Update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` by replacing the root `Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center)` block with the following code so the VPS2 screen actually uses `WayfindingARSceneView(...)` and keeps the existing VPS2 overlay UI:
+
+   ```kotlin
+   WayfindingARSceneView(
+       modifier = Modifier.fillMaxSize(),
+       sessionManager = nsdkManager.arManager
+   ) {
+       Box(
+           modifier = Modifier.fillMaxSize(),
+           contentAlignment = Alignment.Center
+       ) {
+           Column(
+               horizontalAlignment = Alignment.CenterHorizontally
+           ) {
+               val trackedAnchorCount = vps2Manager.anchorStates.values.count { state ->
+                   state != AnchorTrackingState.NOT_TRACKED
+               }
+
+               Box(
+                   modifier = Modifier
+                       .size(16.dp)
+                       .background(indicatorColor, CircleShape)
+               )
+
+               Text(
+                   text = "Localization: ${vps2Manager.localizationTrackingState}",
+                   modifier = Modifier.padding(top = 16.dp)
+               )
+               Text(
+                   text = "Tracked anchors: $trackedAnchorCount",
+                   modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+               )
+               Button(
+                   onClick = {
+                       if (!vps2Manager.trackingStarted) {
+                           vps2Manager.startTracking(payloads)
+                       } else {
+                           vps2Manager.stopTracking()
+                       }
+                   }
+               ) {
+                   Text(if (vps2Manager.trackingStarted) "Stop Tracking" else "Start Tracking")
+               }
+           }
+       }
+   }
+   ```
+
+Test this step to validate that the AR scene host is ready:
+
+- Build the app and confirm the new AR dependencies resolve.
+- Run the app, tap **Login**, tap **Browse Sites**, select a Site, and tap **Localize in AR**.
+- Confirm that the AR screen opens the live camera view.
+- In Logcat, confirm that `Advanced AR scene host ready` appears.
+
+The next step publishes tracked-anchor transforms and geolocations so the AR screen can place guidance content in world space.
+
+## Publish tracked anchor data
+
+This step extends the VPS2 manager so it publishes tracked-anchor transforms, geolocations, and localization state. The AR screen uses those values to place cubes, destination guidance, and precise meshes.
+
+- [Publish tracked anchor transforms](#publish-tracked-anchor-transforms): Store each anchor's current world transform and expose it as a `StateFlow`.
+- [Publish tracked anchor geolocations](#publish-tracked-anchor-geolocations): Keep the latest geolocation for each tracked anchor.
+
+### Publish tracked anchor transforms
+
+In an existing app, update your current VPS2 manager so it stores the current world transform for each tracked anchor and exposes those transforms to the AR view. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Store a transform matrix for each tracked anchor.
+- Remove transforms for anchors that return to `NOT_TRACKED`.
+- Publish the latest transforms through a `StateFlow`.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` with the following steps:
+
+1. Add the following imports to the top of `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt`:
+
+   ```kotlin
+   import kotlinx.coroutines.flow.MutableStateFlow
+   import kotlinx.coroutines.flow.StateFlow
+   import kotlinx.coroutines.flow.asStateFlow
+   ```
+
+2. Add the following state to `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` immediately after `val anchorStates = mutableStateMapOf<UUIDKey, AnchorTrackingState>()`:
+
+   ```kotlin
+   // Anchor transforms for AR rendering.
+   val anchorTransforms = mutableStateMapOf<UUIDKey, FloatArray>()
+
+   // Publish the latest tracked-anchor transforms to the AR view.
+   private val _anchorTransformsFlow = MutableStateFlow<Map<UUIDKey, FloatArray>>(emptyMap())
+   val anchorTransformsFlow: StateFlow<Map<UUIDKey, FloatArray>> = _anchorTransformsFlow.asStateFlow()
+   ```
+
+3. Update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` by adding the following code once inside `private fun startTrackingCollectors()`, in the `vps2Session.anchorUpdates` collector directly below `anchorStates[anchorKey] = update.trackingState`:
+
+   ```kotlin
+   // Remove transforms for anchors that are no longer tracked.
+   if (update.trackingState == AnchorTrackingState.NOT_TRACKED) {
+       anchorTransforms.remove(anchorKey)
+   } else {
+       // Store a fresh world transform for each tracked anchor.
+       val matrix = FloatArray(16)
+       update.anchorToLocalTrackingTransform.toMatrix(matrix, 0)
+       anchorTransforms[anchorKey] = matrix
+   }
+
+   // Publish the latest transforms to the AR screen.
+   _anchorTransformsFlow.value = anchorTransforms.toMap()
+   android.util.Log.i(TAG, "Published ${anchorTransforms.size} anchor transforms")
+   ```
+
+### Publish tracked anchor geolocations
+
+In an existing app, update your current VPS2 manager so it keeps the latest geolocation for each tracked anchor. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Store the latest geolocation for each tracked anchor.
+- Remove geolocations for anchors that return to `NOT_TRACKED`.
+- Publish the latest geolocations through a `StateFlow`.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` with the following steps:
+
+1. Add the following import to the top of `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt`:
+
+   ```kotlin
+   import com.nianticspatial.nsdk.GeolocationData
+   ```
+
+2. Add the following state to `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` immediately below `val anchorTransformsFlow: StateFlow<Map<UUIDKey, FloatArray>> = _anchorTransformsFlow.asStateFlow()`:
+
+   ```kotlin
+   // Store the latest geolocation for each tracked anchor.
+   val anchorGeolocations = mutableStateMapOf<UUIDKey, GeolocationData>()
+
+   // Publish the latest tracked-anchor geolocations to the AR view.
+   private val _anchorGeolocationsFlow = MutableStateFlow<Map<UUIDKey, GeolocationData>>(emptyMap())
+   val anchorGeolocationsFlow: StateFlow<Map<UUIDKey, GeolocationData>> = _anchorGeolocationsFlow.asStateFlow()
+   ```
+
+3. Update the same `vps2Session.anchorUpdates` collector in `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` by adding the following code once directly below `android.util.Log.i(TAG, "Published \${anchorTransforms.size} anchor transforms")`:
+
+```kotlin
+// Remove geolocations for anchors that are no longer tracked.
+if (update.trackingState == AnchorTrackingState.NOT_TRACKED) {
+    anchorGeolocations.remove(anchorKey)
+} else {
+    // Store the latest geolocation for each tracked anchor.
+    update.geolocation?.let { anchorGeolocations[anchorKey] = it }
+}
+// Publish the latest tracked-anchor geolocations to the AR screen.
+_anchorGeolocationsFlow.value = anchorGeolocations.toMap()
+android.util.Log.i(TAG, "Published ${anchorGeolocations.size} anchor geolocations")
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/vps2/VPS2Manager.kt`.
+
+Test this step to validate that the VPS2 manager publishes tracked-anchor data:
+
+- Tap **Login**, tap **Browse Sites**, select a Site, tap **Localize in AR**, and tap **Start Tracking**.
+- In Logcat, confirm that `Published ... anchor transforms` appears. `0` is valid until an anchor reaches a tracked state.
+- In Logcat, confirm that `Published ... anchor geolocations` appears. `0` is valid until a tracked anchor reports a geolocation.
+- Confirm that the AR screen stays open while the manager keeps publishing updates.
+
+The next step uses those published transforms to render tracked-anchor cubes, the destination marker, and chevron guidance.
+
+## Render advanced AR guidance
+
+This step renders the advanced AR guidance. It uses tracked-anchor transforms to place cubes in AR space, rebuilds those cubes when tracking quality changes, and updates the destination marker and chevron trail once per AR frame.
+
+- [Render tracked-anchor cubes](#render-tracked-anchor-cubes): Show coarse and precise tracked anchors with different cube sizes and colors.
+- [Update the destination marker and chevrons](#update-the-destination-marker-and-chevrons): Reposition the destination marker and the chevron trail from per-frame AR updates.
+
+### Render tracked-anchor cubes
+
+In an existing app, update your current AR screen so it creates SceneView nodes for tracked anchors and rebuilds them when tracking quality changes. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Create a cube node for each tracked anchor.
+- Use one visual treatment for `LIMITED` tracking and another for `TRACKED`.
+- Remove nodes when anchors return to `NOT_TRACKED`.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following steps:
+
+1. Add the sample's tracked-anchor cube imports to the top of `app/src/main/java/<your app package path>/WayfindingVPS2View.kt`, including:
+
+   ```kotlin
+   import androidx.compose.runtime.LaunchedEffect
+   import androidx.compose.runtime.snapshotFlow
+   import com.nianticspatial.nsdk.UUIDKey
+   import dev.romainguy.kotlin.math.Float3
+   import dev.romainguy.kotlin.math.Float4
+   import dev.romainguy.kotlin.math.Mat4
+   import io.github.sceneview.ar.node.PoseNode
+   import io.github.sceneview.node.CubeNode
+   import kotlinx.coroutines.flow.collectLatest
+   ```
+
+2. Create a new private composable named `WayfindingVPS2Overlay(...)` in `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` immediately below the closing `}` of `fun WayfindingVPS2View(...)`. Add the following SceneView engine state at the top of `WayfindingVPS2Overlay(...)`:
+
+   ```kotlin
+   val engine = LocalSceneEngine.current
+   val materialLoader = LocalSceneMaterialLoader.current
+   ```
+
+3. Add the following tracked-anchor cube state to `WayfindingVPS2Overlay(...)` immediately below `val materialLoader = LocalSceneMaterialLoader.current`:
+
+   ```kotlin
+   // Create a cube node for each tracked anchor and keep the last state so the cube can rebuild when tracking quality changes.
+   val localAnchorNodeMap = remember { mutableMapOf<UUIDKey, PoseNode>() }
+   val previousUpdateStates = remember { mutableMapOf<UUIDKey, AnchorTrackingState>() }
+
+   // Use one visual treatment for coarse tracking and another for precise tracking.
+   val refinedGreenMaterial = remember {
+       materialLoader.createColorInstance(Color(0xFF42FF44))
+   }
+   val coarseOrangeMaterial = remember {
+       materialLoader.createColorInstance(Color(0xFFFF8C00))
+   }
+   ```
+
+4. Add the following cleanup block to `WayfindingVPS2Overlay(...)` immediately below the tracked-anchor cube state:
+
+   ```kotlin
+   DisposableEffect(engine) {
+       onDispose {
+           // Remove cube nodes when anchors return to NOT_TRACKED or the AR screen closes.
+           localAnchorNodeMap.values.forEach { node ->
+               node.destroyRecursively(arChildNodes)
+           }
+           localAnchorNodeMap.clear()
+           previousUpdateStates.clear()
+           engine.destroyMaterialInstance(refinedGreenMaterial)
+           engine.destroyMaterialInstance(coarseOrangeMaterial)
+       }
+   }
+   ```
+
+5. Add the following tracked-anchor cube collector to `WayfindingVPS2Overlay(...)` immediately below the new `DisposableEffect(engine) { ... }` block:
+
+   ```kotlin
+   LaunchedEffect(vps2Manager, engine, materialLoader) {
+       androidx.compose.runtime.snapshotFlow {
+           vps2Manager.anchorStates.toMap()
+       }.collectLatest { states ->
+           val visibleAnchors = states.keys.filter { anchorKey ->
+               val state = states[anchorKey] ?: AnchorTrackingState.NOT_TRACKED
+               state != AnchorTrackingState.NOT_TRACKED
+           }.toSet()
+
+           val anchorsToRemove = localAnchorNodeMap.keys.filter { anchorKey ->
+               anchorKey !in visibleAnchors
+           }
+           anchorsToRemove.forEach { anchorKey ->
+               localAnchorNodeMap[anchorKey]?.destroyRecursively(arChildNodes)
+               localAnchorNodeMap.remove(anchorKey)
+               previousUpdateStates.remove(anchorKey)
+           }
+
+           visibleAnchors.forEach { anchorKey ->
+               val state = states[anchorKey] ?: AnchorTrackingState.NOT_TRACKED
+               val existingNode = localAnchorNodeMap[anchorKey]
+               val previousUpdateState = previousUpdateStates[anchorKey]
+
+               // Use one visual treatment for coarse tracking and another for precise tracking.
+               val material = if (state == AnchorTrackingState.LIMITED) {
+                   coarseOrangeMaterial
+               } else {
+                   refinedGreenMaterial
+               }
+               val cubeSize = if (state == AnchorTrackingState.LIMITED) {
+                   Float3(1.0f, 1.0f, 1.0f)
+               } else {
+                   Float3(0.2f, 0.2f, 0.2f)
+               }
+
+               if (existingNode == null || previousUpdateState != state) {
+                   existingNode?.destroyRecursively(arChildNodes)
+
+                   // Create a cube node for each tracked anchor.
+                   val poseNode = PoseNode(engine = engine).apply {
+                       val cubeNode = CubeNode(
+                           engine = engine,
+                           size = cubeSize,
+                           center = Float3(0f, 0f, 0f),
+                           materialInstance = material
+                       )
+                       addChildNode(cubeNode)
+                   }
+                   arChildNodes.add(poseNode)
+                   localAnchorNodeMap[anchorKey] = poseNode
+                   previousUpdateStates[anchorKey] = state
+               }
+           }
+       }
+   }
+   ```
+
+6. Add the following transform collector to `WayfindingVPS2Overlay(...)` immediately below the tracked-anchor cube collector:
+
+   ```kotlin
+   LaunchedEffect(vps2Manager, engine) {
+       vps2Manager.anchorTransformsFlow.collectLatest { transforms ->
+           // Use tracked-anchor transforms to place cubes in AR space.
+           transforms.forEach { (anchorKey, matrix) ->
+               val existingNode = localAnchorNodeMap[anchorKey] ?: return@forEach
+               existingNode.worldTransform = Mat4(
+                   Float4(matrix[0], matrix[1], matrix[2], matrix[3]),
+                   Float4(matrix[4], matrix[5], matrix[6], matrix[7]),
+                   Float4(matrix[8], matrix[9], matrix[10], matrix[11]),
+                   Float4(matrix[12], matrix[13], matrix[14], matrix[15])
+               )
+           }
+       }
+   }
+   ```
+
+### Update the destination marker and chevrons
+
+In an existing app, update your current AR screen so it updates the destination marker and chevron guidance once per AR frame. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Read the current camera pose from each AR frame.
+- Hide guidance when no tracked anchor is available.
+- Update the destination marker and chevrons from the first tracked anchor.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following steps:
+
+1. Create `app/src/main/java/<your app package path>/WayfindingDestinationMarkerNode.kt` with the following code:
+
+   #### WayfindingDestinationMarkerNode.kt
+
+   ```kotlin
+   package com.example.wayfinding // Replace with your app package name
+
+   import android.graphics.Bitmap
+   import android.graphics.Canvas
+   import android.graphics.Paint
+   import android.graphics.Path
+   import android.graphics.PorterDuff
+   import com.google.android.filament.Box
+   import com.google.android.filament.Engine
+   import com.google.android.filament.IndexBuffer
+   import com.google.android.filament.RenderableManager
+   import com.google.android.filament.Texture
+   import com.google.android.filament.TextureSampler
+   import com.google.android.filament.VertexBuffer
+   import com.google.ar.core.Pose
+   import com.nianticspatial.nsdk.AnchorTrackingState
+   import dev.romainguy.kotlin.math.Float4
+   import dev.romainguy.kotlin.math.Mat4
+   import io.github.sceneview.ar.node.PoseNode
+   import io.github.sceneview.loaders.MaterialLoader
+   import io.github.sceneview.node.MeshNode
+   import java.nio.ByteBuffer
+   import java.nio.ByteOrder
+   import kotlin.math.sqrt
+
+   class WayfindingDestinationMarkerNode(
+       private val engine: Engine,
+       private val materialLoader: MaterialLoader,
+   ) {
+       val rootNode: PoseNode = PoseNode(engine = engine)
+
+       private var meshNode: MeshNode? = null
+       private var markerTexture: Texture? = null
+
+       init {
+           buildMarker()
+           rootNode.isVisible = false
+       }
+
+       private fun buildMarker() {
+           val size = 256
+           val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+           val canvas = Canvas(bitmap)
+           canvas.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+
+           val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+           paint.color = android.graphics.Color.WHITE
+
+           paint.style = Paint.Style.STROKE
+           paint.strokeWidth = 14f
+           val circleRadius = size / 2f - 9f
+           canvas.drawCircle(size / 2f, size / 2f, circleRadius, paint)
+
+           paint.style = Paint.Style.FILL
+           val pinRadius = size * 0.22f
+           val pinCenterX = size / 2f
+           val pinCenterY = size * 0.36f
+           canvas.drawCircle(pinCenterX, pinCenterY, pinRadius, paint)
+
+           val path = Path()
+           val baseHalfWidth = pinRadius * 0.65f
+           val baseY = pinCenterY + pinRadius * 0.55f
+           val tipY = size * 0.82f
+           path.moveTo(pinCenterX - baseHalfWidth, baseY)
+           path.lineTo(pinCenterX + baseHalfWidth, baseY)
+           path.lineTo(pinCenterX, tipY)
+           path.close()
+           canvas.drawPath(path, paint)
+
+           val tex = Texture.Builder()
+               .width(size)
+               .height(size)
+               .sampler(Texture.Sampler.SAMPLER_2D)
+               .format(Texture.InternalFormat.RGBA8)
+               .levels(1)
+               .build(engine)
+
+           val byteBuffer = ByteBuffer.allocateDirect(bitmap.byteCount)
+           bitmap.copyPixelsToBuffer(byteBuffer)
+           byteBuffer.rewind()
+
+           tex.setImage(
+               engine, 0,
+               Texture.PixelBufferDescriptor(byteBuffer, Texture.Format.RGBA, Texture.Type.UBYTE)
+           )
+           markerTexture = tex
+           bitmap.recycle()
+
+           val materialInstance = materialLoader.createImageInstance(tex, TextureSampler())
+
+           val h = 1.0f
+           val positions = floatArrayOf(
+               -h, -h, 0f,
+                h, -h, 0f,
+                h,  h, 0f,
+               -h,  h, 0f,
+           )
+           val uvs = floatArrayOf(
+               0f, 1f,
+               1f, 1f,
+               1f, 0f,
+               0f, 0f,
+           )
+           val indices = intArrayOf(0, 1, 2, 0, 2, 3)
+
+           val vStride = 3 * 4
+           val uvStride = 2 * 4
+
+           val vbb = ByteBuffer.allocateDirect(4 * vStride).order(ByteOrder.nativeOrder())
+           positions.forEach { vbb.putFloat(it) }
+           vbb.rewind()
+
+           val uvbb = ByteBuffer.allocateDirect(4 * uvStride).order(ByteOrder.nativeOrder())
+           uvs.forEach { uvbb.putFloat(it) }
+           uvbb.rewind()
+
+           val ibb = ByteBuffer.allocateDirect(6 * 4).order(ByteOrder.nativeOrder())
+           indices.forEach { ibb.putInt(it) }
+           ibb.rewind()
+
+           val vb = VertexBuffer.Builder()
+               .bufferCount(2)
+               .vertexCount(4)
+               .attribute(VertexBuffer.VertexAttribute.POSITION, 0, VertexBuffer.AttributeType.FLOAT3, 0, vStride)
+               .attribute(VertexBuffer.VertexAttribute.UV0, 1, VertexBuffer.AttributeType.FLOAT2, 0, uvStride)
+               .build(engine)
+           vb.setBufferAt(engine, 0, vbb)
+           vb.setBufferAt(engine, 1, uvbb)
+
+           val ib = IndexBuffer.Builder()
+               .indexCount(6)
+               .bufferType(IndexBuffer.Builder.IndexType.UINT)
+               .build(engine)
+           ib.setBuffer(engine, ibb)
+
+           val node = MeshNode(
+               engine = engine,
+               primitiveType = RenderableManager.PrimitiveType.TRIANGLES,
+               vertexBuffer = vb,
+               indexBuffer = ib,
+               boundingBox = Box(0f, 0f, 0f, h, h, 0.001f),
+               materialInstance = materialInstance,
+           )
+           rootNode.addChildNode(node)
+           meshNode = node
+       }
+
+       fun update(cameraPose: Pose, anchorMatrix: FloatArray, state: AnchorTrackingState) {
+           if (state == AnchorTrackingState.NOT_TRACKED) {
+               rootNode.isVisible = false
+               return
+           }
+           rootNode.isVisible = true
+
+           val anchorX = anchorMatrix[12]
+           val anchorY = anchorMatrix[13]
+           val anchorZ = anchorMatrix[14]
+
+           val ct = cameraPose.translation
+           val cameraX = ct[0]
+           val cameraY = ct[1]
+           val cameraZ = ct[2]
+
+           val dx = anchorX - cameraX
+           val dz = anchorZ - cameraZ
+           val hDist = sqrt((dx * dx + dz * dz).toDouble()).toFloat()
+           val markerX: Float
+           val markerZ: Float
+           if (hDist < 0.001f || hDist <= 40f) {
+               markerX = anchorX
+               markerZ = anchorZ
+           } else {
+               markerX = cameraX + (dx / hDist) * 40f
+               markerZ = cameraZ + (dz / hDist) * 40f
+           }
+           val markerY = anchorY + 1.4f
+
+           val toCamX = cameraX - markerX
+           val toCamY = cameraY - markerY
+           val toCamZ = cameraZ - markerZ
+           val camDist = sqrt((toCamX * toCamX + toCamY * toCamY + toCamZ * toCamZ).toDouble()).toFloat()
+           if (camDist < 0.001f) return
+           val fwdX = toCamX / camDist
+           val fwdY = toCamY / camDist
+           val fwdZ = toCamZ / camDist
+
+           val rightX = -fwdZ
+           val rightZ = fwdX
+           val rightLen = sqrt((rightX * rightX + rightZ * rightZ).toDouble()).toFloat()
+           val rX: Float
+           val rZ: Float
+           if (rightLen > 0.001f) {
+               rX = rightX / rightLen
+               rZ = rightZ / rightLen
+           } else {
+               rX = 1f
+               rZ = 0f
+           }
+           val upX = fwdY * rZ
+           val upY = fwdZ * rX - fwdX * rZ
+           val upZ = -fwdY * rX
+
+           rootNode.worldTransform = Mat4(
+               Float4(rX, 0f, rZ, 0f),
+               Float4(upX, upY, upZ, 0f),
+               Float4(fwdX, fwdY, fwdZ, 0f),
+               Float4(markerX, markerY, markerZ, 1f),
+           )
+       }
+
+       fun destroy() {
+           rootNode.destroy()
+           markerTexture?.let(engine::destroyTexture)
+           markerTexture = null
+       }
+   }
+   ```
+
+2. Create `app/src/main/java/<your app package path>/WayfindingChevronArrowNode.kt` with the following code:
+
+   #### WayfindingChevronArrowNode.kt
+
+   ```kotlin
+   package com.example.wayfinding // Replace with your app package name
+
+   import android.content.Context
+   import com.google.android.filament.Engine
+   import com.google.ar.core.Plane
+   import com.google.ar.core.Pose
+   import com.nianticspatial.nsdk.AnchorTrackingState
+   import dev.romainguy.kotlin.math.Float3
+   import dev.romainguy.kotlin.math.Float4
+   import dev.romainguy.kotlin.math.Mat4
+   import io.github.sceneview.ar.node.PoseNode
+   import io.github.sceneview.loaders.MaterialLoader
+   import io.github.sceneview.node.CubeNode
+   import kotlin.math.cos
+   import kotlin.math.sin
+   import kotlin.math.sqrt
+
+   class WayfindingChevronArrowNode(
+       private val engine: Engine,
+       private val materialLoader: MaterialLoader,
+       private val context: Context,
+   ) {
+       val rootNode: PoseNode = PoseNode(engine = engine)
+
+       private val count = 10
+       private val baseArmLength = 0.26f
+       private val baseArmThickness = 0.013f
+       private val armDepth = 0.005f
+       private val halfAngle = (Math.PI / 4).toFloat()
+       private val spacing = 0.20f
+       private val tipSizeFraction = 0.75f
+
+       init {
+           buildChevrons()
+           rootNode.isVisible = false
+       }
+
+       private fun buildChevrons() {
+           val lastIndex = (count - 1).toFloat()
+
+           for (i in 0 until count) {
+               val t = if (lastIndex > 0f) i.toFloat() / lastIndex else 0f
+               val scale = 1f - t * (1f - tipSizeFraction)
+               val armLength = baseArmLength * scale
+               val armThickness = baseArmThickness * scale
+               val alpha = 0.25f + 0.75f * t
+
+               val material = materialLoader.createColorInstance(
+                   androidx.compose.ui.graphics.Color.White.copy(alpha = alpha)
+               )
+
+               val cosH = cos(halfAngle)
+               val sinH = sin(halfAngle)
+
+               val leftLength = armLength
+               val leftPosX = -cosH * leftLength * 0.5f + sinH * armThickness * 0.5f
+               val leftPosZ = sinH * leftLength * 0.5f + cosH * armThickness * 0.5f
+
+               val leftArm = CubeNode(
+                   engine = engine,
+                   size = Float3(leftLength, armDepth, armThickness),
+                   center = Float3(0f, 0f, 0f),
+                   materialInstance = material,
+               )
+               leftArm.transform = Mat4(
+                   Float4(cosH, 0f, -sinH, 0f),
+                   Float4(0f, 1f, 0f, 0f),
+                   Float4(sinH, 0f, cosH, 0f),
+                   Float4(leftPosX, 0f, leftPosZ, 1f),
+               )
+
+               val rightLength = armLength - armThickness
+               val rCenter = rightLength * 0.5f + armThickness
+               val rightPosX = cosH * rCenter - sinH * armThickness * 0.5f
+               val rightPosZ = sinH * rCenter + cosH * armThickness * 0.5f
+
+               val rightArm = CubeNode(
+                   engine = engine,
+                   size = Float3(rightLength, armDepth, armThickness),
+                   center = Float3(0f, 0f, 0f),
+                   materialInstance = material,
+               )
+               rightArm.transform = Mat4(
+                   Float4(cosH, 0f, sinH, 0f),
+                   Float4(0f, 1f, 0f, 0f),
+                   Float4(-sinH, 0f, cosH, 0f),
+                   Float4(rightPosX, 0f, rightPosZ, 1f),
+               )
+
+               val chevronZ = (t - 1f) * spacing * lastIndex
+               val chevronNode = PoseNode(engine = engine)
+               chevronNode.addChildNode(leftArm)
+               chevronNode.addChildNode(rightArm)
+               chevronNode.transform = Mat4(
+                   Float4(1f, 0f, 0f, 0f),
+                   Float4(0f, 1f, 0f, 0f),
+                   Float4(0f, 0f, 1f, 0f),
+                   Float4(0f, 0f, chevronZ, 1f),
+               )
+               rootNode.addChildNode(chevronNode)
+           }
+       }
+
+       fun update(
+           cameraPose: Pose,
+           anchorMatrix: FloatArray,
+           state: AnchorTrackingState,
+           horizontalPlanes: List<Plane>,
+       ) {
+           if (state != AnchorTrackingState.LIMITED) {
+               rootNode.isVisible = false
+               return
+           }
+
+           val ct = cameraPose.translation
+           val cameraX = ct[0]
+           val cameraY = ct[1]
+           val cameraZ = ct[2]
+
+           val anchorX = anchorMatrix[12]
+           val anchorY = anchorMatrix[13]
+           val anchorZ = anchorMatrix[14]
+
+           val dx = anchorX - cameraX
+           val dy = anchorY - cameraY
+           val dz = anchorZ - cameraZ
+           val distSq = dx * dx + dy * dy + dz * dz
+           if (distSq <= 4f) {
+               rootNode.isVisible = false
+               return
+           }
+
+           val planesBelow = horizontalPlanes.filter { plane ->
+               plane.centerPose.translation[1] < cameraY - 0.3f
+           }
+           val floorPlane = planesBelow
+               .filter { it.type == Plane.Type.HORIZONTAL_UPWARD_FACING }
+               .maxByOrNull { it.centerPose.translation[1] }
+           val fallbackPlane = planesBelow.maxByOrNull { it.centerPose.translation[1] }
+           val groundY = when {
+               floorPlane != null -> floorPlane.centerPose.translation[1] + 0.01f
+               fallbackPlane != null -> fallbackPlane.centerPose.translation[1] + 0.01f
+               else -> cameraY - 1.0f
+           }
+
+           val toPoiX = anchorX - cameraX
+           val toPoiZ = anchorZ - cameraZ
+           val toPoiLen = sqrt((toPoiX * toPoiX + toPoiZ * toPoiZ).toDouble()).toFloat()
+           if (toPoiLen < 0.001f) return
+           val ndX = toPoiX / toPoiLen
+           val ndZ = toPoiZ / toPoiLen
+
+           rootNode.worldTransform = Mat4(
+               Float4(-ndZ, 0f, ndX, 0f),
+               Float4(0f, 1f, 0f, 0f),
+               Float4(-ndX, 0f, -ndZ, 0f),
+               Float4(cameraX, groundY, cameraZ, 1f),
+           )
+           rootNode.isVisible = true
+       }
+
+       fun destroy() {
+           rootNode.destroy()
+       }
+   }
+   ```
+
+3. Add the following guidance-node state to `WayfindingVPS2Overlay(...)` immediately below `val previousUpdateStates = remember { mutableMapOf<UUIDKey, AnchorTrackingState>() }`:
+
+   ```kotlin
+   // Create the destination marker and chevron guidance nodes once for the lifetime of this AR screen.
+   val destinationMarkerNode = remember {
+       WayfindingDestinationMarkerNode(engine = engine, materialLoader = materialLoader).apply {
+           arChildNodes.add(rootNode)
+       }
+   }
+   val chevronArrowNode = remember {
+       WayfindingChevronArrowNode(
+           engine = engine,
+           materialLoader = materialLoader,
+           context = context
+       ).apply {
+           arChildNodes.add(rootNode)
+       }
+   }
+   ```
+
+4. Update the same `DisposableEffect(engine) { ... }` cleanup block in `WayfindingVPS2Overlay(...)` by adding the following lines immediately below `engine.destroyMaterialInstance(coarseOrangeMaterial)`:
+
+   ```kotlin
+   arChildNodes.remove(destinationMarkerNode.rootNode)
+   destinationMarkerNode.destroy()
+   arChildNodes.remove(chevronArrowNode.rootNode)
+   chevronArrowNode.destroy()
+   ```
+
+5. Add the following frame-update listener to `WayfindingVPS2Overlay(...)` immediately below the `LaunchedEffect(vps2Manager, engine) { ... }` transform collector:
+
+   ```kotlin
+   DisposableEffect(nsdkManager.arManager, vps2Manager, destinationMarkerNode, chevronArrowNode) {
+       // Read the current camera pose from each AR frame.
+       val listener = OnFrameUpdateListener { frame ->
+           val cameraPose = frame.camera?.getDisplayOrientedPose()
+               ?: run {
+                   destinationMarkerNode.rootNode.isVisible = false
+                   chevronArrowNode.rootNode.isVisible = false
+                   return@OnFrameUpdateListener
+               }
+
+           // Hide guidance when no tracked anchor is available.
+           val anchorTransforms = vps2Manager.anchorTransformsFlow.value
+           val primaryKey = anchorTransforms.keys.firstOrNull()
+           if (primaryKey == null) {
+               destinationMarkerNode.rootNode.isVisible = false
+               chevronArrowNode.rootNode.isVisible = false
+               return@OnFrameUpdateListener
+           }
+
+           val matrix = anchorTransforms[primaryKey] ?: return@OnFrameUpdateListener
+           val state = vps2Manager.anchorStates[primaryKey] ?: AnchorTrackingState.NOT_TRACKED
+           val planes = nsdkManager.arManager.horizontalPlanesFlow.value
+
+           // Update the destination marker and chevron trail from the first tracked anchor.
+           destinationMarkerNode.update(cameraPose, matrix, state)
+           chevronArrowNode.update(cameraPose, matrix, state, planes)
+       }
+
+       nsdkManager.arManager.addFrameUpdateListener(listener)
+       onDispose {
+           nsdkManager.arManager.removeFrameUpdateListener(listener)
+       }
+   }
+   ```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/vps2/VPS2View.kt`, `DestinationMarkerNode.kt`, and `ChevronArrowNode.kt`.
+
+Test this step to validate that the AR screen renders advanced guidance:
+
+- Tap **Login**, tap **Browse Sites**, select a Site, tap **Localize in AR**, and tap **Start Tracking**.
+- In Logcat, confirm that `Advanced guidance nodes ready` appears after the AR screen opens.
+- In Logcat, continue moving until `Anchor state updated: LIMITED` or `Anchor state updated: TRACKED` appears. This depends on how close you are to the Site. If you are not close enough to the Site, the anchor may stay `NOT_TRACKED`, and this section is not fully validated yet unless you are testing with a playback dataset.
+- Confirm that tracked anchors appear as large orange cubes during coarse tracking and smaller green cubes during precise tracking.
+- Confirm that the destination marker and chevron guidance appear only when a tracked anchor is available.
+
+The next step uses the same tracked-anchor data to download mesh content and render it only when an anchor reaches precise tracking.
+
+## Download and render precise meshes
+
+This step adds the precise-only mesh workflow. The VPS2 manager downloads mesh content after each payload is tracked, composes each mesh chunk with the latest anchor transform, and notifies the AR screen when new mesh nodes are ready to render.
+
+- [Start mesh downloads](#start-mesh-downloads): Begin downloading mesh content as soon as an anchor payload starts tracking.
+- [Render meshes only in precise tracking](#render-meshes-only-in-precise-tracking): Compose mesh chunks with the anchor pose and hand them to the renderer only when the anchor is fully tracked.
+
+Before you wire the mesh callbacks into `WayfindingVPS2Manager.kt`, create `app/src/main/java/<your app package path>/WayfindingMeshRenderer.kt` with the following code:
+
+#### WayfindingMeshRenderer.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.content.Context
+import android.util.Log
+import androidx.compose.ui.graphics.Color
+import com.google.android.filament.Box
+import com.google.android.filament.Engine
+import com.google.android.filament.IndexBuffer
+import com.google.android.filament.MaterialInstance
+import com.google.android.filament.RenderableManager
+import com.google.android.filament.VertexBuffer
+import com.nianticspatial.nsdk.MeshData
+import dev.romainguy.kotlin.math.Float3
+import dev.romainguy.kotlin.math.Float4
+import dev.romainguy.kotlin.math.Mat4
+import io.github.sceneview.ar.node.PoseNode
+import io.github.sceneview.loaders.MaterialLoader
+import io.github.sceneview.node.MeshNode
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.get
+import kotlin.math.abs
+
+class WayfindingMeshRenderer(
+    private val engine: Engine,
+    private val materialLoader: MaterialLoader
+) {
+
+    companion object {
+        private const val TAG = "WayfindingMeshRenderer"
+    }
+
+    data class RenderableMeshChunk(
+        val chunkId: Long,
+        val meshData: MeshData,
+        val modelMatrix: FloatArray,
+        val textureData: ByteArray? = null,
+        var indexCount: Int = 0,
+    )
+
+    private var newMeshChunks = ConcurrentHashMap<Long, RenderableMeshChunk>()
+    private var meshNodesToRemove = mutableListOf<Long>()
+    private var processedMeshNodes = ConcurrentHashMap<Long, MeshNode>()
+
+    private var _needsMeshProcessing = false
+    val needsMeshProcessing: Boolean get() = _needsMeshProcessing
+
+    @Volatile private var isDestroyed = false
+
+    @Synchronized
+    fun updateMeshChunks(updatedMeshChunks: List<RenderableMeshChunk>, allUpdatedMeshIds: List<Long>) {
+        meshNodesToRemove.addAll(processedMeshNodes.keys)
+        meshNodesToRemove.removeAll(allUpdatedMeshIds)
+
+        updatedMeshChunks.forEach { chunk ->
+            if (processedMeshNodes.containsKey(chunk.chunkId)) {
+                meshNodesToRemove.add(chunk.chunkId)
+            }
+            newMeshChunks.putIfAbsent(chunk.chunkId, chunk)
+        }
+
+        _needsMeshProcessing = true
+    }
+
+    @Synchronized
+    fun createMeshNodes(context: Context, parentNode: PoseNode) {
+        if (isDestroyed) return
+
+        meshNodesToRemove.forEach { chunkId ->
+            val meshNode = processedMeshNodes.remove(chunkId)
+            if (meshNode != null) {
+                parentNode.removeChildNode(meshNode)
+                meshNode.destroy()
+            }
+        }
+        meshNodesToRemove.clear()
+
+        if (newMeshChunks.isEmpty()) {
+            _needsMeshProcessing = false
+            return
+        }
+
+        newMeshChunks.forEach { chunkId, chunk ->
+            val meshData = chunk.meshData
+            val originalVertices = meshData.vertices
+            val vertexCount = originalVertices.size / 3
+            val correctedVertices = FloatArray(originalVertices.size) { i ->
+                when (i % 3) {
+                    0 -> originalVertices[i]
+                    1 -> -originalVertices[i]
+                    else -> -originalVertices[i]
+                }
+            }
+
+            val uvs = meshData.uvs
+            val hasUvs = uvs != null && uvs.isNotEmpty()
+            var correctedUvs: FloatArray? = null
+            if (hasUvs) {
+                correctedUvs = FloatArray(uvs.size) { i -> uvs[i] }
+            } else {
+                Log.d(TAG, "Chunk: No UV data.")
+            }
+
+            val normals = meshData.normals
+            val hasColors = normals != null && normals.isNotEmpty()
+            var correctedColors: FloatArray? = null
+            if (hasColors) {
+                correctedColors = FloatArray(vertexCount * 4)
+                for (i in 0 until vertexCount) {
+                    val colorIndex = i * 4
+                    val normalIndex = i * 3
+                    correctedColors[colorIndex + 0] = abs(normals[normalIndex + 0])
+                    correctedColors[colorIndex + 1] = abs(normals[normalIndex + 1])
+                    correctedColors[colorIndex + 2] = abs(normals[normalIndex + 2])
+                    correctedColors[colorIndex + 3] = 0.5f
+                }
+            }
+
+            val vertexStride = 3 * 4
+            val uvStride = 2 * 4
+            val colorStride = 4 * 4
+            val correctedVertexBuffer = ByteBuffer.allocateDirect(vertexCount * vertexStride)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+            val correctedUVBuffer = ByteBuffer.allocateDirect(vertexCount * uvStride)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+            val correctedColorBuffer = ByteBuffer.allocateDirect(vertexCount * colorStride)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+
+            var maxExtents = Float3(x = Float.MIN_VALUE, y = Float.MIN_VALUE, z = Float.MIN_VALUE)
+
+            for (i in 0 until vertexCount) {
+                correctedVertexBuffer.put(correctedVertices, i * 3, 3)
+
+                val cX = abs(correctedVertices[i * 3 + 0])
+                val cY = abs(correctedVertices[i * 3 + 1])
+                val cZ = abs(correctedVertices[i * 3 + 2])
+
+                if (cX > maxExtents.x) maxExtents.x = cX
+                if (cY > maxExtents.y) maxExtents.y = cY
+                if (cZ > maxExtents.z) maxExtents.z = cZ
+            }
+            correctedVertexBuffer.position(0)
+
+            var bufferCount = 1
+            var uvBufferIdx = -1
+            var colorBufferIdx = -1
+
+            if (hasUvs) {
+                bufferCount++
+                uvBufferIdx = bufferCount - 1
+                for (i in 0 until vertexCount) {
+                    correctedUVBuffer.put(correctedUvs, i * 2, 2)
+                }
+                correctedUVBuffer.position(0)
+            }
+
+            if (hasColors) {
+                bufferCount++
+                colorBufferIdx = bufferCount - 1
+                for (i in 0 until vertexCount) {
+                    correctedColorBuffer.put(correctedColors, i * 4, 4)
+                }
+                correctedColorBuffer.position(0)
+            }
+
+            val vertexBufferBuilder = VertexBuffer.Builder()
+                .bufferCount(bufferCount)
+                .vertexCount(vertexCount)
+                .attribute(
+                    VertexBuffer.VertexAttribute.POSITION,
+                    0,
+                    VertexBuffer.AttributeType.FLOAT3,
+                    0,
+                    vertexStride
+                )
+
+            if (hasUvs) {
+                vertexBufferBuilder.attribute(
+                    VertexBuffer.VertexAttribute.UV0,
+                    uvBufferIdx,
+                    VertexBuffer.AttributeType.FLOAT2,
+                    0,
+                    uvStride
+                )
+            }
+
+            if (hasColors) {
+                vertexBufferBuilder.attribute(
+                    VertexBuffer.VertexAttribute.COLOR,
+                    colorBufferIdx,
+                    VertexBuffer.AttributeType.FLOAT4,
+                    0,
+                    colorStride
+                )
+            }
+
+            val meshVertexBuffer = vertexBufferBuilder.build(engine)
+            meshVertexBuffer.setBufferAt(engine, 0, correctedVertexBuffer)
+
+            if (hasUvs) {
+                meshVertexBuffer.setBufferAt(engine, uvBufferIdx, correctedUVBuffer)
+            }
+
+            if (hasColors) {
+                meshVertexBuffer.setBufferAt(engine, colorBufferIdx, correctedColorBuffer)
+            }
+
+            val triangleCount = meshData.indices.size / 3
+            val wireframeIndexCount = triangleCount * 6
+            val indicesBuffer = ByteBuffer.allocateDirect(wireframeIndexCount * 4)
+                .order(ByteOrder.nativeOrder())
+
+            for (t in 0 until triangleCount) {
+                val baseIndex = t * 3
+                val i0 = meshData.indices[baseIndex + 0]
+                val i1 = meshData.indices[baseIndex + 1]
+                val i2 = meshData.indices[baseIndex + 2]
+                indicesBuffer.putInt(i0)
+                indicesBuffer.putInt(i1)
+                indicesBuffer.putInt(i1)
+                indicesBuffer.putInt(i2)
+                indicesBuffer.putInt(i2)
+                indicesBuffer.putInt(i0)
+            }
+            indicesBuffer.flip()
+
+            val meshIndexBuffer = IndexBuffer.Builder()
+                .indexCount(wireframeIndexCount)
+                .bufferType(IndexBuffer.Builder.IndexType.UINT)
+                .build(engine)
+            meshIndexBuffer.setBuffer(engine, indicesBuffer)
+            chunk.indexCount = wireframeIndexCount
+
+            val materialInstance = buildWireframeMaterial(chunk.textureData)
+
+            val meshNode = MeshNode(
+                engine = engine,
+                primitiveType = RenderableManager.PrimitiveType.LINES,
+                vertexBuffer = meshVertexBuffer,
+                indexBuffer = meshIndexBuffer,
+                boundingBox = Box(0f, 0f, 0f, maxExtents.x, maxExtents.y, maxExtents.z),
+                materialInstance = materialInstance,
+            )
+            meshNode.worldTransform = floatArrayToMat4(chunk.modelMatrix)
+            parentNode.addChildNode(meshNode)
+            processedMeshNodes[chunkId] = meshNode
+        }
+
+        newMeshChunks.clear()
+        _needsMeshProcessing = false
+    }
+
+    private fun buildWireframeMaterial(textureData: ByteArray?): MaterialInstance {
+        return if (textureData != null && textureData.isNotEmpty()) {
+            materialLoader.createColorInstance(Color.White)
+        } else {
+            materialLoader.createColorInstance(Color.White)
+        }
+    }
+
+    private fun floatArrayToMat4(matrix: FloatArray): Mat4 {
+        return Mat4(
+            Float4(matrix[0], matrix[1], matrix[2], matrix[3]),
+            Float4(matrix[4], matrix[5], matrix[6], matrix[7]),
+            Float4(matrix[8], matrix[9], matrix[10], matrix[11]),
+            Float4(matrix[12], matrix[13], matrix[14], matrix[15])
+        )
+    }
+
+    fun destroy() {
+        isDestroyed = true
+        processedMeshNodes.values.forEach { it.destroy() }
+        processedMeshNodes.clear()
+        newMeshChunks.clear()
+        meshNodesToRemove.clear()
+    }
+}
+```
+
+The matching reference implementation lives in the sample's `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/MeshRenderer.kt`.
+
+### Start mesh downloads
+
+In an existing app, update your current VPS2 manager so it starts a mesh download after each payload begins tracking. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Track downloaded meshes by anchor.
+- Prevent duplicate mesh downloads.
+- Handle mesh download success, timeout, and failure.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` with the following steps:
+
+1. Add the sample's mesh-download imports to the top of `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt`, including:
+
+   ```kotlin
+   import android.opengl.Matrix
+   import com.nianticspatial.nsdk.AsyncResult
+   import com.nianticspatial.nsdk.MeshDownloaderData
+   import com.nianticspatial.nsdk.mesh.MeshDownloaderSession
+   import java.util.concurrent.ConcurrentHashMap
+   import kotlinx.coroutines.withContext
+   ```
+
+2. Add the following mesh-download state to `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` immediately below `val anchorGeolocationsFlow: StateFlow<Map<UUIDKey, GeolocationData>> = _anchorGeolocationsFlow.asStateFlow()`:
+
+   ```kotlin
+   // Track downloaded meshes by anchor and expose mesh readiness to the AR screen.
+   enum class MeshDownloadStatus {
+       READY,
+       IN_PROGRESS,
+       COMPLETED,
+       FAILED,
+       TIMEOUT,
+   }
+
+   object MeshDownload {
+       const val MAX_SIZE_KB = 10240
+       const val TIMEOUT_MS = 15000L
+   }
+
+   private val meshDownloaderSession: MeshDownloaderSession = nsdkManager.session.meshDownload.acquire()
+   private val _meshDownloadStatus = MutableStateFlow<MeshDownloadStatus>(MeshDownloadStatus.READY)
+   val meshDownloadStatus: StateFlow<MeshDownloadStatus> = _meshDownloadStatus
+
+   private val downloadedMeshesByAnchor = ConcurrentHashMap<UUIDKey, Array<MeshDownloaderData>>()
+   private var renderedMeshAnchors: Set<UUIDKey> = emptySet()
+
+   // Notify the AR view when new renderable mesh chunks are ready.
+   var onMeshDataReady: ((List<WayfindingMeshRenderer.RenderableMeshChunk>, List<Long>) -> Unit)? = null
+   ```
+
+3. Add the following line to `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` directly below `anchorStates[anchorKey] = AnchorTrackingState.NOT_TRACKED` in `startTracking(payloads)`:
+
+   ```kotlin
+   // Begin downloading mesh content as soon as an anchor payload starts tracking.
+   startMeshDownload(anchorKey = anchorKey, payload = payload)
+   ```
+
+4. Add the following `startMeshDownload(...)` function to `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` immediately above `private fun startTrackingCollectors()`:
+
+   ```kotlin
+   private fun startMeshDownload(anchorKey: UUIDKey, payload: String) {
+       // Prevent duplicate mesh downloads for the same anchor.
+       if (downloadedMeshesByAnchor.containsKey(anchorKey)) {
+           return
+       }
+
+       // Only allow one mesh download at a time.
+       if (_meshDownloadStatus.value == MeshDownloadStatus.IN_PROGRESS) {
+           return
+       }
+
+       _meshDownloadStatus.value = MeshDownloadStatus.IN_PROGRESS
+       coroutineScope.launch {
+           val asyncResult = authRetryHelper.withRetry {
+               withContext(Dispatchers.IO) {
+                   meshDownloaderSession.download(
+                       payload = payload,
+                       getTexture = true,
+                       maxDownloadSizeKb = MeshDownload.MAX_SIZE_KB,
+                       timeoutMillis = MeshDownload.TIMEOUT_MS
+                   )
+               }
+           }
+
+           when (asyncResult) {
+               is AsyncResult.Success -> {
+                   val meshes = asyncResult.value
+                   if (meshes.isNotEmpty()) {
+                       // Store the downloaded mesh content and notify the renderer path.
+                       downloadedMeshesByAnchor[anchorKey] = meshes
+                       _meshDownloadStatus.value = MeshDownloadStatus.COMPLETED
+                       android.util.Log.i(TAG, "Mesh download successful for anchor")
+                       updateMesh()
+                   }
+               }
+               is AsyncResult.Timeout -> {
+                   _meshDownloadStatus.value = MeshDownloadStatus.TIMEOUT
+               }
+               is AsyncResult.Error -> {
+                   _meshDownloadStatus.value = MeshDownloadStatus.FAILED
+               }
+           }
+       }
+   }
+   ```
+
+### Render meshes only in precise tracking
+
+In an existing app, update your current VPS2 manager and AR renderer so they only render mesh content for anchors that are fully tracked and still have a current transform. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Filter mesh rendering to fully tracked anchors.
+- Compose each mesh chunk transform with the latest anchor pose.
+- Create SceneView mesh nodes only when the renderer has new mesh content to process.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` and `app/src/main/java/<your app package path>/WayfindingVPS2View.kt` with the following steps:
+
+1. Add the following mesh-rendering helpers to `app/src/main/java/<your app package path>/WayfindingVPS2Manager.kt` immediately above `fun stopTracking()`:
+
+   ```kotlin
+   private fun getFullyTrackedAnchors(): Set<UUIDKey> {
+       return anchors.keys.filter { key ->
+           val state = anchorStates[key] ?: AnchorTrackingState.NOT_TRACKED
+           val hasMesh = downloadedMeshesByAnchor.containsKey(key)
+           val hasTransform = anchorTransforms.containsKey(key)
+           // Only render mesh content for anchors that are fully tracked and still have mesh plus transform data.
+           (state == AnchorTrackingState.TRACKED) && hasMesh && hasTransform
+       }.toSet()
+   }
+
+   private fun updateMesh() {
+       val fullyTrackedAnchors = getFullyTrackedAnchors()
+       if (fullyTrackedAnchors == renderedMeshAnchors) {
+           return
+       }
+       renderedMeshAnchors = fullyTrackedAnchors
+
+       val combinedMeshes = mutableListOf<WayfindingMeshRenderer.RenderableMeshChunk>()
+       val allMeshIds = mutableListOf<Long>()
+
+       fullyTrackedAnchors.forEach { anchorKey ->
+           val anchorPoseMatrix = anchorTransforms[anchorKey] ?: return@forEach
+           val meshes = downloadedMeshesByAnchor[anchorKey] ?: return@forEach
+
+           meshes.forEach { chunk ->
+               // Compose each mesh chunk transform with the latest anchor pose.
+               val composed = FloatArray(16)
+               Matrix.multiplyMM(composed, 0, anchorPoseMatrix, 0, chunk.transform, 0)
+               val chunkId = chunk.meshData.hashCode().toLong()
+               allMeshIds.add(chunkId)
+               combinedMeshes.add(
+                   WayfindingMeshRenderer.RenderableMeshChunk(
+                       chunkId = chunkId,
+                       meshData = chunk.meshData,
+                       modelMatrix = composed,
+                       textureData = chunk.imageData,
+                   )
+               )
+           }
+       }
+
+       onMeshDataReady?.invoke(combinedMeshes, allMeshIds)
+   }
+   ```
+
+2. Add the following imports to the top of `app/src/main/java/<your app package path>/WayfindingVPS2View.kt`:
+
+   ```kotlin
+   import io.github.sceneview.ar.node.PoseNode
+   import kotlinx.coroutines.delay
+   ```
+
+3. Add the following mesh-renderer state to `WayfindingVPS2Overlay(...)` immediately below `val materialLoader = LocalSceneMaterialLoader.current`:
+
+   ```kotlin
+   val meshRenderer = remember { WayfindingMeshRenderer(engine, materialLoader) }
+   ```
+
+4. Add the following callback wiring to `WayfindingVPS2Overlay(...)` immediately below the `LaunchedEffect(Unit) { ... }` log block:
+
+   ```kotlin
+   DisposableEffect(vps2Manager, meshRenderer) {
+       vps2Manager.onMeshDataReady = { chunks, meshIds ->
+           meshRenderer.updateMeshChunks(chunks, meshIds)
+       }
+       onDispose {
+           vps2Manager.onMeshDataReady = null
+       }
+   }
+   ```
+
+5. Add the following root mesh node to `WayfindingVPS2Overlay(...)` immediately below `val chevronArrowNode = remember { ... }`:
+
+   ```kotlin
+   val rootMeshNode = remember {
+       PoseNode(engine = engine).apply {
+           arChildNodes.add(this)
+       }
+   }
+   ```
+
+6. Update the same `DisposableEffect(engine) { ... }` cleanup block in `WayfindingVPS2Overlay(...)` by adding the following line immediately below `previousUpdateStates.clear()`:
+
+   ```kotlin
+   rootMeshNode.destroyRecursively(arChildNodes)
+   ```
+
+7. Add the following mesh-processing loop to `WayfindingVPS2Overlay(...)` immediately below the `DisposableEffect(nsdkManager.arManager, vps2Manager, destinationMarkerNode, chevronArrowNode) { ... }` block:
+
+   ```kotlin
+   LaunchedEffect(Unit) {
+       while (true) {
+           // Create SceneView mesh nodes only when the renderer has new mesh content to process.
+           if (meshRenderer.needsMeshProcessing) {
+               meshRenderer.createMeshNodes(context, rootMeshNode)
+           }
+           delay(200)
+       }
+   }
+   ```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/vps2/VPS2Manager.kt`, `VPS2View.kt`, and `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/MeshRenderer.kt`.
+
+Test this step to validate that the AR screen downloads and renders precise meshes:
+
+- Tap **Login**, tap **Browse Sites**, select a Site, tap **Localize in AR**, and tap **Start Tracking**.
+- In Logcat, confirm that `Mesh download successful for anchor` appears after tracking starts.
+- Continue moving until `Anchor state updated: TRACKED` appears. This depends on how close you are to the Site. If you are not close enough to the Site, precise tracking may never happen unless you are testing with a playback dataset.
+- Confirm that aligned mesh content appears only after the anchor reaches precise tracking.
+
+### Platform: swift
+
+# Advanced AR effects and precise localization
+
+This page implements the Advanced AR effects and precise localization step in the wayfinding workflow. In this workflow, the user has already selected a Site, passed its Production VPS anchor payload into the AR flow, and started VPS2 localization. This page shows how to extend the existing Swift AR host with per-frame state, publish the selected anchor's world transform, render tracked-anchor guidance in RealityKit, and download mesh content that appears only when the anchor reaches precise tracking.
+
+In the standalone Swift app shown in this tutorial, `WayfindingARManager` keeps the shared `NSDKView` and per-frame AR state, `WayfindingVPS2ARViewController` binds VPS2 publishers into RealityKit, and `WayfindingVPS2SceneContent` owns the anchor-linked AR entities. Unlike Kotlin, the Swift flow already created the AR host on the previous page, so this page extends that host instead of introducing a second scene container.
+
+This page implements the following AR treatments:
+
+- Large orange cubes for coarse anchor tracking
+- Small green cubes for precise anchor tracking
+- Downloaded wireframe mesh content when an anchor reaches fully tracked mode
+
+(image: After initializing a wayfinding app, selecting a Scaniverse Site and anchor payload, starting VPS2 localization, render advanced AR effects and obtain precise localization.)
+
+*Figure:* Previous steps of the tutorial showed how to initialize the app, implement Site selection, and start VPS2 localization. This step shows AR wayfinding.
+
+## Files Overview
+
+The Advanced AR effects and precise localization step has four steps:
+
+1. [Create the AR scene host](#create-the-ar-scene-host).
+2. [Publish tracked anchor data](#publish-tracked-anchor-data).
+3. [Render advanced AR guidance](#render-advanced-ar-guidance).
+4. [Download and render precise meshes](#download-and-render-precise-meshes).
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone Swift app shown in this tutorial, along with the names of the matching files in the `vps2e2e` sample with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the AR scene host | `NSDK/WayfindingARManager.swift`, `NSDK/WayfindingARFrameState.swift`, and `AR/WayfindingVPS2SceneContent.swift` AR host, per-frame state, and shared RealityKit scene helper | `NSDK/ARManager.swift`, `NSDK/ARFrameState.swift`, and `AR/VPS2SceneContent.swift` |
+| Publish tracked anchor data | `AR/WayfindingVPS2ViewModel.swift` and `AR/WayfindingVPS2ARViewController.swift` selected-anchor transform and tracking state | `AR/VPS2ViewModel.swift` and `AR/VPS2ARViewController.swift` |
+| Render advanced AR guidance | `AR/WayfindingVPS2SceneContent.swift`, `AR/WayfindingDestinationMarkerEntity.swift`, `AR/WayfindingChevronGroupEntity.swift`, and `AR/WayfindingVPS2ARViewController.swift` tracked-anchor cubes, destination marker, and chevron guidance | `AR/VPS2SceneContent.swift`, `AR/DestinationMarkerEntity.swift`, `AR/ChevronGroupEntity.swift`, and `AR/VPS2ARViewController.swift` |
+| Download and render precise meshes | `AR/WayfindingMeshLoader.swift`, `NSDK/MeshDataExtension.swift`, `AR/WayfindingVPS2SceneContent.swift`, `AR/WayfindingVPS2ViewModel.swift`, and `AR/WayfindingVPS2ARViewController.swift` mesh download, wireframe conversion, and precise-only rendering | `AR/MeshLoader.swift`, `NSDK/MeshDataExtension.swift`, `AR/VPS2SceneContent.swift`, `AR/VPS2ViewModel.swift`, and `AR/VPS2ARViewController.swift` |
+
+## Create the AR scene host
+
+This step extends the Swift AR host created on the previous page. In this step, you will publish per-frame camera and plane state from `WayfindingARManager` and create a shared RealityKit scene helper that later steps will use to attach anchor-linked AR content.
+
+- [Publish AR frame state](#publish-ar-frame-state) so the controller can react to camera, tracking, and horizontal-plane updates.
+- [Create the shared RealityKit scene helper](#create-the-shared-realitykit-scene-helper) so later steps can add tracked-anchor content without scattering RealityKit state across the controller.
+
+### Publish AR frame state
+
+In an existing app, update your current AR manager so it publishes the camera, AR tracking state, and currently tracked horizontal planes. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Publish the current `NSDKCamera`.
+- Publish the current ARKit tracking state.
+- Publish the currently tracked horizontal planes.
+- Keep the existing `NSDKSession.update()` frame loop.
+
+In a new app, do the following:
+
+1. Create `NSDK/WayfindingARFrameState.swift` to hold the per-frame AR state that later steps will consume:
+
+   #### Expand to view WayfindingARFrameState.swift
+
+   ```swift
+   import ARKit
+   import Combine
+   import Foundation
+   import NSDK
+
+   final class WayfindingARFrameState {
+       // Step 1: Publish the current camera, tracking state, and known planes.
+       @Published private(set) var camera: NSDKCamera?
+       @Published private(set) var trackingState: ARCamera.TrackingState = .notAvailable
+       @Published private(set) var anchorsIsEmpty: Bool = true
+       @Published private(set) var horizontalPlanes: [UUID: ARPlaneAnchor] = [:]
+
+       func update(camera: NSDKCamera?) {
+           self.camera = camera
+       }
+
+       func update(trackingState: ARCamera.TrackingState) {
+           self.trackingState = trackingState
+       }
+
+       func update(anchorsIsEmpty: Bool) {
+           self.anchorsIsEmpty = anchorsIsEmpty
+       }
+
+       func upsertHorizontalPlane(_ plane: ARPlaneAnchor) {
+           guard plane.alignment == .horizontal else { return }
+           var next = horizontalPlanes
+           next[plane.identifier] = plane
+           horizontalPlanes = next
+       }
+
+       func removeHorizontalPlane(id: UUID) {
+           var next = horizontalPlanes
+           next.removeValue(forKey: id)
+           horizontalPlanes = next
+       }
+
+       func clearHorizontalPlanes() {
+           horizontalPlanes = [:]
+       }
+   }
+   ```
+
+2. Update `NSDK/WayfindingARManager.swift` with the following steps to publish that frame state from the shared `NSDKView` host:
+
+   1. Add the following property immediately below `let nsdkView: NSDKView` to publish shared per-frame AR state:
+
+   ```swift
+   let frameState = WayfindingARFrameState()
+   ```
+
+   2. Add the following property immediately below `private var dataSource: NSDKSessionDataSource?` to keep one shared light anchor alive:
+
+   ```swift
+   private var lightAnchor: AnchorEntity?
+   ```
+
+   3. Add the following line immediately below `nsdkView.delegate = self` inside `init(nsdkSession:)` to log that the advanced AR host is ready:
+
+   ```swift
+   print("Advanced AR host ready")
+   ```
+
+   4. Add the following line immediately below `nsdkView.session.run(config)` inside `startSession()` to light the RealityKit scene:
+
+   ```swift
+   setupLighting()
+   ```
+
+   5. Add the following helper immediately below `func stopSession()` to keep the RealityKit scene lit:
+
+   ```swift
+   private func setupLighting() {
+       guard lightAnchor == nil else { return }
+       nsdkView.environment.lighting.intensityExponent = 1.0
+
+       let light = DirectionalLight()
+       light.light.intensity = 1000
+       light.orientation = simd_quatf(
+           angle: .pi / 4,
+           axis: simd_normalize([1, 1, 0])
+       )
+
+       let anchor = AnchorEntity(world: .zero)
+       anchor.addChild(light)
+       nsdkView.scene.addAnchor(anchor)
+       lightAnchor = anchor
+   }
+   ```
+
+   6. Update `private func handleFrameUpdate()` to publish the current `NSDKCamera` after `nsdkSession.update()`:
+
+   ```swift
+   private func handleFrameUpdate() {
+       // Step 6: Feed each AR frame into NSDK and publish the current camera.
+       nsdkSession.update()
+       frameState.update(camera: nsdkView.getCamera())
+   }
+   ```
+
+   7. Add the following delegate methods inside `extension WayfindingARManager: NSDKViewDelegate` below the existing `didUpdate` methods so later steps can read camera tracking state and horizontal planes:
+
+   ```swift
+   func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
+       frameState.update(trackingState: camera.trackingState)
+   }
+
+   func playbackSession(
+       _ session: PlaybackSession,
+       cameraDidChangeTrackingState camera: PlaybackCamera
+   ) {
+       frameState.update(trackingState: camera.trackingState)
+   }
+
+   func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+       for anchor in anchors {
+           if let plane = anchor as? ARPlaneAnchor {
+               frameState.upsertHorizontalPlane(plane)
+           }
+       }
+       frameState.update(anchorsIsEmpty: session.currentFrame?.anchors.isEmpty ?? true)
+   }
+
+   func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+       for anchor in anchors {
+           if let plane = anchor as? ARPlaneAnchor {
+               frameState.upsertHorizontalPlane(plane)
+           }
+       }
+   }
+
+   func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+       for anchor in anchors {
+           frameState.removeHorizontalPlane(id: anchor.identifier)
+       }
+       frameState.update(anchorsIsEmpty: session.currentFrame?.anchors.isEmpty ?? true)
+   }
+
+   func sessionWasInterrupted(_ session: ARSession) {
+       frameState.update(trackingState: .notAvailable)
+   }
+
+   func sessionInterruptionEnded(_ session: ARSession) {
+       frameState.clearHorizontalPlanes()
+   }
+   ```
+
+### Create the shared RealityKit scene helper
+
+In an existing app, update your current AR screen so one helper object owns the tracked-anchor entities and the coarse and precise marker state. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Keep one `AnchorEntity` per tracked VPS2 anchor.
+- Keep one coarse marker and one precise marker for the selected anchor.
+- Expose helper methods to create anchors, update transforms, and toggle marker visibility.
+- Clean up all RealityKit entities when the screen closes.
+
+In a new app, create `AR/WayfindingVPS2SceneContent.swift` to own the shared RealityKit entities for this VPS2 screen:
+
+#### Expand to view WayfindingVPS2SceneContent.swift
+
+```swift
+import ARKit
+import NSDK
+import RealityKit
+import UIKit
+
+final class WayfindingVPS2SceneContent {
+private weak var scene: Scene?
+private var anchors: [NSDKVpsAnchorId: AnchorEntity] = [:]
+private let coarseMarker: ModelEntity
+private let preciseMarker: ModelEntity
+private var poiAnchorId: NSDKVpsAnchorId?
+
+init(scene: Scene) {
+    self.scene = scene
+
+    let coarseMaterial = SimpleMaterial(
+        color: UIColor.orange.withAlphaComponent(0.85),
+        roughness: 1.0,
+        isMetallic: false
+    )
+    coarseMarker = ModelEntity(
+        mesh: .generateBox(size: 1.0),
+        materials: [coarseMaterial]
+    )
+    coarseMarker.isEnabled = false
+
+    let preciseMaterial = SimpleMaterial(
+        color: UIColor.green.withAlphaComponent(0.9),
+        roughness: 1.0,
+        isMetallic: false
+    )
+    preciseMarker = ModelEntity(
+        mesh: .generateBox(size: 0.2),
+        materials: [preciseMaterial]
+    )
+    preciseMarker.isEnabled = false
+}
+
+@discardableResult
+func getOrCreateAnchor(anchorId: NSDKVpsAnchorId) -> AnchorEntity? {
+    guard let scene else { return nil }
+    if let existing = anchors[anchorId] { return existing }
+    let anchor = AnchorEntity(world: .zero)
+    anchor.name = String(describing: anchorId)
+    scene.addAnchor(anchor)
+    anchors[anchorId] = anchor
+    return anchor
+}
+
+func setAnchorTransform(anchorId: NSDKVpsAnchorId, matrix: simd_float4x4) {
+    guard let anchor = anchors[anchorId] else { return }
+    anchor.transform = Transform(matrix: matrix)
+}
+
+func setPoiAnchor(_ anchorId: NSDKVpsAnchorId?) {
+    poiAnchorId = anchorId
+    guard let anchorId, let anchor = anchors[anchorId], anchor.children.isEmpty else { return }
+    anchor.addChild(coarseMarker)
+    anchor.addChild(preciseMarker)
+}
+
+func updatePoiVisibility(trackingState: VpsAnchorUpdate.AnchorTrackingState) {
+    guard let id = poiAnchorId, anchors[id] != nil else { return }
+
+    switch trackingState {
+    case .notTracked:
+        coarseMarker.isEnabled = false
+        preciseMarker.isEnabled = false
+    case .limited:
+        coarseMarker.isEnabled = true
+        preciseMarker.isEnabled = false
+    case .tracked:
+        coarseMarker.isEnabled = false
+        preciseMarker.isEnabled = true
+    }
+}
+
+func cleanup() {
+    coarseMarker.removeFromParent()
+    preciseMarker.removeFromParent()
+    for (_, anchor) in anchors {
+        anchor.removeFromParent()
+    }
+    anchors.removeAll()
+    poiAnchorId = nil
+}
+}
+```
+
+Still in `Create the shared RealityKit scene helper`, update `AR/WayfindingVPS2ARViewController.swift` with the following steps so the controller creates and cleans up that shared scene helper:
+
+1. Add the following import at the top of the file to read `arManager.nsdkView.scene`:
+
+   ```swift
+   import RealityKit
+   ```
+
+2. Add the following property immediately below `private var trackedAnchorIds: [NSDKVpsAnchorId] = []` to keep one shared scene helper for the screen:
+
+   ```swift
+   private var sceneContent: WayfindingVPS2SceneContent?
+   ```
+
+3. Add the following line immediately below `arManager.nsdkView.setup(in: view)` inside `viewDidLoad()` to create that scene helper when the AR screen opens:
+
+   ```swift
+   sceneContent = WayfindingVPS2SceneContent(scene: arManager.nsdkView.scene)
+   ```
+
+4. Add the following lines immediately below `print("Stopped VPS2 tracking")` inside `viewDidDisappear(_:)` to clean up all tracked-anchor entities when the screen closes:
+
+   ```swift
+   sceneContent?.cleanup()
+   sceneContent = nil
+   ```
+
+Test this step to validate that the AR host still opens and the shared scene helper is ready:
+
+- Build the app.
+- Run the app to reach the VPS2 screen.
+- Confirm that the live camera view still opens.
+- Confirm that `Advanced AR host ready` appears in Xcode's console.
+
+The next step uses the selected anchor from the tracking button to publish its transform and state to the AR scene.
+
+## Publish tracked anchor data
+
+This step publishes the selected anchor's transform and state so the RealityKit scene can follow the tracked Site. Unlike Kotlin's geolocation map, this Swift flow tracks one POI anchor at a time and drives advanced guidance from that anchor's world transform directly.
+
+- [Publish tracked anchor transforms](#publish-tracked-anchor-transforms) so the scene can move the selected anchor entity with VPS2 updates.
+- [Register the selected anchor](#register-the-selected-anchor) so the scene knows which tracked anchor should drive the guidance.
+
+### Publish tracked anchor transforms
+
+In an existing app, update your current VPS2 view model so it publishes the selected anchor's transform and tracking state while preserving the existing status text from the previous page. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Publish the selected anchor's world transform.
+- Publish the selected anchor's tracking state.
+- Keep the existing localization and tracked-anchor text updates.
+- Ignore updates for anchors other than the selected POI anchor.
+
+In a new app, update `AR/WayfindingVPS2ViewModel.swift` with the following steps to publish the selected anchor's transform and tracking state:
+
+1. Add the following import at the top of the file to store the selected anchor transform:
+
+   ```swift
+   import simd
+   ```
+
+2. Add the following published properties immediately below `@Published var trackedAnchorStateText = "Anchor state: NOT_TRACKED"` to publish the selected anchor's latest transform and tracking state:
+
+   ```swift
+   @Published private(set) var anchorWorldTransform: simd_float4x4?
+   @Published private(set) var anchorTrackingState: VpsAnchorUpdate.AnchorTrackingState?
+   ```
+
+3. Add the following property immediately below those new published properties to remember which tracked anchor should drive the AR guidance:
+
+   ```swift
+   private(set) var poiAnchorId: NSDKVpsAnchorId?
+   ```
+
+4. Replace the existing `session.anchorUpdated ...` collector inside `bind(session:)` so it stores the selected anchor's transform and ignores other tracked anchors:
+
+   ```swift
+   session.anchorUpdated
+       .receive(on: DispatchQueue.main)
+       .sink { [weak self] id, update in
+           guard let self else { return }
+           if let poiAnchorId = self.poiAnchorId, poiAnchorId != id {
+               return
+           }
+
+           self.anchorTrackingState = update.trackingState
+           self.anchorWorldTransform = update.trackingData?.targetAnchorTransform
+
+           let stateText = self.anchorStateText(from: update.trackingState)
+           self.trackedAnchorStateText = "Anchor state: \(stateText)"
+           print("Anchor state updated: \(stateText)")
+       }
+   ```
+
+5. Add the following helper immediately above `func setSessionStatus(_ text: String)` to reset the published transform when the selected anchor changes:
+
+   ```swift
+   func setPoiAnchorId(_ id: NSDKVpsAnchorId) {
+       guard poiAnchorId != id else { return }
+       poiAnchorId = id
+       anchorTrackingState = nil
+       anchorWorldTransform = nil
+   }
+   ```
+
+### Register the selected anchor
+
+In an existing app, update the code path that starts tracking so it marks one tracked anchor as the selected POI anchor for the advanced AR scene. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Mark the first tracked anchor as the selected POI anchor.
+- Hand the same anchor id to the shared RealityKit scene helper.
+- Keep the existing tracking logs and tracked-anchor count.
+
+In a new app, add the following lines inside `private func startTracking(anchorPayloads:)` in `AR/WayfindingVPS2ARViewController.swift` immediately below `self.trackedAnchorIds.append(anchorId)` to mark the first tracked anchor as the one that drives the advanced AR scene and log that registration:
+
+```swift
+self.viewModel.setPoiAnchorId(anchorId)
+self.sceneContent?.setPoiAnchor(anchorId)
+print("Registered selected POI anchor")
+```
+
+Test this step to validate that the selected anchor's state is now published:
+
+- Build the app.
+- Run the app to reach the VPS2 screen and tap `Start Tracking`.
+- Confirm that `Registered selected POI anchor` appears in Xcode's console.
+- Confirm that `Anchor state updated: ...` still appears in Xcode's console.
+
+The next step uses those published anchor updates to render tracked-anchor cubes, the destination marker, and the chevron trail.
+
+## Render advanced AR guidance
+
+This step renders the advanced AR guidance in RealityKit. It uses the selected anchor's world transform to place coarse and precise cubes, then uses the per-frame camera and plane updates to position the destination marker and chevron trail.
+
+- [Render tracked-anchor cubes](#render-tracked-anchor-cubes) so coarse and precise tracking have different AR treatments.
+- [Update the destination marker and chevrons](#update-the-destination-marker-and-chevrons) so the scene updates guidance once per AR frame.
+
+### Render tracked-anchor cubes
+
+In an existing app, update your current AR controller so it binds the selected anchor's transform and tracking state into the shared RealityKit scene helper. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Create or update the selected anchor entity from VPS2 transform updates.
+- Show a large orange cube during `LIMITED` tracking.
+- Show a small green cube during `TRACKED`.
+- Keep the AR screen open while the guidance nodes update.
+
+In a new app, update `AR/WayfindingVPS2ARViewController.swift` with the following steps:
+
+1. Replace the status-card `VStack(...)` inside `AR/WayfindingVPS2View.swift` to keep the advanced AR guidance visible instead of covering the camera view with the full anchor payload:
+
+   ```swift
+   VStack(alignment: .leading, spacing: 10) {
+       HStack {
+           Text(siteName)
+               .font(.headline)
+               .lineLimit(1)
+           Spacer()
+       }
+
+       Text(viewModel.localizationStatusText)
+           .font(.subheadline.weight(.semibold))
+
+       Text(viewModel.trackedAnchorsText)
+           .font(.subheadline)
+
+       Text(viewModel.trackedAnchorStateText)
+           .font(.subheadline)
+
+       Button {
+           trackingRequestID += 1
+       } label: {
+           Label("Start Tracking", systemImage: "scope")
+               .frame(maxWidth: .infinity)
+       }
+       .buttonStyle(.borderedProminent)
+       .disabled(trackingPayloads.isEmpty)
+
+       Text(viewModel.sessionStatusText)
+           .font(.footnote.weight(.medium))
+   }
+   .padding(16)
+   .frame(maxWidth: .infinity)
+   .frame(maxWidth: 420, alignment: .leading)
+   .background(.ultraThinMaterial)
+   .clipShape(RoundedRectangle(cornerRadius: 18))
+   .padding(.horizontal, 16)
+   .padding(.bottom, 24)
+   ```
+
+2. Add the following imports to the top of the file to bind Combine publishers into RealityKit updates:
+
+   ```swift
+   import Combine
+   import RealityKit
+   ```
+
+3. Add the following property immediately below `private var retryHelper: AuthRetryHelper!` to keep the anchor and frame subscriptions alive:
+
+   ```swift
+   private var cancellables = Set<AnyCancellable>()
+   ```
+
+4. Add the following lines immediately below `viewModel.bind(session: vps2Session)` inside `viewDidLoad()` to start reacting to anchor transforms as soon as the VPS2 session is ready:
+
+   ```swift
+   bindAnchorScene()
+   print("Advanced guidance nodes ready")
+   ```
+
+5. Add the following helper immediately below the closing `}` of `override func viewDidDisappear(_ animated: Bool)` so the scene follows the selected anchor's transform and state:
+
+   ```swift
+   private func bindAnchorScene() {
+       viewModel.$anchorWorldTransform
+           .receive(on: DispatchQueue.main)
+           .sink { [weak self] matrix in
+               guard let self, let matrix, let poiId = self.viewModel.poiAnchorId else { return }
+               _ = self.sceneContent?.getOrCreateAnchor(anchorId: poiId)
+               self.sceneContent?.setAnchorTransform(anchorId: poiId, matrix: matrix)
+           }
+           .store(in: &cancellables)
+
+       viewModel.$anchorTrackingState
+           .receive(on: DispatchQueue.main)
+           .sink { [weak self] trackingState in
+               guard let self, let trackingState else { return }
+               self.sceneContent?.updatePoiVisibility(trackingState: trackingState)
+           }
+           .store(in: &cancellables)
+   }
+   ```
+
+### Update the destination marker and chevrons
+
+In an existing app, update your current RealityKit scene helper and AR controller so they create destination guidance once and update it from per-frame camera and plane changes. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Create a destination marker entity.
+- Create a chevron trail entity.
+- Update both from the selected anchor and the current AR frame.
+- Hide chevrons unless the selected anchor is in coarse tracking.
+
+In a new app, do the following:
+
+1. Create `AR/WayfindingDestinationMarkerEntity.swift` to draw the billboard marker that hovers over the selected destination:
+
+   #### Expand to view WayfindingDestinationMarkerEntity.swift
+
+   ```swift
+   import RealityKit
+   import UIKit
+
+   final class WayfindingDestinationMarkerEntity: Entity {
+       // Step 1: Draw one billboard-ready destination marker.
+       private static let diameter: Float = 2.0
+
+       required init() {
+           super.init()
+           build()
+       }
+
+       private func build() {
+           guard let texture = Self.makeMarkerTexture() else { return }
+
+           var material = UnlitMaterial()
+           material.color = .init(tint: .white, texture: .init(texture))
+           material.blending = .transparent(opacity: .init(floatLiteral: 1.0))
+
+           let mesh = MeshResource.generatePlane(width: Self.diameter, height: Self.diameter)
+           let quad = ModelEntity(mesh: mesh, materials: [material])
+
+           if #available(iOS 18.0, *) {
+               quad.components.set(BillboardComponent())
+           }
+
+           addChild(quad)
+       }
+
+       private static func makeMarkerTexture() -> TextureResource? {
+           let size: CGFloat = 256
+           let rect = CGRect(origin: .zero, size: CGSize(width: size, height: size))
+
+           let symbolConfig = UIImage.SymbolConfiguration(pointSize: size * 0.55, weight: .regular)
+           guard let symbol = UIImage(systemName: "location.fill", withConfiguration: symbolConfig) else {
+               return nil
+           }
+
+           let renderer = UIGraphicsImageRenderer(size: rect.size)
+           let image = renderer.image { ctx in
+               let cgCtx = ctx.cgContext
+               cgCtx.clear(rect)
+
+               let center = CGPoint(x: size / 2, y: size / 2)
+               let strokeWidth: CGFloat = 14
+               let circleRadius = size / 2 - strokeWidth / 2 - 2
+
+               cgCtx.setStrokeColor(UIColor.white.cgColor)
+               cgCtx.setLineWidth(strokeWidth)
+               cgCtx.addArc(center: center, radius: circleRadius, startAngle: 0, endAngle: 2 * .pi, clockwise: false)
+               cgCtx.strokePath()
+
+               let symbolSize = symbol.size
+               let symbolRect = CGRect(
+                   x: center.x - symbolSize.width / 2,
+                   y: center.y - symbolSize.height / 2,
+                   width: symbolSize.width,
+                   height: symbolSize.height
+               )
+               symbol.withTintColor(.white, renderingMode: .alwaysOriginal).draw(in: symbolRect)
+           }
+
+           guard let cgImage = image.cgImage else { return nil }
+           if #available(iOS 18.0, *) {
+               return try? TextureResource(image: cgImage, options: .init(semantic: .color))
+           } else {
+               return try? TextureResource.generate(from: cgImage, options: .init(semantic: .color))
+           }
+       }
+   }
+   ```
+
+2. Create `AR/WayfindingChevronGroupEntity.swift` to draw the coarse-guidance chevron trail:
+
+   #### Expand to view WayfindingChevronGroupEntity.swift
+
+   ```swift
+   import RealityKit
+   import UIKit
+
+   final class WayfindingChevronGroupEntity: Entity {
+       // Step 2: Build a reusable chevron trail for coarse guidance.
+       struct Configuration {
+           var count: Int = 10
+           var baseArmLength: Float = 0.26
+           var baseArmThickness: Float = 0.013
+           var armDepth: Float = 0.005
+           var halfAngle: Float = .pi / 4
+           var spacing: Float = 0.20
+           var tipSizeFraction: Float = 0.75
+           var emissiveIntensity: Float = 1.5
+       }
+
+       init(configuration: Configuration = Configuration()) {
+           super.init()
+           build(configuration)
+       }
+
+       required init() {
+           super.init()
+           build(Configuration())
+       }
+
+       private func build(_ cfg: Configuration) {
+           let lastIndex = Float(cfg.count - 1)
+
+           for i in 0..<cfg.count {
+               let t = lastIndex > 0 ? Float(i) / lastIndex : 0
+               let scale = 1.0 - t * (1.0 - cfg.tipSizeFraction)
+               let armLength = cfg.baseArmLength * scale
+               let armThickness = cfg.baseArmThickness * scale
+               let alpha = CGFloat(0.25 + 0.75 * t)
+               let material = Self.emissiveMaterial(alpha: alpha, intensity: cfg.emissiveIntensity)
+               let half = cfg.halfAngle
+
+               let leftLength = armLength
+               let rightLength = armLength - armThickness
+
+               let leftMesh = MeshResource.generateBox(size: [leftLength, cfg.armDepth, armThickness])
+               let rightMesh = MeshResource.generateBox(size: [rightLength, cfg.armDepth, armThickness])
+
+               let leftArm = ModelEntity(mesh: leftMesh, materials: [material])
+               leftArm.orientation = simd_quatf(angle: half, axis: [0, 1, 0])
+               leftArm.position = [
+                   -cos(half) * leftLength * 0.5 + sin(half) * armThickness * 0.5,
+                   0,
+                   sin(half) * leftLength * 0.5 + cos(half) * armThickness * 0.5
+               ]
+
+               let rightArm = ModelEntity(mesh: rightMesh, materials: [material])
+               rightArm.orientation = simd_quatf(angle: -half, axis: [0, 1, 0])
+               let rCenter = rightLength * 0.5 + armThickness
+               rightArm.position = [
+                   cos(half) * rCenter - sin(half) * armThickness * 0.5,
+                   0,
+                   sin(half) * rCenter + cos(half) * armThickness * 0.5
+               ]
+
+               let chevron = Entity()
+               chevron.addChild(leftArm)
+               chevron.addChild(rightArm)
+               chevron.position = [0, 0, (t - 1.0) * cfg.spacing * lastIndex]
+               addChild(chevron)
+           }
+       }
+
+       private static func emissiveMaterial(alpha: CGFloat, intensity: Float) -> PhysicallyBasedMaterial {
+           var material = PhysicallyBasedMaterial()
+           material.baseColor = .init(tint: UIColor.white.withAlphaComponent(alpha))
+           material.emissiveColor = .init(color: UIColor(white: 1.0, alpha: alpha))
+           material.emissiveIntensity = intensity
+           material.roughness = .init(floatLiteral: 1.0)
+           material.metallic = .init(floatLiteral: 0.0)
+           material.blending = .transparent(opacity: .init(floatLiteral: Float(alpha)))
+           return material
+       }
+   }
+   ```
+
+3. Then update `AR/WayfindingVPS2SceneContent.swift` with the following steps:
+
+   1. Add the following properties immediately below `private var poiAnchorId: NSDKVpsAnchorId?` to track the chevron anchor, destination marker, and latest POI tracking state:
+
+   ```swift
+   private var poiArrow: AnchorEntity?
+   private var destinationMarkerAnchor: AnchorEntity?
+   private var lastPoiTrackingState: VpsAnchorUpdate.AnchorTrackingState?
+   ```
+
+   2. Add the following line at the top of `updatePoiVisibility(trackingState:)` to remember which VPS2 tracking mode the selected anchor is in:
+
+   ```swift
+   lastPoiTrackingState = trackingState
+   ```
+
+   3. Add the following destination-marker visibility lines inside the same `switch trackingState` in `updatePoiVisibility(trackingState:)` to hide the marker until the selected anchor is being tracked:
+
+   ```swift
+   destinationMarkerAnchor?.isEnabled = false
+   ```
+
+   inside `case .notTracked`, and:
+
+   ```swift
+   destinationMarkerAnchor?.isEnabled = true
+   ```
+
+   inside both `case .limited` and `case .tracked`.
+
+   4. Add the following methods immediately above `func cleanup()` to create and update the chevrons and destination marker from the current camera frame:
+
+   #### Expand to view the added guidance methods
+
+   ```swift
+   func createPoiArrow() {
+       // Step 3: Create one chevron anchor that points toward the selected Site.
+       guard let scene else { return }
+       let chevronGroup = WayfindingChevronGroupEntity()
+       let anchor = AnchorEntity(world: .zero)
+       anchor.isEnabled = false
+       anchor.addChild(chevronGroup)
+       scene.addAnchor(anchor)
+       poiArrow = anchor
+   }
+
+   func createDestinationMarker() {
+       // Step 4: Create one billboard marker that hovers above the destination.
+       guard let scene else { return }
+       let marker = WayfindingDestinationMarkerEntity()
+       let anchor = AnchorEntity(world: .zero)
+       anchor.isEnabled = false
+       anchor.addChild(marker)
+       scene.addAnchor(anchor)
+       destinationMarkerAnchor = anchor
+   }
+
+   func updatePoiArrow(cameraTransform: simd_float4x4, horizontalPlanes: [UUID: ARPlaneAnchor]) {
+       // Step 5: Reposition the chevrons on the floor beneath the current camera.
+       guard
+           let id = poiAnchorId,
+           let poiAnchor = anchors[id],
+           let arrow = poiArrow
+       else { return }
+       guard case .limited = lastPoiTrackingState else {
+           arrow.isEnabled = false
+           return
+       }
+
+       let cameraPosition = SIMD3<Float>(
+           cameraTransform.columns.3.x,
+           cameraTransform.columns.3.y,
+           cameraTransform.columns.3.z
+       )
+
+       let planesBelow = horizontalPlanes.values.filter {
+           $0.transform.columns.3.y < cameraPosition.y - 0.3
+       }
+       let classifiedFloor = planesBelow
+           .filter { $0.classification == .floor }
+           .max(by: { $0.transform.columns.3.y < $1.transform.columns.3.y })
+       let fallbackFloor = planesBelow
+           .max(by: { $0.transform.columns.3.y < $1.transform.columns.3.y })
+       let groundY: Float
+       if let best = classifiedFloor ?? fallbackFloor {
+           groundY = best.transform.columns.3.y + 0.01
+       } else {
+           groundY = cameraPosition.y - 1.0
+       }
+
+       let arrowPosition = SIMD3<Float>(cameraPosition.x, groundY, cameraPosition.z)
+       arrow.position = arrowPosition
+
+       let poiWorldPosition = poiAnchor.position(relativeTo: nil)
+       let toPoiFlat = simd_normalize(SIMD3<Float>(
+           poiWorldPosition.x - arrowPosition.x,
+           0,
+           poiWorldPosition.z - arrowPosition.z
+       ))
+       arrow.orientation = simd_quatf(from: [0, 0, -1], to: toPoiFlat)
+
+       let distSq = simd_length_squared(poiWorldPosition - cameraPosition)
+       arrow.isEnabled = distSq > 4.0
+   }
+
+   func updateDestinationMarker(cameraTransform: simd_float4x4) {
+       // Step 6: Clamp the destination marker to a readable distance in front of the user.
+       guard
+           let id = poiAnchorId,
+           let poiAnchor = anchors[id],
+           let markerAnchor = destinationMarkerAnchor,
+           markerAnchor.isEnabled
+       else { return }
+
+       let cameraPosition = SIMD3<Float>(
+           cameraTransform.columns.3.x,
+           cameraTransform.columns.3.y,
+           cameraTransform.columns.3.z
+       )
+       let destinationPosition = poiAnchor.position(relativeTo: nil)
+       let toDestination = destinationPosition - cameraPosition
+       let horizontalDist = simd_length(SIMD3<Float>(toDestination.x, 0, toDestination.z))
+       let maxDistance: Float = 40.0
+       let markerPosition: SIMD3<Float>
+       if horizontalDist <= maxDistance {
+           markerPosition = destinationPosition
+       } else {
+           let horizontalDir = simd_normalize(SIMD3<Float>(toDestination.x, 0, toDestination.z))
+           markerPosition = SIMD3<Float>(
+               cameraPosition.x + horizontalDir.x * maxDistance,
+               destinationPosition.y,
+               cameraPosition.z + horizontalDir.z * maxDistance
+           )
+       }
+
+       markerAnchor.position = SIMD3<Float>(
+           markerPosition.x,
+           markerPosition.y + 1.4,
+           markerPosition.z
+       )
+   }
+   ```
+
+   5. Replace `func cleanup()` in `AR/WayfindingVPS2SceneContent.swift` to also remove the chevron and destination-marker anchors when the AR screen closes:
+
+   ```swift
+   func cleanup() {
+       coarseMarker.removeFromParent()
+       preciseMarker.removeFromParent()
+       for (_, anchor) in anchors {
+           anchor.removeFromParent()
+       }
+       anchors.removeAll()
+       poiArrow?.removeFromParent()
+       poiArrow = nil
+       destinationMarkerAnchor?.removeFromParent()
+       destinationMarkerAnchor = nil
+       poiAnchorId = nil
+       lastPoiTrackingState = nil
+   }
+   ```
+
+4. Finally, update `AR/WayfindingVPS2ARViewController.swift` with the following steps:
+
+5. Add the following lines immediately below `bindAnchorScene()` inside the body of `viewDidLoad()` to create the guidance nodes and update them once per AR frame:
+
+   ```swift
+   sceneContent?.createPoiArrow()
+   sceneContent?.createDestinationMarker()
+   bindSceneUpdatesPerFrame()
+   ```
+
+   2. Add the following helper immediately below `private func bindAnchorScene() { ... }` to move the chevrons and destination marker from the current camera frame:
+
+   ```swift
+   private func bindSceneUpdatesPerFrame() {
+       arManager.frameState.$camera
+           .combineLatest(arManager.frameState.$horizontalPlanes)
+           .receive(on: DispatchQueue.main)
+           .sink { [weak self] camera, planes in
+               guard let self, let camera else { return }
+               let transform = camera.transform
+               self.sceneContent?.updatePoiArrow(
+                   cameraTransform: transform,
+                   horizontalPlanes: planes
+               )
+               self.sceneContent?.updateDestinationMarker(cameraTransform: transform)
+           }
+           .store(in: &cancellables)
+   }
+   ```
+
+Test this step to validate that the AR screen renders advanced guidance:
+
+- Build the app.
+- Run the app to reach the VPS2 screen and tap `Start Tracking`.
+- Confirm that `Advanced guidance nodes ready` appears in Xcode's console.
+- If you are close enough to the Site or are using playback, confirm that a large orange cube appears during `LIMITED` tracking and a small green cube appears during `TRACKED`.
+- Confirm that the destination marker and chevrons appear only when a tracked anchor is available.
+
+The next step uses the same selected anchor and tracking state to download mesh content and render it only in precise tracking.
+
+## Download and render precise meshes
+
+This step adds the precise-only mesh workflow. In this step, you will start a mesh download after tracking begins, convert the downloaded mesh into a wireframe RealityKit mesh, and attach it under the same precise marker that is already hidden until the anchor reaches `TRACKED`.
+
+- [Start mesh downloads](#start-mesh-downloads) so mesh content begins downloading as soon as tracking starts.
+- [Render meshes only in precise tracking](#render-meshes-only-in-precise-tracking) so the downloaded mesh appears only when the precise marker becomes visible.
+
+### Start mesh downloads
+
+In an existing app, update your current VPS2 view model and controller so mesh downloads begin after tracking starts. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Start a mesh download after a payload begins tracking.
+- Keep the mesh loader out of the view controller.
+- Log a successful mesh download.
+
+In a new app, do the following:
+
+1. Create `AR/WayfindingMeshLoader.swift` to keep the mesh-download task out of the view model and controller:
+
+   #### Expand to view WayfindingMeshLoader.swift
+
+   ```swift
+   import Foundation
+   import NSDK
+
+   final class WayfindingMeshLoader {
+       // Step 1: Keep one mesh download task alive for the selected anchor.
+       private var meshDownloadTask: Task<Void, Never>?
+
+       @MainActor
+       func start(
+           anchorPayload: String,
+           session: NSDKSession,
+           onLoaded: @MainActor @escaping (MeshDownloaderResults) -> Void
+       ) {
+           cancel()
+
+           let downloader = session.acquireMeshDownloader()
+           meshDownloadTask = Task { [anchorPayload, downloader] in
+               defer { session.destroy(downloader) }
+               do {
+                   let results = try await downloader.requestLocationMesh(
+                       payload: anchorPayload,
+                       getTexture: false
+                   )
+                   try Task.checkCancellation()
+                   await onLoaded(results)
+               } catch is CancellationError {
+                   // expected
+               } catch {
+                   print("Failed to download mesh: \(error)")
+               }
+           }
+       }
+
+       func cancel() {
+           meshDownloadTask?.cancel()
+           meshDownloadTask = nil
+       }
+   }
+   ```
+
+2. Update `AR/WayfindingVPS2ViewModel.swift` with the following steps so the view model owns that loader:
+
+   1. Add the following property immediately below `private var cancellables = Set<AnyCancellable>()` and above `private var hasBoundSession = false` to keep one mesh loader with the VPS2 view model:
+
+      ```swift
+      private let meshLoader = WayfindingMeshLoader()
+      ```
+
+   2. Add the following methods immediately above `private func anchorStateText(from:)` and below the closing `}` of `func setTrackedAnchorCount(_ count: Int)` to start and cancel mesh downloads through that loader:
+
+      ```swift
+      @MainActor
+      func startMeshDownload(
+          anchorPayload: String,
+          session: NSDKSession,
+          onLoaded: @MainActor @escaping (MeshDownloaderResults) -> Void
+      ) {
+          meshLoader.start(
+              anchorPayload: anchorPayload,
+              session: session,
+              onLoaded: onLoaded
+          )
+      }
+
+      func cancelMeshDownload() {
+          meshLoader.cancel()
+      }
+      ```
+
+3. Update `AR/WayfindingVPS2ARViewController.swift` with the following steps so mesh downloads begin when tracking starts:
+
+   1. Add the following line immediately below `print("Stopped VPS2 tracking")` inside `override func viewDidDisappear(_ animated: Bool)` to cancel any in-flight mesh download when the VPS2 screen closes:
+
+      ```swift
+      viewModel.cancelMeshDownload()
+      ```
+
+   2. Add the following block inside the `for payload in anchorPayloads { ... }` loop immediately below `print("Tracking anchor payload: \(payload)")` to start downloading mesh content as soon as a payload starts tracking:
+
+      ```swift
+      self.viewModel.startMeshDownload(
+          anchorPayload: payload,
+          session: self.arManager.nsdkSession
+      ) { _ in
+          print("Mesh download successful for anchor")
+      }
+      ```
+
+### Render meshes only in precise tracking
+
+In an existing app, update your current scene helper so the downloaded mesh becomes a child of the precise marker. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Convert the downloaded mesh into a wireframe RealityKit mesh.
+- Parent that mesh under the precise marker.
+- Keep the mesh hidden until the precise marker becomes visible during `TRACKED`.
+
+In a new app, do the following:
+
+1. Create `NSDK/MeshDataExtension.swift` so `MeshData` can build the white wireframe mesh shown during precise tracking:
+
+   #### Expand to view MeshDataExtension.swift
+
+   ```swift
+   import Foundation
+   import MetalKit
+   import ModelIO
+   import NSDK
+   import RealityKit
+
+   extension MeshData {
+       public func toWireframeMeshResource() -> MeshResource? {
+           // Step 1: Convert the downloaded triangle mesh into source positions.
+           let numSourceVertices = verticesPtr.count / 3
+           var sourcePositions = [SIMD3<Float>]()
+           sourcePositions.reserveCapacity(numSourceVertices)
+
+           for i in 0..<numSourceVertices {
+               let idx = i * 3
+               sourcePositions.append(SIMD3<Float>(
+                   verticesPtr[idx],
+                   -verticesPtr[idx + 1],
+                   -verticesPtr[idx + 2]
+               ))
+           }
+
+           let halfWidth: Float = 0.003
+           var outPositions = [SIMD3<Float>]()
+           var outIndices = [UInt32]()
+
+           // Step 2: Expand each triangle edge into a thin white quad strip.
+           let triangleCount = indicesPtr.count / 3
+           for t in 0..<triangleCount {
+               let base = t * 3
+               let edges: [(UInt32, UInt32)] = [
+                   (indicesPtr[base], indicesPtr[base + 1]),
+                   (indicesPtr[base + 1], indicesPtr[base + 2]),
+                   (indicesPtr[base + 2], indicesPtr[base])
+               ]
+
+               for (aIndex, bIndex) in edges {
+                   let a = sourcePositions[Int(aIndex)]
+                   let b = sourcePositions[Int(bIndex)]
+                   let along = b - a
+                   let length = simd_length(along)
+                   guard length > 1e-6 else { continue }
+
+                   let direction = along / length
+                   let up = SIMD3<Float>(0, 1, 0)
+                   var perpendicular = simd_cross(direction, up)
+                   if simd_length(perpendicular) < 1e-4 {
+                       perpendicular = simd_cross(direction, SIMD3<Float>(1, 0, 0))
+                   }
+                   perpendicular = simd_normalize(perpendicular) * halfWidth
+
+                   let baseIndex = UInt32(outPositions.count)
+                   outPositions.append(contentsOf: [a - perpendicular, a + perpendicular, b + perpendicular, b - perpendicular])
+                   outIndices.append(contentsOf: [
+                       baseIndex, baseIndex + 1, baseIndex + 2,
+                       baseIndex, baseIndex + 2, baseIndex + 3
+                   ])
+               }
+           }
+
+           var descriptor = MeshDescriptor(name: "WireframeMeshDescriptor")
+           descriptor.positions = MeshBuffers.Positions(outPositions)
+           descriptor.primitives = .triangles(outIndices)
+
+           do {
+               // Step 3: Build one RealityKit mesh resource from the generated wireframe.
+               return try MeshResource.generate(from: [descriptor])
+           } catch {
+               return nil
+           }
+       }
+   }
+   ```
+
+2. Update `AR/WayfindingVPS2SceneContent.swift` with the following steps to attach the downloaded wireframe mesh under the precise marker:
+
+   1. Add the following methods immediately above `func cleanup()`:
+
+      ```swift
+      func loadMeshIntoPreciseMarker(_ meshResults: MeshDownloaderResults) {
+          // Step 2: Replace any older mesh with the newly downloaded precise mesh.
+          preciseMarker.children.removeAll()
+          let loadedChunkCount = loadMesh(meshResults, to: preciseMarker)
+          print("Loaded \(loadedChunkCount) mesh chunks into precise marker")
+      }
+
+      @discardableResult
+      private func loadMesh(_ meshResults: MeshDownloaderResults, to parent: Entity) -> Int {
+          // Step 3: Attach each downloaded wireframe chunk under the precise marker.
+          let material = UnlitMaterial(color: .white)
+          var loadedChunkCount = 0
+          for result in meshResults.results {
+              guard let meshResource = result.meshData.toWireframeMeshResource() else { continue }
+              let modelEntity = ModelEntity(mesh: meshResource, materials: [material])
+              modelEntity.transform = Transform(matrix: result.transform)
+              parent.addChild(modelEntity)
+              loadedChunkCount += 1
+          }
+          return loadedChunkCount
+      }
+      ```
+
+3. Update `AR/WayfindingVPS2ARViewController.swift` with the following step so the downloaded mesh is sent into the precise marker:
+
+   1. Replace the mesh-download closure you added earlier with:
+
+      ```swift
+      self.viewModel.startMeshDownload(
+          anchorPayload: payload,
+          session: self.arManager.nsdkSession
+      ) { [weak self] results in
+          self?.sceneContent?.loadMeshIntoPreciseMarker(results)
+          print("Mesh download successful for anchor")
+      }
+      ```
+
+Test this step to validate that the AR screen downloads and renders precise mesh content:
+
+- Build the app.
+- Run the app to reach the VPS2 screen and tap `Start Tracking`.
+- Confirm that `Mesh download successful for anchor` appears in Xcode's console when the Site has mesh content.
+- Confirm that `Loaded ... mesh chunks into precise marker` appears in Xcode's console after the download completes.
+- If you are close enough to the Site or are using playback, confirm that the white wireframe mesh appears only after the selected anchor reaches `TRACKED`.
+- If the selected anchor stays `NOT_TRACKED` or `LIMITED`, the mesh workflow is not fully validated yet.

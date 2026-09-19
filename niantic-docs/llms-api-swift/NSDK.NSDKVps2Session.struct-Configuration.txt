@@ -1,0 +1,38 @@
+# Configuration
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.struct-Configuration/
+
+Configuration
+Configuration for the VPS2 session.
+
+---
+
+## Declaration
+
+struct Configuration
+
+---
+
+## Constructors
+
+init(universalLocalizationEnabled: Bool? = nil, universalLocalizationRequestsPerSecond: Float? = nil, vpsMapLocalizationEnabled: Bool? = nil, initialVpsRequestsPerSecond: Float? = nil, continuousVpsRequestsPerSecond: Float? = nil, geolocationSmoothingEnabled: Bool? = nil, deviceMapLocalizationEnabled: Bool? = nil, deviceMapLocalizationFramerate: Int32? = nil, universalLocalizationRequestTimeoutMs: Int32? = nil, maxRequestsInTransitPerTarget: UInt32? = nil, anchorDistanceGateMeters: Float? = nil)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var anchorDistanceGateMeters | Float | Distance gate in meters for anchor candidate filtering when geo-corrected.Nodes farther than this distance from the device are skipped during anchor localization.When only GPS is available (no geo-correction), the effective gate is 2x this value.Use 0 to apply the default value (50 meters geo-corrected, 100 meters GPS-only).Use -1 to disable the distance check entirely. |
+| var continuousVpsRequestsPerSecond | Float | Number of VPS localization requests per second to send the server whilesuccessfully localized on a VPS map. |
+| var deviceMapLocalizationEnabled | Bool | Device maps are created by the on-device mapping feature. They do not providea georeference. |
+| var deviceMapLocalizationFramerate | Int32 | Number of times per second to attempt localization on available device maps. |
+| var geolocationSmoothingEnabled | Bool | If true, geolocation smoothing is enabled. |
+| var initialVpsRequestsPerSecond | Float | Number of VPS localiziation requests per second to send the server prior to firstsuccessful localization on a VPS map. |
+| var maxRequestsInTransitPerTarget | UInt32 | Maximum number of concurrent localization requests per target.Limits how many in-flight cloud localization requests can be active for a single targetsimultaneously. Use 0 to apply the default value (2). |
+| var universalLocalizationEnabled | Bool | If true, universal localization is enabled.Universal localization provides geographic positioning that works anywherewithout requiring pre-scanning. |
+| var universalLocalizationRequestsPerSecond | Float | Number of requests per second to send the cloud for universal localization. |
+| var universalLocalizationRequestTimeoutMs | Int32 | Timeout in milliseconds for universal localization requests.Responses in uncached areas may take 60+ seconds; subsequent requests are typicallyunder 1 second. Use 0 to apply the default value (90000 ms). |
+| var vpsMapLocalizationEnabled | Bool | If true, VPS map localization is enabled.VPS maps only exist in pre-scanned areas. Your device must be localized ona VPS map in order for VPS anchors to be placed with high accuracy. |
+
+---

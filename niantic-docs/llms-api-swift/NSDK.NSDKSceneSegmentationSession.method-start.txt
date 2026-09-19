@@ -1,0 +1,26 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-start/
+
+start
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts the Scene Segmentation system.
+After starting, Scene Segmentation will begin processing incoming frame data for semantic segmentation.
+The system must be configured before starting.
+
+#### Example
+
+```swift
+sceneSegmentationSession.configure(with: config)
+sceneSegmentationSession.start()
+```
+
+---

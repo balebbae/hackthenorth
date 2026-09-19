@@ -1,0 +1,85 @@
+# Vps2Location
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-Vps2Location/
+
+Vps2Location
+> inherits from _LocationEssentials.CLLocation
+
+---
+
+## Declaration
+
+final class Vps2Location
+
+## Summary
+
+A `CLLocation` subclass representing a position computed by VPS2.
+MSL altitude is not available from VPS2 without a geoid model conversion, so `altitude`
+always returns `-1`. Use `ellipsoidalAltitude` for the WGS84 height computed by VPS2, and
+`verticalAccuracy` (>= 0) for its precision.
+
+---
+
+## Constructors
+
+### Constructor
+
+required init?(coder: NSCoder)
+
+---
+
+### Overload
+
+init(coordinate: CLLocationCoordinate2D, ellipsoidalAltitude: CLLocationDistance, horizontalAccuracy: CLLocationAccuracy, verticalAccuracy: CLLocationAccuracy, timestamp: Date = Date())
+
+#### Summary
+
+Creates a Vps2Location from VPS2-computed position data.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| override var altitude | CLLocationDistance | Always `-1`. MSL altitude is not available from VPS2; use `ellipsoidalAltitude` instead. |
+| override var ellipsoidalAltitude | CLLocationDistance | The WGS84 ellipsoidal altitude computed by VPS2, in metres. |
+| override class var supportsSecureCoding | Bool | - |
+| override var verticalAccuracy | CLLocationAccuracy | Accuracy of `ellipsoidalAltitude`, in metres. A negative value indicates invalid. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| override copy | Any | - |
+| override encode | void | - |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Foundation.NSCopying 
+
+conforms to:  Foundation.NSSecureCoding 
+
+conforms to:  Foundation.NSCoding 
+
+conforms to:  ObjectiveC.NSObjectProtocol
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.CVarArg 
+
+conforms to:  Swift.CustomStringConvertible 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.SendableMetatype 
+
+conforms to:  CloudKit.CKRecordValueProtocol

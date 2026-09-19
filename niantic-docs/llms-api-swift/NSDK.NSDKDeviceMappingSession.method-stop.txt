@@ -1,0 +1,24 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDeviceMappingSession.method-stop/
+
+stop
+Stop all mapping processes.
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stop all mapping processes.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: If mapping is in progress, this will stop mapping.
+
+---

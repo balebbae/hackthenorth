@@ -1,0 +1,45 @@
+# PlaybackDatasetError
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.enum-PlaybackDatasetError/
+
+PlaybackDatasetError
+Errors that can occur when retrieving frame data.
+
+---
+
+## Declaration
+
+enum PlaybackDatasetError
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case imageLoadFailed | Int, : String) | Frame image could not be loaded: either the frame has no image filename in the capture JSON, or the loader could not read the file. |
+| case indexOutOfBounds | Int, : Int) | Requested frame index is outside the dataset (e.g. negative or >= frame count). |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var errorDescription | String | A localized message describing what error occurred. |
+| var failureReason | String | A localized message describing the reason for the failure. |
+| var helpAnchor | String | A localized message providing "help" text if the user requests help. |
+| var localizedDescription | String | Retrieve the localized description for this error. |
+| var recoverySuggestion | String | A localized message describing how one might recover from the failure. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Error 
+
+conforms to:  Foundation.LocalizedError 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

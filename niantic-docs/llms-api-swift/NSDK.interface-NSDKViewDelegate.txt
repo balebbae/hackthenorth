@@ -1,0 +1,23 @@
+# NSDKViewDelegate
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKViewDelegate/
+
+NSDKViewDelegate
+
+---
+
+## Declaration
+
+protocol NSDKViewDelegate : ARSessionDelegate, PlaybackSessionDelegate
+
+---
+
+## Relationships
+
+conforms to:  PlaybackSessionDelegate 
+
+conforms to:  ARKit.ARSessionDelegate
+
+conforms to:  ARKit.ARSessionObserver
+
+conforms to:  ObjectiveC.NSObjectProtocol

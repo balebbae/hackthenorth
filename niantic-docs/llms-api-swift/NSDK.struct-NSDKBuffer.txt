@@ -1,0 +1,70 @@
+# NSDKBuffer
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-NSDKBuffer/
+
+NSDKBuffer
+
+---
+
+## Declaration
+
+struct NSDKBuffer
+
+## Summary
+
+A buffer containing binary data for NSDK operations.
+`NSDKBuffer` provides a safe wrapper around binary data buffers used by
+various NSDK features. It handles memory management and provides convenient
+access to buffer data.
+
+## Overview
+
+NSDK buffers are used for:
+
+- Image data transfer
+- Mesh data storage
+- Configuration data
+- Any binary data that needs to be passed between Swift and the native NSDK layer
+
+## Example Usage
+
+```swift
+// Create buffer from Swift Data
+let imageData = UIImage(named: "texture")?.pngData()
+let buffer = NSDKBuffer(data: imageData!)
+// Access buffer data
+print("Buffer size: \(buffer.dataSize) bytes")
+// Use buffer with NSDK APIs
+let status = someArdkFunction(buffer: buffer)
+```
+
+## Memory Management
+
+`NSDKBuffer` automatically manages memory allocation and deallocation.
+When created from Swift `Data`, it maintains a reference to prevent premature deallocation.
+
+---
+
+## Constructors
+
+### Constructor
+
+init(data: Data)
+
+---
+
+### Overload
+
+init(data: UnsafePointer<UInt8>, dataSize: UInt32)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let data | UnsafePointer<UInt8> | Pointer to the buffer's binary data.This provides direct access to the buffer's contents. The data remainsvalid as long as the `NSDKBuffer` instance exists. |
+| let dataSize | UInt32 | Size of the buffer data in bytes.This indicates the total number of bytes available in the buffer. |
+| let owner | ResourceOwner? | Resource owner for memory management.This ensures the buffer's memory is properly managed and deallocatedwhen the buffer is no longer needed. |
+
+---

@@ -1,0 +1,198 @@
+# Displaying Interpolated Depth
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/depth/interpolated_depth/
+
+In the previous tutorial, we learned how to display the **raw environment depth texture** from NSDK using Unity's AROcclusionManager. That setup visualized the latest depth frame exactly as it was produced, aligned to the viewport through a simple **display matrix.**
+
+In this tutorial, we extend that concept by enabling **depth warping** (also referred to as *interpolation*). This feature allows NSDK to *project* and *re-align* previously inferred depth images to the **current camera pose**, producing smoother and more temporally consistent results -- even when new depth frames aren't yet available.
+
+---
+
+## 1. Overview of Warping (Interpolation)
+
+When depth is inferred via NSDK's neural network, each depth image is tied to the **camera pose** from the frame it was generated for. As the camera moves, NSDK can reproject that depth image forward in time to better match the current view.
+
+> **Info:**
+>
+> In the previous tutorial, the transformation was purely **affine** (used `CameraMath.CalculateDisplayMatrix`).
+> In this tutorial, it becomes **projective** -- meaning the transformation includes distance-based warping caused by changes in camera position and orientation.
+
+---
+
+## 2. Adding the NSDK Occlusion Extension
+
+Unlike Unity's built-in AROcclusionManager, the **NsdkOcclusionExtension** component exposes NSDK-specific depth functionality, including interpolation.
+
+1. Select your **AR Camera** in the Unity scene.
+2. Add the **NsdkOcclusionExtension** component.
+3. Default settings are usually fine.
+   - To *visualize interpolation more clearly*, try setting your **target frame rate** to **1 FPS**. This slows the updates to inference, letting you see how warping adjusts the depth between frames.
+
+---
+
+## 3. Modified Script
+
+### FitDepth.cs
+
+This version of the FitDepth component is very similar to the previous one -- the key difference is that it uses the **NsdkOcclusionExtension** instead of the **AROcclusionManager**, and applies a combined **display + interpolation matrix.**
+
+```csharp
+using NianticSpatial.NSDK.AR.Occlusion;
+using UnityEngine.UI;
+
+namespace UnityEngine.XR.ARFoundation.Samples
+{
+    /// <summary>
+    /// This component overlays the environment depth texture to the full screen viewport (interpolated).
+    /// </summary>
+    public class FitDepth : MonoBehaviour
+    {
+        [SerializeField]
+        private NsdkOcclusionExtension _occlusionExtension;
+
+        [SerializeField]
+        private Material _displayMaterial;
+
+        [SerializeField]
+        private RawImage _rawImage;
+
+        private static readonly int s_displayMatrixId = Shader.PropertyToID("_DisplayMatrix");
+
+        private void Awake()
+        {
+            Debug.Assert(_rawImage != null, "no raw image");
+
+            // Assign the display material to the RawImage
+            _rawImage.material = _displayMaterial;
+            _rawImage.material.SetMatrix(s_displayMatrixId, Matrix4x4.identity);
+        }
+
+        private void Update()
+        {
+            // Get the latest depth texture
+            var environmentDepthTexture = _occlusionExtension.DepthTexture;
+            if (environmentDepthTexture == null)
+                return;
+
+            // This transformation combines both the display and interpolation matrices.
+            var imageTransform = _occlusionExtension.DepthTransform;
+
+            // Assign and update
+            _rawImage.texture = environmentDepthTexture;
+            _rawImage.material.SetMatrix(s_displayMatrixId, imageTransform);
+        }
+    }
+}
+```
+
+> **Info:**
+>
+> **Key difference from the previous version:**
+> Instead of computing the display matrix manually with `CameraMath.CalculateDisplayMatrix`, this version retrieves a **combined projective transform** (DepthTransform) directly from **NsdkOcclusionExtension**.
+
+---
+
+## 4. Modified Shader
+
+### DepthFit
+
+The shader logic remains mostly the same as before, with one crucial change:
+Because the new _DisplayMatrix now includes a **projective transformation**, the UV coordinates must be divided by z to correctly convert from homogeneous space back to 2D texture space.
+
+```
+Shader "Unlit/DepthFit"
+{
+    Properties
+    {
+        _MainTex ("Texture", 2D) = "white" {}
+    }
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 100
+
+        Pass
+        {
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "UnityCG.cginc"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float3 uv : TEXCOORD0;
+                float4 vertex : SV_POSITION;
+            };
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+
+            // Combined display + interpolation transform
+            float4x4 _DisplayMatrix;
+
+            // Convert HSV to RGB
+            half4 HSVtoRGB(half3 arg1)
+            {
+                half4 K = half4(1.0h, 2.0h / 3.0h, 1.0h / 3.0h, 3.0h);
+                half3 P = abs(frac(arg1.xxx + K.xyz) * 6.0h - K.www);
+                half3 rgb = arg1.z * lerp(K.xxx, saturate(P - K.xxx), arg1.y);
+                return half4(rgb, 1.0h);
+            }
+
+            v2f vert (appdata v)
+            {
+                v2f o;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+
+                // Apply projective transformation to UVs
+                o.uv = mul(_DisplayMatrix, float4(v.uv, 1.0f, 1.0f)).xyz;
+                return o;
+            }
+
+            fixed4 frag (v2f i) : SV_Target
+            {
+                // Convert from homogeneous coordinates to screen-space UVs
+                float2 uv = float2(i.uv.x / i.uv.z, i.uv.y / i.uv.z);
+
+                // Sample the metric depth texture
+                fixed depth = tex2D(_MainTex, uv).r;
+
+                // Map depth range to color
+                const float minDistance = 0;
+                const float maxDistance = 8;
+                half lerpFactor = (depth - minDistance) / (maxDistance - minDistance);
+                half hue = lerp(0.70h, -0.15h, saturate(lerpFactor));
+                if (hue < 0.0h) hue += 1.0h;
+
+                half3 hsv = half3(hue, 0.9h, 0.6h);
+                return HSVtoRGB(hsv);
+            }
+            ENDCG
+        }
+    }
+}
+```
+
+---
+
+## 5. How it Works
+
+- The NsdkOcclusionExtension provides:
+  - DepthTexture: the latest available depth frame.-
+  - DepthTransform: a combined **display + interpolation matrix** that handles both screen alignment and motion-based reprojection.
+  - The **shader** applies this transform per-vertex to reproject UVs based on the current camera pose.
+  - During fragment shading, the **division by z** converts from homogeneous coordinates to normalized UVs -- this step is essential because interpolation introduces projective distortion.
+  - The **resulting image** "warps" to stay visually consistent with the camera's perspective, even if the depth data was inferred from a slightly earlier frame.
+
+---
+
+## 6. Result
+
+When you press Play, you'll see the environment depth overlaid on the screen -- but this time, it stays spatially aligned with the world even as the camera moves between frames. Lowering the frame rate (e.g., to 1 FPS) makes the interpolation effect especially visible: the depth map "warps" smoothly to follow the camera, even when a new inference hasn't yet been produced.

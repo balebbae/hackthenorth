@@ -1,0 +1,29 @@
+# SaveInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.struct-SaveInfo/
+
+SaveInfo
+Information about a save operation for a scan.
+
+---
+
+## Declaration
+
+struct SaveInfo
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let path | String | The path to the saved scan. |
+| let scanId | String | The unique identifier of the scan. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

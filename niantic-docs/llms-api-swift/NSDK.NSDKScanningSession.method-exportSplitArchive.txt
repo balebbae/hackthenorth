@@ -1,0 +1,44 @@
+# exportSplitArchive
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-exportSplitArchive/
+
+exportSplitArchive
+
+---
+
+## Declaration
+
+func exportSplitArchive(metadata: [String : Any]? = nil, maxFramesPerArchive: Int, exportAsVideo: Bool = true, exportResolution: ExportResolution = .high) throws -> [String]?
+
+#### Summary
+
+Exports the scan data as multiple archive files.
+This method processes the saved scan data and exports it to multiple archive files
+based on the maxFramesPerArchive parameter. Each archive will contain at most
+maxFramesPerArchive frames.
+
+#### Returns
+
+An array of paths to the archive files, if the export was successful, nil if otherwise.
+    Export failure indicates something was wrong with the saved scan.
+
+#### Throws
+
+  - NSDKError.invalidOperation if the scanning session did not have a saved scan to export.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: This function is blocking and may take a while to execute. See
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| metadata | [String : ]? | Metadata dictionary to include with the export. Can be left empty. |
+| maxFramesPerArchive | Int | Maximum number of frames per archive file. |
+| exportAsVideo | Bool | If true, the RGB frames in the scan will be exported as an .mp4 video. If false, they will be individual image files. |
+| exportResolution | ExportResolution | - |
+
+---

@@ -1,0 +1,99 @@
+# AssetPipelineJobStatus
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-AssetPipelineJobStatus/
+
+AssetPipelineJobStatus
+
+---
+
+## Declaration
+
+enum AssetPipelineJobStatus
+
+## Summary
+
+Asset pipeline job status.
+Maps to proto enum AssetPipelineJobStatus.
+
+---
+
+## Constructors
+
+### Constructor
+
+init(fromC cValue: ARDK_SitesManager_AssetPipelineJobStatus)
+
+---
+
+### Overload
+
+init?(rawValue: Int)
+
+#### Summary
+
+Creates a new instance with the specified raw value.
+If there is no value of the type that corresponds with the specified raw
+value, this initializer returns nil. For example:
+    enum PaperSize: String {
+        case A4, A5, Letter, Legal
+    }
+    print(PaperSize(rawValue: "Legal"))
+    // Prints "Optional(PaperSize.Legal)"
+    print(PaperSize(rawValue: "Tabloid"))
+    // Prints "nil"
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case failed | failed | - |
+| case notFound | notFound | - |
+| case pending | pending | - |
+| case ready | ready | - |
+| case running | running | - |
+| case succeeded | succeeded | - |
+| case unknown | unknown | - |
+| case unspecified | unspecified | - |
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| var hashValue | Int | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| hash | void | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.RawRepresentable 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

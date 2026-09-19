@@ -1,0 +1,24 @@
+# setCallbackLogLevel
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-setCallbackLogLevel/
+
+setCallbackLogLevel
+Sets the log level for callback logging.
+
+---
+
+## Declaration
+
+func setCallbackLogLevel(logLevel: NSDKLogLevel)
+
+#### Summary
+
+Sets the log level for callback logging.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| logLevel | NSDKLogLevel | The desired log level for callback logging |
+
+---

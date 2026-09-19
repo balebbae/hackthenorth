@@ -1,0 +1,25 @@
+# affineScaling
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineScaling/
+
+affineScaling
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine scaling.
+
+---
+
+## Declaration
+
+static func affineScaling(sx: Float, sy: Float) -> CGAffineTransform
+
+#### Summary
+
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine scaling.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| sx | Float | - |
+| sy | Float | - |
+
+---

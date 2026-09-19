@@ -1,0 +1,494 @@
+# How to Create a Device Map
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/vps/adding_device_mapping/
+
+> **Caution:**
+>
+> **Attention!**
+>
+> This feature is experimental and may not work as expected. For more information about it, see the [Device Mapping Feature page](https://www.nianticspatial.com/docs/nsdk/features/device_mapping/).
+
+### Platform: unity
+
+Before you can use a device map in your AR application, you will need to create and save it. In this tutorial, we will go over how to create and save a device map in your Unity project, as well as some tips for how to get the most out of device mapping.
+
+## Prerequisites
+
+You will need a Unity project with NSDK installed and a basic AR scene. For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity) and [Set up a basic AR scene](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-a-basic-ar-scene).
+
+## Creating a Device Map
+
+To create and store a device map:
+
+1. In the **Hierarchy**, select the **XROrigin**, then, in the **Inspector**, click **Add Component** and add an `ARDeviceMappingManager`.
+2. In the **Hierarchy**, right-click the root of your AR scene, then select **Create Empty**. Name the new object `DeviceMappingDemo`.
+3. Select `DeviceMappingDemo` from the **Hierarchy**, then, in the **Inspector**, click **Add Component**. Search for and add a **New Script** to it, then name it `Mapper.cs`.
+4. Open `Mapper.cs` and replace its contents with the following snippet:
+
+```cs
+using System;
+using System.Collections;
+using System.IO;
+using NianticSpatial.NSDK.AR.Mapping;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Mapper : MonoBehaviour
+  {
+
+  }
+```
+
+5. Add UI elements for the mapper:
+   1. Right-click in the **Hierarchy**, then open the **Create** menu and select **Button** from the **UI** sub-menu. This will create a **Canvas** element and add the button to it.
+6. Add this snippet to the `Mapper` class to map for ten seconds when the button is pressed:
+
+   ```cs
+   [SerializeField]
+   private ARDeviceMappingManager _deviceMappingManager;
+
+   [SerializeField]
+   private Button _startMappingButton;
+
+   private void Start()
+   {
+       _startMappingButton.onClick.AddListener(OnStartMappingClicked);
+   }
+
+   // Set this function to be called when button is clicked
+   public void OnStartMappingClicked()
+   {
+       StartCoroutine(RunMapping());
+   }
+
+   private IEnumerator RunMapping()
+   {
+       // disable the button after clicking so that only one map is made at a time
+       _startMappingButton.gameObject.SetActive(false);
+       _deviceMappingManager.StartMapping();
+       // change this value to map for more or less time
+       yield return new WaitForSeconds(10.0f);
+       _deviceMappingManager.StopMapping();
+       _startMappingButton.gameObject.SetActive(true);
+   }
+   ```
+
+> **Note:**
+>
+> Ten seconds is enough time to map a small area, such as a desk or couch. If you are mapping a larger area, increase the mapping time to compensate.
+
+7. After the UI code, add an event listener for `ARDeviceMappingManager.MapFinalized` so that we know when to save the map. Use `ARDeviceMappingManager.TryGetMapData` to get entire Device Map generated since start mapping. The byte array passed in `MapFinalized` event only has partial updates since last map update event :
+
+   ```cs
+   private const string MapFileName = "SerializedDeviceMapData";
+
+   private void Start()
+   {
+       // Add this below the previous section's code in Start()
+       _deviceMappingManager.MapFinalized += OnDeviceMapFinalized;
+       _startMappingButton.onClick.AddListener(OnStartMappingClicked);
+   }
+
+   private void OnDeviceMapFinalized(byte[] mapData)
+   {
+       if (_deviceMappingManager.TryGetMapData(out var entireMapData))
+       {
+           var path = Path.Combine(Application.persistentDataPath, MapFileName);
+           File.WriteAllBytes(path, entireMapData);
+           Debug.Log($"Map saved");
+       }
+       else
+       {
+           Debug.LogError("Map was empty");
+       }
+   }
+   ```
+
+> **Note:**
+>
+> A final device map will be generated after `StopMapping()` is called, but it will not be available until the `MapFinalized` event is invoked. Make sure to **wait for the finalized event** after the button is pressed!
+
+## Optional: Show the Mesh While Mapping
+
+By default, `ARDeviceMappingManager` does not provide any visual feedback while mapping an area. By adding meshing to your project, you can visualize your map's coverage and get a sense of where you still need to cover. The mesh cannot exactly show where the device map was generated or its localizability, but it can provide a general idea of the map's area. To learn about how to add meshing to your NSDK project, see [Creating a Mesh](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/adding_meshing/).
+
+> **Note:**
+>
+> **For Unity iOS builds**, NSDK is configured to convert the MSL altitude provided by Unity to WGS84. This conversion requires a one-time download. The first time that device mapping runs on iOS, the device must have an **active internet connection** and will experience a brief delay while the 20 MB model file downloads.
+
+## Complete Device Mapping Script
+
+If you are having trouble with your mapping script, compare it to the finished product here!
+
+#### Click here to reveal the final Mapper.cs script
+
+```cs
+using System;
+using System.Collections;
+using System.IO;
+using NianticSpatial.NSDK.AR.Mapping;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Mapper : MonoBehaviour
+{
+  public const string MapFileName = "SerializedDeviceMapData";
+
+  [SerializeField]
+  private ARDeviceMappingManager _deviceMappingManager;
+
+  [SerializeField]
+  private Button _startMappingButton;
+
+  private void Start()
+  {
+      _deviceMappingManager.MapFinalized += OnDeviceMapFinalized;
+      _startMappingButton.onClick.AddListener(OnStartMappingClicked);
+  }
+
+  private void OnDeviceMapFinalized(byte[] mapData)
+  {
+    if (_deviceMappingManager.TryGetMapData(out var entireMapData))
+    {
+        var path = Path.Combine(Application.persistentDataPath, MapFileName);
+        File.WriteAllBytes(path, entireMapData);
+        Debug.Log($"Map saved");
+    }
+    else
+    {
+        Debug.LogError("Map was empty");
+    }
+  }
+
+  // Set this function to be called when button is clicked
+  public void OnStartMappingClicked()
+  {
+      StartCoroutine(RunMapping());
+  }
+
+  private IEnumerator RunMapping()
+  {
+      _startMappingButton.gameObject.SetActive(false);
+      _deviceMappingManager.StartMapping();
+      yield return new WaitForSeconds(10.0f);
+      _deviceMappingManager.StopMapping();
+      _startMappingButton.gameObject.SetActive(true);
+  }
+
+}
+```
+
+### Platform: swift
+
+The `NSDKDeviceMappingSession` enables you to locally create maps for VPS localization. When those maps are loaded with `NSDKMapStorage`, localization and anchors can be managed with a `NSDKVps2Session`, via the same APIs used to interact with a map created on Niantic Spatial's servers.
+
+### Prerequisites
+
+You will need a Swift project with NSDK installed and a basic AR scene. For more information, see [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+### Setting Up the Sessions
+
+Create the `NSDKDeviceMappingSession` and `NSDKMapStorage` from an existing `NSDKSession` instance:
+
+```swift
+let mappingSession = nsdkSession.acquireDeviceMappingSession()
+let mapStorage = nsdkSession.acquireMapStorage()
+```
+
+### Starting and Stopping Device Mapping
+
+The device mapping lifecycle has two levels:
+
+1. **`start()` / `stop()`** -- Initializes and tears down native resources (including model downloads). No map data is produced at this level.
+2. **`startMapping()` / `stopMapping()`** -- Controls the actual map construction within a started session.
+
+```swift
+// Initialize native resources
+mappingSession.start()
+
+// Begin building the map
+mappingSession.startMapping()
+
+// ... user scans the environment ...
+
+// Stop map construction
+mappingSession.stopMapping()
+
+// Release native resources
+mappingSession.stop()
+```
+
+After stopping, you can reconfigure and restart the session.
+
+### Checking Mapping Progress
+
+The time it takes to construct a valid map varies depending on the environment and the device's processing power. Use the `mappingSession.$latestMapUpdate` publisher to receive incremental map data as it is produced:
+
+```swift
+mappingSession.$latestMapUpdate
+    .compactMap { $0 }
+    .receive(on: DispatchQueue.main)
+    .sink { [weak self] buffer in
+        // `buffer` contains additional map data since the last update
+    }
+    .store(in: &cancellables)
+```
+
+Once a map is valid, you can create a root anchor at its origin. Check this after receiving map updates:
+
+```swift
+if let anchorPayload = mapStorage.createRootAnchor() {
+    // The map is valid -- save or continue to grow it
+}
+```
+
+Alternatively, you can poll for updates with `mapStorage.mapUpdate()` instead of using the publisher.
+
+### Saving the Map to Disk
+
+To persist the map, retrieve the complete serialized map data from storage and write it to a file. The `.map` extension is recommended by convention:
+
+```swift
+guard let buffer = mapStorage.mapData() else {
+    print("Failed to get map from storage")
+    return
+}
+
+let mapData = Data(bytes: buffer.data, count: buffer.dataSize)
+
+do {
+    let fileURL = documentsDirectory.appendingPathComponent("my_device_map.map")
+    try mapData.write(to: fileURL)
+    print("Map saved to \(fileURL)")
+} catch {
+    print("Failed to save map: \(error)")
+}
+```
+
+> **Note:**
+>
+> `mapStorage.mapData()` can block the calling thread. Call it off the main thread to avoid interrupting the AR session.
+
+### Optional: Customizing the Configuration
+
+You can customize the mapping session before calling `start()` using `NsdkDeviceMappingSession.Configuration`:
+
+```swift
+var config = NsdkDeviceMappingSession.Configuration()
+config.mapperFrameRate = 15  // Target FPS for map processing (0 = automatic)
+
+try mappingSession.configure(with: config)
+mappingSession.start()
+```
+
+Configuration must be applied while the session is stopped.
+
+### Optional: Visualizing the Point Cloud
+
+When mapping larger areas, it can be useful to visualize the growing map's coverage. Once a root anchor has been obtained, `mapStorage.extractMapMetadata(anchorPayload:map:)` can be used to obtain the map's feature points.
+
+Pass the incremental buffer from `mappingSession.$latestMapUpdate` or the complete map from `mapStorage.mapData()`:
+
+```swift
+do {
+    let mapMetadata = try mapStorage.extractMapMetadata(
+        anchorPayload: rootAnchorPayload, map: buffer)
+    guard let metadata = mapMetadata else {
+        print("Failed to extract map metadata.")
+        return
+    }
+    // Visualize points described in metadata.points
+} catch {
+    print("Failed to extract map metadata: \(error)")
+}
+```
+
+Feature points are extracted relative to the pose of the anchor passed in for the `anchorPayload` argument. To render the points on screen, you must first track the pose of that anchor using a VPS2 session. See the guide [Localizing and Tracking anchors with VPS](https://www.nianticspatial.com/docs/nsdk/how-to/vps/tracking_anchors_swift/#tracking-existing-anchors) for how to do that.
+
+Then get the location of feature points relative to that anchor:
+
+```swift
+let points = metadata.points
+for i in stride(from: 0, to: points.count - 2, by: 3) {
+    let center = SIMD3<Float>(points[i], points[i + 1], points[i + 2])
+    // Position a point cloud entity at `center`
+}
+```
+
+> **Note:**
+>
+> Point cloud visualization requires a VPS2 session to track the anchor pose. Mapping itself does not require VPS2.
+
+### Sharing the Map
+
+Serialized map data can be saved for use on the local device, or shared with other devices. To load a previously saved map into a fresh session:
+
+```swift
+do {
+    let mapData = try Data(contentsOf: mapFileURL)
+    let mapBuffer = NSDKBuffer(data: mapData)
+    try mapStorage.addMap(map: mapBuffer)
+} catch {
+    print("Failed to add map to storage: \(error)")
+}
+```
+
+Once a device map has been added to storage, the `NSDKVps2Session` APIs can be used to create and track anchors to the map.
+
+> **Caution:**
+>
+> `addMap()` **appends** to existing storage. If you want to replace the current map, call `mapStorage.clear()` before `addMap()`. Do **not** call `clear()` while VPS is running -- stop the VPS2 session first.
+
+### Platform: kotlin
+
+The `DeviceMappingSession` enables you to locally create maps for VPS localization. When those maps are loaded with `MappingStorageSession`, localization and anchors can be managed with a `Vps2Session`, via the same APIs used to interact with a map created on Niantic Spatial's servers.
+
+### Prerequisites
+
+You will need a Kotlin project with NSDK installed and a basic AR scene. For more information, see [Set up the NSDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-kotlin).
+
+### Setting Up the Sessions
+
+Create the `DeviceMappingSession` and `MappingStorageSession` from an existing `NSDKSession` instance:
+
+```kotlin
+val mappingSession = nsdkSession.mapping.acquire()
+val mapStoreSession = nsdkSession.mapStore.acquire()
+```
+
+### Starting and Stopping Device Mapping
+
+The device mapping lifecycle has two levels:
+
+1. **`start()` / `close()`** -- Initializes and tears down native resources (including model downloads). No map data is produced at this level.
+2. **`startCreating()` / `stopCreating()`** -- Controls the actual map construction within a started session.
+
+```kotlin
+// Initialize native resources
+mappingSession.start()
+
+// Begin building the map
+mappingSession.startCreating()
+
+// ... user scans the environment ...
+
+// Stop map construction
+mappingSession.stopCreating()
+
+// Release native resources when completely done
+mappingSession.stop()
+mappingSession.close()
+```
+
+After stopping, you can reconfigure and restart the session.
+
+### Checking Mapping Progress
+
+The time it takes to construct a valid map varies depending on the environment and the device's processing power. Use `mapStoreSession.mapUpdates` to collect incremental map data as it is produced:
+
+```kotlin
+coroutineScope.launch {
+    mapStoreSession.mapUpdates.collect { mapUpdate ->
+        if (mapUpdate == null) return@collect
+        // `mapUpdate` is a ByteArray containing additional map data since the last update
+    }
+}
+```
+
+Once a map is valid, you can create a root anchor at its origin. Check this after receiving map updates:
+
+```kotlin
+val rootAnchorPayload = mapStoreSession.createRootAnchor()
+if (rootAnchorPayload != null) {
+    // The map is valid -- save or continue to grow it
+}
+```
+
+Alternatively, you can retrieve the complete map at any time with `mapStoreSession.getData()`.
+
+### Saving the Map to Disk
+
+To persist the map, retrieve the complete serialized map data from storage and write it to a file. The `.map` extension is recommended by convention:
+
+```kotlin
+val mapData = mapStoreSession.getData()
+if (mapData == null) {
+    Log.e("DeviceMapping", "Map has no data")
+    return
+}
+
+val file = File(context.filesDir, "my_device_map.map")
+FileOutputStream(file).use { output ->
+    output.write(mapData)
+}
+Log.i("DeviceMapping", "Map saved to ${file.absolutePath}")
+```
+
+### Optional: Customizing the Configuration
+
+You can customize the mapping session before calling `start()` using `DeviceMappingConfig`:
+
+```kotlin
+val config = DeviceMappingConfig(
+    slickMapperFrameRate = 15  // Target FPS for map processing (0 = automatic)
+)
+mappingSession.configure(config)
+mappingSession.start()
+```
+
+Configuration must be applied while the session is stopped.
+
+### Optional: Visualizing the Point Cloud
+
+When mapping larger areas, it can be useful to visualize the growing map's coverage. Once a root anchor has been obtained, `mapStoreSession.extractMetadata()` can be used to obtain the map's feature points.
+
+Pass the incremental buffer from `mapStoreSession.mapUpdates` or the complete map from `mapStoreSession.getData()`:
+
+```kotlin
+val metadata: MapMetadata? = mapStoreSession.extractMetadata(rootAnchorPayload, mapData)
+if (metadata != null) {
+    val points = metadata.points       // FloatArray of [x, y, z, x, y, z, ...]
+    val count = metadata.pointsCount   // number of points
+
+    for (i in 0 until count.toInt()) {
+        val x = points[i * 3]
+        val y = points[i * 3 + 1]
+        val z = points[i * 3 + 2]
+        // Position a point cloud element at (x, y, z)
+    }
+}
+```
+
+Feature points are extracted relative to the pose of the anchor passed in for the first argument. To render the points on screen, you must first track the pose of that anchor using a VPS2 session. See [How to Place Virtual Content Using a Device Map](https://www.nianticspatial.com/docs/nsdk/how-to/vps/using_device_maps/) for how to do that.
+
+> **Note:**
+>
+> Point cloud visualization requires a VPS2 session to track the anchor pose. Mapping itself does not require VPS2.
+
+### Sharing the Map
+
+Serialized map data can be saved for use on the local device, or shared with other devices. To load a previously saved map into a fresh session:
+
+```kotlin
+val mapData = File(context.filesDir, "my_device_map.map").readBytes()
+mapStoreSession.add(mapData)
+```
+
+Once a device map has been added to storage, the `Vps2Session` APIs can be used to create and track anchors to the map.
+
+> **Caution:**
+>
+> `add()` **appends** to existing storage. If you want to replace the current map, call `mapStoreSession.clear()` before `add()`. Do **not** call `clear()` while VPS is running -- stop the VPS2 session first.
+
+## Device Mapping Tips
+
+- Because device mapping relies on a single scan, localization and tracking accuracy depend heavily on how well you scan the area. If you remember one tip, let it be this: **if you are having localization issues, don't be afraid to re-scan!**
+- Lighting matters a lot when scanning an area. If the lighting during localization doesn't match the scan, you will need to re-scan. (This includes both outdoor and indoor lighting!)
+- For best results, follow these guidelines when scanning:
+  - Focus on distinctive objects in the area that are unlikely to move between scanning and localization, such as furniture, household fixtures, or statues.
+  - Avoid looking primarily at flat surfaces without color variation, such as the ground, grass, walls, and floors.
+  - Move around while scanning! The more viewpoints you see an object from, the better the map of it will be.
+
+## Next Steps
+
+Once you have created and saved a device map, move on to [How to Place Real-World Content Using a Device Map](https://www.nianticspatial.com/docs/nsdk/how-to/vps/using_device_maps/).

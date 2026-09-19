@@ -1,0 +1,35 @@
+# union
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.SceneSegmentationChannels.method-union/
+
+union
+
+---
+
+## Declaration
+
+func union(_ other: Self) -> Self
+
+#### Summary
+
+Returns a new option set of the elements contained in this set, in the
+given set, or in both.
+This example uses the union(_:) method to add two more shipping options
+to the default set.
+    let defaultShipping = ShippingOptions.standard
+    let memberShipping = defaultShipping.union([.secondDay, .priority])
+    print(memberShipping.contains(.priority))
+    // Prints "true"
+
+#### Returns
+
+A new option set made up of the elements contained in this
+  set, in other, or in both.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | An option set. |
+
+---

@@ -1,0 +1,163 @@
+# NSDK
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK/
+
+NSDK
+
+---
+
+## Type Aliases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| NetworkRequestId = ARDK_NetworkRequestId | ARDK_NetworkRequestId | - |
+| NSDKCameraExtrinsics = simd_float4x4 | simd_float4x4 | - |
+| NSDKCameraIntrinsics = NSDKFrameData.CameraIntrinsics | NSDKFrameData.CameraIntrinsics | - |
+| NSDKHandle = ARDK_Handle | ARDK_Handle | A type alias for the native NSDK handle used to interface with the underlying C API. |
+| NsdkSessionDataSource = NSDKSessionDataSource | NSDKSessionDataSource | Type alias for API compatibility. |
+| NSDKVpsAnchorId = String | String | - |
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AssetResult | AssetResult | Contains all the `AssetInfo` objects returned by a query to the Sites Manager service. |
+| AwarenessImageResult | AwarenessImageResult | Image-based awareness result containing an NSDKImage. |
+| AwarenessResult | AwarenessResult | Base class for awarness results such as depth and segmentation.Provides common properties like frame ID, timestamp, camera pose, and intrinsics. |
+| BundlePlaybackDatasetLoader | BundlePlaybackDatasetLoader | A loader that retrieves playback dataset data from the app bundle.This is the default implementation for loading datasets from `Bundle.main`.Frame images and depth data are loaded on-demand when requested. |
+| DataResourceOwner | DataResourceOwner | - |
+| final DefaultSessionDataSource | DefaultSessionDataSource | Default iOS implementation of `NSDKSessionDataSource` backed by`ARSession` and `CLLocationManager`. |
+| DepthResult | DepthResult | Contains depth estimation results from the NSDK depth processing system. |
+| MeshData | MeshData | Contains 3D mesh data for rendering and visualization.`MeshData` provides access to 3D mesh geometry including vertices, indices,normals, and texture coordinates. |
+| final MeshDownloaderResults | MeshDownloaderResults | Contains the downloaded mesh geometry data for a VPS location.This object holds an array of mesh results, where each result includes mesh geometry,texture data (if requested), and the transform matrix that positions the mesh in world space. |
+| final NSDKCamera | NSDKCamera | Single camera API for both modes. Holds either **ARCamera** (live) or **PlaybackCamera** (playback)and exposes transform, viewMatrix, projectionMatrix, viewportRect, etc.Relation to Apple AR: **Wraps** Apple's ARCamera in live mode; wraps our PlaybackCamera in playback.Callers use NSDKCamera and don't branch. Create via `NSDKCamera(arCamera:)` or `NSDKCamera(playbackCamera:)`. |
+| final NSDKDepthSession | NSDKDepthSession | Depth feature session for NSDK with Combine publisher support.Upon starting the depth session, NSDK will begin processing AR frames to generate depth data.The latest depth data can be retrieved using `latestDepth()`, and `latestImageParams()`provides information to synchronize the depth image with camera frame.`$result` is refreshed automatically each frame by `NSDKSession.update()` while the sessionis active. Subscribe to it with Combine: |
+| final NSDKDeviceMappingSession | NSDKDeviceMappingSession | A session for creating VPS maps from AR data on the local device, with Combine publisher support.The device mapping feature provides capabilities for locally building persistent maps thatcan be used for Visual Positioning System (VPS) localization. These maps capture the visualfeatures and spatial structure of an environment.`$latestMapUpdate` is refreshed automatically each frame by `NSDKSession.update()` while thesession is active. Subscribe to it with Combine: |
+| final NSDKMapStorage | NSDKMapStorage | A storage system for managing device-generated maps.The map storage feature provides capabilities for capturing, storing, and managingmap data from AR sessions. This data can be persisted and used for Visual PositioningSystem (VPS) localization and map updates. |
+| final NSDKMeshDownloader | NSDKMeshDownloader | A session-scoped utility for downloading mesh geometry associated with VPS locations. |
+| final NSDKMeshingSession | NSDKMeshingSession | A session for real-time 3D mesh generation from AR camera frames, with Combine publisher support.The meshing feature provides capabilities for processing AR session data and generatinga triangle mesh representation of the physical environment in real-time. The mesh isdivided into chunks that are individually tracked as they are inserted, updated, or removed.`meshUpdates` emits each frame a non-empty batch of chunk changes is available, driven by`NSDKSession.update()` while the session is active. Subscribe to it with Combine: |
+| final NSDKRecordingExporter | NSDKRecordingExporter | A session for exporting scan recordings to various formats.`NSDKRecordingExporter` provides capabilities for converting saved scan datainto recorderV2 format for use in Unity Playback or activating VPS. |
+| final NSDKScanningSession | NSDKScanningSession | A session for 3D scanning and visualization with Combine publisher support.The scanning feature provides capabilities for capturing, processing, and exporting3D scan data from AR sessions. Scans of a location can be processed by the VisualPositioning System's (VPS's) cloud services to enable VPS localization. |
+| final NSDKSceneSegmentationSession | NSDKSceneSegmentationSession | A session for semantic segmentation and environmental understanding with Combine publisher support.`NSDKSceneSegmentationSession` provides capabilities for understanding the semantic structureof the environment by classifying pixels into different object categories. This enablesapplications to make intelligent decisions based on environmental context. |
+| final NSDKSession | NSDKSession | The main entry point for the NSDK (Native SDK) framework.`NSDKSession` provides the core functionality for AR applications, managing the lifecycleof NSDK features and serving as a factory for specialized sessions like VPS2, scanning, and mapping.This class handles frame data processing, configuration management, and resource cleanup. |
+| final NSDKSitesSession | NSDKSitesSession | - |
+| @MainActor NSDKView | NSDKView | Single view for both live and playback. Subclasses **ARView**; holds either an **ARSession** (live)or **PlaybackSession** (playback) and exposes `sessionMode`, `getCamera()`, `setDelegate()`, `setup()`.Relation to Apple AR: **Uses** ARView; assigns either Apple's ARSession or our PlaybackSession to`self.session` so the view always has a "session." The app talks to NSDKView so it doesn't have tobranch on live vs. playback for view, projection, viewport, or delegate callbacks. |
+| final NSDKVps2Session | NSDKVps2Session | A session for VPS2 (Visual Positioning System) localization with Combine publisher support.`NSDKVps2Session` provides capabilities for localizing the device in the real world usingVPS maps, universal localization, and anchor tracking. Anchors can be created at specificposes and tracked across sessions using payloads. |
+| OrganizationResult | OrganizationResult | Contains all the `OrganizationInfo` objects returned by a query to the Sites Manager service. |
+| @MainActor PlaybackBackgroundRenderer | PlaybackBackgroundRenderer | - |
+| final PlaybackCamera | PlaybackCamera | Camera representation built from frame **metadata** (pose4x4, intrinsics, resolution). Exposes the sameconcepts as **ARCamera**: transform, viewMatrix, projectionMatrix, viewportRect, displayOrientedTransform.Relation to Apple AR: **Stands in for** ARCamera during playback. No Apple camera; we synthesizeview/projection from recorded intrinsics and pose. Use `PlaybackFrame.camera` to obtain an instance. |
+| PlaybackDataset | PlaybackDataset | A dataset loaded from a capture JSON file containing frame metadata.This class uses on-demand loading for frame images and depth data.Only the currently requested frame is loaded into memory, reducing memory pressurefor large datasets. |
+| PlaybackDatasetLoader | PlaybackDatasetLoader | Base class for loading playback dataset data from various sources.This class provides a base implementation that must be subclassed. Subclasses must override`loadCaptureJSON()`, `loadImage(imageName:)`, `loadDepthData(depthFileName:)`, and`loadDepthConfidence(confidenceFileName:)` to provide concrete implementations.The loader uses on-demand loading - only the capture JSON is loaded upfront, and frameimages/depth data are loaded when requested by `PlaybackDataset`. |
+| @MainActor PlaybackRenderer | PlaybackRenderer | Renders each playback frame: (1) draws the recorded camera image as the background, (2) **moves theRealityKit camera** (pose + FOV) to match the playback frame. **PlaybackSession** holds an optionalreference and calls `renderFrame(_:)` on the main queue for every new frame.Relation to Apple AR: **Manipulates** RealityKit--sets `arView.environment.background = .color(.clear)`,adds a **PerspectiveCamera** and **AnchorEntity**, and updates their transform and `fieldOfViewInDegrees`every frame from PlaybackCamera. In playback, ARView's default camera is off; we drive the virtual camera. |
+| PlaybackSession | PlaybackSession | Drives playback. **Subclasses ARSession** so it can be assigned to `ARView.session` and the app can usethe same delegate pattern. Runs a loop on a background queue, builds **PlaybackFrame** per frame fromthe PlaybackDataset, dispatches to the main queue, and notifies the delegate and **PlaybackRenderer**.Relation to Apple AR: **Replaces** the behavior of ARSession (no real device frames); API-compatible soARView and delegate code don't need to know it's playback. |
+| final PlaybackSessionDataSource | PlaybackSessionDataSource | - |
+| RaycastBuffer | RaycastBuffer | A read-only container for the raycast buffer information generated during scanning. |
+| SceneSegmentationResult | SceneSegmentationResult | Contains semantic segmentation results from the NSDK scene segmentation processing system.`SceneSegmentationResult` provides semantic understanding of the environment by classifyingpixels in camera images into different object categories (e.g., sky, ground, buildings,people, vehicles). This enables applications to understand the scene structure andmake intelligent decisions based on environmental context. |
+| SiteAssetsResult | SiteAssetsResult | Contains the `SiteAssetsInfo` objects returned by a location-based sites query. |
+| SiteResult | SiteResult | Contains all the `SiteInfo` objects returned by a query to the Sites Manager service. |
+| SitesResult | SitesResult | Base class for results returned by queries to the Sites Manager service. |
+| UserResult | UserResult | Contains the user information returned by a query to the Sites Manager service. |
+| VoxelBuffer | VoxelBuffer | A read-only container for the voxel buffer information generated during scanning. |
+| final Vps2Heading | Vps2Heading | A `CLHeading` subclass representing heading data computed by VPS2.VPS2 derives heading from visual-inertial localization rather than a physical magnetometer,so the raw magnetometer component values (`x`, `y`, `z`) are zero and not meaningful. |
+| final Vps2Location | Vps2Location | A `CLLocation` subclass representing a position computed by VPS2.MSL altitude is not available from VPS2 without a geoid model conversion, so `altitude`always returns `-1`. Use `ellipsoidalAltitude` for the WGS84 height computed by VPS2, and`verticalAccuracy` (>= 0) for its precision. |
+
+---
+
+## Protocols
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| NSDKFeatureSession | NSDKFeatureSession | A protocol that defines the common lifecycle and configuration interface for NSDK feature sessions. |
+| NSDKLogCallback : AnyObject | AnyObject | Protocol for receiving log messages from NSDK.Implement this protocol to receive NSDK log messages in your application.The callback will be invoked on background threads, so ensure your implementationis thread-safe. |
+| NSDKSessionDataSource : AnyObject | AnyObject | Provides synchronous, pull-based access to the latest available sensor datarequired by `NSDKSession`.All methods must be non-blocking and thread-safe. Returned values representthe most recent samples already captured by the underlying services. |
+| NSDKViewDelegate : ARSessionDelegate, PlaybackSessionDelegate | ARSessionDelegate, PlaybackSessionDelegate | - |
+| PlaybackDatasetSource | PlaybackDatasetSource | Protocol for loading playback dataset data from various sources.This protocol abstracts data retrieval, allowing for different implementationssuch as bundle loading, file system loading, remote loading, or mock data for testing.Implementations are used for on-demand frame loading - the loader is passed to`PlaybackDataset` which calls these methods when frames are requested. |
+| PlaybackSessionDelegate : AnyObject | AnyObject | Delegate protocol for receiving frame updates during playback (mirrors ARSessionDelegate-style callbacks). |
+| ResourceOwner : AnyObject | AnyObject | - |
+| UIOrientationReporter : AnyObject | AnyObject | - |
+
+---
+
+## Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AreaTarget | AreaTarget | Contains a `CoverageArea` and its associated `LocalizationTarget`. |
+| AreaTargetResult | AreaTargetResult | - |
+| ARUtils | ARUtils | Utility functions for AR and device capability detection.`ARUtils` provides helper methods for detecting device capabilitiesand AR features that are relevant to NSDK functionality. |
+| AssetInfo | AssetInfo | Represents asset information from the Sites Manager service.Maps to proto messages AssetRecord, AssetData, and AssetComputedValues. |
+| AssetMeshData | AssetMeshData | Mesh-specific asset data.Maps to proto message AssetMeshData. |
+| AssetSplatData | AssetSplatData | Splat-specific asset data.Maps to proto message AssetSplatData. |
+| AssetVpsData | AssetVpsData | VPS-specific asset data.Maps to proto message AssetVpsData. |
+| AuthInfo | AuthInfo | Authentication information containing token claims.Contains parsed JWT claims including token string, expiration, user information, and other standard JWT fields. |
+| AwarenessImageParams | AwarenessImageParams | - |
+| CoverageArea | CoverageArea | Represents a geographic area where VPS localization is possible |
+| CoverageAreaResult | CoverageAreaResult | Contains all the `CoverageArea` objects returned by a query to the VPS Coverage service. |
+| GeolocationData | GeolocationData | Struct representing geolocation data including latitude, longitude, altitude,heading, and orientation. |
+| HintImageResult | HintImageResult | Image data returned by a query to a VPS hint image URL. |
+| ImageMath | ImageMath | Provides affine transformation utilities for image processing.All affine matrices returned by this class operate in **normalized coordinates**,where image space is mapped to the [0, 1] range in both axes with origin at top-left. |
+| LocalizationTarget | LocalizationTarget | Represents a real-world point of interest that is a VPS localization target.VPS localization is more likely to succeed when a localization target is in camera view. |
+| LocalizationTargetResult | LocalizationTargetResult | Contains all the `LocalizationTarget` objects returned by a query to the VPS Coverage service. |
+| MapMetadata | MapMetadata | Structure representing the metadata of a device map for visualization and processing. |
+| MeshDownloaderResult | MeshDownloaderResult | Represents a single mesh result with geometry, texture, and transform data. |
+| NSDKBuffer | NSDKBuffer | A buffer containing binary data for NSDK operations.`NSDKBuffer` provides a safe wrapper around binary data buffers used byvarious NSDK features. It handles memory management and provides convenientaccess to buffer data. |
+| NSDKFeatureStatus | NSDKFeatureStatus | Status flags for NSDK features indicating their current operational state.`NSDKFeatureStatus` is an option set that represents various status conditionsfor NSDK features like VPS2, scanning, and mapping. Multiple status flagscan be active simultaneously to provide detailed status information. |
+| NSDKFrameData | NSDKFrameData | A complete frame of data captured from an AR session.`NSDKFrameData` encapsulates all the sensor data, images, and tracking informationfrom a single AR frame. This includes camera images, depth data, device pose,GPS location, compass heading, and camera intrinsics. |
+| NSDKImage | NSDKImage | Provides a view into the data buffer of an image output by the NSDK.`NSDKImage` provides access to image data in various formats (RGB, grayscale,depth, etc.) used by NSDK features like depth processing, semantic segmentation,and image analysis. |
+| NSDKInputDataFlags | NSDKInputDataFlags | Flags indicating which types of input data are required by NSDK.`NSDKInputDataFlags` is an option set that specifies which data typesshould be included in frames sent to NSDK. Use `getRequestedDataInputs()`to determine which data is currently needed, then include only therequested data types in your frame data for optimal performance. |
+| NSDKPathConfig | NSDKPathConfig | - |
+| NSDKUtils | NSDKUtils | Utility functions for NSDK string management and memory handling.`NSDKUtils` provides helper methods for safely managing C string conversionsand memory allocation when working with the NSDK C API. |
+| OrganizationInfo | OrganizationInfo | Represents organization information from the Sites Manager service. |
+| PlaybackFrame | PlaybackFrame | One "frame" of playback: metadata (pose, intrinsics, orientation, etc.), optional camera image, optional depth.Exposes `.camera` -> **PlaybackCamera**. Created by PlaybackSession and delivered to the delegate and PlaybackRenderer.Relation to Apple AR: Not an Apple type. Delivered **instead of ARFrame** when in playback; the app getsframe-like data (image, camera, etc.) from the delegate so app code can stay uniform. |
+| SceneSegmentationChannels | SceneSegmentationChannels | A set of semantic channels represented as a bitmask, matching the C SDK packed-channel layout.Use this type wherever you need one or more semantic channels. It supports clean Swift syntax:Bit positions 0-4 correspond to the C SDK channels: Sky=0, Ground=1, NaturalGround=2, ArtificialGround=3, Grass=4. |
+| SiteAssetsInfo | SiteAssetsInfo | A single entry in a site-assets location query result. |
+| SiteInfo | SiteInfo | Represents site information from the Sites Manager service. |
+| TextureUtils | TextureUtils | - |
+| TimeoutError | TimeoutError | - |
+| UserInfo | UserInfo | Represents user information from the Sites Manager service. |
+| Vps2GeolocationData | Vps2GeolocationData | Location and heading data calculated by VPS2. |
+| Vps2Localization | Vps2Localization | Spatial mapping between the device's AR coordinate space and real-worldgeolocation, as determined by VPS2. |
+| Vps2LocalizationRequestRecord | Vps2LocalizationRequestRecord | - |
+| Vps2Pose | Vps2Pose | Pose in AR coordinate space calculated by VPS2 from a geolocation. |
+| VpsAnchorUpdate | VpsAnchorUpdate | Contains the latest tracking information for a VPS anchor.Anchor updates are retrieved via `anchorUpdate(anchorId:)` and provide themost current information about an anchor's position, orientation, and tracking status. Thisis a snapshot of the anchor, and the latest anchor update should be used every frame. |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AgeLevel | AgeLevel | Codes describing the age level of the user.This enum represents the age classification for users of the NSDK |
+| AssetDeploymentType | AssetDeploymentType | Asset deployment type.Maps to proto enum AssetDeploymentType. |
+| AssetPipelineJobStatus | AssetPipelineJobStatus | Asset pipeline job status.Maps to proto enum AssetPipelineJobStatus. |
+| AssetStatusType | AssetStatusType | Asset status.Maps to proto enum AssetStatusType. |
+| AssetType | AssetType | Asset type - determines which typed asset data is present.Maps to proto enum AssetType. |
+| AwarenessError | AwarenessError | - |
+| ExportResolution | ExportResolution | Resolution option for exported scan images.When exporting a recording, this controls which image resolutions are included in the payload. |
+| HeadingMode | HeadingMode | Controls how the heading is computed from the device's orientation. |
+| NSDKAsyncState<Value, Error> where Error : Error | Error | Reports the state of an asynchronous NSDK operation. |
+| NSDKError | NSDKError | Errors thrown by the NSDK API.`NSDKError` a subset of all the `ARDK_Status`codes returned by the C API,containing just those that can occur in the Swift environment. |
+| NSDKLogLevel | NSDKLogLevel | Defines the available logging levels for NSDK.`NSDKLogLevel` controls the verbosity of logging output from the NSDK system.Logging can be configured separately for stdout, files, and callback functions. |
+| @frozen NSDKScreenOrientation | NSDKScreenOrientation | Represents the screen orientation in the NSDK layer. |
+| NSDKTelemetry | NSDKTelemetry | Namespace for NSDK telemetry controls. |
+| NSDKTelemetryEnvironment | NSDKTelemetryEnvironment | Telemetry backend environment passed to native on session start.Use this type instead of a free `String` so only supported values (`dev`, `stg`, `prod`) compile. |
+| @frozen NsdkTrackingState | NsdkTrackingState | The general quality of position tracking available when the camera captured a frame. |
+| PlaybackDatasetConstants | PlaybackDatasetConstants | Constants for playback dataset file names and extensions. |
+| TypedAssetData | TypedAssetData | Discriminated union for typed asset data.One of mesh, splat, or vps will be set based on the asset type. |
+| Vps2LocalizationError | Vps2LocalizationError | Possible errors from VPS localization operations. |
+| Vps2LocalizationRequestStatus | Vps2LocalizationRequestStatus | Status of a network request. |
+| Vps2LocalizationRequestType | Vps2LocalizationRequestType | - |
+| Vps2TrackingState | Vps2TrackingState | - |
+| VpsGraphOperationError | VpsGraphOperationError | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| playbackSession | void | Called on the main queue when the tracking state changes (e.g. at start of playback). For playback, state is typically .normal. |
+
+---

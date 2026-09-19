@@ -1,0 +1,994 @@
+# Set up the Niantic SDK
+
+Source: https://www.nianticspatial.com/docs/nsdk/setup/
+
+### Platform: unity
+
+# Set up the Niantic SDK for Unity
+
+The Niantic Spatial SDK (NSDK) for Unity extends AR Foundation with Niantic Spatial features for VPS localization, depth, occlusion, meshing, semantics, and developer tools such as playback and project validation, so you can build Unity AR experiences with real-world localization, contextual awareness, and NSDK development workflows.
+
+### Prerequisites
+
+Before you begin, decide whether you are building for Android, iOS, or Meta Quest 3. If you are building for iOS, you will also need Apple Developer account setup for signing.
+
+## AI set up
+
+Niantic Spatial provides a **Unity Setup Skill** containing the NSDK setup workflow.
+AI assistants can use the Skill to guide or automate NSDK installation and configuration, helping you complete the steps on this page more quickly.
+
+To use an **AI coding assistant** to set up the Niantic SDK for you, do the following:
+
+1. Download the Unity setup Skill.
+2. Extract and place the folder into your AI assistant's skills directory. For example:
+   - Claude Code: `.claude/skills/`
+   - Codex: `.agents/skills/`
+3. Create or open an existing Unity project. If you're creating a new project, use the 3D (Built-In Render Pipeline) or Universal 3D (Core) template.
+4. Ask your AI assistant to set up NSDK in your project. It will guide you through the required steps and help configure your project.
+
+## Manual set up
+
+To **manually** set up the Niantic SDK for Unity, you will need to:
+
+1. [Create an account](#create-an-account).
+2. [Download and install](#download-and-install-unity) the Unity Hub and the Unity Engine.
+3. [Install the Niantic SDK Unity packages](#install-the-niantic-sdk-packages).
+4. [Authenticate Niantic SDK in Unity](#authenticate-niantic-sdk-in-unity).
+5. [Activate the XR Loader](#activate-the-xr-loader) for your mobile platform.
+6. [Configure the build platform](#configure-the-build-platform) in Unity for your target device.
+7. [Set up a basic AR scene](#set-up-a-basic-ar-scene) to test your configuration.
+
+Steps to manually set up the NSDK are shown in the following sections.
+
+---
+
+### Create an account
+
+Before getting started with the NSDK setup, follow the steps to [create a Scaniverse account](https://www.nianticspatial.com/docs/nsdk/create_account/#create-a-scaniverse-account). You will use this account either to sign in through **NSDK > Settings** in the Unity Editor or to create a developer token, depending on the authorization path you choose.
+
+For authorization options, see [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+### Download and install Unity
+
+In order to install the Unity 3D Engine you must first install the [Unity Hub](https://unity.com/download) which gives you access to the latest versions of the currently supported engines.
+
+NSDK only supports **Unity LTS** and **Unity 6000.0.74f1**. If you no longer see this engine version in the Unity Hub downloads window, go to the [Unity download archive](https://unity.com/releases/editor/archive) to locate it.
+Using any other version of 6000.0.x can introduce conflicts with NSDK and is not recommended.
+
+### Install the Niantic SDK Packages
+
+Use the following platform-specific instructions to create your Unity project and add the NSDK packages through Unity Package Manager. Select the tab for your target platform before you begin.
+
+#### Android
+
+1. Create a new Unity project with the **3D (Built-In Render Pipeline)** template. Alternatively, if planning to use Unity's Universal Render Pipeline select the **Universal 3D (Core)** template.
+
+> **Caution:**
+>
+> **Attention!**
+>
+> If you are using or plan to use the Universal Render Pipeline (URP), refer to [How to Set Up NRDK with the Universal Render Pipeline](https://www.nianticspatial.com/docs/how-to/ar/urp/) for additional setup instructions.
+
+2. In your Unity project, open the **Window** top menu, then select **Package Manager**.
+
+> **Caution:**
+>
+> **Attention!**
+>
+> If you are using Unity **6000.0.X**, you must update the **AR Foundation** package to a minimum of **6.3.0**, but we recommend **6.4.1**.
+
+1. From the plus menu on the Package Manager tab, select **Add package from git URL...**.
+
+   (image: Package Manager menu)
+2. Enter `https://github.com/nianticspatial/nsdk-library-upm.git`.
+   1. If prompted, select **Yes** to activate the new Input System Package. This may require a restart of the Unity Editor.
+
+To install a specific NSDK version, use **Add package from git URL...** and append the Git tag, branch, or commit after a `#`. For example: `https://github.com/nianticspatial/nsdk-library-upm.git#vX.Y.Z`.
+
+The official installation path is **Add package from git URL...**. If you want to install NSDK locally instead:
+
+1. Download and unzip the **Source code (zip)** from the Unity package [release](https://github.com/nianticspatial/nsdk-library-upm/releases) repository.
+2. In Unity, open **Window > Package Management > Package Manager**.
+3. Open the drop-down menu next to the **+** in the top-left main window.
+4. Select **Install Package From Disk** in Unity Package Manager
+5. Select the root `package.json` file.
+
+Do not use GitHub source archives from **Download ZIP / tar.gz** or **Add package from tarball** for this workflow.
+
+#### iOS
+
+1. Create a new Unity project with the **3D (Built-In Render Pipeline)** template. Alternatively, if planning to use Unity's Universal Render Pipeline select the **Universal 3D (Core)** template.
+
+> **Caution:**
+>
+> **Attention!**
+>
+> If you are using or plan to use the Universal Render Pipeline (URP), refer to [How to Set Up NRDK with the Universal Render Pipeline](https://www.nianticspatial.com/docs/how-to/ar/urp/) for additional setup instructions.
+
+2. In your Unity project, open the **Window** top menu, then select **Package Manager**.
+
+> **Caution:**
+>
+> **Attention!**
+>
+> If you are using Unity **6000.0.X**, you must update the **AR Foundation** package to a minimum of **6.3.0**, but we recommend **6.4.1**.
+
+1. From the plus menu on the Package Manager tab, select **Add package from git URL...**.
+
+   (image: Package Manager menu)
+2. Enter `https://github.com/nianticspatial/nsdk-library-upm.git`.
+   1. If prompted, select **Yes** to activate the new Input System Package. This may require a restart of the Unity Editor.
+
+To install a specific NSDK version, use **Add package from git URL...** and append the Git tag, branch, or commit after a `#`. For example: `https://github.com/nianticspatial/nsdk-library-upm.git#vX.Y.Z`.
+
+The official installation path is **Add package from git URL...**. If you want to install NSDK locally instead:
+
+1. Download and unzip the **Source code (zip)** from the Unity package [release](https://github.com/nianticspatial/nsdk-library-upm/releases) repository.
+2. In Unity, open **Window > Package Management > Package Manager**.
+3. Open the drop-down menu next to the **+** in the top-left main window.
+4. Select **Install Package From Disk** in Unity Package Manager
+5. Select the root `package.json` file.
+
+Do not use GitHub source archives from **Download ZIP / tar.gz** or **Add package from tarball** for this workflow.
+
+#### Meta Quest 3
+
+The Niantic SDK leverages **Meta XR Core SDK** and **Unity's XR Core Plugin** to support the **Meta Quest 3**.
+
+Follow Meta's [official tutorial](https://developers.meta.com/horizon/documentation/unity/unity-project-setup/) to begin developing for the Meta Quest 3 in Unity 6.
+
+#### Notes & Caveats
+
+- Ensure you're using a supported version of Unity 6 (such as **6000.0.74f1**) and the **OpenXR** plugin (`com.unity.xr.openxr`) version **1.15.1**. Version 1.16.1 is known to cause issues, so force the package to **1.15.1** in the Package Manager.
+- The **Meta XR Core SDK** must be acquired from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/meta-xr-core-sdk-269169), as explained in the Meta docs. Select **Enable Feature Set** if prompted.
+- If prompted to restart the Unity Editor, do so with **Restart Editor**.
+- Verify the Quest's OS version is >=v74
+
+1. Go to Meta -> Tools -> Project Setup Tools and resolve all issues.
+2. In your Unity project, open the **Window** top menu, then select **Package Manager**.
+3. From the plus menu on the Package Manager tab, select **Add package from git URL...**.
+
+   (image: Package Manager menu)
+4. Enter `https://github.com/nianticspatial/nsdk-library-upm.git`.
+   1. If prompted, select **Yes** to activate the new Input System Package. This may require a restart of the Unity Editor.
+5. Install the **NSDK Quest Package** by repeating these steps using the following URL instead: `https://github.com/nianticspatial/nsdk-library-upm-quest3.git`.
+
+To install a specific NSDK version, use **Add package from git URL...** and append the same Git tag, branch, or commit to both package URLs. For example:
+
+- `https://github.com/nianticspatial/nsdk-library-upm.git#vX.Y.Z`
+- `https://github.com/nianticspatial/nsdk-library-upm-quest3.git#vX.Y.Z`
+
+### Authenticate Niantic SDK in Unity
+
+Authenticate NSDK in Unity before you build and run your project. You can do this in one of two ways:
+
+1. Sign in through the Unity Editor:
+   1. In Unity's top menu bar, select **NSDK**.
+   2. Select **Settings**.
+   3. Sign in to your Scaniverse account.
+
+2. Provide an access token directly to NSDK:
+   For development and internal testing, create a developer token in [Scaniverse Web](https://scaniverse.nianticspatial.com/signin). For production apps, use an access token from your backend.
+
+   Then choose **one** of the following ways to provide that token to NSDK:
+
+   - In Project Settings, paste it into **Edit > Project Settings > XR Plug-in Management > Niantic Spatial Development Kit > Credentials > Niantic Spatial Access Token**.
+   - In code, set `NsdkSettingsHelper.ActiveSettings.AccessToken`.
+
+For more information, see [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/), [Generate developer tokens](https://www.nianticspatial.com/docs/nsdk/auth_developer_token/), and [Generate access tokens](https://www.nianticspatial.com/docs/nsdk/auth_backend/).
+
+Before you continue, confirm that one of these authentication paths is set up. Importing NSDK adds an `AuthBuildSettings` asset, and that asset can be empty, so a successful build does not confirm that authentication is configured.
+
+### Activate the XR loader
+
+> **Caution:**
+>
+> **Attention!**
+>
+> In Unity versions **6000.0.74f1** or newer, you might see a [benign error](https://www.nianticspatial.com/docs/nsdk/release_notes/#known-issues) in the console after following these steps.
+
+#### Android
+
+Open the NSDK top menu, then select XR Plug-in Management.
+In the XR Plug-in Management menu, select the Android tab, then check the box labeled Niantic Spatial Development Kit + Google ARCore.
+
+#### iOS
+
+Open the NSDK top menu, then select XR Plug-in Management.
+In the XR Plug-in Management menu, select the iOS tab, then check the box labeled Niantic Spatial Development Kit + Apple ARKit.
+
+### Configure the build platform
+
+1. Open the **Build Profiles** window by selecting **File** > **Build Profiles**.
+2. Select iOS or Android, then click **Switch Platform**. After the progress bar finishes, click **Player Settings**. Select your platform from the tabs, scroll down to **Other Settings**, and change the following settings:
+
+#### Android
+
+Rendering - Uncheck Auto Graphics API. If Vulkan appears in the Graphics API list, remove it.
+Identification - Set the Minimum API Level to Android 7.0 'Nougat' (API Level 24) or higher.
+Configuration - Set the Scripting Backend to IL2CPP, then enable both ARMv7 and ARM64.
+
+#### iOS
+
+Identification > Signing Team ID - Enter your iOS app developer key from developer.apple.com.
+Camera Use Description -  Write a description for how you're using AR, such as "NSDK".
+Target Minimum iOS Version -  Set to 14.0 or higher.
+Architecture - Select ARM64.
+
+In Unity, NSDK is configured through components and project settings. Once enabled, the SDK automatically receives AR frame and sensor data and updates each frame at runtime.
+
+### Set up a basic AR scene
+
+#### Android
+
+To get started creating your own AR project, begin by creating an empty AR scene:
+
+1. Create a new Basic scene:
+   1. From the main menu, choose **File** > **New Scene**.
+   2. Select **Basic (Built-in)** and click **Create**.
+2. Right-click on the **Main Camera** and select **Delete**.
+3. Add an **ARSession** and **XROrigin** to your new scene
+   1. Select the new scene in the **Hierarchy**.
+   2. From the main menu, select **Game Object** > **XR** > **AR Session**.
+   3. Repeat to add an **XR Origin (Mobile AR)**.
+4. Save the scene using **File** > **Save**.
+
+> **Tip:**
+>
+> If you choose **Save As Scene Template**, you can select this scene in the **New Scene** dialog next time.
+
+#### iOS
+
+To get started creating your own AR project, begin by creating an empty AR scene:
+
+1. Create a new Basic scene:
+   1. From the main menu, choose **File** > **New Scene**.
+   2. Select **Basic (Built-in)** and click **Create**.
+2. Right-click on the **Main Camera** and select **Delete**.
+3. Add an **ARSession** and **XROrigin** to your new scene
+   1. Select the new scene in the **Hierarchy**.
+   2. From the main menu, select **Game Object** > **XR** > **AR Session**.
+   3. Repeat to add an **XR Origin (Mobile AR)**.
+4. Save the scene using **File** > **Save**.
+
+> **Tip:**
+>
+> If you choose **Save As Scene Template**, you can select this scene in the **New Scene** dialog next time.
+
+## Next steps
+
+After your project is set up, continue to [Unity sample projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/) to explore working examples of NSDK features.
+
+### Platform: swift
+
+# Set up the NSDK in Swift
+
+The Swift NSDK plugin enables you to integrate AR capabilities into any Xcode project.
+It is distributed as a Swift Package hosted on GitHub and can be added directly through Xcode's built-in Swift Package Manager.
+
+### Prerequisites
+
+Before you begin, make sure you have Xcode 12.0 or later, an iOS device with ARKit support, Apple Developer account setup, and basic familiarity with Swift and ARKit.
+
+## AI set up
+
+Niantic Spatial provides a **Swift Setup Skill** containing the NSDK setup workflow.
+AI assistants can use the Skill to guide or automate NSDK installation and configuration, helping you complete the steps on this page more quickly.
+
+To use an **AI coding assistant** to set up the NSDK for you, do the following:
+
+1. Download the Swift setup Skill.
+2. Extract and place the folder into your AI assistant's skills directory. For example:
+   - Claude Code: `.claude/skills/`
+   - Codex: `.agents/skills/`
+3. Create or open an existing Xcode project. If you're creating a new project, use the **Augmented Reality App** template and **SwiftUI** interface.
+4. Ask the assistant to help you add and configure NSDK. The assistant will guide you through the required Xcode steps and help configure the project.
+
+## Manual set up
+
+To **manually** set up the NSDK in Swift, you will need to:
+
+1. [Create an account](#create-an-account-1).
+2. [Add the NSDK package](#add-the-nsdk-package).
+3. [Create an NSDK session](#create-an-nsdk-session).
+4. [Provide frame and sensor data](#provide-frame-and-sensor-data).
+5. [Review permissions](#permissions).
+
+Steps to manually set up the NSDK are shown in the following sections.
+
+---
+
+### Create an account
+
+Before getting started with the NSDK setup, follow the steps to [create a Scaniverse account](https://www.nianticspatial.com/docs/nsdk/create_account/#create-a-scaniverse-account). You will need an access token to initialize the NSDK session and use its features.
+
+For more information about access tokens, see [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+### Add the NSDK package
+
+1. Open your project in Xcode or create a new one:
+   - When creating a new project:
+     1. Start with the "Augmented Reality App" template in Xcode 11 or later.
+     2. Select SwiftUI as your interface technology.
+     3. In your project, ensure you have imported the SwiftUI, RealityKit, and ARKit frameworks.
+
+2. Add the NSDK Swift Package:
+   1. On the top menu bar, go to **File** -> **Add Package Dependencies...**
+   2. In the search bar, enter the package URL:
+      ```
+      https://github.com/nianticspatial/nsdk-library-xcframework
+      ```
+   3. Select your desired version rule (**Up to Next Major Version**), then click **Add Package**.
+   4. When prompted, select **NSDK** in the package product list and click **Add Package**.
+
+3. Navigate to your project target.
+
+4. Configure your project.
+   1. Select **General -> Scroll down to Frameworks, Libraries, and Embedded Content**.
+   2. Set NSDK to **Embed & Sign**.
+
+5. Add required privacy descriptions to your `Info.plist`
+
+   NSDK uses the camera for AR and location for GPS features. Add both usage descriptions to `Info.plist` as follows:
+
+   1. In Xcode, click on the **Info** tab, locate **Custom iOS Target Properties**, hover over any key and click the **+** icon to add a new entry.
+
+      (image: Add new property to plist)
+
+   2. Add both of the following keys with a short description of how your app uses each.
+
+      **If either key is missing, iOS terminates the app** the first time NSDK accesses the camera or location.
+
+      The following table provides example key descriptions:
+
+      | Key | Example value |
+      |-----|---------------|
+      | `Privacy - Camera Usage Description` | `Required for AR` |
+      | `Privacy - Location When In Use Usage Description` | `Required for AR features` |
+
+      The following image shows how to add a key to `Info.plist` in the Xcode UI:
+
+      (image: Add location property to plist)
+
+### Create an NSDK session
+
+To create an NSDK session, you will need a valid access token from your Niantic Spatial account.
+
+Create an `NSDKSession` object to access NSDK features as shown in the following simple initializer:
+
+```swift
+let nsdkSession = NSDKSession(
+    accessToken: "YOUR_ACCESS_TOKEN"
+)
+```
+
+Most apps can use the access-token initializer shown in the previous example.
+
+If your app needs more control over NSDK configuration, you can also create the session from a `Configuration` object or a JSON configuration file. For those options, see the [NSDKSession API reference](https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKSession).
+
+Create one `NSDKSession` and reuse it for the life of your app. When you no longer need the session, call `destroyAll()` to release its resources.
+
+If you acquired a child session from `NSDKSession`, call `destroy(_:)` for that child session.
+
+Do not create a second `NSDKSession` while the first one is still active. If you need a new session, call `destroyAll()` on the current session first and wait for it to finish.
+
+### Provide frame and sensor data
+
+Before you use features that rely on live AR or device data, connect your `NSDKSession` to a data source.
+
+The following code example creates a `DefaultSessionDataSource` with your ARKit session and orientation reporter, then assigns it to `NSDKSession` so it can receive camera frames and sensor data:
+
+```swift
+import ARKit
+import NSDK
+
+let dataSource = DefaultSessionDataSource(
+    session: arSession,
+    orientationReporter: self
+)
+
+nsdkSession.dataSource = dataSource
+```
+
+After you assign the data source, `NSDKSession` can read camera frames and sensor data from it.
+
+- `arSession` should be the `ARSession` your app is using.
+- `orientationReporter` reports the current screen orientation. In most apps, your view controller provides it.
+
+To report the current orientation, conform your view controller to `UIOrientationReporter`.
+
+The following code example adds a property to your view controller that returns the current interface orientation so NSDK can interpret AR data correctly:
+
+```swift
+extension ViewController: UIOrientationReporter {
+    var currentOrientation: NSDKScreenOrientation {
+        let orientation = view.window?.windowScene?.interfaceOrientation ?? .unknown
+        return NSDKScreenOrientation(orientation)
+    }
+}
+```
+
+Configure the data source once for the session. This step is required for features that depend on live AR or device data.
+
+### Call update for each ARKit frame
+
+ARKit delivers camera data one frame at a time. A frame is one camera image and its related device data.
+
+After you assign a data source, NSDK can read that data, but NSDK does not process it until you call [NSDKSession.update()](https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-update).
+
+Call `update()` once each time ARKit provides a new frame.
+
+If your view controller implements `ARSessionDelegate`, ARKit calls [session(_:didUpdate:)](https://developer.apple.com/documentation/arkit/arsessiondelegate/session(_:didupdate:)) whenever a new frame is available.
+You can call `update()` in your view controller as shown in the following example:
+
+```swift
+extension ViewController: ARSessionDelegate {
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        nsdkSession.update()
+    }
+}
+```
+
+If you use `ARSessionDelegate`, make sure your app is set up to receive [session(_:didUpdate:)](https://developer.apple.com/documentation/arkit/arsessiondelegate/session(_:didupdate:)) callbacks.
+If you do not call `update()` for each frame, NSDK does not process camera frames. Features such as VPS localization, depth, meshing, and semantics do not run, and NSDK does not show an error.
+
+### Permissions
+
+NSDK uses two device permissions: **camera** for AR and **location** for GPS and coarse localization.
+
+The usage descriptions in [Add the NSDK package](#add-the-nsdk-package) are required, but they are not enough on their own. Your app must also obtain each permission at runtime.
+
+When your app starts ARKit, iOS prompts for camera access automatically.
+
+Location works differently. iOS does not prompt for location access automatically. Request location access before you use a feature that depends on it. If you do not, GPS and coarse localization will not run, and NSDK does not show an error or a permission dialog.
+
+Request location access as shown in the following code example:
+
+```swift
+import CoreLocation
+
+let locationManager = CLLocationManager()
+locationManager.requestWhenInUseAuthorization()
+```
+
+Refer to the [Swift sample projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/) for examples of handling permission checks and requests.
+
+## Next steps
+
+After your project is set up, continue to [Swift sample projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/) to explore working examples of NSDK features.
+
+### Example code
+
+The following example provides a complete base view controller for an NSDK project.
+It is used by the [Swift how-to guides](https://www.nianticspatial.com/docs/nsdk/features/ar_effects/#guides) and can be used as a foundation to build your own application.
+Before using it, [create a Niantic Spatial account](https://www.nianticspatial.com/docs/nsdk/create_account/) and [authenticate](https://www.nianticspatial.com/docs/nsdk/auth_client/).
+
+#### Click to reveal `BaseARViewController.swift`
+
+```swift
+import UIKit
+import RealityKit
+import ARKit
+import NSDK
+
+// Base view controller for ARKit and NSDK
+class BaseARViewController: UIViewController, UIOrientationReporter, NSDKViewDelegate {
+    
+    // NSDK AR view
+    public let arView: NSDKView
+    
+    // Active NSDK session
+    public private(set) var nsdkSession: NSDKSession!
+    
+    // Data source for frames and sensors
+    private var nsdkDataSource: NSDKSessionDataSource?
+
+    // Access token
+    var accessToken: String = "YOUR_ACCESS_TOKEN"
+
+    // MARK: UIOrientationReporter
+
+    // Current device orientation
+    var currentOrientation: NSDKScreenOrientation {
+        let uiOrientation = arView.window?.windowScene?.interfaceOrientation ?? .unknown
+        return NSDKScreenOrientation(uiOrientation)
+    }
+
+    // MARK: Initialization
+
+    init() {
+        self.arView = NSDKView()
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("not supported")
+    }
+
+    // MARK: Lifecycle
+
+    // Setup view and NSDK
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        arView.setup(in: view)
+        setupNsdk()
+    }
+
+    // Create session and data source
+    private func setupNsdk() {
+        nsdkSession = NSDKSession(
+            accessToken: accessToken
+        )
+        
+        if let playbackSession = arView.session as? PlaybackSession {
+            nsdkDataSource = PlaybackSessionDataSource(session: playbackSession)
+        } else {
+            nsdkDataSource = DefaultSessionDataSource(
+                session: arView.session,
+                orientationReporter: self
+            )
+        }
+        
+        nsdkSession.dataSource = nsdkDataSource
+    }
+
+    // Start AR session
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical]
+        
+        if ARUtils.isLidarAvailable() {
+            configuration.frameSemantics.insert(.sceneDepth)
+        }
+        
+        arView.session.run(configuration)
+        arView.delegate = self
+        UIApplication.shared.isIdleTimerDisabled = true
+    }
+
+    // Pause AR session
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        arView.session.pause()
+    }
+
+    // MARK: Entity Management
+
+    // Add anchor entity
+    func addAnchorEntity(for anchor: ARAnchor) -> AnchorEntity {
+        let anchorEntity = AnchorEntity(anchor: anchor)
+        arView.scene.addAnchor(anchorEntity)
+        return anchorEntity
+    }
+
+    // Update anchor entity
+    func updateAnchorEntity(_ entity: Entity, for anchor: ARAnchor) {}
+
+    // MARK: NSDKViewDelegate
+
+    // Update NSDK each frame
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        nsdkSession.update()
+    }
+
+    // Update NSDK for playback
+    func playbackSession(_ session: PlaybackSession, didUpdate frame: PlaybackFrame) {
+        nsdkSession.update()
+    }
+
+    // Handle interruption end
+    func sessionInterruptionEnded(_ session: ARSession) {
+        resetTracking()
+    }
+
+    // Handle AR errors
+    func session(_ session: ARSession, didFailWithError error: Error) {
+        guard error is ARError else { return }
+        resetTracking()
+    }
+
+    // Reset tracking
+    private func resetTracking() {
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical]
+        
+        arView.session.run(
+            configuration,
+            options: [.resetTracking, .removeExistingAnchors]
+        )
+    }
+}
+```
+
+### Platform: kotlin
+
+# Set up the NSDK in Kotlin
+
+The NSDK Android library is distributed as an AAR served from a GitHub Maven repository and is added through Gradle.
+
+Before you begin, ensure your Android project uses `minSdk` **24** or higher and Kotlin version **2.0.0** or higher. Kotlin DSL (`build.gradle.kts`) and Groovy (`build.gradle`) are both supported build configuration languages, but Kotlin DSL is preferred.
+
+## AI set up
+
+Niantic Spatial provides a **Kotlin Setup Skill** containing the NSDK setup workflow.
+AI assistants can use the Skill to guide or automate NSDK installation and configuration, helping you complete the steps on this page more quickly.
+
+To use an **AI coding assistant** to set up the NSDK for you, do the following:
+
+1. Download the Kotlin setup Skill.
+2. Extract and place the folder into your AI assistant's skills directory. For example:
+   - Claude Code: `.claude/skills/`
+   - Codex: `.agents/skills/`
+3. Create or open an existing Android Studio project. If you're creating a new project, use the **Empty Activity** template.
+   1. Choose a minimum SDK of Android 7.0 / API 24.
+   2. Set the **Build configuration language** to **Kotlin DSL**.
+4. Ask your AI assistant to set up NSDK in your project. It will guide you through the required steps and help configure your project.
+
+## Manual set up
+
+To **manually** set up the NSDK in Kotlin, you will need to:
+
+1. [Create an account](#create-an-account-2).
+2. [Add GitHub Packages](#add-the-github-packages) for the Maven repository.
+3. [Add permissions](#add-permissions) to the Android Manifest.
+4. [Configure your app module](#configure-your-app-module).
+5. [Set the Kotlin version](#set-kotlin-version).
+6. [Create an NSDK session](#create-an-nsdk-session-1).
+7. [Provide frame and sensor data](#provide-frame-and-sensor-data-1).
+8. [Update the session](#update-the-session).
+9. [Review permissions](#permissions-1).
+
+Steps to manually set up the NSDK are shown in the following sections.
+
+---
+
+### Create an account
+
+Before getting started with the NSDK setup, follow the steps to [create a Scaniverse account](https://www.nianticspatial.com/docs/nsdk/create_account/#create-a-scaniverse-account). You will need a valid access token from your Niantic Spatial account.
+
+For more information about access tokens, see [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+### Add the GitHub packages
+
+Add the Niantic Spatial Maven repository so Gradle can resolve the NSDK Android artifacts.
+
+In your project's `settings.gradle.kts`, add the Niantic Spatial repository under `dependencyResolutionManagement`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://raw.githubusercontent.com/nianticspatial/nsdk-library-aar/main")
+        }
+    }
+}
+```
+
+### Add permissions
+
+NSDK uses the camera for AR, location for GPS features, and network access for online services. ARCore also requires camera feature declarations in the app manifest.
+
+Add the following entries to your `AndroidManifest.xml` file:
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-feature android:name="android.hardware.camera.ar" android:required="true" />
+<uses-feature
+    android:name="android.hardware.camera"
+    android:required="false" />
+```
+
+(image: Kotlin Setup Manifest Permissions)
+
+Then add the following ARCore entry **inside** the `<application>` element:
+
+```xml
+<application ...>
+    <meta-data android:name="com.google.ar.core" android:value="required" />
+    
+</application>
+```
+
+ARCore reads the entry from the previous code example when the app starts. If it is missing, ARCore reports an `ARCore init failed` or `Application manifest must include ...` error, the app cannot create an ARCore `Session`, and often shows a black screen.
+To complete this setup, use `android:value="required"`. Use `optional` only if your app is designed to keep working on devices that do not support AR.
+
+### Configure your app module
+
+Add the NSDK dependency, ARCore, Play Services Location, and Kotlin serialization dependencies to your app module.
+
+Add the following to your app module `build.gradle.kts` or `build.gradle`.
+
+If your project uses a version catalog, keep your existing Android and Kotlin plugin entries and add the following:
+
+```kotlin
+plugins {
+    alias(libs.plugins.kotlin.serialization)
+}
+
+android {
+    defaultConfig {
+        minSdk = 24
+    }
+}
+
+dependencies {
+    implementation("com.nianticspatial:nsdk:<published-version>")
+    implementation("com.google.ar:core:1.42.0")
+    implementation(libs.play.services.location)
+    implementation(libs.kotlinx.serialization.json)
+}
+```
+
+If your project does not use a version catalog, keep your existing Android and Kotlin plugin entries and add the following:
+
+```kotlin
+plugins {
+    id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+android {
+    defaultConfig {
+        minSdk = 24
+    }
+}
+
+dependencies {
+    implementation("com.nianticspatial:nsdk:<published-version>")
+    implementation("com.google.ar:core:1.42.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+}
+```
+
+Check the [nsdk-library-aar repository](https://github.com/nianticspatial/nsdk-library-aar) for the latest published NSDK version number.
+
+### Set Kotlin version
+
+Update your Kotlin and related Gradle entries so they meet the minimum versions required by the NSDK dependencies.
+
+Ensure your Kotlin version is set to a minimum of **2.0.0** and playServicesLocation is set to **21.3.0**. Lastly, under Libraries add the following line:
+`play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }`
+
+1. Ensure the Kotlin version in `gradle/libs.versions.toml` is at least **2.0.0**.
+
+2. Add the following entries to `gradle/libs.versions.toml`:
+
+   ```toml
+   [versions]
+   playServicesLocation = "21.3.0"
+   kotlinxSerializationJson = "1.9.0"
+
+   [libraries]
+   play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+   kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+   [plugins]
+   kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+   ```
+
+   (image: Kotlin Setup Kotlin Version)
+
+3. In your app module `app/build.gradle.kts`, add the serialization plugin to the `plugins` block and the dependencies to the `dependencies` block:
+
+   ```kotlin
+   plugins {
+       alias(libs.plugins.kotlin.serialization)
+   }
+
+   dependencies {
+       implementation(libs.play.services.location)
+       implementation(libs.kotlinx.serialization.json)
+   }
+   ```
+
+If your project does not use a version catalog, use the following steps:
+
+1. Ensure your Kotlin version is at least **2.0.0** in your project-level `build.gradle` or `build.gradle.kts`.
+
+2. In your app module `build.gradle` or `build.gradle.kts`, add the Kotlin serialization plugin if it is not already present:
+
+   ```kotlin
+   plugins {
+       id("org.jetbrains.kotlin.plugin.serialization")
+   }
+   ```
+
+3. Add the dependencies directly:
+
+   ```kotlin
+   implementation("com.google.android.gms:play-services-location:21.3.0")
+   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+   ```
+
+In Android Studio, go to **File** -> **Sync Project with Gradle Files** to apply the changes for either setup path.
+
+### Create an NSDK session
+
+Create an `NSDKSession` so your app can initialize NSDK features with an access token before you start using live AR data.
+
+#### Set up ARCore
+
+Before NSDK can use live AR data, your app must already create and run an [ARCore Session](https://developers.google.com/ar/reference/java/com/google/ar/core/Session). NSDK reads frames from that session. It does not create, own, or render it for you.
+
+A new project such as a blank Compose app does not include that ARCore session yet. Before you continue, make sure your app is already set up as a working ARCore host app and does the following:
+
+- Checks ARCore availability and prompts for installation with `ArCoreApk.requestInstall(...)`.
+- Requests the `CAMERA` permission.
+- Creates, resumes, pauses, and closes an ARCore `Session` as your activity moves through its lifecycle.
+- Runs a render loop, typically a `GLSurfaceView.Renderer`, that calls `session.update()` each frame to get the latest `Frame` and binds the ARCore camera texture.
+
+Without a running ARCore session producing frames, NSDK does not receive camera or pose data. This ARCore and GL setup is standard ARCore code, not NSDK-specific code, and it is a substantial part of the app. If you are starting from a blank app, the quickest path is to begin with the [Kotlin sample app](https://github.com/nianticspatial/nsdk-samples-kotlin). For an overview of the sample app, see [Kotlin sample projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/). The sample app already has the session and render loop wired up, so you can add the NSDK steps below instead of building the camera and GL stack from scratch.
+
+#### Initialize the session
+
+In your application, create an `NSDKSession` object to access NSDK features. You will need a valid access token from your Niantic Spatial account.
+
+Most applications will only need to set the configurations exposed in the following simple initializer which creates an NSDKSession instance using your access token to initialize and configure access to NSDK features:
+
+```kotlin
+val nsdkSession = NSDKSession(
+    accessToken = "CURRENT ACCESS TOKEN HERE",
+    useLidar = false
+)
+```
+
+Call `close()` when the session is no longer needed to release resources.
+
+NSDK supports one active `NSDKSession` per process. Create one session and reuse it for the lifetime of your app. Do not create a second `NSDKSession` while the first one is still active. If you need a new session, for example to change the configuration, call `close()` on the existing session and let it finish closing before you create another one.
+
+Use the initializer in the previous code example for a standard setup. If your app needs a different `NSDKSession` setup, see the [NSDKSession API reference](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession) and the Kotlin examples in [Client code integration](https://www.nianticspatial.com/docs/nsdk/auth_client/) and [Getting logs](https://www.nianticspatial.com/docs/nsdk/getting_logs/).
+
+### Provide frame and sensor data
+
+Before using features that rely on live AR or device data, configure a data source for the session. Use `createLiveDataSource` to supply frame data including camera image, pose, tracking state, GPS, and compass information to the NSDK from ARCore and device sensors.
+
+The following code example creates a data source that supplies ARCore frames and device orientation to the NSDK and assigns it to the session so it can use live camera and sensor data:
+
+```kotlin
+import com.google.ar.core.Frame
+import com.nianticspatial.nsdk.Orientation
+import com.nianticspatial.nsdk.helpers.createLiveDataSource
+
+var currentFrame: Frame? = null
+
+val dataSource = createLiveDataSource(
+    context = this,
+    frameProvider = { currentFrame },
+    orientationProvider = {
+        Orientation.fromSurfaceRotation(windowManager.defaultDisplay.rotation)
+    }
+)
+
+nsdkSession.dataSource = dataSource
+```
+
+In the previous code example, `frameProvider` returns the latest ARCore `Frame`, and `orientationProvider` returns the current screen orientation as an `Orientation`.
+
+Get the ARCore `Frame` from your existing ARCore update loop. For `orientationProvider`, read the current screen rotation from your activity or window manager, then convert it with `Orientation.fromSurfaceRotation(...)` so NSDK receives an `Orientation`.
+
+Configure the data source once for each `NSDKSession`. This step is required for features that use live AR or device data.
+
+### Update the session
+
+Each time ARCore produces a frame, your app must pass that frame data to NSDK. Choose one of the following approaches:
+
+- Use [update with a data source](#use-update-with-a-data-source) if you created a data source with `createLiveDataSource` and want `NSDKSession` to read the requested values from that data source.
+- Use [sendFrame to send frame data directly](#use-sendframe-to-send-frame-data-directly) if you want your app to control exactly when the camera image is acquired and exactly which values are sent to NSDK.
+
+#### Use update with a data source
+
+The `NsdkSessionDataSource` created by `createLiveDataSource` makes the latest ARCore data available to NSDK, but it does not send frames to NSDK by itself. Keep the `dataSource` reference returned by `createLiveDataSource` so you can use it in your frame loop.
+
+For each frame:
+
+1. Call `dataSource.prepareFrame()` to capture the current ARCore frame for NSDK.
+2. Check the return value. `prepareFrame()` returns `true` when a frame was captured and `false` when no frame was ready.
+3. Call `nsdkSession.update()` only when `prepareFrame()` returns `true`. If it returns `false`, skip that frame and wait for the next one.
+
+The following code example saves the latest ARCore frame, asks the data source to prepare that frame for the NSDK, and updates the NSDK only
+if a frame was successfully prepared:
+
+```kotlin
+import com.google.ar.core.Frame
+import com.google.ar.core.Session
+import kotlinx.coroutines.runBlocking
+
+fun onSessionUpdated(session: Session, frame: Frame) {
+    currentFrame = frame
+    // prepareFrame() snapshots the current ARCore frame; update() then processes it.
+    val frameReady = runBlocking { dataSource.prepareFrame() }
+    if (frameReady) nsdkSession.update()
+}
+```
+
+Always call `prepareFrame()` before `update()`. If you call `nsdkSession.update()` first, NSDK has no captured frame to read from the data source. In that case, `latestCameraSample()` remains null and NSDK logs `CAMERA_IMAGE requested but cameraSample is null, skipping`. Features that depend on camera data, such as localization, do not run. Also, do not start a second `prepareFrame()` call before the previous `prepareFrame()` and `update()` cycle finishes.
+
+`prepareFrame()` is a `suspend` function. You can call it only from a coroutine or from another `suspend` function. A draw callback such as `GLSurfaceView.Renderer.onDrawFrame` is a normal function, so it cannot call `prepareFrame()` directly. If you try, Kotlin reports that the suspend function can be called only from a coroutine or another suspend function. In the previous code example, `runBlocking` is used as a simple bridge so `prepareFrame()` and `update()` run in order on the same thread.
+
+If your app draws the camera view every frame, use a coroutine setup that runs `prepareFrame()` and `update()` on one background thread and allows only one frame update at a time. The Kotlin sample app shows this setup. If you use `runBlocking`, make sure your project includes the `org.jetbrains.kotlinx:kotlinx-coroutines-android` library.
+
+`nsdkSession.update()` reads from `dataSource` and only acquires the data types currently requested by active features, so costly resources such as the camera image are not transferred on every frame unnecessarily.
+
+#### Use sendFrame to send frame data directly
+
+With `sendFrame(...)`, your app creates a `FrameData` object for each ARCore frame and passes it directly to `nsdkSession.sendFrame(...)`. `sendFrame(...)` does not read frame data from `nsdkSession.dataSource`. The Kotlin sample app uses `sendFrame(...)`.
+
+Before you create `FrameData`, call `getRequestedDataFormats()`. That call returns the inputs NSDK's active features need for the current frame. Then fill in only those parts of `FrameData`.
+
+```kotlin
+import android.media.Image
+import com.google.ar.core.Frame
+import com.google.ar.core.exceptions.NotYetAvailableException
+import com.nianticspatial.nsdk.CameraIntrinsicsFromARCore
+import com.nianticspatial.nsdk.FrameData
+import com.nianticspatial.nsdk.InputDataFlags
+
+fun onSessionUpdated(frame: Frame) {
+    val requested = nsdkSession.getRequestedDataFormats()
+    if (InputDataFlags.NONE.Is(requested)) return
+
+    val data = FrameData(frame.timestamp / 1_000_000, frame.timestamp)
+
+    var image: Image? = null
+    if (InputDataFlags.CAMERA_IMAGE.Within(requested)) {
+        try {
+            image = frame.acquireCameraImage()
+            data.cameraImagePlanes = image.planes
+            data.cameraImageWidth = image.width
+            data.cameraImageHeight = image.height
+            data.cameraImageFormat = image.format
+            data.cameraIntrinsics = CameraIntrinsicsFromARCore(frame.camera.imageIntrinsics)
+        } catch (ignored: NotYetAvailableException) {
+            // The camera image isn't ready for this frame yet -- skip it.
+            return
+        }
+    }
+    if (InputDataFlags.POSE.Within(requested)) data.cameraPose = frame.camera.pose
+    if (InputDataFlags.TRACKING_STATE.Within(requested)) data.trackingState = frame.camera.trackingState
+    // Set DEVICE_ORIENTATION, GPS_LOCATION, and COMPASS the same way when requested.
+
+    nsdkSession.sendFrame(data)
+    image?.close()
+}
+```
+
+In the previous code example, the app asks NSDK which inputs it needs, creates a `FrameData` object for the current ARCore frame, fills in only the requested values, and sends that data to NSDK.
+
+Using `sendFrame(...)` can also help if logcat repeatedly shows `update: CAMERA_IMAGE requested but cameraSample is null, skipping`. With `update()`, that message means NSDK asked the data source for a camera image, but no image was available for that frame. This usually happens when the `frameProvider` given to `createLiveDataSource` returns `null` or returns a frame whose camera image is not ready yet. The app keeps running, but NSDK does not receive camera frames, so localization and other camera based features do not run.
+
+With `sendFrame(...)`, your app acquires the camera image directly with `frame.acquireCameraImage()`. If the image is not ready yet, `acquireCameraImage()` throws `NotYetAvailableException` and the app skips only that frame.
+
+### Permissions
+
+NSDK uses the **camera** for AR and **location** for GPS and coarse localization.
+
+The manifest entries in [Add permissions](#add-permissions) are required, but they do not grant access on their own. On Android 6.0 and later, your app must request `CAMERA` and location permissions at runtime with `ActivityCompat.requestPermissions(...)` and handle the user's response before you use features that depend on them.
+
+If you do not request these permissions, NSDK cannot use those device signals. For example, GPS and coarse localization do not run, and Android does not grant the permission from the manifest entry alone.
+
+Refer to the Kotlin [sample projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/) for examples of a `Utils` class that handles checking and requesting permissions.
+
+### Show the camera feed
+
+At this point, NSDK can receive ARCore frames, but your app may still show a black screen. That usually means ARCore is providing camera frames, but your app is not drawing the camera image to the screen. NSDK reads the ARCore camera texture, but it does not render the camera background for you.
+
+To show the live camera feed, add the standard ARCore camera background renderer to your app. This code belongs to your ARCore setup, not to NSDK. In that renderer, do the following:
+
+1. Draw a full screen quad that displays the camera texture.
+2. Use `frame.transformCoordinates2d(...)` to get the correct texture coordinates for that camera image.
+3. Call `session.setDisplayGeometry(...)` when the view size or screen rotation changes.
+
+The [Kotlin sample app](https://github.com/nianticspatial/nsdk-samples-kotlin) includes camera background rendering code that you can reuse. For an overview of the sample app, see [Kotlin sample projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/).
+
+When you can see the live camera feed, you know your ARCore rendering setup is working and NSDK is receiving frames. Confirm that before you move on to NSDK features.
+
+## Next steps
+
+After your project is set up, continue to [Sample Projects](https://www.nianticspatial.com/docs/nsdk/sample_projects/) to explore working examples of NSDK features.

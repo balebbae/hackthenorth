@@ -1,0 +1,72 @@
+# NSDKDepthSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKDepthSession/
+
+NSDKDepthSession
+
+---
+
+## Declaration
+
+final class NSDKDepthSession
+
+## Summary
+
+Depth feature session for NSDK with Combine publisher support.
+Upon starting the depth session, NSDK will begin processing AR frames to generate depth data.
+The latest depth data can be retrieved using `latestDepth()`, and `latestImageParams()`
+provides information to synchronize the depth image with camera frame.
+`$result` is refreshed automatically each frame by `NSDKSession.update()` while the session
+is active. Subscribe to it with Combine:
+
+```swift
+depthSession.$result
+    .compactMap { if case .success(let result) = $0 { return result } else { return nil } }
+    .sink { result in ... }
+    .store(in: &cancellables)
+```
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @Published var result | NSDKAsyncState<DepthResult, AwarenessError | The current depth result. Updated each frame by `NSDKSession` while active. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configure | void | Configures the session with the specified settings.- Attention: This method must be called while the session is stopped, or else configuration will fail. In that case, while this function returns without throwing, configuration will still fail asynchronously. Use `featureStatus()` to check that configuration has not failed. |
+| featureStatus | NSDKFeatureStatus | The current feature status of the depth session. |
+| latestDepth | NSDKAsyncState<DepthResult, AwarenessError> | Retrieves the latest depth result from the depth session. |
+| latestImageParams | NSDKAsyncState<AwarenessImageParams, AwarenessError> | Retrieves the latest image parameters associated with the depth data. |
+| start | void | Starts the depth session, enabling depth data processing with the current configuration. |
+| stop | void | Stops the depth session, halting depth data processing. |
+
+---
+
+## Nested Types
+
+### Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configuration | Configuration | The type of configuration used by this session |
+
+---
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| DepthMode | DepthMode | Options for different depth sensing modes.These trade off between performance and quality. |
+
+---
+
+## Relationships
+
+conforms to:  NSDKFeatureSession

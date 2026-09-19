@@ -1,0 +1,30 @@
+# anchorUpdate
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-anchorUpdate/
+
+anchorUpdate
+
+---
+
+## Declaration
+
+func anchorUpdate(anchorId: NSDKVpsAnchorId) -> VpsAnchorUpdate?
+
+#### Summary
+
+Gets the latest tracking update for a specified anchor.
+Call this for one-shot queries. For ongoing per-frame updates, subscribe to
+anchorUpdated instead.
+- Precondition: anchorId must be exactly 32 characters long.
+
+#### Returns
+
+The latest anchor update, or nil if the anchor ID is not recognized.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorId | NSDKVpsAnchorId | The unique identifier of a tracked anchor. |
+
+---

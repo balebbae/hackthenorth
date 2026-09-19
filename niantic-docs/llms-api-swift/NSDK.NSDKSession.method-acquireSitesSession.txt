@@ -1,0 +1,13 @@
+# acquireSitesSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireSitesSession/
+
+acquireSitesSession
+
+---
+
+## Declaration
+
+@MainActor func acquireSitesSession() -> NSDKSitesSession
+
+---

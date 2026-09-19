@@ -1,0 +1,18 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFeatureSession.method-stop/
+
+stop
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stops the feature session.
+This halts all processing. The session can be reconfigured and restarted after stopping.
+
+---

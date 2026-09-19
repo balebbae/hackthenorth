@@ -1,0 +1,36 @@
+# SitesResult
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-SitesResult/
+
+SitesResult
+Base class for results returned by queries to the Sites Manager service.
+
+---
+
+## Declaration
+
+class SitesResult
+
+---
+
+## Nested Types
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Error | Error | Network request errors that can occur during Sites Manager operations. |
+
+---
+
+## Relationships
+
+derived:  AssetResult 
+
+derived:  OrganizationResult 
+
+derived:  SiteAssetsResult 
+
+derived:  SiteResult 
+
+derived:  UserResult

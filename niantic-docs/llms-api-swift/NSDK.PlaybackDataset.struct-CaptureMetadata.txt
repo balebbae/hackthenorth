@@ -1,0 +1,44 @@
+# CaptureMetadata
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDataset.struct-CaptureMetadata/
+
+CaptureMetadata
+Metadata structure for capture information. All fields optional so varying capture exports decode without keyNotFound.
+
+---
+
+## Declaration
+
+struct CaptureMetadata
+
+---
+
+## Constructors
+
+init(from decoder: any Decoder) throws
+
+#### Summary
+
+Creates a new instance by decoding from the given decoder.
+This initializer throws an error if reading from the decoder fails, or
+if the data read is corrupted or otherwise invalid.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let appId | String? | - |
+| let appVersion | String? | - |
+| let captureName | String? | - |
+| let generatedBy | String? | - |
+| let unityVersion | String? | - |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Decodable 
+
+conforms to:  Swift.Encodable

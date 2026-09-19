@@ -1,0 +1,23 @@
+# getLatestLocalizationRequestRecords
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-getLatestLocalizationRequestRecords/
+
+getLatestLocalizationRequestRecords
+
+---
+
+## Declaration
+
+func getLatestLocalizationRequestRecords() -> [Vps2LocalizationRequestRecord]
+
+#### Summary
+
+Gets the latest localization request records from the VPS2 feature.
+Returns only records that occurred since the last call -- this is a delta, not cumulative.
+For reactive use, subscribe to localizationRequestRecords instead.
+
+#### Returns
+
+Localization request state changes since the last call.
+
+---

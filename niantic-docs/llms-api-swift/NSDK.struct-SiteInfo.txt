@@ -1,0 +1,42 @@
+# SiteInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-SiteInfo/
+
+SiteInfo
+Represents site information from the Sites Manager service.
+
+---
+
+## Declaration
+
+struct SiteInfo
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_SitesManager_SiteInfo)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let id | String | Site identifier. |
+| let location | CLLocationCoordinate2D? | The latitude and longitude associated with a location, specified using the WGS 84reference frame. |
+| let name | String | Site name. |
+| let organizationId | String | Organization identifier that owns this site. |
+| let parentSiteId | String? | Parent site identifier (nil if no parent site). |
+| let status | String | Site status. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.SendableMetatype

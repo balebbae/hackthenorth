@@ -1,0 +1,28 @@
+# addMap
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-addMap/
+
+addMap
+Adds previously serialized map data to the map storage.
+
+---
+
+## Declaration
+
+func addMap(map: NSDKBuffer) throws
+
+#### Summary
+
+Adds previously serialized map data to the map storage.
+
+#### Throws
+
+NSDKError.invalidArgumentor NSDKError.nullArgument   indicating a problem with the map argument . Check NSDK's C logs for more information.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| map | NSDKBuffer | The serialized map data to add. It should be encoded as a DeviceMap protobuf and can be obtained from `mapData()`, `mapUpdate()`, or `mergeMapUpdate(existingMap:mapUpdate:)`. |
+
+---
