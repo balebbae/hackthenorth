@@ -50,5 +50,6 @@ The iOS and localization developers share one native app. Agree on the camera/AR
 - The first MVP uses the chest phone; the same iOS app can later support left, right, and back device roles.
 - Niantic localization runs through the phone SDK. Modal hosts the custom backend.
 - Exported map assets belong in `maps/assets/`; navigation metadata belongs in `maps/navigation/`.
+- Worlds are stored on a Modal Volume as `worlds/<id>/world.json` + `worlds/<id>/<version>/scene.spz` (contract in `shared/contracts/`). The web app renders them with Spark/Three.js at `/worlds/<id>` (measure distances, tag stops, save the graph back), reading through FastAPI when `WANDER_API_URL` is set or from `maps/assets/worlds/` locally (`npm run world:add` in `apps/web` registers an export).
 - Empty folders contain `.gitkeep` placeholders so they can be tracked by Git.
-- The web app contains the create-next-app starter and npm dependencies. No Xcode project, backend implementation, or deployment code has been added.
+- No Xcode project, backend implementation, or deployment code has been added yet; the FastAPI endpoints the web app expects are listed in `shared/contracts/README.md`.

@@ -1,0 +1,500 @@
+openapi: 3.1.0
+info:
+  title: Wander worlds API
+  version: 1.0.0
+  description: |
+    FastAPI service deployed on Modal. It is the only thing that touches the
+    Modal Volume (`worlds/…`, `sessions/…`) and the only thing the phone and the
+    web app talk to.
+
+    * **Worlds** — manifests, splats, VPS maps, meshes, navigation graph and
+      measurements, stored on the Volume (see `world.schema.json`).
+    * **Navigation** — localization fixes from the Niantic Lightship SDK on the
+      phone, routing over the graph, live session progress for the dashboard
+      (see `navigation.schema.json`).
+
+    Every request carries `X-API-Key`. The Next.js app proxies the `/worlds/…`
+    routes at `/api/worlds/…` so the key never reaches the browser; the phone
+    sends the key directly. Rendering happens in the browser, so this service
+    runs on a CPU container — no GPU.
+
+    Storage layout on the Volume:
+
+        worlds/<id>/world.json           manifest (source of truth for the graph)
+        worlds/<id>/measurements.json    measurements taken in the web viewer
+        worlds/<id>/<version>/scene.spz  immutable versioned assets
+        sessions/<sessionId>.json        navigation session state (or a Modal Dict)
+
+servers:
+  - url: https://{app}.modal.run
+    variables:
+      app: { default: wander-api }
+
+security:
+  - apiKey: []
+
+tags:
+  - name: worlds
+  - name: assets
+  - name: navigation
+  - name: sessions
+
+paths:
+  /worlds:
+    get:
+      tags: [worlds]
+      summary: List worlds
+      description: Every readable `worlds/*/world.json`. Invalid manifests are skipped and logged.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [worlds]
+                properties:
+                  worlds:
+                    type: array
+                    items: { $ref: "world.schema.json" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [worlds]
+      summary: Create a world
+      description: |
+        Creates `worlds/<id>/world.json` with `status: draft`, `version: v1` and
+        `assets.splat` pointing at the expected `worlds/<id>/v1/scene.spz`.
+        Upload the file afterwards with `PUT /worlds/{id}/{version}/{filename}`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, name]
+              properties:
+                id: { type: string, pattern: "^[a-z0-9][a-z0-9._-]{0,63}$" }
+                name: { type: string }
+                space: { type: string }
+                description: { type: string }
+                nianticSiteId: { type: [string, "null"] }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "world.schema.json" }
+        "409": { description: A world with this id already exists }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [worlds]
+      summary: Read a world manifest
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "world.schema.json" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [worlds]
+      summary: Update manifest fields
+      description: |
+        Partial update. Only the listed fields may change here; the graph has
+        its own endpoint and asset paths change by switching `version`.
+        `updatedAt` is set by the server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string }
+                space: { type: string }
+                description: { type: string }
+                nianticSiteId: { type: [string, "null"] }
+                version: { type: string, description: "Switch the active asset version (directory must exist)." }
+                alignment: { $ref: "world.schema.json#/properties/alignment" }
+                status: { $ref: "world.schema.json#/properties/status" }
+                stats: { $ref: "world.schema.json#/properties/stats" }
+      responses:
+        "200":
+          description: Updated manifest
+          content:
+            application/json:
+              schema: { $ref: "world.schema.json" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [worlds]
+      summary: Delete a world and all of its versions
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/graph:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    put:
+      tags: [worlds]
+      summary: Replace the navigation graph
+      description: |
+        Written by the web viewer when stops are tagged. Replaces
+        `navigationGraph` wholesale (validate node ids are unique and every
+        edge references a node) and bumps `updatedAt`. Routing uses this graph
+        immediately; no cache.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "world.schema.json#/properties/navigationGraph" }
+      responses:
+        "200":
+          description: Updated manifest
+          content:
+            application/json:
+              schema: { $ref: "world.schema.json" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/measurements:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [worlds]
+      summary: Read measurements
+      description: Returns an empty list (not 404) when the file does not exist yet.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "measurements.schema.json" }
+        "404": { description: World not found }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [worlds]
+      summary: Replace measurements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "measurements.schema.json" }
+      responses:
+        "200":
+          description: Stored file (server sets `updatedAt`)
+          content:
+            application/json:
+              schema: { $ref: "measurements.schema.json" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/vps:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [navigation]
+      summary: Niantic VPS site status
+      description: |
+        Combines what the volume holds (`assets.vpsMap`) with the last
+        successful localization recorded for the site and, when a Lightship
+        API key is configured on the backend, the location's activation state
+        from Niantic. Cached for 60 s.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/vpsSiteStatus" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The world has no `nianticSiteId` yet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/localize:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    post:
+      tags: [navigation]
+      summary: Report a Niantic SDK localization fix
+      description: |
+        The phone calls this whenever the Lightship SDK returns a VPS
+        localization. The backend:
+
+        1. rejects the fix if `nianticSiteId` differs from the manifest (`409`);
+        2. re-expresses the pose in the world frame using `alignment`;
+        3. snaps it to the nearest graph node / edge;
+        4. creates a session on the first call and returns its id.
+
+        Subsequent high-rate ARKit poses go to `POST /sessions/{sessionId}/pose`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "navigation.schema.json#/$defs/localizationUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/localizationResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Site id mismatch, or the world has no navigation graph }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/route:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    post:
+      tags: [navigation]
+      summary: Compute a route over the navigation graph
+      description: |
+        Dijkstra over `navigationGraph` (edge `distance` when present,
+        otherwise straight-line). A free `from` position is snapped to the
+        nearest edge first. Turn instructions are derived from consecutive leg
+        headings; `text` is what the phone speaks.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "navigation.schema.json#/$defs/routeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/routeResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { description: World or destination node not found }
+        "422": { description: Destination is unreachable from the start }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/{version}/{filename}:
+    parameters:
+      - { $ref: "#/components/parameters/worldId" }
+      - name: version
+        in: path
+        required: true
+        schema: { type: string, pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$" }
+      - name: filename
+        in: path
+        required: true
+        schema: { type: string, pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$" }
+    get:
+      tags: [assets]
+      summary: Download an asset
+      description: |
+        Streams the file. Set `Content-Type` (`application/octet-stream` for
+        `.spz`), `Content-Length`, `ETag` and
+        `Cache-Control: public, max-age=31536000, immutable` — versions never
+        change in place. `Range` support is optional; Spark streams
+        sequentially.
+      responses:
+        "200":
+          description: File bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [assets]
+      summary: Upload an asset
+      description: |
+        Raw bytes in the body (no multipart). Creates the version directory if
+        needed and refuses to overwrite an existing file (`409`) — bump the
+        version instead. Does not touch the manifest; follow up with
+        `PATCH /worlds/{id}` to switch `version`. Accepted splat formats:
+        `.spz .ply .splat .ksplat .sog`; also `.glb`, `.png`, `.bin`.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [path, bytes]
+                properties:
+                  path: { type: string, examples: ["worlds/demo-building/v2/scene.spz"] }
+                  bytes: { type: integer }
+                  sha256: { type: string }
+        "409": { description: File already exists at this version }
+        "413": { description: Larger than the configured limit (default 2 GiB) }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /sessions:
+    post:
+      tags: [sessions]
+      summary: Start a navigation session explicitly
+      description: |
+        Optional — `POST /worlds/{id}/localize` creates one implicitly. Use this
+        when the destination is chosen before the first VPS fix (e.g. picked in
+        the web dashboard and pushed to the phone).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [worldId, deviceId]
+              properties:
+                worldId: { type: string }
+                deviceId: { type: string }
+                destination: { type: string, description: "Destination node id." }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/session" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /sessions/{sessionId}:
+    parameters: [{ $ref: "#/components/parameters/sessionId" }]
+    get:
+      tags: [sessions]
+      summary: Read session state
+      description: Used by the web dashboard's live panel; poll or subscribe via the WebSocket.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/session" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [sessions]
+      summary: End a session
+      responses:
+        "204": { description: Ended }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /sessions/{sessionId}/destination:
+    parameters: [{ $ref: "#/components/parameters/sessionId" }]
+    put:
+      tags: [sessions]
+      summary: Set or change the destination
+      description: Recomputes the route from the last known pose and emits a `rerouted` event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination]
+              properties:
+                destination: { type: string }
+      responses:
+        "200":
+          description: Updated session with the new route
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/session" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { description: Destination unreachable }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /sessions/{sessionId}/pose:
+    parameters: [{ $ref: "#/components/parameters/sessionId" }]
+    post:
+      tags: [sessions]
+      summary: Push an ARKit pose and get the next cue
+      description: |
+        Called at 5–10 Hz by the phone between VPS fixes. The backend updates
+        progress along the route, detects off-route (> 3 m from the nearest
+        leg → `off-route`, re-route automatically after 5 s), arrival (< 1.5 m
+        from the destination) and lost tracking, and returns the `speak`
+        phrase, if any, that the phone should say now. Every call also emits a
+        `progress` event on the WebSocket.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "navigation.schema.json#/$defs/poseUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "navigation.schema.json#/$defs/progressUpdate" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Session has no destination yet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /ws/sessions/{sessionId}:
+    parameters: [{ $ref: "#/components/parameters/sessionId" }]
+    get:
+      tags: [sessions]
+      summary: Live session events (WebSocket)
+      description: |
+        Upgrade to a WebSocket. Authenticate with `X-API-Key` on the upgrade
+        request (or `?key=` for browsers that cannot set headers — the Next.js
+        app should proxy instead). The server pushes `SessionEvent` JSON
+        messages (`localized`, `progress`, `rerouted`, `arrived`, `lost`,
+        `ended`) and replays the latest state on connect. Clients may send
+        `{"type":"ping"}`; nothing else is accepted.
+      responses:
+        "101": { description: Switching protocols }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Shared secret from the `WANDER_API_KEY` Modal Secret; compared with `secrets.compare_digest`.
+
+  parameters:
+    worldId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^[a-z0-9][a-z0-9._-]{0,63}$" }
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Missing or wrong `X-API-Key`
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: { detail: { type: string, examples: ["invalid api key"] } }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: { detail: { type: string } }
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                oneOf:
+                  - { type: string }
+                  - { type: array, items: { type: object } }

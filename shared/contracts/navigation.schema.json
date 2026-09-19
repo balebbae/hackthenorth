@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wander.app/contracts/navigation.schema.json",
+  "title": "Wander navigation messages",
+  "description": "Payloads exchanged between the iPhone (Niantic Lightship SDK / ARKit), the FastAPI backend on Modal, and the web dashboard. All positions are metres in the world's frame (the frame `alignment` maps the splat into — normally the Niantic VPS site frame). Rotations are unit quaternions [x, y, z, w].",
+  "$defs": {
+    "pose": {
+      "type": "object",
+      "required": ["position", "rotation"],
+      "additionalProperties": false,
+      "properties": {
+        "position": { "$ref": "world.schema.json#/$defs/vec3" },
+        "rotation": { "$ref": "world.schema.json#/$defs/quat" }
+      }
+    },
+
+    "localizationUpdate": {
+      "title": "LocalizationUpdate",
+      "description": "Sent by the phone every time the Niantic SDK returns a VPS localization result (or ARKit drifts enough to re-report).",
+      "type": "object",
+      "required": ["deviceId", "nianticSiteId", "pose", "confidence", "timestamp"],
+      "additionalProperties": false,
+      "properties": {
+        "sessionId": { "type": "string", "description": "Omit on the first call; the backend returns one." },
+        "deviceId": { "type": "string", "description": "Stable per-install id; also identifies the role (chest / left / back) via `role`." },
+        "role": { "type": "string", "enum": ["chest", "left", "right", "back"], "default": "chest" },
+        "nianticSiteId": { "type": "string", "description": "Lightship VPS location the phone localised against. Must match the world's manifest." },
+        "pose": {
+          "allOf": [{ "$ref": "#/$defs/pose" }],
+          "description": "Camera pose in the VPS site frame as reported by the SDK (`ARLocalizationResult` / `LocalizationTarget` transform)."
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "trackingState": { "type": "string", "enum": ["localized", "limited", "lost"], "default": "localized" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "localizationResponse": {
+      "title": "LocalizationResponse",
+      "type": "object",
+      "required": ["sessionId", "worldId", "pose", "nearestNode"],
+      "additionalProperties": false,
+      "properties": {
+        "sessionId": { "type": "string" },
+        "worldId": { "type": "string" },
+        "pose": { "allOf": [{ "$ref": "#/$defs/pose" }], "description": "Pose re-expressed in the world frame (identical to the input when alignment.frame is the VPS frame)." },
+        "nearestNode": { "$ref": "#/$defs/nodeRef" },
+        "snappedPosition": { "$ref": "world.schema.json#/$defs/vec3", "description": "Position projected onto the closest graph edge." },
+        "offGraphMetres": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "nodeRef": {
+      "type": "object",
+      "required": ["id", "position"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["waypoint", "entrance", "destination"] },
+        "position": { "$ref": "world.schema.json#/$defs/vec3" },
+        "distanceMetres": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "routeRequest": {
+      "title": "RouteRequest",
+      "type": "object",
+      "required": ["to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "oneOf": [
+            { "type": "string", "description": "Node id" },
+            { "$ref": "world.schema.json#/$defs/vec3", "description": "Free position; snapped to the nearest edge." }
+          ],
+          "description": "Defaults to the session's last known position when omitted."
+        },
+        "to": { "type": "string", "description": "Destination node id (usually kind = destination)." },
+        "avoid": { "type": "array", "items": { "type": "string" }, "description": "Node ids to route around (e.g. closed doors)." }
+      }
+    },
+
+    "routeResponse": {
+      "title": "RouteResponse",
+      "type": "object",
+      "required": ["nodes", "legs", "totalMetres", "instructions"],
+      "additionalProperties": false,
+      "properties": {
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/nodeRef" } },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "distanceMetres", "headingDeg"],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "distanceMetres": { "type": "number" },
+              "headingDeg": { "type": "number", "description": "Compass-style heading in the world frame, 0 = -Z, clockwise." }
+            }
+          }
+        },
+        "totalMetres": { "type": "number" },
+        "instructions": { "type": "array", "items": { "$ref": "#/$defs/instruction" } }
+      }
+    },
+
+    "instruction": {
+      "type": "object",
+      "required": ["atNode", "turn", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "atNode": { "type": "string" },
+        "turn": { "type": "string", "enum": ["straight", "slight-left", "left", "sharp-left", "slight-right", "right", "sharp-right", "u-turn", "arrive"] },
+        "text": { "type": "string", "description": "Short spoken cue, e.g. 'Left in 3 metres'." },
+        "distanceMetres": { "type": "number", "description": "Distance from the previous instruction." }
+      }
+    },
+
+    "session": {
+      "title": "NavigationSession",
+      "type": "object",
+      "required": ["sessionId", "worldId", "deviceId", "state", "createdAt"],
+      "additionalProperties": false,
+      "properties": {
+        "sessionId": { "type": "string" },
+        "worldId": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "destination": { "type": "string", "description": "Destination node id." },
+        "route": { "$ref": "#/$defs/routeResponse" },
+        "state": { "type": "string", "enum": ["localizing", "navigating", "off-route", "arrived", "lost", "ended"] },
+        "lastPose": { "$ref": "#/$defs/pose" },
+        "lastProgress": { "$ref": "#/$defs/progressUpdate" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "poseUpdate": {
+      "title": "PoseUpdate",
+      "description": "High-rate pose from ARKit between VPS fixes (5–10 Hz is plenty).",
+      "type": "object",
+      "required": ["pose", "timestamp"],
+      "additionalProperties": false,
+      "properties": {
+        "pose": { "$ref": "#/$defs/pose" },
+        "trackingState": { "type": "string", "enum": ["localized", "limited", "lost"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "progressUpdate": {
+      "title": "ProgressUpdate",
+      "type": "object",
+      "required": ["state", "remainingMetres"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "type": "string", "enum": ["localizing", "navigating", "off-route", "arrived", "lost", "ended"] },
+        "nextNode": { "$ref": "#/$defs/nodeRef" },
+        "distanceToNextMetres": { "type": "number" },
+        "remainingMetres": { "type": "number" },
+        "instruction": { "$ref": "#/$defs/instruction" },
+        "offRouteMetres": { "type": "number", "description": "Perpendicular distance from the route; > 3 m flips state to off-route." },
+        "speak": { "type": "string", "description": "Exact phrase the phone should say now, if any." }
+      }
+    },
+
+    "sessionEvent": {
+      "title": "SessionEvent",
+      "description": "Envelope pushed over the WebSocket to the web dashboard (and optionally back to the phone).",
+      "type": "object",
+      "required": ["type", "sessionId", "timestamp"],
+      "properties": {
+        "type": { "type": "string", "enum": ["localized", "progress", "rerouted", "arrived", "lost", "ended"] },
+        "sessionId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "pose": { "$ref": "#/$defs/pose" },
+        "progress": { "$ref": "#/$defs/progressUpdate" },
+        "route": { "$ref": "#/$defs/routeResponse" }
+      }
+    },
+
+    "vpsSiteStatus": {
+      "title": "VpsSiteStatus",
+      "description": "What the backend knows about the Niantic Lightship VPS location behind a world.",
+      "type": "object",
+      "required": ["nianticSiteId", "localizable", "checkedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "nianticSiteId": { "type": "string" },
+        "localizable": { "type": "boolean", "description": "Lightship reports the location as activated / localizable." },
+        "meshAvailable": { "type": "boolean", "description": "A VPS mesh export exists on the volume (assets.vpsMap)." },
+        "lastLocalizedAt": { "type": "string", "format": "date-time", "description": "Most recent successful phone localization against this site." },
+        "checkedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

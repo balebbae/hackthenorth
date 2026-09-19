@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wander.app/contracts/measurements.schema.json",
+  "title": "Wander world measurements",
+  "description": "Distance measurements taken in the web viewer, stored at worlds/<id>/measurements.json. Points are in the world frame (after alignment), in metres.",
+  "type": "object",
+  "required": ["schema", "worldId", "measurements"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "wander.measurements/v1" },
+    "worldId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+    "measurements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/measurement" }
+    },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "measurement": {
+      "type": "object",
+      "required": ["id", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string", "description": "Optional human label, e.g. 'Door width'." },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "$ref": "world.schema.json#/$defs/vec3" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

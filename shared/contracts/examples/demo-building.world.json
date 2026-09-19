@@ -1,0 +1,36 @@
+{
+  "schema": "wander.world/v1",
+  "id": "demo-building",
+  "name": "Demo building — ground floor",
+  "space": "Field tests",
+  "description": "Scaniverse capture of the demo building lobby and main corridor.",
+  "nianticSiteId": null,
+  "version": "v1",
+  "assets": {
+    "splat": "worlds/demo-building/v1/scene.spz",
+    "thumbnail": "worlds/demo-building/v1/thumbnail.png"
+  },
+  "alignment": {
+    "frame": "niantic-vps",
+    "position": [0, 0, 0],
+    "rotation": [0, 0, 0, 1],
+    "scale": 1
+  },
+  "navigationGraph": {
+    "frame": "world",
+    "nodes": [
+      { "id": "entrance", "name": "Front entrance", "kind": "entrance", "position": [0, 0, 0] },
+      { "id": "lobby", "name": "Lobby desk", "position": [4.5, 0, -1.2] },
+      { "id": "elevators", "name": "Elevator bank", "position": [9, 0, -1.5] },
+      { "id": "room-101", "name": "Room 101", "kind": "destination", "position": [14, 0, 2] }
+    ],
+    "edges": [
+      { "from": "entrance", "to": "lobby" },
+      { "from": "lobby", "to": "elevators" },
+      { "from": "elevators", "to": "room-101" }
+    ]
+  },
+  "stats": { "splatCount": 1200000, "captureApp": "Scaniverse", "capturedAt": "2026-09-19T12:00:00Z" },
+  "status": "aligned",
+  "updatedAt": "2026-09-19T12:30:00Z"
+}
