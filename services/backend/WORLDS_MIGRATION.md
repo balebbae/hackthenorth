@@ -5,6 +5,14 @@ The six contract files from that revision are copied unchanged into shared/contr
 
 ## Deployment changes
 
+GitHub Actions: `.github/workflows/deploy-modal.yml` tests every push to main and
+then deploys both Modal apps to the `main` Modal environment. It also supports
+manual runs from GitHub Actions on main. Configure repository Actions secrets
+`MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` for the workspace containing htn-backend.
+Application credentials remain in that existing Modal secret; CI does not replace
+it or require a checked-in .env. Deployments are serialized and require passing
+backend tests. The two app deployments are sequential, not an atomic rollout.
+
 Shortcut from the activated virtual environment at the repository root:
 `python -m services.backend.scripts.deploy`. This replaces the htn-backend secret
 from the local .env (excluding local path overrides), deploys both apps, and saves

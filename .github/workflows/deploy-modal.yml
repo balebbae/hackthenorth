@@ -1,0 +1,61 @@
+name: Test and deploy Modal
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Finish an active deployment before starting the next one.
+concurrency:
+  group: modal-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: services/backend/requirements.txt
+      - name: Install backend dependencies
+        run: python -m pip install -r services/backend/requirements.txt
+      - name: Run backend tests
+        run: python -m pytest services/backend/tests -q
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_ENVIRONMENT: main
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: services/backend/requirements.txt
+      - name: Check deployment credentials
+        shell: bash
+        run: |
+          if [[ -z "$MODAL_TOKEN_ID" || -z "$MODAL_TOKEN_SECRET" ]]; then
+            echo "::error::Add MODAL_TOKEN_ID and MODAL_TOKEN_SECRET to repository Actions secrets."
+            exit 1
+          fi
+      - name: Install backend dependencies
+        run: python -m pip install -r services/backend/requirements.txt
+      # htn-backend is managed in Modal; CI never replaces it from a local .env.
+      - name: Deploy navigation backend
+        run: python -m modal deploy -m services.backend.deployment.modal_app
+      - name: Deploy annotation worker
+        run: python -m modal deploy -m services.backend.deployment.modal_annotations
