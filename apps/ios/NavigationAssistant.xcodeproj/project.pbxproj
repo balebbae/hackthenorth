@@ -11,6 +11,7 @@
 		1E16261BF60F3C660C763485 /* ObstacleCuePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */; };
 		282E424B5E073A890218C693 /* DeviceRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B80D61B973ADDB8AA016DD /* DeviceRole.swift */; };
 		2FC324B2B98E44A37AC5977C /* ObstacleCuePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F986D58B840F2AEC8BA69CC /* ObstacleCuePolicy.swift */; };
+		3E174877BB3AC0724CD4D660 /* ProximityHapticProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6B07030EF6C1772C97EECA /* ProximityHapticProfileTests.swift */; };
 		3E44CA0C91BEDB122D3C7491 /* LocalizationTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15A27278F3DD2A7D562BD0C /* LocalizationTransport.swift */; };
 		4053713D51A6AA505C5F8D89 /* RolePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B102DBDF9D441F5AB16955F /* RolePickerView.swift */; };
 		49E668DB9AB2D3657ED00985 /* NianticRESTTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */; };
@@ -28,6 +29,7 @@
 		BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */; };
 		CDBDE6DA591478F0C50C23F3 /* ARSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031568815C5D0030A5C5CE41 /* ARSessionController.swift */; };
 		DE398D0DF725BEB920A9B924 /* LocalizationQueryLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */; };
+		EA90A2B85FE65160F53F6834 /* ProximityHapticProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D81B2EE76F1BACE86F7C9B /* ProximityHapticProfile.swift */; };
 		EF21256AFF4120B855E27FE2 /* SpeechCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161465C2356D2C43BB567B41 /* SpeechCoordinator.swift */; };
 		F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */; };
 /* End PBXBuildFile section */
@@ -61,6 +63,7 @@
 		5429B17D898EB77DE97049B0 /* NavigationAssistantUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NavigationAssistantUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationQueryLoop.swift; sourceTree = "<group>"; };
 		643868D493D450DB94B2C834 /* HapticController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticController.swift; sourceTree = "<group>"; };
+		67D81B2EE76F1BACE86F7C9B /* ProximityHapticProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityHapticProfile.swift; sourceTree = "<group>"; };
 		6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameEncoder.swift; sourceTree = "<group>"; };
 		73228F8110F3A379A989BA31 /* FrontPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontPipeline.swift; sourceTree = "<group>"; };
 		781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleAndSettingsTests.swift; sourceTree = "<group>"; };
@@ -78,6 +81,7 @@
 		DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetectorTests.swift; sourceTree = "<group>"; };
 		ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontRoleView.swift; sourceTree = "<group>"; };
 		F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NianticRESTTransportTests.swift; sourceTree = "<group>"; };
+		FF6B07030EF6C1772C97EECA /* ProximityHapticProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityHapticProfileTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -151,6 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				643868D493D450DB94B2C834 /* HapticController.swift */,
+				67D81B2EE76F1BACE86F7C9B /* ProximityHapticProfile.swift */,
 			);
 			path = Haptics;
 			sourceTree = "<group>";
@@ -246,6 +251,7 @@
 				F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */,
 				11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */,
 				DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */,
+				FF6B07030EF6C1772C97EECA /* ProximityHapticProfileTests.swift */,
 				781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */,
 			);
 			path = Unit;
@@ -361,6 +367,7 @@
 				49E668DB9AB2D3657ED00985 /* NianticRESTTransportTests.swift in Sources */,
 				1E16261BF60F3C660C763485 /* ObstacleCuePolicyTests.swift in Sources */,
 				AB00AEB7C13277269E469307 /* ObstacleDetectorTests.swift in Sources */,
+				3E174877BB3AC0724CD4D660 /* ProximityHapticProfileTests.swift in Sources */,
 				909A791B211A73D9540814EF /* RoleAndSettingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -384,6 +391,7 @@
 				F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */,
 				2FC324B2B98E44A37AC5977C /* ObstacleCuePolicy.swift in Sources */,
 				BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */,
+				EA90A2B85FE65160F53F6834 /* ProximityHapticProfile.swift in Sources */,
 				4053713D51A6AA505C5F8D89 /* RolePickerView.swift in Sources */,
 				EF21256AFF4120B855E27FE2 /* SpeechCoordinator.swift in Sources */,
 			);

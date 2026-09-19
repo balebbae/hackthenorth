@@ -13,18 +13,20 @@ final class ObstacleCuePolicyTests: XCTestCase {
         let d = policy.decide(zones)
         XCTAssertEqual(d.cue?.priority, .obstacle)
         XCTAssertTrue(d.cue!.text.contains("right"))
-        XCTAssertEqual(d.haptics, HapticCommand(left: true, right: false, back: true))
+        XCTAssertEqual(d.haptics, HapticCommand(left: true, right: false, back: true, distance: 0.5))
     }
 
     func testLeftObstacleBuzzesLeftPhone() {
         let d = policy.decide(ObstacleZones(left: 0.4, center: nil, right: nil))
-        XCTAssertEqual(d.haptics, HapticCommand(left: true))
+        XCTAssertEqual(d.haptics, HapticCommand(left: true, distance: 0.4))
+        XCTAssertTrue(d.haptics.shouldBuzz(.left))
+        XCTAssertFalse(d.haptics.shouldBuzz(.right))
         XCTAssertEqual(d.cue?.text, "Obstacle on your left. Move right.")
     }
 
     func testRightObstacleBuzzesRightPhone() {
         let d = policy.decide(ObstacleZones(left: nil, center: nil, right: 0.4))
-        XCTAssertEqual(d.haptics, HapticCommand(right: true))
+        XCTAssertEqual(d.haptics, HapticCommand(right: true, distance: 0.4))
     }
 
     func testFarObstaclesAreIgnored() {

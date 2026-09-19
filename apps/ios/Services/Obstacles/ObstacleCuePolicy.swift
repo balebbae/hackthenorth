@@ -6,8 +6,19 @@ struct HapticCommand: Equatable, Sendable {
     var left = false
     var right = false
     var back = false
+    /// Distance to the obstacle that triggered the command, driving pulse speed.
+    var distance: Float? = nil
 
     static let none = HapticCommand()
+
+    func shouldBuzz(_ role: DeviceRole) -> Bool {
+        switch role {
+        case .left: left
+        case .right: right
+        case .back: back
+        case .front: false
+        }
+    }
 }
 
 /// A spoken cue with a priority so obstacle warnings interrupt route guidance.
@@ -40,19 +51,19 @@ struct ObstacleCuePolicy {
             let side = zones.gapDirection < 0 ? "left" : "right"
             return Decision(
                 cue: SpokenCue(text: "Stop. Obstacle ahead. Clear path to the \(side).", priority: .obstacle),
-                haptics: HapticCommand(left: side == "right", right: side == "left", back: true)
+                haptics: HapticCommand(left: side == "right", right: side == "left", back: true, distance: center)
             )
         }
         if let left = zones.left, left < veerDistance {
             return Decision(
                 cue: SpokenCue(text: "Obstacle on your left. Move right.", priority: .obstacle),
-                haptics: HapticCommand(left: true)
+                haptics: HapticCommand(left: true, distance: left)
             )
         }
         if let right = zones.right, right < veerDistance {
             return Decision(
                 cue: SpokenCue(text: "Obstacle on your right. Move left.", priority: .obstacle),
-                haptics: HapticCommand(right: true)
+                haptics: HapticCommand(right: true, distance: right)
             )
         }
         return .clear
