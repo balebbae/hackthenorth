@@ -81,6 +81,12 @@
         }
       }
     },
+    "meshFrame": {
+      "type": "string",
+      "enum": ["world", "splat"],
+      "default": "world",
+      "description": "Frame `assets.mesh` vertices are expressed in. 'world' = already aligned (a Scaniverse export registered to the VPS frame); 'splat' = raw splat coordinates, mapped through `alignment` like the splat."
+    },
     "alignment": {
       "type": "object",
       "description": "Rigid transform + uniform scale mapping splat-local coordinates into the world frame: p_world = rotation * (scale * p_splat) + position.",

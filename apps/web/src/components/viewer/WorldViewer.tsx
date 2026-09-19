@@ -15,6 +15,7 @@ import {
   type LocalizationQuery,
 } from "@/lib/localization";
 import {
+  assetUrl,
   EMPTY_GRAPH,
   formatSplatCount,
   type Measurement,
@@ -27,6 +28,7 @@ import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { InspectorPanel, type PanelTab } from "./InspectorPanel";
 import type { LocalizationMarker, ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
 import { PHONE_ONLINE_MS, useLocalizationFeed, useNow } from "./useLocalizationFeed";
+import { useMeshTools } from "./useMeshTools";
 import { useSplatViewer, type PickHandler } from "./useSplatViewer";
 import { ViewerOverlay } from "./ViewerOverlays";
 
@@ -90,7 +92,17 @@ export function WorldViewer({
   source,
 }: Props) {
   /* ------------------------------------------------------------ edit state */
-  const graph = useMemo<NavigationGraph>(() => manifest?.navigationGraph ?? EMPTY_GRAPH, [manifest]);
+  // A graph written from the Mesh tab shows immediately; the server copy takes over on the next refresh.
+  const [saved, setSaved] = useState<{ graph: NavigationGraph; over: WorldManifest | null } | null>(null);
+  const graph = useMemo<NavigationGraph>(
+    () => (saved && saved.over === manifest ? saved.graph : manifest?.navigationGraph ?? EMPTY_GRAPH),
+    [saved, manifest],
+  );
+  const setSavedGraph = useCallback((next: NavigationGraph) => setSaved({ graph: next, over: manifest }), [manifest]);
+  const meshTools = useMeshTools(worldId, manifest, graph);
+  const meshUrl = manifest?.assets.mesh ? assetUrl(manifest.assets.mesh) : null;
+  /** What the engine draws: the generated proposal while it is being previewed, else the live graph. */
+  const shownGraph = meshTools.preview && meshTools.proposal ? meshTools.proposal.graph : graph;
   const [notes, setNotes] = useState(initialNotes);
   const [measurements, setMeasurements] = useState(initialMeasurements);
   const [selection, setSelection] = useState<ViewerSelection | null>(null);
@@ -218,7 +230,7 @@ export function WorldViewer({
       }
       if (e.type === "pick-miss") {
         if (e.tool === "navigate") setSelection(null);
-        else setNotice({ tone: "error", text: "Click on the scan itself — that spot has no splats." });
+        else setNotice({ tone: "error", text: "Click on the scan itself — that spot has no surface." });
         return;
       }
       if (e.tool === "note") addNote(e.point);
@@ -234,8 +246,11 @@ export function WorldViewer({
 
   const { containerRef, state, api, focusViewer } = useSplatViewer({
     splatUrl,
+    meshUrl,
+    meshFrame: manifest?.meshFrame ?? "world",
     alignment: manifest?.alignment,
-    graph,
+    graph: shownGraph,
+    graphFlags: meshTools.flags,
     notes,
     measurements,
     selection,
@@ -365,13 +380,22 @@ export function WorldViewer({
               <ToolButton icon="phone" label="Connect a phone (QR code)" onClick={() => setConnectOpen(true)} />
             )}
             <ToolButton icon="frame" label="Reset view" disabled={!interactive} onClick={api.resetView} />
-            {graph.nodes.length > 0 && (
+            {shownGraph.nodes.length > 0 && (
               <ToolButton
                 icon="route"
                 label={state.showGraph ? "Hide waypoints" : "Show waypoints"}
                 pressed={state.showGraph}
                 disabled={!interactive}
                 onClick={() => api.setShowGraph(!state.showGraph)}
+              />
+            )}
+            {meshUrl && (
+              <ToolButton
+                icon="layers"
+                label={state.showMesh ? "Hide mesh" : "Show mesh"}
+                pressed={state.showMesh}
+                disabled={state.mesh.status !== "ready"}
+                onClick={() => api.setShowMesh(!state.showMesh)}
               />
             )}
             <ToolButton
@@ -412,12 +436,36 @@ export function WorldViewer({
                 connectInfo,
                 onConnectPhone: () => setConnectOpen(true),
               }}
+              mesh={{
+                manifest,
+                graph,
+                mesh: state.mesh,
+                showMesh: state.showMesh,
+                onShowMesh: api.setShowMesh,
+                tools: meshTools,
+                selection,
+                onSelect: setSelection,
+                onFocusNode: (id) => {
+                  api.focusNode(id);
+                  focusViewer();
+                },
+                onGraphSaved: (next, text) => {
+                  setSavedGraph(next.navigationGraph ?? EMPTY_GRAPH);
+                  setNotice({ tone: "ok", text });
+                  router.refresh();
+                },
+                onMeshUploaded: () => {
+                  setNotice({ tone: "ok", text: "Mesh uploaded — loading the layer" });
+                  router.refresh();
+                },
+                source,
+              }}
               name={name}
               status={status}
               manifest={manifest}
               splatUrl={splatUrl}
               numSplats={state.numSplats}
-              graph={graph}
+              graph={shownGraph}
               notes={notes}
               measurements={measurements}
               selection={selection}
@@ -486,6 +534,15 @@ export function WorldViewer({
           )}
         </span>
       </div>
+
+      {meshTools.preview && (
+        <div
+          role="status"
+          className="pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 rounded-lg border border-transparent bg-pink-tint px-3 py-1.5 text-body-sm font-medium text-wander-pink"
+        >
+          Previewing generated waypoints — not saved
+        </div>
+      )}
 
       {notice && (
         <div

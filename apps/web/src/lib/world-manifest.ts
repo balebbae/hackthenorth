@@ -54,7 +54,7 @@ export type Alignment = {
 export type WorldAssets = {
   /** Volume-relative path to the splat (.spz / .ply / .splat / .ksplat / .sog). */
   splat: string;
-  /** Optional collision / occlusion mesh (.glb / .obj). */
+  /** Optional collision / occlusion mesh (.glb); the navmesh builder and viewer raycasts prefer it over the splat. */
   mesh?: string;
   /** Optional VPS map export used by the phone for localization. */
   vpsMap?: string;
@@ -75,6 +75,8 @@ export type WorldManifest = {
   version: string;
   assets: WorldAssets;
   navigationGraph?: NavigationGraph;
+  /** Frame `assets.mesh` is expressed in; "world" (default) = already aligned, "splat" = goes through `alignment`. */
+  meshFrame?: "world" | "splat";
   alignment?: Alignment;
   stats?: { splatCount?: number; captureApp?: string; capturedAt?: string };
   status?: WorldStatus;
@@ -197,6 +199,9 @@ export function validateManifest(input: unknown): string[] {
   else
     for (const k of ["mesh", "vpsMap", "thumbnail"] as const)
       if (m.assets[k] !== undefined && !isStr(m.assets[k])) errs.push(`assets.${k} must be a string`);
+
+  if (m.meshFrame !== undefined && m.meshFrame !== "world" && m.meshFrame !== "splat")
+    errs.push('meshFrame must be "world" or "splat"');
 
   if (m.alignment !== undefined) {
     const a = m.alignment;

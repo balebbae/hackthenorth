@@ -14,10 +14,11 @@ import {
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { LiveTab, type LiveTabProps } from "./LiveTab";
+import { MeshTab, type MeshTabProps } from "./MeshTab";
 import { formatMetres, type ViewerSelection } from "./SplatViewerEngine";
 import { PHONE_ONLINE_MS, useNow } from "./useLocalizationFeed";
 
-export type PanelTab = "live" | "notes" | "measure" | "details";
+export type PanelTab = "live" | "notes" | "measure" | "mesh" | "details";
 
 export const NODE_TONE: Record<NavNodeKind, string> = {
   waypoint: "bg-wander-blue",
@@ -29,6 +30,7 @@ const TABS: { id: PanelTab; label: string }[] = [
   { id: "live", label: "Live" },
   { id: "notes", label: "Notes" },
   { id: "measure", label: "Measure" },
+  { id: "mesh", label: "Mesh" },
   { id: "details", label: "Details" },
 ];
 
@@ -38,6 +40,8 @@ type Props = {
   onClose: () => void;
   /** Phone localization feed shown in the Live tab. */
   live: LiveTabProps;
+  /** Mesh layer, graph validator and generated-graph review shown in the Mesh tab. */
+  mesh: MeshTabProps;
   name: string;
   status: WorldStatus;
   manifest: WorldManifest | null;
@@ -107,6 +111,7 @@ export function InspectorPanel(p: Props) {
         {p.tab === "live" && <LiveTab {...p.live} />}
         {p.tab === "notes" && <NotesTab {...p} />}
         {p.tab === "measure" && <MeasureTab {...p} />}
+        {p.tab === "mesh" && <MeshTab {...p.mesh} />}
         {p.tab === "details" && <DetailsTab {...p} />}
       </div>
     </aside>

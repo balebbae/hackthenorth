@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 import type { Alignment, Measurement, NavigationGraph, NavNodeKind, Vec3, WorldNote } from "@/lib/world-manifest";
 import { CameraKeyControls } from "./CameraKeyControls";
@@ -7,13 +8,16 @@ import { CameraKeyControls } from "./CameraKeyControls";
 export type ViewerMode = "orbit" | "walk";
 export type ViewerTool = "navigate" | "measure" | "note";
 export type LoadStatus = "empty" | "loading" | "ready" | "error";
+export type MeshStatus = "none" | "loading" | "ready" | "error";
 
 export type EngineEvent =
   | { type: "status"; status: LoadStatus; error?: string }
   | { type: "progress"; loaded: number; total: number }
   | { type: "loaded"; numSplats: number }
-  /** A click landed on the splat. `point` is in world space, `graphPoint` in the graph's frame. */
-  | { type: "pick"; tool: ViewerTool; point: Vec3; graphPoint: Vec3 }
+  /** The collision mesh (`assets.mesh`) layer changed state; `triangles` on ready. */
+  | { type: "mesh"; status: MeshStatus; triangles?: number; error?: string }
+  /** A click landed on the scan. `point` is in world space, `graphPoint` in the graph's frame; `surface` says what was hit. */
+  | { type: "pick"; tool: ViewerTool; point: Vec3; graphPoint: Vec3; surface: "mesh" | "splat" }
   /** A click landed on a navigation-graph waypoint. */
   | { type: "pick-node"; tool: ViewerTool; id: string }
   /** A click landed on a note pin. */
@@ -43,6 +47,10 @@ export type EngineOptions = {
   /** Fills this element with the canvas; it is also the keyboard focus target for walk mode. */
   container: HTMLElement;
   splatUrl: string | null;
+  /** Aligned collision mesh (.glb). Drawn as a toggleable layer and preferred over the splat for picking. */
+  meshUrl?: string | null;
+  /** Frame the mesh vertices are in: "world" (default) or "splat" (goes through `alignment` like the splat). */
+  meshFrame?: "world" | "splat";
   alignment?: Alignment;
   onEvent: (event: EngineEvent) => void;
 };
@@ -57,6 +65,7 @@ const SLATE = 0x475569;
 
 const NODE_RADIUS = 0.14;
 const EDGE_RADIUS = 0.035;
+const MESH_COLOR = 0x94a3b8;
 const MEASURE_RADIUS = 0.05;
 /** Note pins are screen-space: fixed 28 px, coloured by distance instead of shrinking with it. */
 const PIN_SIZE = 28;
@@ -144,6 +153,7 @@ export class SplatViewerEngine {
     destination: overlayMaterial(PINK),
   };
   private readonly edgeMaterial = overlayMaterial(BLUE);
+  private readonly flagMaterial = overlayMaterial(PINK);
   private readonly measureMaterial = overlayMaterial(SKY);
   private readonly pendingMaterial = overlayMaterial(WHITE);
   private readonly selectionRing: THREE.Mesh;
@@ -171,6 +181,10 @@ export class SplatViewerEngine {
   private followPhone = false;
 
   private mesh: SplatMesh | null = null;
+  private readonly meshGroup = new THREE.Group();
+  private collision: THREE.Object3D | null = null;
+  private readonly collisionMeshes: THREE.Mesh[] = [];
+  private meshVisible = false;
   private nodeMeshes = new Map<string, THREE.Mesh>();
   private nodePositions = new Map<string, THREE.Vector3>();
   private notePositions = new Map<string, THREE.Vector3>();
@@ -211,6 +225,12 @@ export class SplatViewerEngine {
     this.spark = new SparkRenderer({ renderer: this.renderer });
     this.scene.add(this.spark, this.root, this.measureGroup);
     this.applyAlignment(opts.alignment);
+    (opts.meshFrame === "splat" ? this.root : this.scene).add(this.meshGroup);
+    this.meshGroup.visible = false;
+    this.meshGroup.add(new THREE.HemisphereLight(0xffffff, 0x334155, 2.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    sun.position.set(3, 8, 5);
+    this.meshGroup.add(sun);
 
     this.grid = new THREE.GridHelper(20, 20, SLATE, 0x334155);
     this.grid.visible = !opts.splatUrl;
@@ -280,6 +300,7 @@ export class SplatViewerEngine {
       this.frameBox(this.worldBounds());
       opts.onEvent({ type: "status", status: "empty" });
     }
+    if (opts.meshUrl) this.loadMesh(opts.meshUrl);
 
     this.renderer.setAnimationLoop((time) => this.tick(time));
   }
@@ -327,8 +348,17 @@ export class SplatViewerEngine {
     for (const l of this.labels) if (l.el.dataset.kind === "node") l.el.hidden = !visible;
   }
 
-  /** Replace the rendered navigation graph. Cheap: graphs are tens of nodes. */
-  setGraph(graph: NavigationGraph) {
+  /** Show or hide the collision-mesh layer. Hidden meshes still catch picks (they are the cleaner surface). */
+  setShowMesh(visible: boolean) {
+    this.meshVisible = visible;
+    this.meshGroup.visible = visible && this.collision !== null;
+  }
+
+  /**
+   * Replace the rendered navigation graph. Cheap: graphs are tens of nodes.
+   * `flags` (node ids and "from|to" edge keys the mesh validator rejected) draw in pink.
+   */
+  setGraph(graph: NavigationGraph, flags?: { nodes: Set<string>; edges: Set<string> }) {
     const frame = graph.frame ?? "world";
     if (frame !== this.graphFrame || !this.graphGroup.parent) {
       this.graphGroup.removeFromParent();
@@ -343,7 +373,10 @@ export class SplatViewerEngine {
     for (const node of graph.nodes) {
       const p = new THREE.Vector3(...node.position);
       this.nodePositions.set(node.id, p);
-      const m = new THREE.Mesh(this.sphereGeo, this.nodeMaterials[node.kind ?? "waypoint"]);
+      const m = new THREE.Mesh(
+        this.sphereGeo,
+        flags?.nodes.has(node.id) ? this.flagMaterial : this.nodeMaterials[node.kind ?? "waypoint"],
+      );
       m.scale.setScalar(NODE_RADIUS);
       m.position.copy(p);
       m.renderOrder = 1001;
@@ -355,7 +388,9 @@ export class SplatViewerEngine {
     for (const edge of graph.edges) {
       const a = this.nodePositions.get(edge.from);
       const b = this.nodePositions.get(edge.to);
-      if (a && b) this.graphGroup.add(this.tube(a, b, EDGE_RADIUS, this.edgeMaterial, 1000));
+      if (!a || !b) continue;
+      const flagged = flags?.edges.has(`${edge.from}|${edge.to}`) ?? false;
+      this.graphGroup.add(this.tube(a, b, flagged ? EDGE_RADIUS * 1.6 : EDGE_RADIUS, flagged ? this.flagMaterial : this.edgeMaterial, 1000));
     }
     if (this.mesh === null && graph.nodes.length) {
       this.grid.position.y = new THREE.Box3().setFromPoints([...this.nodePositions.values()]).min.y - 0.01;
@@ -637,11 +672,12 @@ export class SplatViewerEngine {
     this.orbit.dispose();
     this.keys.dispose();
     this.mesh?.dispose();
+    this.disposeCollision();
     this.spark.dispose();
     this.clearGroup(this.graphGroup);
     this.clearGroup(this.measureGroup);
     this.clearGroup(this.trailGroup);
-    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.measureMaterial, this.pendingMaterial, this.trailMaterial])
+    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.flagMaterial, this.measureMaterial, this.pendingMaterial, this.trailMaterial])
       m.dispose();
     this.imageTexture?.dispose();
     this.imagePlane.geometry.dispose();
@@ -684,7 +720,7 @@ export class SplatViewerEngine {
     const now = performance.now();
     if (now - this.lastHover < HOVER_THROTTLE_MS) return;
     this.lastHover = now;
-    this.setHover(this.intersectSplat(e)?.point ?? null);
+    this.setHover(this.intersectScene(e)?.point ?? null);
   };
 
   private pick(e: PointerEvent) {
@@ -698,11 +734,17 @@ export class SplatViewerEngine {
     }
     if (this.tool === "navigate") return;
 
-    const hit = this.intersectSplat();
+    const hit = this.intersectScene();
     if (!hit) return onEvent({ type: "pick-miss", tool: this.tool });
     this.graphGroup.updateMatrixWorld(true);
     const graphPoint = this.graphGroup.worldToLocal(hit.point.clone());
-    onEvent({ type: "pick", tool: this.tool, point: hit.point.toArray() as Vec3, graphPoint: graphPoint.toArray() as Vec3 });
+    onEvent({
+      type: "pick",
+      tool: this.tool,
+      point: hit.point.toArray() as Vec3,
+      graphPoint: graphPoint.toArray() as Vec3,
+      surface: hit.surface,
+    });
   }
 
   private setRayFromEvent(e: PointerEvent) {
@@ -714,9 +756,22 @@ export class SplatViewerEngine {
     this.raycaster.setFromCamera(ndc, this.camera);
   }
 
-  private intersectSplat(e?: PointerEvent): THREE.Intersection | null {
-    if (!this.mesh?.isInitialized) return null;
+  /** Nearest surface under the pointer: the collision mesh when there is one (a real surface), else the splat. */
+  private intersectScene(e?: PointerEvent): (THREE.Intersection & { surface: "mesh" | "splat" }) | null {
     if (e) this.setRayFromEvent(e);
+    if (this.collisionMeshes.length) {
+      this.meshGroup.updateMatrixWorld(true);
+      const hits: THREE.Intersection[] = [];
+      for (const m of this.collisionMeshes) m.raycast(this.raycaster, hits);
+      hits.sort((a, b) => a.distance - b.distance);
+      if (hits[0]) return { ...hits[0], surface: "mesh" };
+    }
+    const splat = this.intersectSplat();
+    return splat ? { ...splat, surface: "splat" } : null;
+  }
+
+  private intersectSplat(): THREE.Intersection | null {
+    if (!this.mesh?.isInitialized) return null;
     const hits: THREE.Intersection[] = [];
     this.mesh.raycast(this.raycaster, hits);
     hits.sort((a, b) => a.distance - b.distance);
@@ -763,6 +818,60 @@ export class SplatViewerEngine {
         if (this.disposed) return;
         onEvent({ type: "status", status: "error", error: describeError(err) });
       });
+  }
+
+  private loadMesh(url: string) {
+    const { onEvent } = this.opts;
+    onEvent({ type: "mesh", status: "loading" });
+    new GLTFLoader().load(
+      url,
+      (gltf) => {
+        if (this.disposed) return;
+        this.disposeCollision();
+        const object = gltf.scene;
+        let triangles = 0;
+        object.traverse((child) => {
+          if (!(child instanceof THREE.Mesh)) return;
+          const geometry = child.geometry as THREE.BufferGeometry;
+          triangles += (geometry.index ? geometry.index.count : geometry.attributes.position.count) / 3;
+          // Scaniverse exports are often single-sided and can face either way; picking must work from anywhere.
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          for (const material of materials) {
+            material.side = THREE.DoubleSide;
+            if (material instanceof THREE.MeshStandardMaterial && !material.map) material.color.set(MESH_COLOR);
+          }
+          this.collisionMeshes.push(child);
+        });
+        this.collision = object;
+        this.meshGroup.add(object);
+        this.meshGroup.visible = this.meshVisible;
+        if (!this.mesh) {
+          this.localBounds = new THREE.Box3().setFromObject(object);
+          this.resetView();
+        }
+        onEvent({ type: "mesh", status: "ready", triangles: Math.round(triangles) });
+      },
+      undefined,
+      (err) => {
+        if (this.disposed) return;
+        onEvent({ type: "mesh", status: "error", error: describeError(err).replace("splat", "mesh") });
+      },
+    );
+  }
+
+  private disposeCollision() {
+    if (!this.collision) return;
+    this.meshGroup.remove(this.collision);
+    for (const m of this.collisionMeshes) {
+      m.geometry.dispose();
+      for (const material of Array.isArray(m.material) ? m.material : [m.material]) {
+        if (material instanceof THREE.MeshStandardMaterial) material.map?.dispose();
+        material.dispose();
+      }
+    }
+    this.collisionMeshes.length = 0;
+    this.collision = null;
+    this.meshGroup.visible = false;
   }
 
   private applyAlignment(a: Alignment | undefined) {
@@ -877,6 +986,10 @@ export class SplatViewerEngine {
     if (this.localBounds && this.mesh) {
       this.mesh.updateMatrixWorld(true);
       return this.localBounds.clone().applyMatrix4(this.mesh.matrixWorld);
+    }
+    if (this.localBounds && this.collision) {
+      this.meshGroup.updateMatrixWorld(true);
+      return this.localBounds.clone().applyMatrix4(this.meshGroup.matrixWorld);
     }
     const points = [...this.nodePositions.values()];
     if (points.length) {

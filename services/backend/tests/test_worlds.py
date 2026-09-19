@@ -6,6 +6,7 @@ import json
 import math
 
 import pytest
+import trimesh
 from fastapi.testclient import TestClient
 from ..app.main import create_app
 from ..app.services.worlds import check, compute_route, world_graph
@@ -300,3 +301,42 @@ def test_chest_height_pose_uses_horizontal_thresholds_and_speaks_turns(client):
     assert turned['instruction']['turn'] == 'straight' and 'speak' in turned
     assert 'speak' not in update(7, [3, 1.3, -10], east)
     assert update(8, [10, 1.3, -10], east)['state'] == 'arrived'
+
+
+def test_mesh_upload_registers_and_navmesh_proposal_stays_unpublished(client, world):
+    url = '/worlds/demo-building'
+    assert client.post(url+'/navmesh', json={}).status_code == 409
+    # 8 m × 6 m room: floor slab at y=0, walls around, one wall across the middle with a 1.4 m gap.
+    parts = []
+    for size, centre in [((8.4, .1, 6.4), (0, -.05, 0)), ((.2, 2.5, 6.4), (-4.1, 1.25, 0)), ((.2, 2.5, 6.4), (4.1, 1.25, 0)),
+                         ((8.4, 2.5, .2), (0, 1.25, -3.1)), ((8.4, 2.5, .2), (0, 1.25, 3.1)),
+                         ((.2, 2.5, 2.3), (0, 1.25, -1.85)), ((.2, 2.5, 2.3), (0, 1.25, 1.85))]:
+        box = trimesh.creation.box(extents=size)
+        box.apply_translation(centre)
+        parts.append(box)
+    assert client.put(url+'/v1/mesh.glb', content=trimesh.util.concatenate(parts).export(file_type='glb')).status_code == 201
+    assert client.get(url).json()['assets']['mesh'] == 'worlds/demo-building/v1/mesh.glb'
+    assert client.get(url+'/navmesh').status_code == 404
+
+    proposal = client.post(url+'/navmesh', json={'params': {'cell': .2}})
+    assert proposal.status_code == 201, proposal.text
+    proposal = proposal.json()
+    assert proposal['status'] == 'proposed' and proposal['params']['cell'] == .2
+    assert len(proposal['graph']['nodes']) >= 4 and proposal['graph']['edges']
+    assert proposal['grid']['walkableCells'] > 0
+    assert client.get(url+'/navmesh').json()['createdAt'] == proposal['createdAt']
+    # The live graph is untouched until a reviewer PUTs the proposal.
+    assert client.get(url).json()['navigationGraph'] == world['navigationGraph']
+    assert client.put(url+'/graph', json=proposal['graph']).status_code == 200
+    assert len(client.get(url).json()['navigationGraph']['nodes']) == len(proposal['graph']['nodes'])
+
+    # Validation: a floating node and an edge straight through the divider; snapping is returned, not saved.
+    graph = {'nodes': [{'id': 'w', 'position': [-2, 1.4, 0]}, {'id': 'e', 'position': [2, 0, 2]}],
+             'edges': [{'from': 'w', 'to': 'e'}]}
+    result = client.post(url+'/graph/validate', json={'graph': graph, 'params': {'cell': .2}})
+    assert result.status_code == 200, result.text
+    kinds = {(i['kind'], i.get('node') or (i.get('from'), i.get('to'))) for i in result.json()['issues']}
+    assert ('edge-through-wall', ('w', 'e')) in kinds and ('node-height', 'w') in kinds
+    assert result.json()['graph']['nodes'][0]['position'][1] == pytest.approx(0, abs=.03)
+    assert client.get(url).json()['navigationGraph']['nodes'][0]['id'] != 'w'
+    assert client.post(url+'/graph/validate', json={'params': {'cell': -1}}).status_code == 422
