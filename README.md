@@ -22,9 +22,11 @@ htn/
 │   └── backend/                # Python / FastAPI backend
 │       ├── app/
 │       │   ├── api/            # HTTP endpoints and WebSocket connections
+│       │   ├── vps/            # Mapping + image-query localization (ACE scene-coordinate regression)
 │       │   ├── routing/        # Waypoint routing and navigation progress
 │       │   └── integrations/   # OpenAI and other external service clients
-│       └── deployment/         # Modal deployment configuration
+│       ├── deployment/         # Modal deployment configuration
+│       └── tests/              # Synthetic end-to-end mapping/localization tests
 ├── shared/
 │   └── contracts/              # Message schemas shared by the apps and backend
 ├── maps/
@@ -52,4 +54,4 @@ The iOS and localization developers share one native app. Agree on the camera/AR
 - Exported map assets belong in `maps/assets/`; navigation metadata belongs in `maps/navigation/`.
 - Worlds are stored on a Modal Volume as `worlds/<id>/world.json` + `worlds/<id>/<version>/scene.spz` (contract in `shared/contracts/`). The web app renders them with Spark/Three.js at `/worlds/<id>` (measure distances, tag stops, save the graph back), reading through FastAPI when `WANDER_API_URL` is set or from `maps/assets/worlds/` locally (`npm run world:add` in `apps/web` registers an export).
 - Empty folders contain `.gitkeep` placeholders so they can be tracked by Git.
-- No Xcode project, backend implementation, or deployment code has been added yet; the FastAPI endpoints the web app expects are listed in `shared/contracts/README.md`.
+- `services/backend` holds the FastAPI backend and its Modal deployment; see `services/backend/README.md`. It currently implements the worlds/asset reads and the self-hosted visual positioning pipeline (`/worlds/{id}/vps/*`: upload posed frames, train a map on a Modal GPU, localize a single image to a 6DoF pose). The routing/session endpoints listed in `shared/contracts/README.md` are not implemented yet. No Xcode project has been added yet.

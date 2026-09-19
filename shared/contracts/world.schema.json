@@ -35,7 +35,7 @@
           "description": "Volume-relative path, e.g. worlds/demo-building/v1/scene.spz (.spz, .ply, .splat, .ksplat, .sog)."
         },
         "mesh": { "type": "string", "description": "Optional collision/occlusion mesh (.glb)." },
-        "vpsMap": { "type": "string", "description": "Optional VPS map export for on-device localization." },
+        "vpsMap": { "type": "string", "description": "Optional VPS map. For the self-hosted VPS this is the active scene-coordinate head, e.g. worlds/<id>/vps/maps/<mapId>/head.pt (see vps.schema.json)." },
         "thumbnail": { "type": "string", "description": "Optional 16:10 preview image." }
       }
     },

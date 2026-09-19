@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vps.schema.json",
+  "title": "Wander VPS (visual positioning) contracts",
+  "description": "Payloads for the self-hosted mapping + image-query localization service (`/worlds/{id}/vps/*`, services/backend). Mapping follows ACE (Brachmann et al., CVPR 2023): a frozen pretrained encoder plus a per-world scene-coordinate regression head trained from posed RGB frames; localization regresses dense 2D->3D correspondences for a single query image and solves PnP-RANSAC for a 6DoF pose in the map frame. The map frame is the ARKit world frame of the capture that produced the map (metres, +Y up, right-handed).",
+  "$defs": {
+    "columnMajor3x3": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 9,
+      "maxItems": 9,
+      "description": "3x3 matrix flattened column-major (simd_float3x3 layout)."
+    },
+    "columnMajor4x4": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 16,
+      "maxItems": 16,
+      "description": "4x4 matrix flattened column-major (simd_float4x4 layout)."
+    },
+    "rotation": {
+      "type": "string",
+      "enum": ["none", "cw90", "ccw90", "180"],
+      "description": "How the client rotated the landscape sensor image before encoding it. `cw90` is what the iOS FrameEncoder does (`.oriented(.right)`) to produce a portrait upload."
+    },
+    "frame": {
+      "type": "object",
+      "description": "One posed RGB frame - exactly what `NianticRESTTransport` (apps/ios) posts, plus optional sensor hints. `intrinsics` and `cameraTransform` are the raw ARKit values for the *sensor* image; the server folds `rotation` and the sensor->upload resize into them.",
+      "required": ["imageBase64", "imageWidth", "imageHeight", "intrinsics"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 0, "default": 0 },
+        "capturedAt": { "type": "number", "description": "ARFrame timestamp (seconds)." },
+        "imageBase64": { "type": "string", "contentEncoding": "base64", "contentMediaType": "image/jpeg" },
+        "imageWidth": { "type": "integer", "minimum": 1, "description": "Width of the uploaded (rotated, resized) image." },
+        "imageHeight": { "type": "integer", "minimum": 1 },
+        "intrinsics": { "$ref": "#/$defs/columnMajor3x3", "description": "ARCamera.intrinsics (sensor pixels, landscape)." },
+        "cameraTransform": {
+          "oneOf": [{ "$ref": "#/$defs/columnMajor4x4" }, { "type": "null" }],
+          "description": "ARCamera.transform (camera->ARKit world, OpenGL axes). Required for mapping frames; optional for queries - when present the response includes `mapFromSession`."
+        },
+        "sensorWidth": { "type": ["integer", "null"], "minimum": 1, "description": "ARCamera.imageResolution width. Inferred from the principal point when omitted." },
+        "sensorHeight": { "type": ["integer", "null"], "minimum": 1 },
+        "rotation": { "$ref": "#/$defs/rotation", "default": "cw90" }
+      }
+    },
+    "localizeRequest": {
+      "allOf": [
+        { "$ref": "#/$defs/frame" },
+        {
+          "type": "object",
+          "properties": {
+            "mapId": { "type": ["string", "null"], "description": "Defaults to the world's active map." }
+          }
+        }
+      ]
+    },
+    "capture": {
+      "type": "object",
+      "required": ["captureId", "worldId", "frameCount", "createdAt"],
+      "properties": {
+        "captureId": { "type": "string" },
+        "worldId": { "type": "string" },
+        "deviceId": { "type": ["string", "null"] },
+        "sensorWidth": { "type": ["integer", "null"] },
+        "sensorHeight": { "type": ["integer", "null"] },
+        "rotation": { "$ref": "#/$defs/rotation" },
+        "frameCount": { "type": "integer", "minimum": 0 },
+        "lastSequence": { "type": ["integer", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "createMapRequest": {
+      "type": "object",
+      "required": ["captureIds"],
+      "properties": {
+        "captureIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "name": { "type": ["string", "null"] },
+        "mapping": {
+          "type": "object",
+          "description": "Overrides for services/backend `MappingOptions` (image_height, buffer_size, samples_per_image, batch_size, epochs, learning rates, head_blocks, augmentation, ...).",
+          "additionalProperties": true
+        },
+        "localization": {
+          "type": "object",
+          "description": "Overrides for `LocalizationOptions` stored with the map (max_reproj_error_px, min_inlier_count, min_inlier_ratio, RANSAC iteration bounds, ...).",
+          "additionalProperties": true
+        }
+      }
+    },
+    "mapStatus": { "type": "string", "enum": ["pending", "training", "ready", "failed"] },
+    "map": {
+      "type": "object",
+      "required": ["mapId", "worldId", "captureIds", "status", "jobId", "createdAt"],
+      "properties": {
+        "mapId": { "type": "string" },
+        "worldId": { "type": "string" },
+        "name": { "type": ["string", "null"] },
+        "captureIds": { "type": "array", "items": { "type": "string" } },
+        "frameCount": { "type": "integer" },
+        "status": { "$ref": "#/$defs/mapStatus" },
+        "jobId": { "type": "string" },
+        "options": { "type": "object", "description": "Resolved MappingOptions." },
+        "localization": { "type": "object", "description": "Resolved LocalizationOptions." },
+        "stats": {
+          "type": ["object", "null"],
+          "description": "Filled when ready: frames, buffer_samples, epochs, train_seconds, final_loss, loss_curve, scene_center, ...",
+          "additionalProperties": true
+        },
+        "error": { "type": ["string", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "jobStatus": { "type": "string", "enum": ["pending", "running", "succeeded", "failed"] },
+    "job": {
+      "type": "object",
+      "required": ["jobId", "worldId", "mapId", "status", "phase", "progress"],
+      "properties": {
+        "jobId": { "type": "string" },
+        "worldId": { "type": "string" },
+        "mapId": { "type": "string" },
+        "status": { "$ref": "#/$defs/jobStatus" },
+        "phase": { "type": "string", "description": "queued | loading | buffer | train | export | done | error" },
+        "progress": { "type": "number", "minimum": 0, "maximum": 1 },
+        "detail": { "type": "object", "additionalProperties": true },
+        "error": { "type": ["string", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "localizeResponse": {
+      "type": "object",
+      "required": ["mapId", "sequence", "localized", "inlierCount", "correspondences", "inlierRatio", "ransacIterations", "latencyMs", "pose", "cameraToMap", "mapFromSession"],
+      "properties": {
+        "mapId": { "type": "string" },
+        "sequence": { "type": "integer" },
+        "localized": { "type": "boolean", "description": "False when PnP-RANSAC found fewer inliers than the map's `min_inlier_count` / `min_inlier_ratio`; the pose fields are then null." },
+        "inlierCount": { "type": "integer" },
+        "correspondences": { "type": "integer", "description": "Number of regressed 2D->3D correspondences (one per 8x8 feature cell)." },
+        "inlierRatio": { "type": "number" },
+        "ransacIterations": { "type": "integer" },
+        "latencyMs": { "type": "number", "description": "Server-side encode + regress + PnP time." },
+        "pose": {
+          "oneOf": [{ "$ref": "navigation.schema.json#/$defs/pose" }, { "type": "null" }],
+          "description": "6DoF camera pose in the map (ARKit world) frame: position [x,y,z] metres + rotation quaternion [x,y,z,w]."
+        },
+        "cameraToMap": {
+          "oneOf": [{ "$ref": "#/$defs/columnMajor4x4" }, { "type": "null" }],
+          "description": "Same pose as a camera->map ARKit-convention transform, ready to compare with ARCamera.transform."
+        },
+        "mapFromSession": {
+          "oneOf": [{ "$ref": "#/$defs/columnMajor4x4" }, { "type": "null" }],
+          "description": "map <- current ARKit session transform (= cameraToMap * inverse(cameraTransform)). Null when the query had no `cameraTransform`. Apply it to subsequent ARKit poses to keep tracking in the map frame between VPS fixes."
+        }
+      }
+    }
+  }
+}
