@@ -8,10 +8,10 @@ volume = modal.Volume.from_name('htn-annotations', create_if_missing=True)
 ROOT = Path(__file__).resolve().parents[3]
 image = (modal.Image.debian_slim(python_version='3.12').apt_install('ffmpeg')
     .pip_install_from_requirements(str(ROOT / 'services/backend/requirements.txt'))
-    .workdir('/workspace')
-    .add_local_dir(str(ROOT / 'services/backend'), remote_path='/workspace/services/backend',
+    .workdir('/root')
+    .add_local_dir(str(ROOT / 'services/backend'), remote_path='/root/services/backend',
         ignore=['.env', '.env.*', '**/.env', '**/.env.*', '**/__pycache__/**', '**/.pytest_cache/**'])
-    .add_local_dir(str(ROOT / 'shared/contracts'), remote_path='/workspace/shared/contracts'))
+    .add_local_dir(str(ROOT / 'shared/contracts'), remote_path='/root/shared/contracts'))
 
 
 @app.function(image=image, secrets=[modal.Secret.from_name('htn-backend')],
@@ -28,12 +28,12 @@ async def annotate_video(job_id: str, site: str, revision: str, floor: int, limi
                                floor, Settings(), limit)
         return batch.model_dump()
     finally:
-        volume.commit()
+        await volume.commit.aio()
 
 
 @app.local_entrypoint()
 def main(video: str, site: str, revision: str, floor: int, output: str = 'artifacts/candidates.json',
-         limit: int = 120):
+         limit: int = 120, download_frames: bool = False):
     import json
     source = Path(video)
     if not source.is_file():
@@ -47,3 +47,12 @@ def main(video: str, site: str, revision: str, floor: int, output: str = 'artifa
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     print(f'Review candidates in {target}; frames are in volume /{job_id}/frames')
+    if download_frames:
+        import subprocess
+        import sys
+        frame_dir = target.parent / 'frames'
+        if frame_dir.is_file():
+            raise ValueError('Frame destination is a file; move it aside before downloading evidence.')
+        frame_dir.mkdir(parents=True, exist_ok=True)
+        subprocess.run([sys.executable, '-X', 'utf8', '-m', 'modal', 'volume', 'get',
+                        'htn-annotations', f'/{job_id}/frames', str(frame_dir)], check=True)

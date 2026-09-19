@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     voice_access_token: str = ''
     voice_enabled: bool = False
     wander_api_key: str = ''
+    wander_backend_url: str = ''
     wander_data_root: Path = ROOT / 'maps/assets'
     asset_max_bytes: int = 2 * 1024 * 1024 * 1024
     elasticsearch_url: str = ''

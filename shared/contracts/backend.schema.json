@@ -237,6 +237,33 @@
             "bottle_filler",
             "reception",
             "room",
+            "door",
+            "corridor",
+            "intersection",
+            "ramp",
+            "escalator",
+            "sign",
+            "directory",
+            "floor_indicator",
+            "tactile_paving",
+            "handrail",
+            "accessibility_control",
+            "emergency_equipment",
+            "seating",
+            "table",
+            "desk",
+            "counter",
+            "window",
+            "pillar",
+            "landmark",
+            "service_point",
+            "food_drink",
+            "waste_bin",
+            "storage",
+            "charging_point",
+            "obstacle",
+            "surface_change",
+            "scene_context",
             "other"
           ],
           "title": "Category",
@@ -271,6 +298,40 @@
         "uncertainty": {
           "maxLength": 500,
           "title": "Uncertainty",
+          "type": "string"
+        },
+        "permanence": {
+          "default": "unknown",
+          "enum": [
+            "fixed",
+            "movable",
+            "temporary",
+            "unknown"
+          ],
+          "title": "Permanence",
+          "type": "string"
+        },
+        "navigation_role": {
+          "default": "landmark",
+          "enum": [
+            "destination",
+            "landmark",
+            "context",
+            "potential_hazard"
+          ],
+          "title": "Navigation Role",
+          "type": "string"
+        },
+        "visual_location": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Visual Location",
+          "type": "string"
+        },
+        "navigation_relevance": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Navigation Relevance",
           "type": "string"
         },
         "id": {
@@ -327,6 +388,33 @@
             "bottle_filler",
             "reception",
             "room",
+            "door",
+            "corridor",
+            "intersection",
+            "ramp",
+            "escalator",
+            "sign",
+            "directory",
+            "floor_indicator",
+            "tactile_paving",
+            "handrail",
+            "accessibility_control",
+            "emergency_equipment",
+            "seating",
+            "table",
+            "desk",
+            "counter",
+            "window",
+            "pillar",
+            "landmark",
+            "service_point",
+            "food_drink",
+            "waste_bin",
+            "storage",
+            "charging_point",
+            "obstacle",
+            "surface_change",
+            "scene_context",
             "other"
           ],
           "title": "Category",
@@ -361,6 +449,40 @@
         "uncertainty": {
           "maxLength": 500,
           "title": "Uncertainty",
+          "type": "string"
+        },
+        "permanence": {
+          "default": "unknown",
+          "enum": [
+            "fixed",
+            "movable",
+            "temporary",
+            "unknown"
+          ],
+          "title": "Permanence",
+          "type": "string"
+        },
+        "navigation_role": {
+          "default": "landmark",
+          "enum": [
+            "destination",
+            "landmark",
+            "context",
+            "potential_hazard"
+          ],
+          "title": "Navigation Role",
+          "type": "string"
+        },
+        "visual_location": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Visual Location",
+          "type": "string"
+        },
+        "navigation_relevance": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Navigation Relevance",
           "type": "string"
         }
       },

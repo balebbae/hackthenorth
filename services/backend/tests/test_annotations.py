@@ -53,6 +53,30 @@ def test_rejected_candidate_never_becomes_destination(graph):
     assert publish(batch, review, graph, 'v1').destinations == graph.destinations
 
 
+@pytest.mark.parametrize('role,permanence', [('potential_hazard', 'movable'), ('context', 'fixed'), ('landmark', 'temporary')])
+def test_observations_do_not_become_route_targets(graph, role, permanence):
+    batch, review = sample(graph)
+    batch.candidates[0].navigation_role = role
+    batch.candidates[0].permanence = permanence
+    review.batch_sha256 = batch_digest(batch)
+    with pytest.raises(ValueError, match='routing destinations'):
+        publish(batch, review, graph, 'v1')
+
+
+def test_landmark_preserves_uncertainty_and_image_frame(graph):
+    batch, review = sample(graph)
+    candidate = batch.candidates[0]
+    candidate.category = 'seating'
+    candidate.permanence = 'movable'
+    candidate.visual_location = 'left foreground'
+    candidate.uncertainty = 'May have moved since capture'
+    review.batch_sha256 = batch_digest(batch)
+    result = publish(batch, review, graph, 'v1').destination(candidate.id)
+    assert 'not user-relative' in result.description
+    assert candidate.uncertainty in result.description
+    assert 'not live state' in result.description
+
+
 def test_duplicate_review_preserves_only_corrected_object(graph):
     batch, review = sample(graph)
     batch.candidates.append(batch.candidates[0].model_copy(update={'id': 'duplicate'}))

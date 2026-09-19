@@ -60,3 +60,19 @@ Display candidate evidence images with names/sign text and uncertainty. Allow
 corrections, duplicate merging, rejection and waypoint selection. Never approve
 by default. Validate floor/door association and reachable side of walls. Do not
 expose OpenAI keys. This backend change does not implement the review frontend.
+# Expanded visual annotations
+
+Findings now cover doors, corridors/junctions, ramps/escalators, signs/directories,
+floor indicators, tactile paving, handrails/buttons, emergency equipment, furniture,
+windows/pillars/artwork, services, waste/storage/charging, visible obstacles, surface
+changes and scene context, in addition to the original destination categories.
+Each finding includes permanence (fixed/movable/temporary/unknown), navigation_role
+(destination/landmark/context/potential_hazard), visual_location (image-relative,
+never user-relative), navigation_relevance and uncertainty. Defaults allow older
+candidate files to load; existing reviews must be regenerated if their digest changes.
+These are recorded observations, not live obstacle detections or accessibility proof.
+Context, potential_hazard and temporary findings remain review evidence; publishing
+them as routing destinations is rejected. Permanent/movable landmarks still require
+reviewed approach waypoints. Context-only retrieval is not yet implemented.
+Use scan_pipeline --reannotate to preserve prior output and rerun with the expanded
+prompt. This invokes paid annotation again; cached pipeline output is otherwise reused.
