@@ -1,0 +1,29 @@
+# TryConvertArdk3ToNsdk
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ARDeviceMapCompatibilityUtil.TryConvertArdk3ToNsdk/
+
+TryConvertArdk3ToNsdk
+Try to convert Device Map blob as ARDK 3.x Device Map
+
+---
+
+## Declaration
+
+public static bool TryConvertArdk3ToNsdk(byte[] ardk3DeviceMap, out byte[] nsdkDeviceMap)
+
+#### Summary
+
+Try to convert Device Map blob as ARDK 3.x Device Map
+
+#### Returns
+
+true if successfully converted into NSDK Device Map. false if failed to convert Device Map
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ardk3DeviceMap | byte[] | Byte array data of serialized ARDK 3.x Device Map |
+| nsdkDeviceMap | byte[] | NSDK Device Map, or null if ardk3DeviceMap is not ARDK 3.x Device Map |
+
+---

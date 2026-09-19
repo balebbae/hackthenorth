@@ -1,0 +1,19 @@
+# IsValid
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanArchiveBuilder.IsValid/
+
+IsValid
+
+---
+
+## Declaration
+
+public bool IsValid()
+
+#### Summary
+
+Return if the ScanArchiveBuilder class is valid.
+    Users must called this function and only use the other ScanArchiveBuilder APIs when it
+    return true.
+
+---

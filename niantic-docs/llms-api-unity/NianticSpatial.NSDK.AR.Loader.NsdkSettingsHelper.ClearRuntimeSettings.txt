@@ -1,0 +1,13 @@
+# ClearRuntimeSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSettingsHelper.ClearRuntimeSettings/
+
+ClearRuntimeSettings
+
+---
+
+## Declaration
+
+public static void ClearRuntimeSettings()
+
+---

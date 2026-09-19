@@ -1,0 +1,19 @@
+# encode
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.Vps2Heading.method-encode/
+
+encode
+
+---
+
+## Declaration
+
+override func encode(with coder: NSCoder)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| coder | NSCoder | - |
+
+---

@@ -1,0 +1,21 @@
+# TryGetRaycastBuffer
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.Provider.TryGetRaycastBuffer/
+
+TryGetRaycastBuffer
+
+---
+
+## Declaration
+
+public virtual bool TryGetRaycastBuffer(out XRTextureDescriptor raycastBufferDescriptor, out XRTextureDescriptor raycastNormalBufferDescriptor, out XRTextureDescriptor raycastPositionAndConfidenceDescriptor)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| raycastBufferDescriptor | XRTextureDescriptor | - |
+| raycastNormalBufferDescriptor | XRTextureDescriptor | - |
+| raycastPositionAndConfidenceDescriptor | XRTextureDescriptor | - |
+
+---

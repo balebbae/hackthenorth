@@ -1,0 +1,26 @@
+# ==
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKError.operator-op_Equality/
+
+\==
+
+---
+
+## Declaration
+
+static func == (lhs: NSDKError, rhs: NSDKError) -> Bool
+
+#### Summary
+
+Returns a Boolean value indicating whether two values are equal.
+Equality is the inverse of inequality. For any values a and b,
+a == b implies that a != b is false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| lhs | NSDKError | A value to compare. |
+| rhs | NSDKError | Another value to compare. |
+
+---

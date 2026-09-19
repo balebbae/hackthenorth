@@ -1,0 +1,43 @@
+# getFocalLength
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CameraIntrinsics.getFocalLength/
+
+getFocalLength
+
+---
+
+## Declaration
+
+open fun getFocalLength(): FloatArray
+
+#### Summary
+
+Returns the camera's focal length in pixels.
+
+The focal length is conventionally represented in pixels. For a detailed explanation, please
+see
+[Disecting the Camera Matrix, Part 3: The Intrinsic Matrix](https://ksimek.github.io/2013/08/13/intrinsic).
+Pixels-to-meters conversion can use SENSOR_INFO_PHYSICAL_SIZE and
+SENSOR_INFO_PIXEL_ARRAY_SIZE in the Android Characteristics API.
+
+#### Returns
+
+a float[2] containing the focal length. The order of values is {fx, fy}.
+
+---
+
+## Overload
+
+open fun getFocalLength(focalLength: FloatArray?, offset: Int)
+
+#### Summary
+
+Returns the camera's focal length in pixels.
+
+The focal length is conventionally represented in pixels. For a detailed explanation, please
+see
+[Disecting the Camera Matrix, Part 3: The Intrinsic Matrix](https://ksimek.github.io/2013/08/13/intrinsic).
+Pixels-to-meters conversion can use SENSOR_INFO_PHYSICAL_SIZE and
+SENSOR_INFO_PIXEL_ARRAY_SIZE in the Android Characteristics API.
+
+---

@@ -1,0 +1,27 @@
+# LocationHelper
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.LocationHelper/
+
+LocationHelper
+
+---
+
+## Declaration
+
+class LocationHelper
+
+## Summary
+
+Subscribes to GPS updates via the Fused Location Provider and notifies an [OnUpdateListener]
+on each new fix. Used internally by [DefaultSessionDataSource].
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| startLocationUpdates | void | Begins receiving GPS updates. Delivers the last known location immediately (if available),then streams new fixes at ~5-second intervals via [OnUpdateListener.onLocationUpdate].Requires [ACCESS_FINE_LOCATION][android.Manifest.permission.ACCESS_FINE_LOCATION]; no-op ifthe permission is not granted. |
+| stopLocationUpdates | void | Stops receiving GPS updates. Safe to call even if [startLocationUpdates] was never called. |
+
+---

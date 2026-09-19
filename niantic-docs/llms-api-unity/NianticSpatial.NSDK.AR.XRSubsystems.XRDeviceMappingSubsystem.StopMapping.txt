@@ -1,0 +1,18 @@
+# StopMapping
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem.StopMapping/
+
+StopMapping 
+Stop map generation.
+
+---
+
+## Declaration
+
+public void StopMapping()
+
+#### Summary
+
+Stop map generation.
+
+---

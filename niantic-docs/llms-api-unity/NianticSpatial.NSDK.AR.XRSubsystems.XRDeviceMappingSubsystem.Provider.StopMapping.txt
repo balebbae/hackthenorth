@@ -1,0 +1,13 @@
+# StopMapping
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem.Provider.StopMapping/
+
+StopMapping
+
+---
+
+## Declaration
+
+public virtual void StopMapping()
+
+---

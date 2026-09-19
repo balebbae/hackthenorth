@@ -1,0 +1,29 @@
+# GetPackedSceneSegmentationChannelsTexture
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetPackedSceneSegmentationChannelsTexture/
+
+GetPackedSceneSegmentationChannelsTexture
+
+---
+
+## Declaration
+
+public Texture2D GetPackedSceneSegmentationChannelsTexture(out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Retrieves the texture of semantic data where each pixel can be interpreted as a uint with bits
+    corresponding to different classifications.
+
+#### Returns
+
+The packed scene segmentation texture, owned by the manager, if any. Otherwise, null.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| samplerMatrix | Matrix4x4 | A matrix that converts from viewport to image coordinates according to the latest pose. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

@@ -1,0 +1,31 @@
+# SceneSegmentationResult
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationResult/
+
+SceneSegmentationResult
+
+---
+
+## Declaration
+
+class SceneSegmentationResult
+
+## Summary
+
+Represents the result of the scene segmentation processor.
+This class encapsulates all the data returned from a processed scene segmentation frame,
+including the semantic image data, camera pose, intrinsics, and timing information.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| frameId | Long | The unique identifier of the AR frame that this result was generated from |
+| image | Image | The scene segmentation result image (confidence, packed channels, or suppression mask) |
+| intrinsics | CameraIntrinsics | The camera intrinsics used for this frame |
+| pose | Pose | The camera pose of the AR frame that this result was generated from |
+| timestampMs | Long | The timestamp of the AR frame in milliseconds |
+
+---

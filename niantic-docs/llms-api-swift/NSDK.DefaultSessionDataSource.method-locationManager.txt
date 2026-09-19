@@ -1,0 +1,33 @@
+# locationManager
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.DefaultSessionDataSource.method-locationManager/
+
+locationManager
+
+---
+
+## Declaration
+
+func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation])
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| manager | CLLocationManager | - |
+| locations | [CLLocation] | - |
+
+---
+
+## Overload
+
+func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| manager | CLLocationManager | - |
+| locations | [CLLocation] | - |
+
+---

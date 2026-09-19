@@ -1,0 +1,24 @@
+# DeleteScanAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanStore.DeleteScanAsync/
+
+DeleteScanAsync
+Delete the scan in an async way. DeleteScan.
+
+---
+
+## Declaration
+
+public Task DeleteScanAsync(SavedScan scan)
+
+#### Summary
+
+Delete the scan in an async way. DeleteScan.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| scan | SavedScan | - |
+
+---

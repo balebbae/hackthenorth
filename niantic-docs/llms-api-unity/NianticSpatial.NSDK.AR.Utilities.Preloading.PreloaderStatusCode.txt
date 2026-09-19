@@ -1,0 +1,30 @@
+# PreloaderStatusCode
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.PreloaderStatusCode/
+
+PreloaderStatusCode
+Return status codes for the model preloader
+
+---
+
+## Declaration
+
+public enum PreloaderStatusCode
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Failure | PreloaderStatusCode | - |
+| static FileExistsInCache | PreloaderStatusCode | - |
+| static FileNotAccessible | PreloaderStatusCode | - |
+| static HttpError | PreloaderStatusCode | - |
+| static HttpTimeout | PreloaderStatusCode | - |
+| static InvalidArguments | PreloaderStatusCode | - |
+| static RequestInProgress | PreloaderStatusCode | - |
+| static RequestNotFound | PreloaderStatusCode | - |
+| static Success | PreloaderStatusCode | - |
+
+---

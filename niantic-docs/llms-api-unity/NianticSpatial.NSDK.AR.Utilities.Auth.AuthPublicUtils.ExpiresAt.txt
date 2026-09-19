@@ -1,0 +1,28 @@
+# ExpiresAt
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Auth.AuthPublicUtils.ExpiresAt/
+
+ExpiresAt
+Get the expiry time of a JWT token in seconds.
+
+---
+
+## Declaration
+
+public static int ExpiresAt(string token)
+
+#### Summary
+
+Get the expiry time of a JWT token in seconds.
+
+#### Returns
+
+the expiry time or 0 if the token cannot be parsed
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| token | string | the token |
+
+---

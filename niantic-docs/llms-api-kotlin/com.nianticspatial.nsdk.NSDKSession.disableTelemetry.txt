@@ -1,0 +1,20 @@
+# disableTelemetry
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession.disableTelemetry/
+
+disableTelemetry
+
+---
+
+## Declaration
+
+fun disableTelemetry()
+
+#### Summary
+
+Disables telemetry collection for this process.
+
+Clears any buffered telemetry events and stops accepting new ones.
+This is a process-wide operation.
+
+---

@@ -1,0 +1,49 @@
+# ARSceneSegmentationModelEventArgs
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationModelEventArgs/
+
+ARSceneSegmentationModelEventArgs
+
+---
+
+## Declaration
+
+public struct ARSceneSegmentationModelEventArgs : ValueType, IEquatable<ARSceneSegmentationModelEventArgs>
+
+## Summary
+
+A structure for information about the semantic segmentation model that's become ready. This is used to
+communicate information in the MetadataInitialized event.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ChannelIndices | IReadOnlyDictionary<SceneSegmentationChannel, int> | The indices of the semantic channels detected by the semantic segmentation model. |
+| Channels | IReadOnlyList<SceneSegmentationChannel> | The semantic channels detected by the semantic segmentation model. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Equals | bool | Tests for equality. |
+| GetHashCode | int | Generates a hash suitable for use with containers like `HashSet` and `Dictionary`. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static != | bool | Tests for inequality. Same as `!`Equals. |
+| static == | bool | Tests for equality. Same as Equals. |
+
+---
+
+## Relationships
+
+implements:  System.IEquatable

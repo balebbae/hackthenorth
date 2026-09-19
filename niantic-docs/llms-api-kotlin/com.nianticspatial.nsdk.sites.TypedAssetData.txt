@@ -1,0 +1,26 @@
+# TypedAssetData
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.TypedAssetData/
+
+TypedAssetData
+
+---
+
+## Declaration
+
+sealed class TypedAssetData
+
+## Summary
+
+Discriminated union for typed asset data.
+One of mesh, splat, or vps will be set based on the asset type.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| toString | String | - |
+
+---

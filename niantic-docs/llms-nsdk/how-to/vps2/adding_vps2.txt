@@ -1,0 +1,188 @@
+# Get started with VPS2
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/vps2/adding_vps2/
+
+## Prerequisites
+
+This guide assumes that you have already completed:
+
+- [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity)
+- [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/)
+
+### Platform: unity
+
+## Adding VPS2 to your projects
+
+The Niantic Spatial Unity SDK (NSDK) uses AR Foundation as the interface for exposing its features. Adding VPS2 is therefore similar to adding other AR Foundation components.
+
+#### ARVps2Manager
+
+`ARVps2Manager` is a [trackable manager](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@6.4/manual/architecture/managers.html#trackables-and-trackable-managers) that manages georeferenced anchors. An anchor represents a real-world pose that the device maintains over time. With VPS2, anchors can be persisted and shared across AR sessions.
+
+The manager can also convert between local AR poses and global geopositions (and vice versa).
+
+(image: AR VPS2 Manager Component)
+
+#### Configuration Fields
+
+- **Universal Localization Enabled:** This field enables Cloud-based Geopositioning. When active, VPS2 sends AR sensor data and camera imagery to the server to calculate the device's absolute geographic coordinates and heading. This method can improve geoposition accuracy beyond local sensor fusion but requires a network connection. If disabled, the system relies exclusively on local sensor fusion.
+  - **Universal Localization Requests per Second:** (Default: 1) Frequency of cloud geopositioning requests.
+
+- **VPS Map Localization Enabled:** When active, the system localizes the device against VPS maps to achieve "precise" localization.
+  - **Initial Requests per Second:** (Default: 1.0) Server request frequency prior to the first successful VPS map localization. (For example, 1.0 = 1 request per second.)
+  - **Continuous Requests per Second:** (Default: 0.2) Server request frequency after the initial localization. (For example, 0.2 = 1 request every 5 seconds.)
+
+- **Geolocation Smoothing Enabled:** Enables interpolation between localization updates. This minimizes "snapping" or visual jumps during abrupt GPS or compass recalibrations, ensuring a stable AR experience.
+
+## Starting and Stopping VPS2
+
+VPS2 starts and stops according to the Unity component lifecycle. When started, the system begins collecting sensor data required for localization. Coarse positioning estimates are typically available within a few seconds after the AR session begins running.
+
+When stopped, all anchor state is reset.
+
+Configuration changes to `ARVps2Manager` are applied only when the component starts and cannot be modified while it is running.
+
+### Platform: swift
+
+`NSDKVps2Session` provides coarse and precise localization. In addition to estimating the geographic location and orientation of a pose in local AR space and vice versa, it can create and manage anchors in both mapped and unmapped areas.
+
+## Setting Up and Configuring VPS2
+
+`NSDKVps2Session` manages the VPS2 lifecycle: configuration, activation, and retrieval of geographic positioning data. It is created from an existing `NSDKSession` and operates independently of other AR features.
+
+```swift
+let vps2Session = nsdkSession.acquireVps2Session()
+
+let config = NSDKVps2Session.Configuration(
+    universalLocalizationEnabled: true,
+    vpsMapLocalizationEnabled: true
+)
+
+do {
+    try vps2Session.configure(with: config)
+} catch {
+    print("Configuration failed: \(error)")
+}
+```
+
+#### Configuration Fields
+
+- **Universal Localization Enabled:** This field enables Cloud-based Geopositioning. When active, VPS2 sends AR sensor data and camera imagery to the server to calculate the device's absolute geographic coordinates and heading. This method can improve geoposition accuracy beyond local sensor fusion but requires a network connection. If disabled, the system relies exclusively on local sensor fusion.
+  - **Universal Localization Requests per Second:** (Default: 1) Frequency of cloud geopositioning requests.
+
+- **VPS Map Localization Enabled:** When active, the system localizes the device against VPS maps to achieve "precise" localization.
+  - **Initial Requests per Second:** (Default: 1.0) Server request frequency prior to the first successful VPS map localization. (For example, 1.0 = 1 request per second.)
+  - **Continuous Requests per Second:** (Default: 0.2) Server request frequency after the initial localization. (For example, 0.2 = 1 request every 5 seconds.)
+
+- **Geolocation Smoothing Enabled:** Enables interpolation between localization updates. This minimizes "snapping" or visual jumps during abrupt GPS or compass recalibrations, ensuring a stable AR experience.
+
+## Starting and Stopping VPS2
+
+Start the session to begin collecting sensor data:
+
+```swift
+vps2Session.start()
+```
+
+Once started, VPS2 begins processing device sensor data. Coarse positioning estimates are typically available within a few seconds of calling `NSDKSession.update()`.
+
+When you call `configure(...)` and `start()`, VPS2 starts the general session. Then, VPS2 begins **coarse** localization, which provides the device's approximate global position and heading. Map-relative localization for a specific Site begins only after you call `trackAnchor` with that Site's anchor payload. VPS2 does not have a separate call that localizes directly from a Site ID.
+
+To start map-relative localization for a specific Site, do the following:
+
+1. Fetch the Site's anchor payload. For instructions, see [Get a Site's VPS anchor payload](https://www.nianticspatial.com/docs/nsdk/how-to/sites/getting_started/#5-get-a-sites-vps-anchor-payload).
+2. Pass that payload to `trackAnchor`. For an example that passes the payload to `trackAnchor` and places content on the tracked anchor, see [Place virtual content with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/).
+
+To check whether the Site has localized, read the anchor's tracking state. Do not use the session's `Vps2TrackingState` for that check. For the difference between those two states, see [Check device status and anchor status](https://www.nianticspatial.com/docs/nsdk/features/vps2/#check-device-status-and-anchor-status). A Site must have a processed VPS map for map-relative localization to succeed.
+
+**Current limitation:** As of NSDK 4.0 Beta, automatic localization is available only for VPS maps created using Scaniverse.
+
+To stop the VPS2 session, simply call:
+
+```swift
+vps2Session.stop()
+```
+
+After stopping, you may reconfigure and restart the session. All anchor state is reset when stopped.
+
+> **Caution:**
+>
+> **Attention!**
+>
+> Always call `stop()` before calling `start()` again.
+
+### Platform: kotlin
+
+## Adding VPS2 to your projects
+
+`VPS2Session` provides coarse and precise localization. In addition to estimating the geographic location and orientation of a pose in local AR space (and vice versa), it can create and manage anchors in both mapped and unmapped areas.
+
+## Setting Up and Configuring VPS2
+
+`VPS2Session` manages the VPS2 lifecycle: configuration, activation, and retrieval of geographic positioning data. It is created from an existing `NSDKSession` and operates independently of other AR features.
+
+```kotlin
+import com.nianticspatial.nsdk.Vps2Config
+
+val vps2Session = nsdkSession.vps2.acquire()
+
+// Example config, see documentation for all possible config options
+val config = Vps2Config(
+    enableUniversalLocalization = true,
+    enableVpsMapLocalization = true,
+)
+
+try {
+    vps2Session.configure(config)
+} catch (e: NsdkStatusException) {
+    Log.e("VPS", "Configuration failed: ${e.message}")
+}
+```
+
+#### Configuration Fields
+
+- **Universal Localization Enabled:** This field enables Cloud-based Geopositioning. When active, VPS2 sends AR sensor data and camera imagery to the server to calculate the device's absolute geographic coordinates and heading. This method can improve geoposition accuracy beyond local sensor fusion but requires a network connection. If disabled, the system relies exclusively on local sensor fusion.
+  - **Universal Localization Requests per Second:** (Default: 1) Frequency of cloud geopositioning requests.
+
+- **VPS Map Localization Enabled:** When active, the system localizes the device against VPS maps to achieve "precise" localization.
+  - **Initial Requests per Second:** (Default: 1.0) Server request frequency prior to the first successful VPS map localization. (For example, 1.0 = 1 request per second.)
+  - **Continuous Requests per Second:** (Default: 0.2) Server request frequency after the initial localization. (For example, 0.2 = 1 request every 5 seconds.)
+
+- **Geolocation Smoothing Enabled:** Enables interpolation between localization updates. This minimizes "snapping" or visual jumps during abrupt GPS or compass recalibrations, ensuring a stable AR experience.
+
+## Starting VPS2
+
+Start the session to begin collecting sensor data:
+
+```kotlin
+vps2Session.start()
+```
+
+Once started, VPS2 begins processing device sensor data. Coarse positioning estimates are typically available within a few seconds of calling `NSDKSession.update()`.
+
+When you call `configure(...)` and `start()`, VPS2 starts the general session. Then, VPS2 begins **coarse** localization, which provides the device's approximate global position and heading. Map-relative localization for a specific Site begins only after you call `trackAnchor` with that Site's anchor payload. VPS2 does not have a separate call that localizes directly from a Site ID.
+
+To start map-relative localization for a specific Site, do the following:
+
+1. Fetch the Site's anchor payload. For instructions, see [Get a Site's VPS anchor payload](https://www.nianticspatial.com/docs/nsdk/how-to/sites/getting_started/#5-get-a-sites-vps-anchor-payload).
+2. Pass that payload to `trackAnchor`. For an example that passes the payload to `trackAnchor` and places content on the tracked anchor, see [Place virtual content with VPS2](https://www.nianticspatial.com/docs/nsdk/how-to/vps2/placing_virtual_content/).
+
+To check whether the Site has localized, read the anchor's tracking state. Do not use the session's `Vps2TrackingState` for that check. For the difference between those two states, see [Check device status and anchor status](https://www.nianticspatial.com/docs/nsdk/features/vps2/#check-device-status-and-anchor-status). A Site must have a processed VPS map for map-relative localization to succeed.
+
+**Current limitation:** Automatic localization is available only for VPS maps created using Scaniverse version NSDK 4.0 Beta.
+
+## Stopping VPS2
+
+Stop the VPS2 session:
+
+```kotlin
+vps2Session.stop()
+```
+
+After stopping, you may reconfigure and restart the session. All anchor state is reset when stopped.
+
+> **Caution:**
+>
+> **Attention!**
+>
+> Always call `stop()` before calling `start()` again.

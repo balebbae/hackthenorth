@@ -1,0 +1,24 @@
+# GetMouseButtonUp
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Input.GetMouseButtonUp/
+
+GetMouseButtonUp
+Returns true during the frame the user releases the given mouse button.
+
+---
+
+## Declaration
+
+public static bool GetMouseButtonUp(int button)
+
+#### Summary
+
+Returns true during the frame the user releases the given mouse button.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| button | int | - |
+
+---

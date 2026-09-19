@@ -1,0 +1,19 @@
+# acquireMapStorage
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireMapStorage/
+
+acquireMapStorage
+
+---
+
+## Declaration
+
+@MainActor func acquireMapStorage() -> NSDKMapStorage
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

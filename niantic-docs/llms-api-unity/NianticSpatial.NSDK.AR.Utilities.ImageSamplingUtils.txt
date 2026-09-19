@@ -1,0 +1,22 @@
+# ImageSamplingUtils
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ImageSamplingUtils/
+
+ImageSamplingUtils
+
+---
+
+## Declaration
+
+public static class ImageSamplingUtils
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Sample | T | Samples a native array as if it was an image. Employs nearest neighbour algorithm. |
+| static TransformImageCoordinates | Vector2Int | Transforms pixel coordinates using the specified matrix. |
+
+---

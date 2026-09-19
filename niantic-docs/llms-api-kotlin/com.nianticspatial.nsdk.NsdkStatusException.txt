@@ -1,0 +1,37 @@
+# NsdkStatusException
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkStatusException/
+
+NsdkStatusException
+> extends Exception 
+Base class for all NSDK-specific exceptions originating from the native layer.
+
+---
+
+## Declaration
+
+open class NsdkStatusException
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| status | NSDKStatus | - |
+
+---
+
+## Relationships
+
+derived:  NsdkFeatureAlreadyInitializedStatusException 
+
+derived:  NsdkFeatureNotInitializedStatusException 
+
+derived:  NsdkInvalidArgumentStatusException 
+
+derived:  NsdkInvalidHandleStatusException 
+
+derived:  NsdkInvalidOperationStatusException 
+
+derived:  NsdkNullArgumentStatusException

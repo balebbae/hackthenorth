@@ -1,0 +1,30 @@
+# DeviceMapAccessController
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController/
+
+DeviceMapAccessController
+Class to access primitive device map data and configs.
+
+---
+
+## Declaration
+
+public class DeviceMapAccessController
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Acquire | DeviceMapAccessController | Gets or creates the shared map access object. |
+| AddMap | bool | Add serialized map data to the map storage. |
+| ClearDeviceMaps | bool | Clear map storage. |
+| CreateRootAnchor | bool | Creates an anchor on the existing map located at the origin of the current AR session, if possible. |
+| ExtractMapMetadataFromAnchor | bool | Extract the metadata from a map relative to an anchor on the map. |
+| GetMapData | bool | Get the current map data. |
+| GetMapUpdate | bool | Get the latest map update data, which consists of the new nodes and edges that have been added since the last call to this function. |
+| MergeMapUpdate | bool | Merge a map update into an existing map. |
+| Release | void | - |
+
+---

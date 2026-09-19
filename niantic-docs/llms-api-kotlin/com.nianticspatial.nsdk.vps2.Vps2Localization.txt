@@ -1,0 +1,30 @@
+# Vps2Localization
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Localization/
+
+Vps2Localization
+
+---
+
+## Declaration
+
+data class Vps2Localization
+
+## Summary
+
+Spatial mapping between the device's AR coordinate space and real-world
+geolocation, as determined by VPS2.
+If [trackingState] is [Vps2TrackingState.UNAVAILABLE], conversions are
+invalid and native conversion APIs will throw
+`ArdkInvalidOperationStatusException`.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| isAvailable | Boolean | - |
+| trackingState | Vps2TrackingState | The state of VPS2 tracking. The other fields in this class areonly valid if the tracking state is **not** [Vps2TrackingState.UNAVAILABLE]. |
+
+---

@@ -1,0 +1,41 @@
+# CaptureRoot
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.CaptureRoot/
+
+CaptureRoot
+Root structure for the capture JSON file. Required fields per spec; optional may be null.
+
+---
+
+## Declaration
+
+data class CaptureRoot
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| app | String? | - |
+| autofocus | Int? | - |
+| coordinates | String | - |
+| depthFormat | String? | - |
+| depthSource | String? | - |
+| duration | Double? | - |
+| formatVersion | String | - |
+| frameCount | Int? | - |
+| framerate | Double? | - |
+| frames | List<FrameMetadata> | - |
+| imageFormat | String | - |
+| imageQuality | Int? | - |
+| manufacturer | String? | - |
+| metadata | CaptureMetadata? | - |
+| model | String? | - |
+| recorder | String? | - |
+| resolution | List<Int> | - |
+| timestamp | Double | - |
+| timezone | Int? | - |
+| uuid | String | - |
+
+---

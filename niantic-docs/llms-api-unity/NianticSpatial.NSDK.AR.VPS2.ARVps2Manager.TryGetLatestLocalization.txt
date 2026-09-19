@@ -1,0 +1,19 @@
+# TryGetLatestLocalization
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryGetLatestLocalization/
+
+TryGetLatestLocalization
+
+---
+
+## Declaration
+
+public bool TryGetLatestLocalization(out XRVps2Localization localizationOut)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| localizationOut | XRVps2Localization | - |
+
+---

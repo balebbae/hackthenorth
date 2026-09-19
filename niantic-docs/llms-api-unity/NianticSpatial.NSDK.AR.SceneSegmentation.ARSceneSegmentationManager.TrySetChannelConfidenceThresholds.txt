@@ -1,0 +1,39 @@
+# TrySetChannelConfidenceThresholds
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.TrySetChannelConfidenceThresholds/
+
+TrySetChannelConfidenceThresholds
+
+---
+
+## Declaration
+
+public bool TrySetChannelConfidenceThresholds(Dictionary<SceneSegmentationChannel, float> channelConfidenceThresholds)
+
+#### Summary
+
+Sets the confidence threshold for including the specified semantic channel in the packed semantic
+    channel buffer.
+
+#### Remarks
+
+Each semantic channel will use its default threshold value chosen by the model until a new value is set
+    by this function during the AR session.
+    Changes to the semantic segmentation thresholds are undone by either restarting the subsystem or by calling
+    TryResetChannelConfidenceThresholds.
+
+#### Returns
+
+True if the thresholds were set. Otherwise, false.
+
+#### Throws
+
+NotSupportedException -- Thrown when setting confidence thresholds is not     supported by the implementation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channelConfidenceThresholds | Dictionary<SceneSegmentationChannel, float> | A dictionary consisting of keys specifying the scene segmentation channel that is needed and values between 0 and 1, inclusive, that set the threshold above which the platform will include the specified channel in the packed scene segmentation buffer. The key must be a semantic channel present in the list returned by TryGetChannelNames. |
+
+---

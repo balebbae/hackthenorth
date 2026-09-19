@@ -1,0 +1,14 @@
+# NsdkSimulationOcclusionSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationOcclusionSubsystem/
+
+NsdkSimulationOcclusionSubsystem
+> extends UnityEngine.XR.ARSubsystems.XROcclusionSubsystem
+
+---
+
+## Declaration
+
+public class NsdkSimulationOcclusionSubsystem : XROcclusionSubsystem
+
+---

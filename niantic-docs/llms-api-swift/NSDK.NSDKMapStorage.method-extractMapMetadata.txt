@@ -1,0 +1,36 @@
+# extractMapMetadata
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-extractMapMetadata/
+
+extractMapMetadata
+
+---
+
+## Declaration
+
+func extractMapMetadata(anchorPayload: String, map: NSDKBuffer) throws -> MapMetadata?
+
+#### Summary
+
+Extracts metadata from a map relative to a specified anchor.
+Render the feature points in the metadata relative to the specified anchor to visualize the map.
+This is only possible when the anchor is linked directly to the map's node(s), or if
+the anchor's nodes are reachable to the map's nodes from the currently active
+transform graph.
+
+#### Returns
+
+The metadata of the map if successful, nil if otherwise.
+
+#### Throws
+
+NSDKError.invalidArgumentor NSDKError.nullArgument   indicating a problem with either argument. Check NSDK's C logs for more information.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorPayload | String | The base64-encoded payload of the anchor that the returned points will be relative to. |
+| map | NSDKBuffer | The map buffer to extract metadata from. |
+
+---

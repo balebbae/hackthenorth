@@ -1,0 +1,27 @@
+# ScanningSqcScores
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanningSqcScores/
+
+ScanningSqcScores
+
+---
+
+## Declaration
+
+public struct ScanningSqcScores : ValueType
+
+## Summary
+
+This struct is used by publicly and internally.
+For internal usage, we will pass down an array of struct to native.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Category | ScanQualityCategory | - |
+| Score | float | - |
+
+---

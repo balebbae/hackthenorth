@@ -1,0 +1,22 @@
+# getDepthDataAtIndex
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDataset.getDepthDataAtIndex/
+
+getDepthDataAtIndex
+Loads depth data (Float32 binary) at [index] on-demand. Returns null if this frame has no depth.
+
+---
+
+## Declaration
+
+fun getDepthDataAtIndex(index: Int): ByteArray?
+
+#### Summary
+
+Loads depth data (Float32 binary) at index on-demand. Returns null if this frame has no depth.
+
+#### Throws
+
+PlaybackDatasetError.IndexOutOfBounds -- if index is invalid.
+
+---

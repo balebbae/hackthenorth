@@ -1,0 +1,131 @@
+# NSDKView
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.class-NSDKView/
+
+NSDKView
+> inherits from RealityKit.ARView
+
+---
+
+## Declaration
+
+@MainActor class NSDKView
+
+## Summary
+
+Single view for both live and playback. Subclasses **ARView**; holds either an **ARSession** (live)
+or **PlaybackSession** (playback) and exposes `sessionMode`, `getCamera()`, `setDelegate()`, `setup()`.
+Relation to Apple AR: **Uses** ARView; assigns either Apple's ARSession or our PlaybackSession to
+`self.session` so the view always has a "session." The app talks to NSDKView so it doesn't have to
+branch on live vs. playback for view, projection, viewport, or delegate callbacks.
+
+---
+
+## Constructors
+
+### Constructor
+
+@MainActor init()
+
+#### Summary
+
+Initializes the view in live AR mode with a new ARSession.
+The session is assigned to the underlying ARView so ARKit drives the camera and tracking.
+
+---
+
+### Overload
+
+@MainActor init(dataset: PlaybackDataset)
+
+#### Summary
+
+Initializes the view in playback mode with a loaded dataset.
+Uses a PlaybackSession and disables ARKit's automatic session configuration so playback drives the camera.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @MainActor weak var delegate | NSDKViewDelegate | Unified session delegate (live or playback).Automatically forwards to the underlying ARSession or PlaybackSession. |
+| @MainActor var hasDepth | Bool | Returns whether depth data is available for this session.In playback, true if the dataset has LiDAR depth; in live, true if the device has a LiDAR sensor. |
+| @MainActor var sessionMode | SessionMode | The current session mode (live AR or playback). Switch on this to access the underlying ARSession or PlaybackSession. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| @MainActor getCamera | NSDKCamera? | Returns a unified camera (NSDKCamera) for the current frame when one is available.In live mode uses the current ARFrame's camera; in playback uses the current playback frame's camera.Returns nil if no frame is ready. Use this so callers do not need to branch on session mode for view/projection/viewport. |
+| @MainActor setup | void | Adds the NSDKView to the given container and sets up playback rendering when in playback mode.In playback, creates the PlaybackRenderer (background + camera) first so the camera image is drawn behind RealityKit content.Call this after creating the NSDKView; the view is constrained to fill the container. |
+
+---
+
+## Nested Types
+
+### Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SessionMode | SessionMode | - |
+
+---
+
+## Relationships
+
+conforms to:  Foundation.NSCoding 
+
+conforms to:  UIKit.UIAppearance 
+
+conforms to:  UIKit.UIAppearanceContainer 
+
+conforms to:  UIKit.UIDynamicItem 
+
+conforms to:  UIKit.UITraitEnvironment 
+
+conforms to:  UIUtilities.UICoordinateSpace 
+
+conforms to:  UIKit.UIFocusItem 
+
+conforms to:  UIKit.UIFocusEnvironment 
+
+conforms to:  UIKit.UIFocusItemContainer 
+
+conforms to:  QuartzCore.CALayerDelegate
+
+conforms to:  UIKit.UIResponderStandardEditActions 
+
+conforms to:  ObjectiveC.NSObjectProtocol
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable 
+
+conforms to:  Swift.CVarArg 
+
+conforms to:  Swift.CustomStringConvertible 
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  UIKit.UIActivityItemsConfigurationProviding 
+
+conforms to:  UIKit.UIPasteConfigurationSupporting 
+
+conforms to:  UIKit.UIUserActivityRestoring 
+
+conforms to:  UIKit.UITraitChangeObservable 
+
+conforms to:  UIKit.UIPopoverPresentationControllerSourceItem 
+
+conforms to:  UIKit.UILargeContentViewerItem 
+
+conforms to:  UIKit.UIAccessibilityIdentification 
+
+conforms to:  ARKit.ARSessionProviding
+
+conforms to:  UIKit.UIGestureRecognizerDelegate 
+
+conforms to:  Swift.Sendable

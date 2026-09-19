@@ -1,0 +1,35 @@
+# TryAcquireSceneSegmentationChannelCpuImage
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.TryAcquireSceneSegmentationChannelCpuImage/
+
+TryAcquireSceneSegmentationChannelCpuImage
+
+---
+
+## Declaration
+
+public bool TryAcquireSceneSegmentationChannelCpuImage(SceneSegmentationChannel channel, out XRCpuImage cpuImage, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Attempt to acquire the latest semantic segmentation XRCpuImage for the specified semantic class. This
+    provides direct access to the raw pixel data.
+
+#### Remarks
+
+The XRCpuImage must be disposed to avoid resource leaks.
+
+#### Returns
+
+True if the CPU image was acquired. Otherwise, false
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channel | SceneSegmentationChannel | The semantic channel to acquire. |
+| cpuImage | XRCpuImage | If this method returns `true`, an acquired XRCpuImage. The XRCpuImage must be disposed by the caller. |
+| samplerMatrix | Matrix4x4 | A matrix that converts from viewport to image coordinates according to the latest pose. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

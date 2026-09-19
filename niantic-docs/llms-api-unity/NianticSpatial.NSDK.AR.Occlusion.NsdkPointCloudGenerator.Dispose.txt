@@ -1,0 +1,13 @@
+# Dispose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkPointCloudGenerator.Dispose/
+
+Dispose
+
+---
+
+## Declaration
+
+public void Dispose()
+
+---

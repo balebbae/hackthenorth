@@ -1,0 +1,24 @@
+# latestDepth
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.depth.DepthSession.latestDepth/
+
+latestDepth
+
+---
+
+## Declaration
+
+fun latestDepth(): NSDKResult<DepthBuffer, AwarenessStatus>
+
+#### Summary
+
+Get the latest output from the depth feature
+
+This retrieves the latest depth buffer represented as an image, along side other
+relevant information such as the camera pose, intrinsics, and min max disparity.
+
+#### Returns
+
+Result containing depth buffer if successful, or error information
+
+---

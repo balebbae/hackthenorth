@@ -1,0 +1,22 @@
+# ToBase64
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2AnchorPayload.ToBase64/
+
+ToBase64
+Converts a payload to a base 64 string.
+
+---
+
+## Declaration
+
+public string ToBase64()
+
+#### Summary
+
+Converts a payload to a base 64 string.
+
+#### Returns
+
+The string representation of the payload.  Returns null if no data exists in the payload.
+
+---

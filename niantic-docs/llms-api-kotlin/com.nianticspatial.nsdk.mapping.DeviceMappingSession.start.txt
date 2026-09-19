@@ -1,0 +1,26 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession.start/
+
+start
+
+---
+
+## Declaration
+
+fun start()
+
+#### Summary
+
+Start the mapping session.
+
+This starts some underlying processes that need to be running before actual mapping can begin,
+downloading the model containing the mapping algorithm. It does not actually start the map
+building process, which needs to be invoked separately with startCreating.
+
+#### See also
+
+stop
+startCreating
+
+---

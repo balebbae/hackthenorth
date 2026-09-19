@@ -1,0 +1,24 @@
+# Create
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystemDescriptor.Create/
+
+Create
+Creates a new subsystem descriptor and registers it with the SubsystemManager.
+
+---
+
+## Declaration
+
+public static void Create(Cinfo cinfo)
+
+#### Summary
+
+Creates a new subsystem descriptor and registers it with the SubsystemManager.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| cinfo | Cinfo | Constructor info describing the descriptor to create. |
+
+---

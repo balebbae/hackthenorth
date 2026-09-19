@@ -1,0 +1,26 @@
+# configure
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.depth.DepthSession.configure/
+
+configure
+
+---
+
+## Declaration
+
+fun configure(config: DepthConfig)
+
+#### Summary
+
+Configures depth settings and parameters.
+
+This sets up depth configuration including frame rate,
+and model the feature is using.
+Must be called after create but before start.
+
+#### See also
+
+start
+MeshingConfig
+
+---

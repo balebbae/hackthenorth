@@ -1,0 +1,1606 @@
+# How to Query Scene Segmentation and Highlight Semantic Channels
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/query_semantics_real_objects/
+
+### Platform: unity
+
+(image: Viewing semantic information in an AR app with playback)
+
+This how-to covers:
+
+- Querying scene segmentation to detect what is on-screen at a point the player touches;
+- Highlighting a specific semantic channel based on the last point the player touched;
+- Available APIs for querying semantic information.
+
+## Prerequisites
+
+You will need a Unity project with NSDK installed and a set-up basic AR scene. For more information, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity) and [Set up a basic AR scene](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-a-basic-ar-scene).
+
+## Steps
+
+### Adding UI Elements
+
+Before implementing the script that handles semantic querying, we need to prepare the UI elements that will display semantic information to the user. For this example, we will create a text field to display the semantic channel name and a `RawImage` to handle shader output.
+
+To create the UI elements:
+
+1. In the **Hierarchy**, right-click in your AR scene, then mouse over **UI** and select **Raw Image** to add a `RawImage` to the scene.
+2. Repeat this process, but select **Text-TextMeshPro** to add a text field. If a TMP Importer pop-up appears, click **Import TMP Essentials** to finish adding the text field.
+3. Select the text field in the **Hierarchy**, then, in the **Inspector**, set its position to (0, 0, 0).
+4. In the **Rect Transform** menu in the **Inspector**, click the square in the top-left corner to open the **Anchor Presets** menu. Hold Shift and click the center option to anchor the text in the middle of the screen.
+
+(image: An image of the Unity UI highlighting the Center Transform button)
+
+5. Select the `RawImage`, then open the **Anchor Presets** menu again. Hold the Option key (Alt on Windows) and select the bottom-right square to place the `RawImage` in the correct spot and stretch it to cover the entire screen.
+
+(image: An image of the Unity UI highlighting the Stretch option in the Anchor Presets menu)
+
+### Adding the Semantic Segmentation Manager
+
+The Semantic Segmentation Manager provides access to the Semantics subsystem and serves semantic predictions that other parts of your code can access. (For more detailed information, see the [Scene Segmentation Features page](https://www.nianticspatial.com/docs/nsdk/features/semantics/).)
+
+To add a Semantic Segmentation Manager to your scene:
+
+1. Right-click in the **Hierarchy** window, then select **Create Empty** to add an empty `GameObject` to the scene. Name it **Segmentation Manager**.
+2. Select the new `GameObject`, then, in the **Inspector** window, click **Add Component**, search for "AR Semantic Segmentation Manager", and select it to add it as a Component.
+
+(image: An example of a game object containing the scene segmentation segmentation manager)
+
+### Adding the Alignment Shader
+
+To make sure our semantic information aligns properly on-screen, we need to use the display matrix and rotate the buffer returned by the camera. Using an overlay shader, we can get the display transform from the **ARCameraManager** frame update event and use it to transform the UVs into the correct screen space. Then, we render the semantic information into the `RawImage` we made earlier and display it to the user.
+
+To create the shader:
+
+1. Create a shader and material:
+   1. In the **Project** window, open the **Assets** directory.
+   2. Right-click in the **Assets** directory, then mouse over **Create** and select **Unlit Shader** from the **Shader** menu. Name it **SemanticShader**.
+   3. Repeat this process, but select **Material** from the **Create** menu to create a new material. Name it **SemanticMaterial**, then drag and drop **SemanticShader** onto the new Material to associate them.
+2. Add the shader code:
+   1. Select **SemanticShader** from the **Assets** directory, then, in the **Inspector** window, click **Open** to edit the shader code.
+   2. Replace the default shader with the alignment shader code.
+
+#### Click to expand the alignment shader code
+
+```cs
+Shader "Unlit/SemanticShader"
+{
+    Properties
+    {
+        _MainTex ("_MainTex", 2D) = "white" {}
+        _SemanticTex ("_SemanticTex", 2D) = "red" {}
+        _Color ("_Color", Color) = (1,1,1,1)
+    }
+    SubShader
+    {
+        Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+        Blend SrcAlpha OneMinusSrcAlpha
+        // No culling or depth
+        Cull Off ZWrite Off ZTest Always
+        Pass
+        {
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "UnityCG.cginc"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float2 uv : TEXCOORD0;
+                float3 texcoord : TEXCOORD1;
+                float4 vertex : SV_POSITION;
+
+            };
+
+            float4x4 _SemanticMat;
+
+            v2f vert (appdata v)
+            {
+                v2f o;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
+
+                //we need to adjust our image to the correct rotation and aspect.
+                o.texcoord = mul(_SemanticMat, float4(v.uv, 1.0f, 1.0f)).xyz;
+                
+                return o;
+            }
+
+            sampler2D _MainTex;
+            sampler2D _SemanticTex;
+            fixed4 _Color;
+
+            fixed4 frag (v2f i) : SV_Target
+            {
+                //convert coordinate space
+                float2 semanticUV = float2(i.texcoord.x / i.texcoord.z, i.texcoord.y / i.texcoord.z);
+                
+                float4 semanticCol = tex2D(_SemanticTex, semanticUV);
+                return float4(_Color.r,_Color.g,_Color.b,semanticCol.r*_Color.a);
+            }
+            ENDCG
+        }
+    }
+}
+```
+
+3. Set up the material properties:
+   1. Once you replace the shader code, the material will populate with properties. To access them, select **SemanticMaterial** from the **Assets** directory, then look in the **Inspector** window.
+   2. Click the color swatch to the right of the **Color** property in the **Inspector** to set the material color and alpha. Set the alpha value to `128` (roughly 50%) to make sure the semantic color filter is translucent enough to see the real-world object beneath it. The color is up to you!
+
+(image: The material inspector)
+
+### Creating the Query Script
+
+To get semantic information when the player touches the screen, we need a script that queries the Semantic Segmentation Manager and displays the information when the player touches an area.
+
+To create the query script:
+
+1. Make the script file and add it to the Segmentation Manager:
+   1. In the **Project** window, select the **Assets** directory, then right-click inside the window, mouse over **Create**, and select **C
+
+# Script**. Name the new script **SemanticQuerying**.
+   2. In the **Hierarchy**, select the **Segmentation Manager** `GameObject`, then, in the **Inspector** window, click **Add Component**. Search for "script", then select **New Script** and choose the **SemanticQuerying** script.
+2. Add code to the script:
+   1. Double-click the **SemanticQuerying** script in the **Assets** directory to open it in a text editor, then copy the following script into it. (See the [Appendix](#appendix-how-does-the-query-script-work) for details on how each part of the script works.)
+
+#### Click to reveal the SemanticQuerying script
+
+```cs
+using NianticSpatial.NSDK.AR.Semantics;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR.ARFoundation;
+
+public class SemanticQuerying : MonoBehaviour
+{
+    public ARCameraManager _cameraMan;
+    public ARSemanticSegmentationManager _semanticMan;
+
+    public TMP_Text _text;
+    public RawImage _image;
+    public Material _material;
+
+    private string _channel = "ground";
+
+    void OnEnable()
+    {
+        _cameraMan.frameReceived += OnCameraFrameUpdate;
+    }
+
+    private void OnDisable()
+    {
+        _cameraMan.frameReceived -= OnCameraFrameUpdate;
+    }
+
+    private void OnCameraFrameUpdate(ARCameraFrameEventArgs args)
+    {
+        if (!_semanticMan.subsystem.running)
+        {
+            return;
+        }
+
+        //get the semantic texture
+        Matrix4x4 mat = Matrix4x4.identity;
+        var texture = _semanticMan.GetSemanticChannelTexture(_channel, out mat);
+
+        if (texture)
+        {
+            //the texture needs to be aligned to the screen so get the display matrix
+            //and use a shader that will rotate/scale things.
+            _image.material = _material;
+            _image.material.SetTexture("_SemanticTex", texture);
+            _image.material.SetMatrix("_SemanticMat", mat);
+        }
+    }
+
+    private float _timer = 0.0f;
+
+    void Update()
+    {
+        if (!_semanticMan.subsystem.running)
+        {
+            return;
+        }
+
+        //Unity Editor vs On Device
+        if (Input.GetMouseButtonDown(0) || (Input.touches.Length > 0))
+        {
+            var pos = Input.mousePosition;
+
+            if (pos.x > 0 && pos.x < Screen.width)
+            {
+                if (pos.y > 0 && pos.y < Screen.height)
+                {
+                    _timer += Time.deltaTime;
+                    if (_timer > 0.05f)
+                    {
+                        var list = _semanticMan.GetChannelNamesAt((int)pos.x, (int)pos.y);
+
+                        if (list.Count > 0)
+                        {
+                            _channel = list[0];
+                            _text.text = _channel;
+                        }
+                        else
+                        {
+                            _text.text = "?";
+                        }
+
+                        _timer = 0.0f;
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+## Assigning Script Variables
+
+Before the script can run, we need to assign its variables in Unity so that the script and UI elements can talk to each other.
+
+To assign the variables:
+
+1. In the **Hierarchy**, select the **Segmentation Manager** `GameObject`.
+2. In the **Inspector** window, assign the variables in the `SemanticQuerying` script Component by dragging and dropping each item to its respective field:
+   1. The scene's `MainCamera` to the **Camera Man** field;
+   2. The `SegmentationManager` object to the **Segmentation Man** field;
+   3. The `Text-TMP` object to the **Text** field;
+   4. The `RawImage` object to the **Image** field;
+   5. `SemanticMaterial` from the **Assets** directory to the **Material** field.
+
+(image: the Semantic Querying script after assigning the script variables)
+
+## Build and Test
+
+Once you have added the script and populated it with code, you can now test using a playback dataset. For instructions on setting up your editor to play back a recorded dataset in the Unity editor, see [How to Setup Playback](https://www.nianticspatial.com/docs/nsdk/how-to/playback/setting_up_playback/#1--download-or-create-a-recording-to-use-for-playback). If using [this Playback dataset from the NSDK Github](https://github.com/nianticspatial/nsdk-samples-csharp/releases/download/3.1.0/Relic_PlaybackDataset.tgz), your output should look something like this:
+
+(image: Viewing semantic information in an AR app)
+
+You can also now build to device and test in a real-world environment:
+
+(image: Viewing semantic information in an AR app)
+
+## Appendix: How Does the Query Script Work?
+
+### What's On The Screen?
+
+The core of the querying script checks on each frame if the user is touching or clicking. After making sure the touch/click is legal by checking the position and amount of frames it took, we get the semantic channel at the point the user chose and show the result using a text box.
+
+#### Click here to reveal the channel names snippet
+
+```cs
+using NianticSpatial.NSDK.AR.Semantics;
+using TMPro;
+using UnityEngine;
+
+public class SemanticQuerying : MonoBehaviour
+{
+    public ARSemanticSegmentationManager _semanticMan;
+    public TMP_Text _text;
+
+    void Update()
+    {
+        if (!_semanticMan.subsystem.running)
+        {
+            return;
+        }
+
+        //Unity Editor vs On Device
+        if (Input.GetMouseButtonDown(0) || (Input.touches.Length > 0))
+        {
+            var pos = Input.mousePosition;
+
+            if (pos.x > 0 && pos.x < Screen.width)
+            {
+                if (pos.y > 0 && pos.y < Screen.height)
+                {
+                    _timer += Time.deltaTime;
+                    if (_timer > 0.05f)
+                    {
+                        var list = _semanticMan.GetChannelNamesAt((int)pos.x, (int)pos.y);
+
+                        if (list.Count > 0)
+                        {
+                            _channel = list[0];
+                            _text.text = _channel;
+                        }
+                        else
+                        {
+                            _text.text = "?";
+                        }
+
+                        _timer = 0.0f;
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+### Highlighting the Semantic Class
+
+Using `GetSemanticChannelTexture`, we can get the texture for the semantic channel we're looking at and output the results to the `RawImage` UI element. Because this function outputs a `Matrix4x4` texture, we then transform it in the shader, as explained in [Adding the Alignment Shader](#adding-the-alignment-shader).
+
+#### Click to reveal the texture output snippet
+
+```cs
+using NianticSpatial.NSDK.AR.Semantics;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class SemanticQuerying : MonoBehaviour
+{
+    public ARSemanticSegmentationManager _semanticMan;
+    public TMP_Text _text;
+    public RawImage _image;
+
+    void Update()
+    {
+        if (!_semanticMan.subsystem.running)
+        {
+            return;
+        }
+
+        var list = _semanticMan.GetChannelNamesAt(Screen.width / 2, Screen.height / 2);
+        _text.text="";
+        foreach (var i in list)
+            _text.text += i;
+
+        //this will highlight the class it found
+        if (list.Count > 0)
+        {
+            //just show the first one.
+            _image.texture = _semanticMan.GetSemanticChannelTexture(list[0], out Matrix4x4 mat);
+        }
+    }
+}
+```
+
+### Platform: swift
+
+This how-to covers:
+
+- Querying scene segmentation to detect what is on screen
+- Select a semantic channel to highlight in AR
+
+## Prerequisites
+
+You will need an Xcode project with NSDK installed and `BaseARViewController` set up.
+For more information, see [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+## Setting Up Scene Segmentation
+
+### Create a Feature Manager
+
+To set up scene segmentation, begin by creating a new script called SemanticsManager.
+This class will start the scene segmentation feature and read semantics data from the feature for rendering in AR.
+
+```swift
+import Foundation
+import NSDK
+import ARKit
+import Metal
+
+final class SemanticsManager {
+    let session: NsdkSemanticsSession
+
+    // GPU resources
+    private let device: MTLDevice
+    private var confidenceTexture: MTLTexture?
+
+    // Helpers
+    private var cachedTextureWidth: Int = 0
+    private var cachedTextureHeight: Int = 0
+    private var lastFrameIndex: UInt64 = 0
+
+    init(nsdk: NsdkSession) {
+        device = MTLCreateSystemDefaultDevice()!
+        session = nsdk.createSemanticsSession()
+    }
+
+    func start() {
+        let config = NsdkSemanticsSession.Configuration()
+        do {
+            try session.configure(with: config)
+        } catch {
+            print("Error: failed to configure session - \(error)")
+            return
+        }
+        session.start()
+    }
+
+    func stop() {
+        session.stop()
+    }
+
+```
+
+### Get the Supported Semantic Channels
+
+Add a method to get the list of supported semantic channels.
+
+```swift
+    // Retrieves the list of available semantic segmentation channel names from the model.
+    // Returns: An array of classification labels (`String`) if available, otherwise `nil`.
+    func channelNames() -> [String]? {
+        let resultState = session.channelNames()
+        switch resultState {
+        case .inProgress(nil):
+            return nil
+        case .failure(let error):
+            print("NSDK Semantics Error: \(error)")
+            return nil
+        case .success(let names):
+            return names
+        default:
+            print("Unexpected state in semantics channel name retrieval: \(resultState)")
+            return nil
+        }
+    }
+```
+
+### Read the Confidence of One Channel
+
+Add a method to get the confidence map for a specific semantic channel.
+If the data is available, it will be passed to a helper function to be turned into a Metal texture.
+
+The current device pose is probably different than the one used to create the most recent semantics data, so this function also returns a transform to reproject the buffer for the latest device pose.
+This function is designed to be called for every render frame; if no new semantics data is available, only the reprojection matrix will be updated, and `isNew` will return false.
+
+```swift
+    // Retrieves the latest confidence map for the specified channel as a Metal texture and computes a
+    // 3x3 homography matrix to reproject pixels into the coordinate system of the given camera pose.
+    // Validates that the semantics feature and latest buffer are available, otherwise returns nil.
+    // Reuses the existing texture unless a new semantics frame was received, in which case it updates it.
+    // Returns: A tuple containing the confidence `MTLTexture` (if available),
+    //          and the reprojection `matrix_float3x3` to the target camera pose.
+    func getTextureAndReprojection(for channelIndex: Int, using cameraPose: matrix_float4x4) -> (texture: MTLTexture?, reprojection: matrix_float3x3?, isNew: Bool) {
+        let featureStatus = session.featureStatus()
+        if (!featureStatus.isOk()) {
+            print("Semantics Feature Status Error: \(featureStatus)")
+            return (nil, nil, false)
+        }
+
+        // Throws error if channelIndex is out of bounds. Here, we assume it's not.
+        let resultState = try! session.latestConfidence(channelIndex: channelIndex)
+        switch resultState {
+        case .inProgress(nil):
+            return (nil, nil, false)
+        case .failure(let error):
+            print("NSDK Semantics Error: \(error)")
+            return (nil, nil, false)
+        case .success(let buffer):
+            // Calculate the reprojection transform
+            let reprojection = SemanticsManager.calculateReprojection(for: buffer, to: cameraPose)
+
+            // Determine if the texture needs to be updated
+            let wasSemanticsUpdated = buffer.frameId != lastFrameIndex
+            lastFrameIndex = buffer.frameId
+
+            // Acquire the latest image
+            let texture = wasSemanticsUpdated ? createOrUpdateTexture(from: buffer.image) : confidenceTexture
+
+            return (texture, reprojection, wasSemanticsUpdated)
+        default:
+            print("Unexpected state in semantics texture and reprojection retrieval: \(resultState)")
+            return (nil, nil, false)
+        }
+    }
+```
+
+### Add Helper Functions
+
+Now, add a helper function to turn the raw semantics confidence data buffer into a Metal texture that we can render.
+
+```swift
+    // Creates or updates a Metal texture from a semantic segmentation confidence map `RawImage` with `Float32` pixel data.
+    // Returns the updated texture, or `nil` if creation/upload fails.
+    private func createOrUpdateTexture(from rawImage: RawImage?) -> MTLTexture? {
+        guard let image = rawImage else {
+            print("Cannot update the confidence texture from the provided image (nil).")
+            return nil
+        }
+
+        guard image.type == .semanticsConfidence else {
+            print("Unsupported image type.")
+            return nil
+        }
+
+        let width = Int(image.width)
+        let height = Int(image.height)
+
+        // Only recreate texture if size changed
+        if confidenceTexture == nil || cachedTextureWidth != width || cachedTextureHeight != height {
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .r32Float,
+                width: width,
+                height: height,
+                mipmapped: false
+            )
+            textureDescriptor.usage = [.shaderRead]
+            textureDescriptor.storageMode = .shared
+
+            guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
+                print("Failed to create Metal texture")
+                return nil
+            }
+
+            confidenceTexture = texture
+            cachedTextureWidth = width
+            cachedTextureHeight = height
+        }
+
+        guard let texture = confidenceTexture else {
+            print("No confidence texture available")
+            return nil
+        }
+
+        // Upload raw float data directly to GPU - no CPU conversion needed!
+        let pixelCount = Int(image.width * image.height)
+        let floatPtr = image.data.bindMemory(to: Float.self, capacity: pixelCount)
+        let region = MTLRegionMake2D(0, 0, width, height)
+        let bytesPerRow = width * MemoryLayout<Float>.size  // 4 bytes per pixel for R32Float
+        texture.replace(region: region, mipmapLevel: 0, withBytes: floatPtr, bytesPerRow: bytesPerRow)
+
+        return texture
+    }
+```
+
+To finish off the class, add a helper function to calculate a reprojection matrix from the device pose of the original semantics frame to the current pose.
+
+```swift
+    /// Computes a 3x3 homography that reprojects the provided semantics image into the coordinate frame
+    /// of the given camera pose.
+    /// - Returns: A 3x3 homography matrix, or `nil` if the computation fails.
+    private static func calculateReprojection(for buffer: SemanticsResult?, to cameraPose: matrix_float4x4) -> matrix_float3x3? {
+        guard let buffer = buffer,
+              let image = buffer.image else {
+            return nil
+        }
+
+        // Projection params
+        let aspect = Float(image.width) / Float(image.height)
+        let focalLength = buffer.intrinsics.columns.1.y
+        let fovRadians = 2.0 * atan(Float(image.height) / (2.0 * focalLength))
+        let zNear: Float = 0.2
+        let zFar: Float = 100.0
+
+        // Reference and target view
+        let reference = buffer.pose.inverse
+        let target = cameraPose.inverse
+
+        return ImageMath.reprojection(
+            aspect: aspect,
+            fovRadians: fovRadians,
+            zNear: zNear,
+            zFar: zFar,
+            referenceView: reference,
+            targetView: target,
+            backProjectionDistance: 0.9
+        )
+    }
+}
+```
+
+#### Click to reveal the full `SemanticsManager` script
+
+```swift
+
+import Foundation
+import NSDK
+import ARKit
+import Metal
+
+final class SemanticsManager {
+    let session: NsdkSemanticsSession
+
+    // GPU resources
+    private let device: MTLDevice
+    private var confidenceTexture: MTLTexture?
+
+    // Helpers
+    private var cachedTextureWidth: Int = 0
+    private var cachedTextureHeight: Int = 0
+    private var lastFrameIndex: UInt64 = 0
+
+    init(nsdk: NsdkSession) {
+        device = MTLCreateSystemDefaultDevice()!
+        session = nsdk.createSemanticsSession()
+    }
+
+    func start() {
+        let config = NsdkSemanticsSession.Configuration()
+        do {
+            try session.configure(with: config)
+        } catch {
+            print("Error: failed to configure session - \(error)")
+            return
+        }
+        session.start()
+    }
+
+    func stop() {
+        session.stop()
+    }
+
+    // Retrieves the list of available semantic segmentation channel names from the model.
+    // Returns: An array of classification labels (`String`) if available, otherwise `nil`.
+    func channelNames() -> [String]? {
+        let resultState = session.channelNames()
+        switch resultState {
+        case .inProgress(nil):
+            return nil
+        case .failure(let error):
+            print("NSDK Semantics Error: \(error)")
+            return nil
+        case .success(let names):
+            return names
+        default:
+            print("Unexpected state in semantics channel name retrieval: \(resultState)")
+            return nil
+        }
+    }
+
+    // Retrieves the latest confidence map for the specified channel as a Metal texture and computes a
+    // 3x3 homography matrix to reproject pixels into the coordinate system of the given camera pose.
+    // Validates that the semantics feature and latest buffer are available, otherwise returns nil.
+    // Reuses the existing texture unless a new semantics frame was received, in which case it updates it.
+    // Returns: A tuple containing the confidence `MTLTexture` (if available),
+    //          and the reprojection `matrix_float3x3` to the target camera pose.
+    func getTextureAndReprojection(for channelIndex: Int, using cameraPose: matrix_float4x4) -> (texture: MTLTexture?, reprojection: matrix_float3x3?, isNew: Bool) {
+        let featureStatus = session.featureStatus()
+        if (!featureStatus.isOk()) {
+            print("Semantics Feature Status Error: \(featureStatus)")
+            return (nil, nil, false)
+        }
+
+        // Throws error if channelIndex is out of bounds. Here, we assume it's not.
+        let resultState = try! session.latestConfidence(channelIndex: channelIndex)
+        switch resultState {
+        case .inProgress(nil):
+            return (nil, nil, false)
+        case .failure(let error):
+            print("NSDK Semantics Error: \(error)")
+            return (nil, nil, false)
+        case .success(let buffer):
+            // Calculate the reprojection transform
+            let reprojection = SemanticsManager.calculateReprojection(for: buffer, to: cameraPose)
+
+            // Determine if the texture needs to be updated
+            let wasSemanticsUpdated = buffer.frameId != lastFrameIndex
+            lastFrameIndex = buffer.frameId
+
+            // Acquire the latest image
+            let texture = wasSemanticsUpdated ? createOrUpdateTexture(from: buffer.image) : confidenceTexture
+
+            return (texture, reprojection, wasSemanticsUpdated)
+        default:
+            print("Unexpected state in semantics texture and reprojection retrieval: \(resultState)")
+            return (nil, nil, false)
+        }
+    }
+
+    // Creates or updates a Metal texture from a semantic segmentation confidence map `RawImage` with `Float32` pixel data.
+    // Returns the updated texture, or `nil` if creation/upload fails.
+    private func createOrUpdateTexture(from rawImage: RawImage?) -> MTLTexture? {
+        guard let image = rawImage else {
+            print("Cannot update the confidence texture from the provided image (nil).")
+            return nil
+        }
+
+        guard image.type == .semanticsConfidence else {
+            print("Unsupported image type.")
+            return nil
+        }
+
+        let width = Int(image.width)
+        let height = Int(image.height)
+
+        // Only recreate texture if size changed
+        if confidenceTexture == nil || cachedTextureWidth != width || cachedTextureHeight != height {
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .r32Float,
+                width: width,
+                height: height,
+                mipmapped: false
+            )
+            textureDescriptor.usage = [.shaderRead]
+            textureDescriptor.storageMode = .shared
+
+            guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
+                print("Failed to create Metal texture")
+                return nil
+            }
+
+            confidenceTexture = texture
+            cachedTextureWidth = width
+            cachedTextureHeight = height
+        }
+
+        guard let texture = confidenceTexture else {
+            print("No confidence texture available")
+            return nil
+        }
+
+        // Upload raw float data directly to GPU - no CPU conversion needed!
+        let pixelCount = Int(image.width * image.height)
+        let floatPtr = image.data.bindMemory(to: Float.self, capacity: pixelCount)
+        let region = MTLRegionMake2D(0, 0, width, height)
+        let bytesPerRow = width * MemoryLayout<Float>.size  // 4 bytes per pixel for R32Float
+        texture.replace(region: region, mipmapLevel: 0, withBytes: floatPtr, bytesPerRow: bytesPerRow)
+
+        return texture
+    }
+
+    /// Computes a 3x3 homography that reprojects the provided semantics image into the coordinate frame
+    /// of the given camera pose.
+    /// - Returns: A 3x3 homography matrix, or `nil` if the computation fails.
+    private static func calculateReprojection(for buffer: SemanticsResult?, to cameraPose: matrix_float4x4) -> matrix_float3x3? {
+        guard let buffer = buffer,
+              let image = buffer.image else {
+            return nil
+        }
+
+        // Projection params
+        let aspect = Float(image.width) / Float(image.height)
+        let focalLength = buffer.intrinsics.columns.1.y
+        let fovRadians = 2.0 * atan(Float(image.height) / (2.0 * focalLength))
+        let zNear: Float = 0.2
+        let zFar: Float = 100.0
+
+        // Reference and target view
+        let reference = buffer.pose.inverse
+        let target = cameraPose.inverse
+
+        return ImageMath.reprojection(
+            aspect: aspect,
+            fovRadians: fovRadians,
+            zNear: zNear,
+            zFar: zFar,
+            referenceView: reference,
+            targetView: target,
+            backProjectionDistance: 0.9
+        )
+    }
+}
+```
+
+### Add a View Controller
+
+In a new file called **SemanticsViewController.swift**, add a view controller that uses the manager to overlay the reprojected semantic channel detection.
+This class depends on the `BaseARViewController` class in [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+#### Click to reveal the full `SemanticsViewController` script
+
+```swift
+import UIKit
+import ARKit
+import RealityKit
+import NSDK
+import Metal
+
+class SemanticsViewController: BaseARViewController, UIPickerViewDataSource, UIPickerViewDelegate {
+    // Image supplier
+    private var manager: SemanticsManager?
+
+    // Toggle image button
+    private var showImageButton: UIButton?
+
+    // Image display
+    private var imageView: TextureView!
+
+    // UI components
+    private var transparencySlider: UISlider = UISlider()
+    private var sliderLabel: UILabel = UILabel()
+    private var channelPicker: UIPickerView = UIPickerView()
+    private var channelButton: UIButton = UIButton()
+ 
+    // State variables and helpers
+    private var isChannelPickerVisible: Bool = false
+    private var channels: [String] = []
+    private var selectedChannelIndex: Int = 1 // Default to channel 1 (ground)
+    private var areChannelsLoaded: Bool = false
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Start semantics inference
+        manager = SemanticsManager(nsdk: nsdkManager!.session)
+        manager?.start()
+    }
+
+    override func setupUI() {
+        super.setupUI()
+
+        self.title = "Semantics"
+        helpLabel.text = "Semantics Sample Help\n\n This sample uses our semantic feature and a shader to represent them coloring pink where found and blue where not.\n\n TO USE: \n select a semantic channel from the drop down menu, and set the transparency to see the color highlight."
+
+        self.showImageButton = addButton(buttonTitle: "Hide", onClickAction: #selector(handleShowImageTap))
+
+        // Set up the image view
+        imageView = TextureView(
+            frame: view.bounds,
+            vertexShader: "semanticVertexShader",
+            fragmentShader: "semanticFragmentShader"
+        )
+
+        // Set transparency
+        imageView.opacity = 0.5
+        imageView.isOpaque = false
+        imageView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        arView.addSubview(imageView)
+
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor),
+            imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        // Observe text changes to show/hide the label
+        sampleInfoLabel.addObserver(self, forKeyPath: "text", options: .new, context: nil)
+
+        // Set up transparency slider
+        transparencySlider.minimumValue = 0.0
+        transparencySlider.maximumValue = 1.0
+        transparencySlider.value = 0.5  // Start at 50% transparency
+        transparencySlider.addTarget(self, action: #selector(transparencySliderChanged), for: .valueChanged)
+        transparencySlider.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(transparencySlider)
+
+        // Set up slider label
+        sliderLabel.text = "Transparency: \(Int(imageView.opacity * Float(100)))%"
+        sliderLabel.textColor = .white
+        sliderLabel.font = .systemFont(ofSize: 12)
+        sliderLabel.textAlignment = .center
+        sliderLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(sliderLabel)
+
+        // Set up channel picker
+        channelPicker.dataSource = self
+        channelPicker.delegate = self
+        channelPicker.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        channelPicker.layer.cornerRadius = 8
+        channelPicker.translatesAutoresizingMaskIntoConstraints = false
+        channelPicker.isHidden = true // Initially hidden
+        view.addSubview(channelPicker)
+
+        // Set up channel button
+        channelButton.setTitle("Loading channels...", for: .normal)
+        channelButton.setTitleColor(.white, for: .normal)
+        channelButton.backgroundColor = .systemGray
+        channelButton.layer.cornerRadius = 8
+        channelButton.titleLabel?.font = .boldSystemFont(ofSize: 16)
+        channelButton.addTarget(self, action: #selector(toggleChannelPicker), for: .touchUpInside)
+        channelButton.isEnabled = false // Initially disabled
+        channelButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(channelButton)
+
+        NSLayoutConstraint.activate([
+            // Slider constraints
+            transparencySlider.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            transparencySlider.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            transparencySlider.bottomAnchor.constraint(equalTo: showImageButton!.topAnchor, constant: -20),
+
+            // Slider label constraints
+            sliderLabel.centerXAnchor.constraint(equalTo: transparencySlider.centerXAnchor),
+            sliderLabel.bottomAnchor.constraint(equalTo: transparencySlider.topAnchor, constant: -5),
+
+            // Channel button constraints
+            channelButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            channelButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            channelButton.bottomAnchor.constraint(equalTo: transparencySlider.topAnchor, constant: -20),
+            channelButton.heightAnchor.constraint(equalToConstant: 44),
+
+            // Channel picker constraints (positioned above the button)
+            channelPicker.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            channelPicker.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            channelPicker.bottomAnchor.constraint(equalTo: channelButton.topAnchor, constant: -5),
+            channelPicker.heightAnchor.constraint(equalToConstant: 120),
+        ])
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        manager?.stop()
+
+        // Remove observer to prevent memory leaks
+        sampleInfoLabel.removeObserver(self, forKeyPath: "text")
+    }
+
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "text", let label = object as? UILabel, label == sampleInfoLabel {
+            DispatchQueue.main.async {
+                // Hide the label if text is empty or nil, show if there's text
+                self.sampleInfoLabel.isHidden = (self.sampleInfoLabel.text?.isEmpty ?? true)
+            }
+        }
+    }
+
+    override func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        super.session(session, didUpdate: frame)
+        guard let manager = manager else { return }
+
+        // Check whether the channel names (classifications) are loaded
+        if !areChannelsLoaded {
+            // Try to get channel names from the semantics session
+            guard let channelNames = manager.channelNames() else {
+                updateInfoLabel(text: "Loading semantic segmentation labels...")
+                return
+            }
+
+            // Update UI with the list of channel names
+            DispatchQueue.main.async {
+                self.updateChannelsWithNames(channelNames)
+            }
+
+            updateInfoLabel(text: "")
+            areChannelsLoaded = true
+        }
+
+        // Skip acquiring the texture if the view is disabled
+        guard !imageView.isHidden else { return }
+
+        // Acquire the new texture
+        let (texture, reprojection, isNewImage) = manager.getTextureAndReprojection(for: selectedChannelIndex, using: frame.camera.transform)
+
+        // Update the view using the texture
+        if isNewImage, let texture = texture {
+            imageView.setTexture(copyFrom: texture)
+        }
+
+        // Optional: Reproject the image to the current devcie pose
+        imageView.setReprojection(reprojection ?? matrix_identity_float3x3)
+    }
+
+    private func updateChannelsWithNames(_ channelNames: [String]) {
+        // Format channel names: capitalize and remove underscores
+        channels = channelNames.map { channelName in
+            return channelName
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
+        }
+
+        // Update UI
+        channelButton.isEnabled = true
+        channelButton.backgroundColor = .systemBlue
+
+        // Set default selection (try to find "ground" or use first channel)
+        if let groundIndex = channels.firstIndex(where: { $0.lowercased().contains("ground") }) {
+            selectedChannelIndex = groundIndex
+        } else {
+            selectedChannelIndex = 0
+        }
+
+        // Update button title
+        let selectedChannel = channels[selectedChannelIndex]
+        channelButton.setTitle("Semantic Channel: \(selectedChannel) ▼", for: .normal)
+
+        // Reload picker
+        channelPicker.reloadAllComponents()
+        channelPicker.selectRow(selectedChannelIndex, inComponent: 0, animated: false)
+
+        print("Loaded \(channels.count) semantic channels: \(channels)")
+    }
+
+    // MARK: - UIPickerViewDataSource
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return channels.count
+    }
+
+    // MARK: - UIPickerViewDelegate
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        guard row < channels.count else { return "Unknown" }
+        return channels[row]
+    }
+
+    func pickerView(_ pickerView: UIPickerView, attributedTitleForRow row: Int, forComponent component: Int) -> NSAttributedString? {
+        guard row < channels.count else { return NSAttributedString(string: "Unknown", attributes: [.foregroundColor: UIColor.white]) }
+        return NSAttributedString(string: channels[row], attributes: [.foregroundColor: UIColor.white])
+    }
+
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        guard row < channels.count else { return }
+        selectedChannelIndex = row
+        let selectedChannel = channels[row]
+        channelButton.setTitle("Semantic Channel: \(selectedChannel) ▼", for: .normal)
+        print("Selected semantic channel: \(selectedChannel) (index: \(row))")
+    }
+
+    @objc private func transparencySliderChanged(_ sender: UISlider) {
+        imageView.opacity = sender.value
+        let percentage = Int(sender.value * 100)
+        sliderLabel.text = "Transparency: \(percentage)%"
+    }
+
+    @objc private func handleShowImageTap() {
+        imageView.reset()
+        imageView.isHidden = !imageView.isHidden
+        showImageButton?.setTitle(imageView.isHidden ? "Show" : "Hide", for: .normal)
+    }
+
+    @objc private func toggleChannelPicker() {
+        guard areChannelsLoaded else { return }
+
+        isChannelPickerVisible = !isChannelPickerVisible
+
+        UIView.animate(withDuration: 0.3) {
+            self.channelPicker.isHidden = !self.isChannelPickerVisible
+            self.channelButton.alpha = self.isChannelPickerVisible ? 0.7 : 1.0
+        }
+
+        // Update button title to show expand/collapse state
+        guard selectedChannelIndex < channels.count else { return }
+        let currentChannel = channels[selectedChannelIndex]
+        let arrow = isChannelPickerVisible ? "▲" : "▼"
+        channelButton.setTitle("Semantic Channel: \(currentChannel) \(arrow)", for: .normal)
+    }
+}
+
+```
+
+### Try it Out
+
+Launch the view controller in your app and move the camera around.
+After the feature starts, the list should populate with NSDK semantic channels.
+When you select a semantic channel from the list, it should be highlighted in AR according to the confidence of its presence in the camera view.
+
+### Platform: kotlin
+
+## Prerequisites
+
+- A Kotlin or Compose app configured with the Niantic Spatial SDK (NSDK) for Android.
+- Access to `NSDKSession` so you can acquire a `SemanticsSession`.
+- (Optional) A rendering layer (Filament, OpenGL, etc.) where you can draw confidence data returned by semantics.
+
+In the sections below we will build a manager that owns the semantics session and walk through the math needed to project the confidence map onto the current camera feed. Feel free to adapt each piece to match your architecture.
+
+(image: Kotlin semantics overlay with adjustable opacity)
+
+## Build a Semantics Manager
+
+The manager encapsulates the `SemanticsSession` lifecycle, polls for channel metadata, emits confidence buffers, and surfaces warnings. The implementation below follows the same structure as the Swift sample: a `start()` function configures the session, channel polling runs until metadata is available, and a second coroutine polls `latestConfidence()` for the active channel.
+
+### Session Lifecycle
+
+Spin up coroutines, expose immutable `StateFlow`s, and keep track of jobs/warnings without tying yourself to a specific UI or lifecycle base class.
+
+```kotlin
+class SemanticsManager(
+    nsdkSessionManager: NSDKSessionManager,
+    parentScope: CoroutineScope? = null,
+) {
+
+    private val semanticsSession = nsdkSessionManager.session.semantics.acquire()
+    private val scope =
+        parentScope?.let { CoroutineScope(it.coroutineContext + SupervisorJob()) }
+            ?: CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+
+    private val _channels = MutableStateFlow<List<String>>(emptyList())
+    val channels: StateFlow<List<String>> = _channels.asStateFlow()
+
+    private val _selectedChannelIndex = MutableStateFlow(-1)
+    val selectedChannelIndex: StateFlow<Int> = _selectedChannelIndex.asStateFlow()
+
+    private val _latestResult = MutableStateFlow<SemanticsResult?>(null)
+    val latestResult: StateFlow<SemanticsResult?> = _latestResult.asStateFlow()
+```
+
+### Configure and Start the Session
+
+Initialize the semantics feature with your desired frame rate, start it on a worker thread, then kick off channel discovery.
+
+```kotlin
+suspend fun start() {
+    if (_sessionState.value is SemanticsSessionState.Streaming) return
+
+    _sessionState.value = SemanticsSessionState.LoadingChannels
+    withContext(Dispatchers.Default) {
+        val config = SemanticsConfig().apply {
+            frameRate = 20
+            mode = AwarenessFeatureMode.UNSPECIFIED
+        }
+        semanticsSession.configure(config)
+        semanticsSession.start()
+    }
+    // Poll channels on start
+    pollChannels()
+}
+```
+
+### Poll for Channel Metadata
+
+Retry `channelNames()` until the model reports labels, choose a default channel (for example `ground`), and transition the manager into a streaming state.
+
+```kotlin
+private fun pollChannels() {
+    channelJob = scope.launch(Dispatchers.Default) {
+        while (isActive && isSessionRunning()) {
+            val result = semanticsSession.channelNames()
+            when (result) {
+                is NSDKResult.Success -> {
+                    val names = result.value.toList()
+                    if (names.isNotEmpty()) {
+                        _channels.value = names
+                        _selectedChannelIndex.value =
+                            names.indexOfFirst { it.contains("ground", ignoreCase = true) }
+                                .takeIf { it >= 0 } ?: 0
+                        updateStreamingState()
+                        startResultPolling()
+                        return@launch
+                    }
+                }
+                is NSDKResult.Error ->
+                    emitWarning(SemanticsWarningEvent.ChannelQueryError(result.code))
+            }
+            delay(CHANNEL_POLL_DELAY_MS)
+        }
+    }
+}
+```
+
+### Poll for Confidence Buffers
+
+Fetch `latestConfidence(channelIndex)` every frame (or at your chosen cadence), publish only newer timestamps, and surface errors through the warning flow.
+
+```kotlin
+private fun startResultPolling() {
+    resultJob = scope.launch(Dispatchers.Default) {
+        var lastTimestamp = 0L
+        while (isActive && isSessionRunning()) {
+            val index = _selectedChannelIndex.value
+            if (index >= 0) {
+                when (val result = semanticsSession.latestConfidence(index)) {
+                    is NSDKResult.Success -> {
+                        val buffer = result.value
+                        if (buffer.timestampMs > lastTimestamp) {
+                            lastTimestamp = buffer.timestampMs
+                            _latestResult.value = buffer
+                        }
+                    }
+                    is NSDKResult.Error -> emitWarning(
+                        SemanticsWarningEvent.LatestConfidenceResultError(index, result.code)
+                    )
+                }
+            }
+            delay(RESULT_POLL_DELAY_MS)
+        }
+    }
+}
+```
+
+This manager intentionally polls the SDK because semantics does not push updates on its own. Use warning events to inform the UI when metadata or buffers are unavailable.
+
+#### Click to reveal the full `SemanticsManager` implementation
+
+```kotlin
+import android.util.Log
+import androidx.lifecycle.LifecycleOwner
+import com.nianticspatial.nsdk.NSDKResult
+import com.nianticspatial.nsdk.AwarenessFeatureMode
+import com.nianticspatial.nsdk.AwarenessStatus
+import com.nianticspatial.nsdk.awareness.semantics.SemanticsConfig
+import com.nianticspatial.nsdk.awareness.semantics.SemanticsResult
+import com.nianticspatial.nsdk.awareness.semantics.SemanticsSession
+import com.nianticspatial.nsdk.externalsamples.NSDKSessionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+sealed interface SemanticsWarningEvent {
+    data class ChannelQueryFailed(val cause: Throwable) : SemanticsWarningEvent
+    data class ChannelQueryError(val status: AwarenessStatus) : SemanticsWarningEvent
+    data object ChannelsUnavailable : SemanticsWarningEvent
+    data class LatestConfidenceQueryFailed(val channelIndex: Int, val cause: Throwable) :
+        SemanticsWarningEvent
+    data class LatestConfidenceResultError(val channelIndex: Int, val status: AwarenessStatus) :
+        SemanticsWarningEvent
+    data class StopFailed(val cause: Throwable) : SemanticsWarningEvent
+    data object Cleared : SemanticsWarningEvent
+}
+
+sealed interface SemanticsSessionState {
+    data object Idle : SemanticsSessionState
+    data object LoadingChannels : SemanticsSessionState
+    data class Streaming(val channelName: String?) : SemanticsSessionState
+    data object Stopping : SemanticsSessionState
+    data class Failed(val cause: Throwable?) : SemanticsSessionState
+}
+
+class SemanticsManager(
+    nsdkSessionManager: NSDKSessionManager,
+    parentScope: CoroutineScope? = null,
+) {
+
+    companion object {
+        private const val TAG = "SemanticsManager"
+        private const val CHANNEL_POLL_DELAY_MS = 100L
+        private const val RESULT_POLL_DELAY_MS = 16L
+        private const val MAX_CHANNEL_POLLS = 1000
+        private const val DEFAULT_ALPHA = 0.5f
+    }
+
+    private val semanticsSession: SemanticsSession = nsdkSessionManager.session.semantics.acquire()
+
+    private val scope: CoroutineScope = parentScope?.let { parent ->
+        val parentJob = parent.coroutineContext[Job]
+        CoroutineScope(parent.coroutineContext + SupervisorJob(parentJob))
+    } ?: CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+
+    private var channelJob: Job? = null
+    private var resultJob: Job? = null
+
+    private val _channels = MutableStateFlow<List<String>>(emptyList())
+    val channels: StateFlow<List<String>> = _channels.asStateFlow()
+
+    private val _selectedChannelIndex = MutableStateFlow(-1)
+    val selectedChannelIndex: StateFlow<Int> = _selectedChannelIndex.asStateFlow()
+
+    private val _sessionState =
+        MutableStateFlow<SemanticsSessionState>(SemanticsSessionState.Idle)
+    val sessionState: StateFlow<SemanticsSessionState> = _sessionState.asStateFlow()
+
+    private val _warnings = MutableSharedFlow<SemanticsWarningEvent>(replay = 0)
+    val warnings: SharedFlow<SemanticsWarningEvent> = _warnings.asSharedFlow()
+
+    private val _latestResult = MutableStateFlow<SemanticsResult?>(null)
+    val latestResult: StateFlow<SemanticsResult?> = _latestResult.asStateFlow()
+
+    private val _overlayOpacity = MutableStateFlow(DEFAULT_ALPHA)
+    val overlayOpacity: StateFlow<Float> = _overlayOpacity.asStateFlow()
+
+    private var isPaused = false
+
+    suspend fun start() {
+        val current = _sessionState.value
+        if (
+            current is SemanticsSessionState.LoadingChannels ||
+            current is SemanticsSessionState.Streaming ||
+            current is SemanticsSessionState.Stopping
+        ) {
+            return
+        }
+
+        _sessionState.value = SemanticsSessionState.LoadingChannels
+
+        runCatching { configureSession() }
+            .onFailure { error ->
+                Log.e(TAG, "Failed to configure semantics", error)
+                _sessionState.value = SemanticsSessionState.Failed(error)
+                return
+            }
+
+        runCatching {
+            withContext(Dispatchers.Default) {
+                semanticsSession.start()
+            }
+        }.onFailure { error ->
+            Log.e(TAG, "Failed to start semantics", error)
+            _sessionState.value = SemanticsSessionState.Failed(error)
+            return
+        }
+
+        pollChannels()
+    }
+
+    fun stop() {
+        when (_sessionState.value) {
+            is SemanticsSessionState.Idle,
+            is SemanticsSessionState.Failed,
+            SemanticsSessionState.Stopping -> return
+            else -> Unit
+        }
+
+        _sessionState.value = SemanticsSessionState.Stopping
+
+        channelJob?.cancel()
+        channelJob = null
+        resultJob?.cancel()
+        resultJob = null
+
+        runCatching {
+            semanticsSession.stop()
+        }.onFailure { error ->
+            Log.e(TAG, "Failed to stop semantics", error)
+            emitWarning(SemanticsWarningEvent.StopFailed(error))
+        }
+
+        _channels.value = emptyList()
+        _selectedChannelIndex.value = -1
+        _latestResult.value = null
+        _sessionState.value = SemanticsSessionState.Idle
+    }
+
+    fun selectChannel(index: Int) {
+        if (index == _selectedChannelIndex.value) return
+        if (index < 0 || index >= _channels.value.size) return
+
+        _selectedChannelIndex.value = index
+        _latestResult.value = null
+        updateStreamingState()
+    }
+
+    fun setOverlayOpacity(value: Float) {
+        val clamped = value.coerceIn(0f, 1f)
+        _overlayOpacity.value = clamped
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        super.onPause(owner)
+        val running = isSessionRunning()
+        isPaused = running
+        if (running) {
+            stop()
+        }
+    }
+
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        if (isPaused) {
+            scope.launch {
+                start()
+            }
+            isPaused = false
+        }
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
+        stop()
+        scope.cancel()
+        runCatching { semanticsSession.close() }
+            .onFailure { error -> Log.e(TAG, "Failed to close semantics session", error) }
+    }
+
+    private suspend fun configureSession() {
+        withContext(Dispatchers.Default) {
+            val config = SemanticsConfig().apply {
+                frameRate = 20
+                mode = AwarenessFeatureMode.UNSPECIFIED
+            }
+            semanticsSession.configure(config)
+        }
+    }
+
+    private fun pollChannels() {
+        channelJob?.cancel()
+        channelJob = scope.launch(Dispatchers.Default) {
+            var polls = 0
+            while (isActive && isSessionRunning() && polls < MAX_CHANNEL_POLLS) {
+                val result = runCatching { semanticsSession.channelNames() }
+                    .onFailure { error ->
+                        Log.e(TAG, "Channel query failed", error)
+                        emitWarning(SemanticsWarningEvent.ChannelQueryFailed(error))
+                    }
+                    .getOrNull()
+                val channelNames = when (result) {
+                    is NSDKResult.Success -> result.value.toList()
+                    is NSDKResult.Error -> {
+                        Log.e(TAG, "Channel query error: ${result.code}")
+                        emitWarning(SemanticsWarningEvent.ChannelQueryError(result.code))
+                        emptyList()
+                    }
+                    else -> emptyList()
+                }
+
+                if (channelNames.isNotEmpty()) {
+                    withContext(Dispatchers.Main.immediate) {
+                        _channels.value = channelNames
+                        val defaultIndex =
+                            channelNames.indexOfFirst { it.contains("ground", ignoreCase = true) }
+                        _selectedChannelIndex.value = if (defaultIndex >= 0) defaultIndex else 0
+                        updateStreamingState()
+                    }
+                    clearWarning()
+                    startResultPolling()
+                    return@launch
+                }
+
+                polls++
+                delay(CHANNEL_POLL_DELAY_MS)
+            }
+
+            if (_channels.value.isEmpty()) {
+                emitWarning(SemanticsWarningEvent.ChannelsUnavailable)
+            }
+        }
+    }
+
+    private fun startResultPolling() {
+        resultJob?.cancel()
+        resultJob = scope.launch(Dispatchers.Default) {
+            var lastTimestamp = 0L
+            var previousIndex = -1
+            while (isActive && isSessionRunning()) {
+                val index = _selectedChannelIndex.value
+                if (index != previousIndex) {
+                    previousIndex = index
+                    lastTimestamp = 0L
+                }
+                if (index >= 0) {
+                    val result = try {
+                        semanticsSession.latestConfidence(index)
+                    } catch (error: Exception) {
+                        Log.e(TAG, "latestConfidence threw", error)
+                        emitWarning(
+                            SemanticsWarningEvent.LatestConfidenceQueryFailed(index, error)
+                        )
+                        delay(RESULT_POLL_DELAY_MS)
+                        continue
+                    }
+                    when (result) {
+                        is NSDKResult.Success -> {
+                            val confidence = result.value
+                            if (confidence.timestampMs > lastTimestamp) {
+                                lastTimestamp = confidence.timestampMs
+                                withContext(Dispatchers.Main.immediate) {
+                                    _latestResult.value = confidence
+                                }
+                                clearWarning()
+                            }
+                        }
+                        is NSDKResult.Error -> {
+                            Log.e(TAG, "Semantics error: ${result.code}")
+                            emitWarning(
+                                SemanticsWarningEvent.LatestConfidenceResultError(
+                                    index,
+                                    result.code
+                                )
+                            )
+                        }
+                    }
+                }
+                delay(RESULT_POLL_DELAY_MS)
+            }
+        }
+    }
+
+    private fun updateStreamingState() {
+        if (!isSessionRunning()) return
+        val channelName = _channels.value.getOrNull(_selectedChannelIndex.value)
+        _sessionState.value = SemanticsSessionState.Streaming(channelName)
+    }
+
+    private fun emitWarning(event: SemanticsWarningEvent) {
+        if (!_warnings.tryEmit(event)) {
+            scope.launch { _warnings.emit(event) }
+        }
+    }
+
+    private fun clearWarning() {
+        emitWarning(SemanticsWarningEvent.Cleared)
+    }
+
+    private fun isSessionRunning(): Boolean =
+        when (_sessionState.value) {
+            SemanticsSessionState.LoadingChannels,
+            is SemanticsSessionState.Streaming -> true
+            else -> false
+        }
+}
+```
+
+## Processing the Confidence Map
+
+Once the manager begins streaming, you will receive `SemanticsResult` objects that contain both the confidence buffer and the pose/intrinsics that were used when the inference ran. To display those pixels on the current screen you need two transforms:
+
+1. **Reprojection** - compensates for camera motion between the inference timestamp and the current frame.
+2. **Display Transform** - adapts the model output resolution to the device viewport (aspect fill, rotation, Y inversion).
+
+```kotlin
+import android.graphics.Matrix
+import android.util.Size
+import androidx.core.graphics.times
+import com.google.ar.core.Frame
+import com.nianticspatial.nsdk.Orientation
+import com.nianticspatial.nsdk.utils.ImageMath
+import kotlin.math.atan
+
+fun updateOverlay(
+    currentFrame: Frame,
+    viewportSize: Size,
+    deviceOrientation: Orientation
+) {
+    // 1. Pull the latest semantics result from your manager.
+    val result = semanticsManager.latestResult.value ?: return
+
+    // 2. Prepare parameters for reprojection.
+    val referenceView = FloatArray(16)
+    val targetView = FloatArray(16)
+
+    //    Calculate the View matrices (inverse of Pose).
+    val reference = result.pose.inverse()
+    val target = currentFrame.camera.pose.inverse()
+    reference.toMatrix(referenceView, 0)
+    target.toMatrix(targetView, 0)
+
+    //    Get dimensions and focal length from intrinsics.
+    val imageSize = result.intrinsics.getImageDimensions()
+    val focalLengthY = result.intrinsics.getFocalLength()[1] // fy
+
+    // 3. Compute the reprojection matrix: maps past inference pixels to current camera pixels.
+    val reprojectionMatrix = ImageMath.reprojection(
+        aspect = imageSize[0].toFloat() / imageSize[1].toFloat(),
+        fovRadians = 2f * atan(imageSize[1].toFloat() / (2f * focalLengthY)),
+        zNear = 0.2f,
+        zFar = 100.0f,
+        referenceView = referenceView,
+        targetView = targetView
+    )
+
+    // 4. Compute the display transform: maps normalized image coordinates to the screen.
+    //    We also apply a vertical flip to match the shader's UV coordinate system.
+    val displayMatrix = ImageMath.displayTransform(
+        orientation = deviceOrientation,
+        viewportSize = viewportSize,
+        imageSize = Size(imageSize[0], imageSize[1])
+    ) * ImageMath.affineInvertVertical()
+
+    // 5. Combine and invert so the shader can sample the texture correctly.
+    //    M_forward = M_display * M_flip * M_reprojection
+    //    M_shader = M_forward^-1
+    val uvTransform = Matrix()
+    (displayMatrix * reprojectionMatrix).invert(uvTransform)
+
+    // 6. Hand the data to your renderer of choice.
+    renderer.updateConfidenceTexture(result.image)
+
+    // Note: Depending on your rendering engine, you may need to convert the Android Matrix
+    // to a float array (e.g. using uvTransform.getValues()) or a native matrix type.
+    renderer.setShaderUniform("uvTransform", uvTransform)
+}
+```
+
+## Why the Confidence map needs these transforms
+
+The semantics model runs asynchronously on a separate timeline from the render loop. This means the confidence map you receive corresponds to a camera frame from the past (typically a few milliseconds ago). To overlay this data accurately on top of the current camera feed, we need to account for two main discrepancies:
+
+1. **Camera Movement (Reprojection)**\
+   As the user moves the device, the camera's position and rotation change. If we simply drew the past confidence map over the current frame, the semantic overlay would appear to "lag" behind the real-world objects.
+
+   **The Solution:** We compute a **homography matrix** that warps pixels from the *inference pose* (where the camera was when the model ran) to the *current render pose* (where the camera is now). This "reprojects" the semantic data to match the current view.
+
+2. **Screen vs. Texture Coordinates (Display Transform)**\
+   The confidence map is a texture with its own resolution and aspect ratio (often lower resolution than the screen). The device screen, however, has a different aspect ratio and orientation (Portrait vs. Landscape).
+
+   **The Solution:** We calculate an affine transform that maps the normalized coordinates of the confidence texture [0, 1] to the screen's viewport. This handles scaling, cropping (aspect fill), and rotation.
+
+   **Coordinate Systems:** Rendering engines typically use UV coordinates where (0,0) is bottom-left, whereas image processing often assumes top-left. A vertical flip is usually applied here to align them.
+
+**Combined Update Logic**\
+By multiplying the display transform and the reprojection matrix, and then inverting the result, we create a single `uvTransform` matrix. In your fragment shader, you can use this matrix to look up the correct semantic value for any given screen pixel: `textureCoordinate = uvTransform * screenCoordinate`
+
+## Try it Out
+
+1. Start the semantics manager when your AR session begins.
+2. Wait for `channels` to populate, then select the semantic class you want to monitor.
+3. Feed the latest `SemanticsResult` into the processing function above and verify that the overlay tracks the scene even as you rotate or move the device.

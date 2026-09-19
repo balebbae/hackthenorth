@@ -1,0 +1,20 @@
+# RayCast
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh.RayCast/
+
+RayCast
+
+---
+
+## Declaration
+
+public bool RayCast(Ray ray, out Vector3 hitPoint)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ray | Ray | - |
+| hitPoint | Vector3 | - |
+
+---

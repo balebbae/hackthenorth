@@ -1,0 +1,28 @@
+# GetChannelFromName
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetChannelFromName/
+
+GetChannelFromName
+Converts a channel name string to its corresponding SceneSegmentationChannel enum value.
+
+---
+
+## Declaration
+
+public Nullable<SceneSegmentationChannel> GetChannelFromName(string channelName)
+
+#### Summary
+
+Converts a channel name string to its corresponding SceneSegmentationChannel enum value.
+
+#### Returns
+
+The SceneSegmentationChannel enum value if found, otherwise null.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channelName | string | The channel name string (e.g., "sky", "ground", "natural_ground"). |
+
+---

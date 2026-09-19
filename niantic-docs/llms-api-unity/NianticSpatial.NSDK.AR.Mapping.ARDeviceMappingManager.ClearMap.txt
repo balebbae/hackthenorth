@@ -1,0 +1,13 @@
+# ClearMap
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.ARDeviceMappingManager.ClearMap/
+
+ClearMap 
+
+---
+
+## Declaration
+
+public void ClearMap()
+
+---

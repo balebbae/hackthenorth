@@ -1,0 +1,14 @@
+# EditorPlaybackSettingsEditor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.EditorPlaybackSettingsEditor/
+
+EditorPlaybackSettingsEditor
+> extends BasePlaybackSettingsEditor 
+
+---
+
+## Declaration
+
+public class EditorPlaybackSettingsEditor : BasePlaybackSettingsEditor
+
+---

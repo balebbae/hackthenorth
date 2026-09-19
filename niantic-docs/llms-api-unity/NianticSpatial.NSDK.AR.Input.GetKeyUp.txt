@@ -1,0 +1,40 @@
+# GetKeyUp
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Input.GetKeyUp/
+
+GetKeyUp
+Returns true during the frame the user releases the key identified by the key KeyCode enum parameter.
+
+---
+
+## Declaration
+
+public static bool GetKeyUp(KeyCode key)
+
+#### Summary
+
+Returns true during the frame the user releases the key identified by the key KeyCode enum parameter.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| key | KeyCode | - |
+
+---
+
+## Overload
+
+public static bool GetKeyUp(string name)
+
+#### Summary
+
+Returns true during the frame the user releases the key identified by name.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| key | KeyCode | - |
+
+---

@@ -1,0 +1,45 @@
+# SessionBase
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.SessionBase/
+
+SessionBase
+> extends Closeable 
+
+---
+
+## Declaration
+
+abstract class SessionBase<T : SessionBase<T>> 
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| acquire | T | - |
+| close | void | - |
+
+---
+
+## Relationships
+
+derived:  SceneSegmentationSession 
+
+derived:  DepthSession 
+
+derived:  DeviceMappingSession 
+
+derived:  MappingStorageSession 
+
+derived:  MeshDownloaderSession 
+
+derived:  MeshingSession 
+
+derived:  RecordingExporter 
+
+derived:  ScanningSession 
+
+derived:  SitesSession 
+
+derived:  Vps2Session

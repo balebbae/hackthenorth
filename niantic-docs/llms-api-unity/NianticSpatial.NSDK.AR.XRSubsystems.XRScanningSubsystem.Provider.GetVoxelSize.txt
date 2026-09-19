@@ -1,0 +1,13 @@
+# GetVoxelSize
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.Provider.GetVoxelSize/
+
+GetVoxelSize
+
+---
+
+## Declaration
+
+public virtual float GetVoxelSize()
+
+---

@@ -1,0 +1,28 @@
+# MapNode
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.MapNode/
+
+MapNode
+
+---
+
+## Declaration
+
+public readonly struct MapNode : ValueType
+
+---
+
+## Constructors
+
+public MapNode(TrackableId nodeId, byte[] data)
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| GetData | byte[] | - |
+| GetNodeId | TrackableId | - |
+
+---

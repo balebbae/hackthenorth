@@ -1,0 +1,53 @@
+# GridNode
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.GridNode/
+
+GridNode
+Encloses data for grid elements used during scanning for walkable areas.
+
+---
+
+## Declaration
+
+public struct GridNode : ValueType, IEquatable<GridNode>
+
+---
+
+## Constructors
+
+public GridNode(Vector2Int coordinates)
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Coordinates | Vector2Int | Coordinates of this node on the grid. |
+| Deviation | float | Standard deviation in the area around the node. |
+| DiffFromNeighbour | float | The calculated minimum difference in elevation from a neighbouring node. |
+| Elevation | float | Height of the node. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Equals | bool | - |
+| GetHashCode | int | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static != | bool | - |
+| static == | bool | - |
+
+---
+
+## Relationships
+
+implements:  System.IEquatable

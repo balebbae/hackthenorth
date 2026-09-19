@@ -1,0 +1,36 @@
+# XRVps2LocalizationRequestRecord
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2LocalizationRequestRecord/
+
+XRVps2LocalizationRequestRecord
+Diagnostic information about a VPS2 network request.
+
+---
+
+## Declaration
+
+public struct XRVps2LocalizationRequestRecord : ValueType
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| EndTimeMs | ulong | Time that the response was received, in milliseconds. It is only comparable to StartTimeMs. |
+| ErrorCode | Vps2LocalizationError | Error code, if any |
+| FrameId | ulong | Id of the frame containing data sent in the request, if available. |
+| RequestId | Guid | Unique request identifier |
+| RequestType | Vps2LocalizationRequestType | Type of request sent |
+| StartTimeMs | ulong | Time that the request was sent, in milliseconds. It is only comparable to EndTimeMs. |
+| Status | Vps2LocalizationRequestStatus | Request status |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ToString | string | - |
+
+---

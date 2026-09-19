@@ -1,0 +1,23 @@
+# setAgeLevel
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession.setAgeLevel/
+
+setAgeLevel
+
+---
+
+## Declaration
+
+fun setAgeLevel(ageLevel: AgeLevel)
+
+#### Summary
+
+Sets the age level for the NSDK session.
+
+This method sets the age classification for the user
+
+#### Throws
+
+NsdkStatusException -- if there was an internal error ## Example kotlin session.setAgeLevel(AgeLevel.Adult) 
+
+---

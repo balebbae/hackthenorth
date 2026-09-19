@@ -1,0 +1,13 @@
+# acquire
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.SessionBase.acquire/
+
+acquire
+
+---
+
+## Declaration
+
+@Synchronized fun acquire(): T
+
+---

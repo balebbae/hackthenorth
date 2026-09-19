@@ -1,0 +1,27 @@
+# UserInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.UserInfo/
+
+UserInfo
+Represents user information from the Sites Manager service.
+
+---
+
+## Declaration
+
+data class UserInfo
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| createdTimestamp | Long | - |
+| email | String | - |
+| firstName | String | - |
+| id | String | - |
+| lastName | String | - |
+| status | String | - |
+
+---

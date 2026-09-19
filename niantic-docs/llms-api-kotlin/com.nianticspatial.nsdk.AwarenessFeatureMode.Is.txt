@@ -1,0 +1,13 @@
+# Is
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessFeatureMode.Is/
+
+Is
+
+---
+
+## Declaration
+
+infix fun Is(other:Int): Boolean
+
+---

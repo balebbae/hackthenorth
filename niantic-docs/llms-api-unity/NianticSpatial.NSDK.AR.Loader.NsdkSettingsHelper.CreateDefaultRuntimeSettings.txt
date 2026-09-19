@@ -1,0 +1,13 @@
+# CreateDefaultRuntimeSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSettingsHelper.CreateDefaultRuntimeSettings/
+
+CreateDefaultRuntimeSettings
+
+---
+
+## Declaration
+
+public static void CreateDefaultRuntimeSettings()
+
+---

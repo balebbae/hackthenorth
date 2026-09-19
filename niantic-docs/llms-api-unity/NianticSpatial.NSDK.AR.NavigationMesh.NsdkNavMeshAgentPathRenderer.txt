@@ -1,0 +1,29 @@
+# NsdkNavMeshAgentPathRenderer
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgentPathRenderer/
+
+NsdkNavMeshAgentPathRenderer
+> extends UnityEngine.MonoBehaviour
+
+---
+
+## Declaration
+
+public class NsdkNavMeshAgentPathRenderer : MonoBehaviour
+
+## Summary
+
+NsdkNavMeshAgentPathRenderer is a debug renderer to show you the path a  NsdkNavMeshAgent is moving along
+while navigating the environment. You add it to the NsdkNavMeshAgentGameObject in your scene
+and it will draw that agent's current path.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| _agent | NsdkNavMeshAgent | The NsdkNavMeshAgent that you want to render the path for. |
+| _material | Material | The Material used to render the path. This Material will be applied on a LineRenderer. |
+
+---

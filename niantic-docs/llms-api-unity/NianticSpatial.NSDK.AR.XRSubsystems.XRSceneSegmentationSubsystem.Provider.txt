@@ -1,0 +1,42 @@
+# Provider
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.Provider/
+
+Provider
+> extends UnityEngine.SubsystemsImplementation.SubsystemProvider
+The provider which will service the XRSceneSegmentationSubsystem.
+
+---
+
+## Declaration
+
+public abstract class Provider : SubsystemProvider<XRSceneSegmentationSubsystem>
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly LatestFrameId | Nullable<uint> | - |
+| SuppressionMaskChannels | HashSet<SceneSegmentationChannel> | Property to be implemented by the provider to get or set the list of suppression channels for the platform's semantic segmentation feature. |
+| TargetFrameRate | uint | Property to be implemented by the provider to get or set the frame rate for the platform's semantic segmentation feature. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| GetChannels | IReadOnlyList<SceneSegmentationChannel> | Method to be implemented by the provider to get a list of the semantic channels for the current semantic model. |
+| TryAcquirePackedSceneSegmentationChannelsCpuImage | bool | Acquire the latest packed semantic channels XRCpuImage. |
+| TryAcquireSceneSegmentationChannelCpuImage | bool | Acquire the latest semantic channel CPU image. |
+| TryAcquireSuppressionMaskCpuImage | bool | Acquire the latest suppression mask XRCpuImage. |
+| TryGetPackedSceneSegmentationChannels | bool | Get the packed semantics texture descriptor. |
+| TryGetSceneSegmentationChannel | bool | Get the XRTextureDescriptor for the specified semantic channel. |
+| TryGetSuppressionMaskTexture | bool | Get a semantic suppression texture descriptor. |
+| TryPrepareSubsystem | bool | If the semantic segmentation model is ready, prepare the subsystem's data structures. |
+| TryResetChannelConfidenceThresholds | bool | Resets the confidence thresholds for all semantic channels to the default values from the current model. |
+| TrySetChannelConfidenceThresholds | bool | Sets the confidence threshold for including the specified semantic channel in the packed semantic channel buffer. |
+
+---

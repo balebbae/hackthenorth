@@ -1,0 +1,31 @@
+# Except
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Surface.Except/
+
+Except
+
+---
+
+## Declaration
+
+public void Except(Surface other)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Surface | - |
+
+---
+
+## Overload
+
+public void Except(IEnumerable<GridNode> nodes)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Surface | - |
+
+---

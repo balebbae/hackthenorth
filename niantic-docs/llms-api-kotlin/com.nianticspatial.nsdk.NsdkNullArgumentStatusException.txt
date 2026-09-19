@@ -1,0 +1,19 @@
+# NsdkNullArgumentStatusException
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkNullArgumentStatusException/
+
+NsdkNullArgumentStatusException
+> extends NsdkStatusException 
+
+---
+
+## Declaration
+
+class NsdkNullArgumentStatusException
+
+## Summary
+
+Thrown when a required native argument is null.
+Corresponds to [NSDKStatus.NULL_ARGUMENT].
+
+---

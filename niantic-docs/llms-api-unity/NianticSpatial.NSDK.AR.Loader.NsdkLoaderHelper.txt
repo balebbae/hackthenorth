@@ -1,0 +1,21 @@
+# NsdkLoaderHelper
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkLoaderHelper/
+
+NsdkLoaderHelper
+
+---
+
+## Declaration
+
+public class NsdkLoaderHelper
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Deinitialize | bool | - |
+
+---

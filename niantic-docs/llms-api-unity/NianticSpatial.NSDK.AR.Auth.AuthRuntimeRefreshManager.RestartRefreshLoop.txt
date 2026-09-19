@@ -1,0 +1,13 @@
+# RestartRefreshLoop
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthRuntimeRefreshManager.RestartRefreshLoop/
+
+RestartRefreshLoop
+
+---
+
+## Declaration
+
+public static void RestartRefreshLoop()
+
+---

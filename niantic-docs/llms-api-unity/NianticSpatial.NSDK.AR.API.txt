@@ -1,0 +1,15 @@
+# NianticSpatial.NSDK.AR.API
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.API/
+
+API
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| VpsGraphOperationError | VpsGraphOperationError | Error codes returned by VPS graph-based functions. |
+
+---

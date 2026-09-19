@@ -1,0 +1,34 @@
+# AuthBuildProcessor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.AuthBuildProcessor/
+
+AuthBuildProcessor
+Class to handle auth-related build tasks.
+
+---
+
+## Declaration
+
+public class AuthBuildProcessor : IPostprocessBuildWithReport
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly callbackOrder | int | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| OnPostprocessBuild | void | - |
+
+---
+
+## Relationships
+
+implements:  UnityEditor.Build.IPostprocessBuildWithReport

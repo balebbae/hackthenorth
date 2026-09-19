@@ -1,0 +1,19 @@
+# identifierString
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationRequestRecord.identifierString/
+
+identifierString
+
+---
+
+## Declaration
+
+fun identifierString(): String
+
+#### Summary
+
+Interprets identifier as a UTF-8 string.
+
+For VPS2 identifiers, this will be a 32-character uppercase hexadecimal string.
+
+---

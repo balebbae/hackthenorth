@@ -1,0 +1,26 @@
+# NsdkPlaybackCameraSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.NsdkPlaybackCameraSubsystem/
+
+NsdkPlaybackCameraSubsystem
+> extends UnityEngine.XR.ARSubsystems.XRCameraSubsystem
+
+---
+
+## Declaration
+
+public class NsdkPlaybackCameraSubsystem : XRCameraSubsystem, IPlaybackDatasetUser
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static BackgroundShaderNames | string[] | - |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.Subsystems.Playback.IPlaybackDatasetUser

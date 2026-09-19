@@ -1,0 +1,58 @@
+# ARScanningManager
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/
+
+ARScanningManager
+> extends UnityEngine.XR.ARFoundation.SubsystemLifecycleManager
+
+---
+
+## Declaration
+
+public class ARScanningManager : SubsystemLifecycleManager<XRScanningSubsystem, XRScanningSubsystemDescriptor, Provider>
+
+## Summary
+
+A manager for recording scans of the AR scene for Playback.
+The recording will start when the manager is enabled.
+Use SaveScan() to stop and save the recording into the ScanPath.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| EnableRaycastVisualization | bool | Enable raycast visualization for scanning. Required to access the raycast textures. The data will be available from the GetRaycastColorTexture, GetRaycastNormalTexture and GetRaycastPositionTexture methods. Must be set before scanning starts to take effect. |
+| EnableVoxelVisualization | bool | Enable voxel visualization for scanning. Required to compute voxels. RequestVoxelUpdate must be called to asynchronously compute the voxel buffers. Then, TryGetVoxelBuffer can be called to get the voxel buffers. After TryGetVoxelBuffer returns true, the voxel data will be available in the VoxelPositions, VoxelColors and LatestVoxelSize fields. Must be set before scanning starts to take effect. |
+| FarDepth | float | The far depth plane for depth range, in meters. This parameter controls the farthest distance at which depth data will be integrated. Objects farther than this distance will not be visible in visualization or reconstruction. Must be set before scanning starts to take effect. |
+| FullResolutionEnabled | bool | Record full resolution images for scan reconstruction. Must be set before scanning starts to take effect. |
+| FullResolutionFramerate | int | The framerate for full resolution frame recording. A framerate of zero means the system will use the default framerate of 2 FPS. Must be set before scanning starts to take effect. |
+| readonly LatestVoxelSize | float | The size of the voxels in VoxelPositions, in meters. The voxel visualizer attempts to use the voxel size requested by the MinimumVoxelSize parameter. As the number of voxels grows, the voxel visualizer periodically doubles the voxel size to keep memory use in check. This value should be used for rendering the voxels with the correct dimensions. |
+| MinimumVoxelSize | float | The minimum size of voxels for voxel visualization, in meters. This parameter sets the initial resolution of the voxel grid used for voxel visualization (see EnableVoxelVisualization. Smaller values result in higher resolution but require more memory and computation. The actual voxel size may be larger due to memory constraints, so this is only a minimum value. Refer to LatestVoxelSize for the correct dimensions when rendering voxels. Must be set before scanning starts to take effect. |
+| NearDepth | float | The near depth plane for depth range, in meters. This parameter controls the closest distance at which depth data will be integrated. Objects closer than this distance will not be visible in visualization or reconstruction. Must be set before scanning starts to take effect. |
+| ScanPath | string | The scan path to store the scan data. If an absolute path is provided (starting with '/', '', or a drive name), the directory must be writable, and the application must have permissions to write to the folder. Otherwise, the path will be interpreted as relative to Application.persistentDataPath. |
+| ScanRecordingFramerate | int | The scan recording framerate. A framerate of zero means the system will use the default framerate of 15 FPS. Must be set before scanning starts to take effect. |
+| ScanTargetId | string | The scan target ID. Must be set before scanning starts to take effect. |
+| UseEstimatedDepth | bool | Record Niantic depth data if the device does not support platform depth such as lidar. If platform depth is present, it will be used instead of Niantic depth. |
+| readonly VoxelColors | NativeArray<Color32> | The color of each voxel. Each entry in the array corresponds to an entry in VoxelPositions at the same index. These values can only be updated when EnableVoxelVisualization is true and scanning is in the Started state. Call RequestVoxelUpdate to update the underlying map, and then call TryGetVoxelBuffer to populate with the latest values. |
+| readonly VoxelNormals | NativeArray<Vector3> | The normal vector of each voxel. Each entry in the array corresponds to an entry in VoxelPositions at the same index. These values can only be updated when EnableVoxelVisualization is true and scanning is in the Started state. Call RequestVoxelUpdate to update the underlying map, and then call TryGetVoxelBuffer to populate with the latest values. |
+| readonly VoxelPositions | NativeArray<Vector3> | The positions of voxels scanned with the camera. Each entry in the array corresponds to an entry in VoxelColors at the same index. These values can only be updated when EnableVoxelVisualization is true and scanning is in the Started state. Call RequestVoxelUpdate to update the underlying map, and then call TryGetVoxelBuffer to populate with the latest values. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| GetCurrentScanId | string | Returns the current scanID. The result is only present when scan is in progress. |
+| GetFrameCount | int | Get the number of frames in the current scan. Should be called before calling SaveScan as frames must be greater than zero to save a scan |
+| GetRaycastColorTexture | Texture2D | Read the current raycast color texture. |
+| GetRaycastNormalTexture | Texture2D | Read the current raycast normal texture. |
+| GetRaycastPositionTexture | Texture2D | Read the current raycast position texture. |
+| GetScanStore | ScanStore | - |
+| RequestVoxelUpdate | void | - |
+| async SaveScan | Task | Save the current scan. This stops any further recording immediately, and the coroutine finishes when the saving is fully complete. Please call GetFrameCount() to guarantee the scan has frames, as if it doesnt have any, the save will fail Do not disable the component or exit the app when this is in progress. The scan will not be saved correctly if this process is interrupted. |
+| TryGetVoxelBuffer | bool | - |
+
+---

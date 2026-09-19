@@ -1,0 +1,24 @@
+# AuthPublicUtils
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Auth.AuthPublicUtils/
+
+AuthPublicUtils
+Static class for auth-related utility functions that are shared as part of the public API
+
+---
+
+## Declaration
+
+public static class AuthPublicUtils
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static ExpiresAt | int | Get the expiry time of a JWT token in seconds. |
+| static IsEmptyOrExpiring | bool | Is the token expired, about to expire, or not set? |
+| static LogToken | void | Log details for a single Jwt token. Shows the context, token tail (truncated to the last four elements), and time left in seconds. |
+
+---

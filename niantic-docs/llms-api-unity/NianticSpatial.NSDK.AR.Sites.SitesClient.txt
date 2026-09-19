@@ -1,0 +1,55 @@
+# SitesClient
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient/
+
+SitesClient
+
+---
+
+## Declaration
+
+public class SitesClient : IDisposable
+
+## Summary
+
+Client for interacting with the Sites Manager service.
+Provides methods to query organizational hierarchy data including users,
+organizations, sites, and assets.
+
+---
+
+## Constructors
+
+public SitesClient()
+
+#### Summary
+
+Creates a new SitesClient.
+
+#### Throws
+
+InvalidOperationException -- Thrown if the NSDK context is not initialized.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Dispose | void | Releases native resources. |
+| async RequestAssetInfoAsync | Task<AssetResult> | Requests asset information by asset ID. |
+| async RequestAssetsForSiteAsync | Task<AssetResult> | Requests all assets for a site. |
+| async RequestOrganizationInfoAsync | Task<OrganizationResult> | Requests organization information by organization ID. |
+| async RequestOrganizationsForUserAsync | Task<OrganizationResult> | Requests all organizations for a user. Consider using RequestSelfOrganizationInfoAsync instead. |
+| async RequestSelfOrganizationInfoAsync | Task<OrganizationResult> | Requests organizations for the current authenticated session. |
+| async RequestSelfUserInfoAsync | Task<UserResult> | Requests information for the currently authenticated user. To fetch organizations, consider using RequestSelfOrganizationInfoAsync instead. |
+| async RequestSiteAssetsByLocationAsync | Task<SiteAssetsResult> | Requests sites and assets near a GPS coordinate. |
+| async RequestSiteInfoAsync | Task<SiteResult> | Requests site information by site ID. |
+| async RequestSitesForOrganizationAsync | Task<SiteResult> | Requests all sites for an organization. |
+| async RequestUserInfoAsync | Task<UserResult> | Requests user information by user ID. |
+
+---
+
+## Relationships
+
+implements:  System.IDisposable

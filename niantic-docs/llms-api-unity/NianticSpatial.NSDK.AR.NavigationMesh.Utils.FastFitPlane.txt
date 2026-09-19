@@ -1,0 +1,26 @@
+# FastFitPlane
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Utils.FastFitPlane/
+
+FastFitPlane
+Fits a plane to best align with the specified set of points.
+
+---
+
+## Declaration
+
+public static void FastFitPlane(Vector3[] points, out Vector3 position, out Vector3 normal)
+
+#### Summary
+
+Fits a plane to best align with the specified set of points.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| points | Vector3[] | - |
+| position | Vector3 | - |
+| normal | Vector3 | - |
+
+---

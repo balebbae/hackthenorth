@@ -1,0 +1,13 @@
+# onDestroy
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.onDestroy/
+
+onDestroy
+
+---
+
+## Declaration
+
+override fun onDestroy()
+
+---

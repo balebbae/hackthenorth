@@ -1,0 +1,24 @@
+# TrackOccludee
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension.TrackOccludee/
+
+TrackOccludee
+
+---
+
+## Declaration
+
+public void TrackOccludee(Renderer occludee)
+
+#### Summary
+
+Sets the principal virtual object being occluded in the SpecifiedGameObject occlusion mode.
+    This method changes the optimal occlusion distance mode setting.>
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| occludee | Renderer | - |
+
+---

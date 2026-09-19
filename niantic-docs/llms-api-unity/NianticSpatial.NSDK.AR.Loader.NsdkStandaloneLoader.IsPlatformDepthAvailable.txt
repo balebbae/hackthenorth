@@ -1,0 +1,13 @@
+# IsPlatformDepthAvailable
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkStandaloneLoader.IsPlatformDepthAvailable/
+
+IsPlatformDepthAvailable
+
+---
+
+## Declaration
+
+public bool IsPlatformDepthAvailable()
+
+---

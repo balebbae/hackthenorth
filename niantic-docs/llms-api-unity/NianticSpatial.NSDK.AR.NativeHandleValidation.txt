@@ -1,0 +1,21 @@
+# NativeHandleValidation
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NativeHandleValidation/
+
+NativeHandleValidation
+
+---
+
+## Declaration
+
+public static class NativeHandleValidation
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static IsValidHandle | bool | - |
+
+---

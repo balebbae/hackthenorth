@@ -1,0 +1,26 @@
+# RequestAssetInfoAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.RequestAssetInfoAsync/
+
+RequestAssetInfoAsync
+Requests asset information by asset ID.
+
+---
+
+## Declaration
+
+public async Task<AssetResult> RequestAssetInfoAsync(string assetId, int timeoutMs = DefaultTimeoutMs, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Requests asset information by asset ID.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| assetId | string | - |
+| timeoutMs | int | - |
+| cancellationToken | CancellationToken | - |
+
+---

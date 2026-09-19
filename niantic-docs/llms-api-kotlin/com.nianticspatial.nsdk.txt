@@ -1,0 +1,119 @@
+# com.nianticspatial.nsdk
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk/
+
+nsdk
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AsyncResult | AsyncResult<out TData, out TError : ErrorCodeProvider> | Represents the final result of a completed asynchronous operation, which can either bea success, a failure, or a timeout. *This is the public-facing result type returned by `suspend` functions. It intentionallyomits an "in-progress" state, guaranteeing that the operation has reached a terminal state. |
+| AwarenessImageParams | AwarenessImageParams | Describes inferred image results. |
+| CameraIntrinsics | CameraIntrinsics | Camera intrinsics. This is a copy of the ARCore CameraIntrinsics class. |
+| CameraIntrinsicsFromARCore | CameraIntrinsicsFromARCore | - |
+| DepthConfig | DepthConfig | Configuration parameters for ARDK's Depth System.
+
+## Basic Usage |
+| DeviceMappingConfig | DeviceMappingConfig | - |
+| FrameData | FrameData | Container for all frame data sent to ARDK for processing.FrameData encapsulates camera frames, sensor data, and metadata that ARDKuses for tracking, mapping, VPS localization, and other AR features.Create one FrameData instance per camera frame and populate it withavailable sensor data before calling [NSDKSession.sendFrame].
+
+## Required Data- [cameraTimestampMs] - Frame timestamp for synchronization- [frameId] - Unique identifier for this frame
+
+## Optional Data- [cameraImagePlanes] - Camera image data (YUV420_888 format)- [cameraImageWidth] - Width of the camera image in pixels- [cameraImageHeight] - Height of the camera image in pixels- [cameraImageFormat] - Format of the camera image (YUV_420_888 or 0 if none)- [cameraPose] - Camera pose in world coordinates- [cameraIntrinsics] - Camera calibration parameters- [depthImageData] - Depth buffer (Float32, meters per pixel)- [depthConfidenceData] - Per-pixel depth confidence (UInt8)- [depthImageDataWidth] - Width of the depth image in pixels- [depthImageDataHeight] - Height of the depth image in pixels- [depthImageIntrinsics] - Depth camera intrinsics (falls back to scaled camera intrinsics if null)- [location] - GPS location data- [compass] - Compass/magnetometer data- [screenOrientation] - Device orientation- [trackingState] - ARCore tracking state |
+| Image | Image | - |
+| MeshingConfig | MeshingConfig | - |
+| NsdkCamera | NsdkCamera | Camera view over the current frame (live or playback). Mirrors ARCore [com.google.ar.core.Camera]so callers can use one API for both live and playback.Use [pose] and [getDisplayOrientedPose] for overlays, VPS2, etc. Use [imageIntrinsics] forCPU image coordinates, [trackingState] / [getTrackingFailureReason] for tracking status, and[getViewMatrix] for rendering. Use [backing] when you need ARCamera- or PlaybackCamera-specific APIs. |
+| NsdkFeatureAlreadyInitializedStatusException | NsdkFeatureAlreadyInitializedStatusException | Thrown when a feature is already initialized.Corresponds to [NSDKStatus.FEATURE_ALREADY_INITIALIZED]. |
+| NsdkFeatureNotInitializedStatusException | NsdkFeatureNotInitializedStatusException | Thrown when a required feature has not been initialized.Corresponds to [NSDKStatus.FEATURE_NOT_INITIALIZED]. |
+| NsdkFrame | NsdkFrame | Abstraction over the current frame so callers can use one API for both live AR (ARCore [Frame])and playback ([PlaybackFrame]). Use [camera] for pose, intrinsics, and tracking.Use [backing] when you need Frame- or PlaybackFrame-specific APIs (e.g. acquireCameraImage). |
+| NsdkInvalidArgumentStatusException | NsdkInvalidArgumentStatusException | Thrown when a native argument has an invalid value.Corresponds to [NSDKStatus.INVALID_ARGUMENT]. |
+| NsdkInvalidHandleStatusException | NsdkInvalidHandleStatusException | Thrown when a native handle is invalid or has been destroyed.Corresponds to [NSDKStatus.INVALID_NSDK_HANDLE]. |
+| NsdkInvalidOperationStatusException | NsdkInvalidOperationStatusException | Thrown when a native operation is not valid in the current state.Corresponds to [NSDKStatus.INVALID_OPERATION]. |
+| NsdkNullArgumentStatusException | NsdkNullArgumentStatusException | Thrown when a required native argument is null.Corresponds to [NSDKStatus.NULL_ARGUMENT]. |
+| NSDKResult | NSDKResult<out TData, out TError : ErrorCodeProvider> | ResultDeprecated wrapper for NSDK operations that can succeed or fail.NSDKResult is a Kotlin sealed class designed to provide a type-safe abstractionover the return values of low-level C APIs. Instead of directly handling rawinteger status codes from the C layer, Kotlin callers receive structured resultsas either Success or Error. |
+| NSDKSession | NSDKSession | Creates a new NSDK instance with auth tokens or a configuration file.This is the primary entry point for initializing NSDK functionality.You must call this before using any other NSDK features.Only one [NSDKSession] may be active at a time. Creating a second instance while one isactive will throw [IllegalStateException]. Call [close] on the existing session beforecreating a new one. |
+| NsdkStatusException | NsdkStatusException | Base class for all NSDK-specific exceptions originating from the native layer. |
+| NsdkUnknownStatusException | NsdkUnknownStatusException | Thrown when an internal, unrecoverable error occurs in the native layer.that is unexpected |
+| ScannerConfig | ScannerConfig | Configuration parameters for scanning functionality.ScannerConfig allows you to customize scan recording behavior including recordingframerate, visualization settings, depth range, and output resolution.Use this class to optimize scanning performance for your specific use case.
+
+## Basic Usage |
+| abstract SessionBase | SessionBase<T : SessionBase<T>> | - |
+| UUIDKey | UUIDKey | - |
+| Vps2Config | Vps2Config | Configuration structure for the VPS2 session. |
+
+---
+
+## Interfaces
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ErrorCodeProvider | ErrorCodeProvider | - |
+| ErrorFactory | ErrorFactory<E : ErrorCodeProvider> | - |
+| NsdkLogCallback | NsdkLogCallback | Functional interface for receiving log messages from NSDK.This callback is invoked by the native NSDK library to send log messagesto the Kotlin/Java layer. The callback receives the log level, message,and optional source location information. |
+| NsdkSessionDataSource | NsdkSessionDataSource | Provides synchronous, pull-based access to the latest available sensor datarequired by [NSDKSession].All methods must be non-blocking and thread-safe. Returned values representthe most recent samples already captured by the underlying services.Implement this interface and assign it to [NSDKSession.dataSource], then call[NSDKSession.update] once per camera frame to submit data to the native layer. |
+
+---
+
+## Data Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AnchorUpdate | AnchorUpdate | Contains the latest tracking information for a VPS anchor.`AnchorUpdate` provides comprehensive information about an anchor's current state,including its pose, tracking quality, and status information. This data is updatedas VPS refines its localization.
+
+### OverviewAnchor updates are retrieved via `getAnchorUpdate(uuid)` and provide themost current information about an anchor's position, orientation, and tracking status.The data includes confidence metrics and timestamps for quality assessment.
+
+### Example |
+| AreaTarget | AreaTarget | - |
+| AuthInfo | AuthInfo | Authentication information containing token claims.Contains parsed JWT claims including token string, expiration, user information, and other standard JWT fields. |
+| AwarenessContext | AwarenessContext | - |
+| CameraSample | CameraSample | A snapshot of camera sensor data for a single frame. |
+| Compass | Compass | - |
+| CoverageArea | CoverageArea | - |
+| DepthBuffer | DepthBuffer | Depth result from ARDK's Depth System after computing disparity. |
+| DepthSample | DepthSample | A snapshot of platform depth data (e.g. LiDAR or ToF sensor) for a single frame. |
+| GeolocationData | GeolocationData | - |
+| LatLng | LatLng | Geographic coordinates representing latitude and longitude.LatLng is used throughout ARDK for specifying geographic locations,particularly for VPS coverage queries and area-based operations. |
+| LocalizationTarget | LocalizationTarget | - |
+| MapMetadata | MapMetadata | - |
+| MeshData | MeshData | - |
+| MeshDownloaderData | MeshDownloaderData | - |
+| MeshingUpdateInfo | MeshingUpdateInfo | - |
+| PathConfig | PathConfig | Optional path overrides mirroring native ARDK_PathConfig.Null or empty values mean: let native auto-detect paths. |
+| RecordingInfo | RecordingInfo | - |
+| ScanSaveInfo | ScanSaveInfo | Information about a saved scan.This class contains details about a scan that has saved (or attempted to be saved),including its unique identifier, file system path, and ultimate state. |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AgeLevel | AgeLevel | Codes describing the age level of the user.This enum represents the age classification for users of the NSDK |
+| AnchorTrackingState | AnchorTrackingState | Represents the current tracking state of a VPS anchor.The tracking state indicates how well the system is able to track an anchor's positionand orientation in the current environment. This information is crucial for determiningthe reliability of anchor pose data.
+
+### OverviewTracking states progress from not tracked to fully tracked, with limited trackingrepresenting an intermediate state where tracking is possible but may be less reliable.
+
+### Example |
+| AnchorTrackingStateReason | AnchorTrackingStateReason | Provides additional context about why an anchor is in a particular tracking state.When an anchor is not tracked or has limited tracking, this enum provides specificreasons that can help developers understand and respond to tracking issues.
+
+### OverviewTracking state reasons help diagnose why tracking may be failing or limited,enabling applications to provide appropriate user feedback or take corrective actions.
+
+### Example |
+| AwarenessFeatureMode | AwarenessFeatureMode | - |
+| AwarenessStatus | AwarenessStatus | - |
+| FeatureStatus | FeatureStatus | - |
+| ImageType | ImageType | - |
+| InputDataFlags | InputDataFlags | - |
+| Localizability | Localizability | - |
+| MeshDownloaderError | MeshDownloaderError | - |
+| NSDKStatus | NSDKStatus | Status codes returned by NSDK operations.NSDKStatus represents the outcome of NSDK API calls, indicatingsuccess or various types of failures. These codes help diagnoseissues with NSDK integration and usage. |
+| Orientation | Orientation | Device orientation when capturing camera frames.Orientation affects how ARDK interprets camera data and poses.Ensure the correct orientation is set in [FrameData.screenOrientation]for accurate tracking and localization. |
+| ScanSaveError | ScanSaveError | Error codes that can be returned when a scan fails to save. |
+| ScanSaveState | ScanSaveState | Enumeration of possible scan recording save states.This enum represents the current state of a scan recording operation,indicating whether the scan data has been successfully saved, discarded, or failed. |
+| VpsCoverageError | VpsCoverageError | - |
+| VpsGraphOperationError | VpsGraphOperationError | Error codes for VPS graph operations.These errors can occur during VPS operations that query the internal graph structure,such as converting device poses to geolocations. Each error provides specific informationabout why the operation failed. |
+
+---

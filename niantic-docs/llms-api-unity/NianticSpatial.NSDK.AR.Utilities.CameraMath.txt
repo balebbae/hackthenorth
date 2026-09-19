@@ -1,0 +1,26 @@
+# CameraMath
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.CameraMath/
+
+CameraMath
+A collection of functions used to calculate transformations for AR imaging.
+
+---
+
+## Declaration
+
+public static class CameraMath
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static CalculateDisplayMatrix | Matrix4x4 | Returns an affine transformation matrix for converting between normalized image coordinates and a coordinate space appropriate for rendering the camera image onscreen. |
+| static CalculateProjectionMatrix | Matrix4x4 | Returns a transform matrix appropriate for rendering 3D content to match the image captured by the camera, using the specified parameters. |
+| static CalculateZBufferParams | Vector4 | Calculates a ZBufferParams container, similar to the built-in _ZBufferParams used in shaders, but instead of using the clipping plane distances of the camera, it will consider the specified near and far values. |
+| static CameraToDisplayRotation | Quaternion | - |
+| static DisplayToCameraRotation | Quaternion | - |
+
+---

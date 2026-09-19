@@ -1,0 +1,28 @@
+# GetChannelIndex
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetChannelIndex/
+
+GetChannelIndex
+
+---
+
+## Declaration
+
+public int GetChannelIndex(SceneSegmentationChannel channel)
+
+#### Summary
+
+Get the channel index of a specified semantic class. This corresponds to a bit position in the packed
+    scene segmentation buffer, with index 0 being the most-significant bit.
+
+#### Returns
+
+The index of the specified semantic class, or -1 if the channel does not exist.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channel | SceneSegmentationChannel | The semantic channel. |
+
+---

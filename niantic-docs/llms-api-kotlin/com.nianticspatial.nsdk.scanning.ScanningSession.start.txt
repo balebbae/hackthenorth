@@ -1,0 +1,26 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.ScanningSession.start/
+
+start
+
+---
+
+## Declaration
+
+fun start()
+
+#### Summary
+
+Start scanning.
+
+"Scanning" here refers to up to three processes: recording the input AR
+data, raycasting, and voxelization, depending on how the feature is
+configured.
+
+#### See also
+
+stop
+configure
+
+---

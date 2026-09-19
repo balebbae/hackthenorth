@@ -1,0 +1,50 @@
+# Vps2LocalizationError
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationError/
+
+Vps2LocalizationError
+
+---
+
+## Declaration
+
+enum class Vps2LocalizationError
+
+## Summary
+
+Error codes from VPS localization operations.
+Mirrors `ARDK_VPS2_LocalizationError`.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AUTH_FAILURE | AUTH_FAILURE | - |
+| BAD_CAMERA_ANGLE | BAD_CAMERA_ANGLE | - |
+| BAD_NETWORK_CONNECTION | BAD_NETWORK_CONNECTION | - |
+| BAD_TRACKING | BAD_TRACKING | - |
+| INTERNAL_CLIENT | INTERNAL_CLIENT | - |
+| INTERNAL_SERVER | INTERNAL_SERVER | - |
+| LOCALIZATION_FAILED | LOCALIZATION_FAILED | - |
+| NONE | NONE | - |
+| NO_MAP_FOUND | NO_MAP_FOUND | - |
+| PERMISSION_DENIED | PERMISSION_DENIED | - |
+| QUOTA_EXCEEDED | QUOTA_EXCEEDED | - |
+| REQUESTS_LIMIT_EXCEEDED | REQUESTS_LIMIT_EXCEEDED | - |
+| UNKNOWN | UNKNOWN | - |
+
+---
+
+## Relationships
+
+implements:  ErrorCodeProvider

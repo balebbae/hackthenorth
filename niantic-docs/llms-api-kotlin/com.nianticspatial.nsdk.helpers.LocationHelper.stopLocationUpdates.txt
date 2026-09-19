@@ -1,0 +1,18 @@
+# stopLocationUpdates
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.LocationHelper.stopLocationUpdates/
+
+stopLocationUpdates
+Stops receiving GPS updates. Safe to call even if [startLocationUpdates] was never called.
+
+---
+
+## Declaration
+
+fun stopLocationUpdates()
+
+#### Summary
+
+Stops receiving GPS updates. Safe to call even if startLocationUpdates was never called.
+
+---

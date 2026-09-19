@@ -1,0 +1,34 @@
+# ScanSaveInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ScanSaveInfo/
+
+ScanSaveInfo
+
+---
+
+## Declaration
+
+data class ScanSaveInfo
+
+## Summary
+
+Information about a saved scan.
+This class contains details about a scan that has saved (or attempted to be saved),
+including its unique identifier, file system path, and ultimate state.
+
+## See also
+
+ScanningSession.getCurrentSaveInfo
+ScanningSession.saveCurrentScan
+ScanSaveState
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| savePath | String? | - |
+| scanId | String? | - |
+
+---

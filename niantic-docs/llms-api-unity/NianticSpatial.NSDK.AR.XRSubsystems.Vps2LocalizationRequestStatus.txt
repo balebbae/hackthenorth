@@ -1,0 +1,25 @@
+# Vps2LocalizationRequestStatus
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.Vps2LocalizationRequestStatus/
+
+Vps2LocalizationRequestStatus
+
+---
+
+## Declaration
+
+public enum Vps2LocalizationRequestStatus : byte
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Completed | Vps2LocalizationRequestStatus | The request completed and a response was received. |
+| static Failed | Vps2LocalizationRequestStatus | The request failed (e.g. network error, HTTP error, or unparseable response). |
+| static FrameRejected | Vps2LocalizationRequestStatus | The request was not sent because the frame was rejected (e.g. camera pointed downward). |
+| static Pending | Vps2LocalizationRequestStatus | The request has been sent and is awaiting a response. |
+| static Unknown | Vps2LocalizationRequestStatus | Status is unknown or uninitialized. |
+
+---

@@ -1,0 +1,2369 @@
+# Select a Site and anchor payload
+
+Source: https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-map-view/
+
+### Platform: kotlin
+
+# Select a Site and anchor payload
+
+This page implements the Select a Site and anchor payload step in the wayfinding workflow. In this workflow, the user browses Sites on a map, selects a Site with a Production VPS asset, and passes its anchor payload into the AR flow. The Kotlin implementation on this page uses the Mapbox-based approach from the enterprise Kotlin VPS2 end-to-end sample: the app loads Organizations, centers the map on the user's current or default location, renders eligible Sites as pins, and opens a site panel that launches VPS2 with the chosen payload.
+
+(image: After initializing a wayfinding app, select a Scaniverse Site and anchor payload.)
+
+*Figure:* Previous steps of the tutorial showed how to initialize the app and route the user into the Sites flow. This step shows how to implement Site selection, and next steps show VPS2 localization, and AR wayfinding.
+
+## Files Overview
+
+The Select a Site and anchor payload step has four steps:
+
+1. [Create the map screen](#create-the-map-screen).
+2. [Manage Sites data and state](#manage-sites-data-and-state).
+3. [Load and filter Sites for VPS2](#load-and-filter-sites-for-vps2).
+4. [Render site pins and select a Site](#render-site-pins-and-select-a-site).
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone app shown in this tutorial, along with the names of the matching files in the Kotlin `vps2e2e` sample with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the map screen | `WayfindingSitesView.kt` Compose map UI, viewport state, and map overlays | `SitesView.kt` |
+| Manage Sites data and state | `WayfindingSitesManager.kt` state and SDK orchestration and `WayfindingSitesState.kt` navigation states and models | `SitesManager.kt` and `SitesState.kt` |
+| Load and filter Sites for VPS2 | `WayfindingSitesManager.kt` loads Organizations, selects the current Organization, and filters Sites for Production VPS assets | `SitesManager.kt` |
+| Render site pins and select a Site | `WayfindingSitesView.kt` renders map pins, site details, and navigation into VPS2 | `SitesView.kt` and `VPS2Route.kt` |
+
+## Create the map screen
+
+This step creates the map-based Sites screen. It adds the map dependencies and access token, creates `WayfindingSitesView.kt`, and routes the app into that screen so the next steps can load Organizations, render pins, and launch VPS2 from the map.
+
+This step has four parts:
+
+1. [Add map dependencies](#add-map-dependencies) to enable the Mapbox map and device-location helpers.
+2. [Add a map token](#add-a-map-token) so the map SDK can load map tiles.
+3. [Create the Sites map screen](#create-the-sites-map-screen) so the Sites route opens a full-screen map.
+4. [Open the map screen](#open-the-map-screen) so the app uses `WayfindingSitesView.kt` instead of the earlier placeholder.
+
+### Add map dependencies
+
+In an existing app, update your app module so it includes the dependencies needed for the map screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Include the Mapbox Maven repository in Gradle dependency resolution.
+- Include the Mapbox Android SDK dependency.
+- Include the Mapbox Compose extension dependency.
+- Include the Google Play Services location dependency.
+
+In a new app, update the Gradle configuration with the following steps:
+
+1. In your project-level `settings.gradle.kts`, add the Mapbox repository to the existing `dependencyResolutionManagement { repositories { ... } }` block, not the `pluginManagement { repositories { ... } }` block:
+
+   ```kotlin
+   maven {
+       url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+   }
+   ```
+
+2. Add the map dependencies to the `dependencies { ... }` block in `app/build.gradle.kts` as shown in the following code example:
+
+   ```kotlin
+   implementation("com.mapbox.maps:android:11.22.0")
+   implementation("com.mapbox.extension:maps-compose:11.22.0")
+   implementation("com.google.android.gms:play-services-location:21.0.1")
+   ```
+
+### Add a map token
+
+In an existing app, update your current map configuration so the map SDK can read a Mapbox access token. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Store the Mapbox access token in an Android resource.
+- Keep that token outside the Kotlin source file.
+- Use a Mapbox public access token so the app can load map tiles.
+
+In a new app, add a Mapbox access token with the following steps:
+
+1. [Create a Mapbox account](https://www.mapbox.com/signup/) if you do not already have one and follow the prompts to create a free account.
+
+2. Create a Mapbox public access token. Sign in to your Mapbox account, open the **Access Tokens** page in the Mapbox Developer Console, and copy a public token that starts with `pk.`.
+
+3. In Android Studio, create a new **Values Resource File** by expanding `app/src/main/res/values`, expanding the `values` menu, selecting **New > Values Resource File**, and entering `mapbox_access_token` as the file name.
+
+4. Create `app/src/main/res/values/mapbox_access_token.xml` as shown in the following code example:
+
+   ```xml
+   <resources xmlns:tools="http://schemas.android.com/tools">
+       <string name="mapbox_access_token" translatable="false" tools:ignore="UnusedResources">YOUR_MAPBOX_ACCESS_TOKEN</string>
+   </resources>
+   ```
+
+5. Replace `YOUR_MAPBOX_ACCESS_TOKEN` with your Mapbox public access token.
+
+### Create the Sites map screen
+
+In an existing app, update your current Sites or destination selection screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The map screen should:
+
+- Receive the shared `NSDKSessionManager`.
+- Receive the app `NavHostController`.
+- Display a full-screen map.
+- Track the current viewport and selected map style.
+- Load the user's current location or fall back to a default starting point.
+- Reserve space for the overlays and Site-selection UI that later steps add.
+
+In a new app, create `app/src/main/java/<your app package path>/WayfindingSitesView.kt` as shown in the following code example:
+
+#### Expand to view WayfindingSitesView.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.navigation.NavHostController
+import com.google.android.gms.location.LocationServices
+import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.Style
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.style.MapStyle
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WayfindingSitesView(
+    nsdkSessionManager: NSDKSessionManager,
+    navHostController: NavHostController,
+    helpContentState: MutableState<Any?>
+) {
+    val context = LocalContext.current
+
+    // Start from a default location until the device location is available.
+    var defaultLatLng by remember {
+        mutableStateOf(Point.fromLngLat(-122.39360033247367, 37.7955374600894))
+    }
+
+    // Keep local UI state for the current map screen.
+    var selectedMapStyle by remember { mutableStateOf(WayfindingMapStyleOption.Standard) }
+
+    // Track one shared viewport state for the full-screen map.
+    val viewportState = rememberMapViewportState {
+        setCameraOptions {
+            zoom(12.0)
+            pitch(0.0)
+            bearing(0.0)
+            center(defaultLatLng)
+            padding(EdgeInsets(0.0, 0.0, 0.0, 0.0))
+        }
+    }
+
+    // Recenter the map on the user's current location when it becomes available.
+    LaunchedEffect(Unit) {
+        fetchLocation(context) { loc ->
+            loc?.let {
+                defaultLatLng = Point.fromLngLat(it.longitude, it.latitude)
+                viewportState.flyTo(
+                    CameraOptions.Builder()
+                        .center(defaultLatLng)
+                        .zoom(12.0)
+                        .build()
+                )
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        MapboxMap(
+            modifier = Modifier.fillMaxSize(),
+            mapViewportState = viewportState,
+            style = { MapStyle(style = selectedMapStyle.styleUri) },
+        ) {
+            // Later steps add map padding, the location puck, and Site pins here.
+        }
+
+        // Later steps add the organization menu, style controls, and site panel here.
+    }
+}
+
+private fun fetchLocation(context: Context, onResult: (android.location.Location?) -> Unit) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+    if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+        != PackageManager.PERMISSION_GRANTED) {
+        onResult(null)
+        return
+    }
+
+    fusedLocationClient.lastLocation.addOnSuccessListener { onResult(it) }
+}
+
+private enum class WayfindingMapStyleOption(val title: String, val styleUri: String) {
+    Standard("Standard", Style.MAPBOX_STREETS),
+    Satellite("Satellite", Style.SATELLITE),
+    Hybrid("Hybrid", Style.SATELLITE_STREETS)
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation starts in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/sites/SitesView.kt`.
+
+### Open the map screen
+
+In an existing app, update your routing so the Sites route opens your new map screen instead of the earlier placeholder screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Open `WayfindingSitesView(...)` from the Sites route.
+- Remove the earlier placeholder Sites screen from the previous page.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` with the following steps:
+
+1. Replace the `composable("sites") { ... }` route from the previous page so it opens `WayfindingSitesView(...)` as shown in the following code example:
+
+   ```kotlin
+   composable("sites") {
+       WayfindingSitesView(
+           nsdkSessionManager = nsdkSessionManager,
+           navHostController = navController,
+           helpContentState = remember { mutableStateOf(null) }
+       )
+   }
+   ```
+
+2. Delete the temporary composable `WayfindingSitesView(...)` placeholder below `WayfindingApp()` from the previous page. `WayfindingSitesView.kt` now owns the Sites map screen.
+
+Test this step to validate that the Sites route opens the new full-screen map screen:
+
+- Build and run the app on your device.
+- Tap **Login**, then tap **Browse Sites**.
+- Confirm that the app opens a full-screen map instead of the earlier button-based Sites screen.
+- If location permission is already granted, confirm that the map recenters near your current location.
+- If location permission is not available, confirm that the map still opens at the default coordinates from `mutableStateOf(Point.fromLngLat(...))` in `WayfindingSitesView.kt`.
+- Confirm that the screen does not crash before later steps add Organizations, Site pins, and the site-selection panel.
+
+In the next step, you will create the state models and Sites manager that load Organizations and filtered VPS-ready Sites for the map.
+
+## Manage Sites data and state
+
+This step creates the state and logic layer that drives the map screen. The manager owns the Sites session, tracks the current navigation state, keeps the current Organizations in memory for the map overlay, and updates the UI based on SDK responses.
+
+This step has three parts:
+
+1. [Create Sites state](#create-sites-state) so the map screen can represent Organizations, filtered Sites, loading, and errors.
+2. [Create an auth retry helper](#create-an-auth-retry-helper) so Sites requests can wait for authorization and retry once on failure.
+3. [Create a Sites manager](#create-a-sites-manager) so the app can load Organizations and filtered VPS-ready Sites from NSDK.
+
+### Create Sites state
+
+In an existing app, update your current state models. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Represent Sites that contain a valid VPS2 asset.
+- Represent the loading, Organization, and error states used by the map screen.
+
+In a new app, create `app/src/main/java/<your app package path>/WayfindingSitesState.kt` as shown in the following code example:
+
+#### Expand to view WayfindingSitesState.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import com.nianticspatial.nsdk.sites.AssetInfo
+import com.nianticspatial.nsdk.sites.OrganizationInfo
+import com.nianticspatial.nsdk.sites.SiteInfo
+import com.nianticspatial.nsdk.sites.UserInfo
+
+// Represent a Site together with the Production VPS asset the app can use later.
+data class SiteWithVpsAsset(
+    val site: SiteInfo,
+    val asset: AssetInfo
+)
+
+// Represent the current state of the Sites map flow.
+sealed class SitesNavState {
+    object Uninitialized : SitesNavState()
+    object Loading : SitesNavState()
+
+    // Show the list of Organizations the user can browse on the map.
+    data class UserView(
+        val user: UserInfo?,
+        val organizations: List<OrganizationInfo>,
+        val warning: String? = null
+    ) : SitesNavState()
+
+    // Show the Sites that have valid VPS assets for the selected Organization.
+    data class OrganizationView(
+        val org: OrganizationInfo,
+        val sitesWithAssets: List<SiteWithVpsAsset>,
+        val warning: String? = null
+    ) : SitesNavState()
+
+    // Show a blocking error when the map flow cannot continue.
+    data class Error(
+        val message: String
+    ) : SitesNavState()
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/sites/SitesState.kt`.
+
+### Create an auth retry helper
+
+In an existing app, update your current auth or networking helper layer. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Wait for `NSDKSession` to become authorized before running Sites requests.
+- Retry a failed Sites request once after a short delay.
+- Keep the retry logic outside `WayfindingSitesManager`.
+
+In a new app, create `app/src/main/java/<your app package path>/auth/AuthRetryHelper.kt` as shown in the following code example:
+
+#### Expand to view AuthRetryHelper.kt
+
+```kotlin
+package com.example.wayfinding.auth // Replace with your app package name
+
+import android.util.Log
+import com.nianticspatial.nsdk.NSDKSession
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+
+class AuthRetryHelper(private val nsdkSession: NSDKSession) {
+    companion object {
+        private const val TAG = "AuthRetryHelper"
+        private const val INITIAL_AUTH_WAIT_MS = 30_000L
+        private const val RETRY_DELAY_MS = 1_000L
+        private const val AUTH_POLL_INTERVAL_MS = 1_000L
+    }
+
+    suspend fun <T> withRetry(operation: suspend () -> T): T {
+        waitForAuthorizationIfNeeded(INITIAL_AUTH_WAIT_MS)
+        return withContext(Dispatchers.Main) {
+            try {
+                operation()
+            } catch (e: Exception) {
+                Log.d(TAG, "Operation failed: ${e.message}, retrying once...")
+                delay(RETRY_DELAY_MS)
+                operation()
+            }
+        }
+    }
+
+    private suspend fun waitForAuthorizationIfNeeded(timeoutMs: Long) {
+        withContext(Dispatchers.Main) {
+            if (nsdkSession.isAuthorized) return@withContext
+
+            val startTime = System.currentTimeMillis()
+            while (!nsdkSession.isAuthorized) {
+                if (System.currentTimeMillis() - startTime > timeoutMs) {
+                    throw AuthRetryException("Timeout waiting for authorization")
+                }
+                delay(AUTH_POLL_INTERVAL_MS)
+            }
+        }
+    }
+}
+
+class AuthRetryException(message: String) : Exception(message)
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/auth/AuthRetryHelper.kt`.
+
+### Create a Sites manager
+
+In an existing app, update your current data or manager layer. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Acquire a Sites session from `NSDKSession`.
+- Track navigation state.
+- Keep the current Organizations and current location available for the map overlay.
+- Expose functions that load Organizations and update the selected Organization.
+- Create the shared Sites manager when the map screen opens.
+
+In a new app, update the Sites manager flow with the following steps:
+
+1. Create `app/src/main/java/<your app package path>/WayfindingSitesManager.kt` as shown in the following code example:
+
+#### Expand to view WayfindingSitesManager.kt
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.example.wayfinding.auth.AuthRetryHelper
+import com.nianticspatial.nsdk.LatLng
+import com.nianticspatial.nsdk.NSDKSession
+import com.nianticspatial.nsdk.sites.AssetDeploymentType
+import com.nianticspatial.nsdk.sites.OrganizationInfo
+import com.nianticspatial.nsdk.sites.SitesException
+import com.nianticspatial.nsdk.sites.SitesSession
+import com.nianticspatial.nsdk.sites.UserInfo
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+
+class WayfindingSitesManager(
+    private val nsdkSession: NSDKSession,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+) : DefaultLifecycleObserver {
+    // Acquire one shared Sites session from the NSDK session.
+    private val sitesSession: SitesSession = nsdkSession.sites.acquire()
+    private val retryHelper = AuthRetryHelper(nsdkSession)
+
+    // Track the current state of the Sites flow for the map UI.
+    var navState by mutableStateOf<SitesNavState>(SitesNavState.Uninitialized)
+        private set
+
+    // Keep the current Organizations and current location available for map overlays.
+    private var currentUser: UserInfo? = null
+    var currentOrganizations: List<OrganizationInfo> = emptyList()
+    var currentLocation: LatLng? = null
+        private set
+
+    fun loadInitialData() {
+        if (navState != SitesNavState.Uninitialized) {
+            return
+        }
+
+        coroutineScope.launch {
+            try {
+                navState = SitesNavState.Loading
+
+                val orgsResult = retryHelper.withRetry {
+                    sitesSession.requestSelfOrganizationInfo()
+                }
+                val organizations = orgsResult.organizations
+                currentOrganizations = organizations
+
+                val warning = if (organizations.isEmpty()) "No organizations found" else null
+                navState = SitesNavState.UserView(null, organizations, warning)
+
+                // Select the first Organization by default so later steps can render Site pins.
+                if (organizations.isNotEmpty()) {
+                    onOrganizationClick(organizations[0], currentLocation)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: SitesException) {
+                navState = SitesNavState.Error("Error: ${e.error}")
+            } catch (e: Exception) {
+                navState = SitesNavState.Error("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun onOrganizationClick(org: OrganizationInfo, location: LatLng?) {
+        currentLocation = location
+        coroutineScope.launch {
+            loadSitesForOrganization(org)
+        }
+    }
+
+    private suspend fun loadSitesForOrganization(org: OrganizationInfo) {
+        try {
+            navState = SitesNavState.Loading
+
+            val result = retryHelper.withRetry {
+                sitesSession.requestSitesForOrganization(org.id)
+            }
+            val allSites = result.sites
+
+            if (allSites.isEmpty()) {
+                navState = SitesNavState.OrganizationView(
+                    org,
+                    emptyList(),
+                    "No sites found for ${org.name}"
+                )
+                return
+            }
+
+            val sitesWithAssets = coroutineScope {
+                allSites.map { site ->
+                    async {
+                        try {
+                            val assetsResult = retryHelper.withRetry {
+                                sitesSession.requestAssetsForSite(site.id)
+                            }
+                            val vpsAsset = assetsResult.assets.firstOrNull { asset ->
+                                val vps = asset.vpsData
+                                vps != null &&
+                                    vps.anchorPayload.isNotBlank() &&
+                                    asset.deployment == AssetDeploymentType.PRODUCTION
+                            }
+                            if (vpsAsset != null) SiteWithVpsAsset(site, vpsAsset) else null
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                }.mapNotNull { it.await() }
+            }
+
+            val warning = if (sitesWithAssets.isEmpty()) {
+                "No sites with Production VPS asset found for ${org.name}"
+            } else {
+                null
+            }
+            navState = SitesNavState.OrganizationView(org, sitesWithAssets, warning)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: SitesException) {
+            val user = currentUser
+            navState = if (user != null) {
+                SitesNavState.UserView(
+                    user,
+                    currentOrganizations,
+                    "Error loading sites: ${e.error}"
+                )
+            } else {
+                SitesNavState.Error("Error loading sites: ${e.error}")
+            }
+        } catch (e: Exception) {
+            val user = currentUser
+            navState = if (user != null) {
+                SitesNavState.UserView(
+                    user,
+                    currentOrganizations,
+                    "Error: ${e.message}"
+                )
+            } else {
+                SitesNavState.Error("Error: ${e.message}")
+            }
+        }
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        coroutineScope.cancel()
+        runCatching { sitesSession.close() }
+    }
+}
+```
+
+2. Update `app/src/main/java/<your app package path>/WayfindingSitesView.kt` so the map screen creates one shared `WayfindingSitesManager` directly after `val context = LocalContext.current`:
+
+   ```kotlin
+   // Create one shared Sites manager for the map flow and print a checkpoint when it is ready.
+   val sitesManager = remember {
+       WayfindingSitesManager(nsdkSessionManager.session).also {
+           android.util.Log.i("WayfindingApp", "WayfindingSitesManager created")
+       }
+   }
+   ```
+
+   Keep `sitesManager` in place even though this step does not use it yet. The next step reads state from the same shared manager.
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/sites/SitesManager.kt`.
+
+Test this step to validate that the map flow creates the shared Sites manager and state layer:
+
+- Build and run the app on your device.
+- Tap **Login**, then tap **Browse Sites**.
+- Confirm that the app still opens the full-screen map from the previous step.
+- In Logcat, filter by `WayfindingApp` and confirm that `WayfindingSitesManager created` appears after the map screen opens.
+- Confirm that there is no visible map change yet. The next step adds the loading and Organization overlays.
+
+In the next step, you will connect the manager state to the map so the app can render Site pins and let the user select a Site.
+
+## Load and filter Sites for VPS2
+
+This step connects the manager state to the map screen so the app can load Organizations, select one of them by default, show a loading overlay while Sites are fetched, and let the user switch Organizations from the map overlay. In the `vps2e2e` sample, this work is split between `SitesManager.loadInitialData()`, `OrganizationMenu`, and `StateOverlay`.
+
+This step has four parts:
+
+1. [Observe Sites state](#observe-sites-state) so the map screen can react to the shared manager.
+2. [Add overlay imports](#add-overlay-imports) so the map screen can render loading and Organization controls.
+3. [Create the map overlays](#create-the-map-overlays) so the map can show loading and Organization selection.
+4. [Show the overlays](#show-the-overlays) so the map displays the current Organization and loading state.
+
+### Observe Sites state
+
+In an existing app, update your current map screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Use the shared Sites manager that was created in the previous section.
+- Observe the current `navState`.
+- Start loading Organizations when the map screen opens.
+- Print a checkpoint when Organizations and filtered Sites finish loading.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingSitesView.kt` with the following steps:
+
+1. Add the following imports to the top of `WayfindingSitesView.kt` as shown in the following code example:
+
+   ```kotlin
+   import androidx.compose.runtime.DisposableEffect
+   import androidx.lifecycle.compose.LocalLifecycleOwner
+   ```
+
+2. Add the lifecycle owner directly above the existing `sitesManager` block from the previous section, directly below `val context = LocalContext.current`:
+
+   ```kotlin
+   val lifecycleOwner = LocalLifecycleOwner.current
+   ```
+
+   After this step, the top of `WayfindingSitesView(...)` should look like this:
+
+   ```kotlin
+   val context = LocalContext.current
+   val lifecycleOwner = LocalLifecycleOwner.current
+
+   // Create one shared Sites manager for the map flow and print a checkpoint when it is ready.
+   val sitesManager = remember {
+       WayfindingSitesManager(nsdkSessionManager.session).also {
+           android.util.Log.i("WayfindingApp", "WayfindingSitesManager created")
+       }
+   }
+   ```
+
+3. Add the observed `navState` directly below the `sitesManager` block as shown in the following code example:
+
+   ```kotlin
+   // Read the current map-flow state from the shared Sites manager.
+   val navState by sitesManager::navState
+   ```
+
+4. Add the lifecycle and initial-load block below the existing `LaunchedEffect(Unit)` that recenters the map as shown in the following code example:
+
+   ```kotlin
+   // Keep the Sites manager attached to the screen lifecycle so it can clean up when the screen closes.
+   DisposableEffect(lifecycleOwner, sitesManager) {
+       lifecycleOwner.lifecycle.addObserver(sitesManager)
+       onDispose {
+           lifecycleOwner.lifecycle.removeObserver(sitesManager)
+       }
+   }
+
+   // Start loading Organizations when the map screen first opens.
+   LaunchedEffect(sitesManager) {
+       sitesManager.loadInitialData()
+   }
+   ```
+
+5. Add the following Logcat checkpoints in `loadInitialData()` directly after `currentOrganizations = organizations` inside `WayfindingSitesManager.kt`:
+
+   ```kotlin
+   android.util.Log.i(
+       "WayfindingApp",
+       "Loaded ${organizations.size} organizations"
+   )
+   ```
+
+6. Then add the following code in `loadSitesForOrganization(org: OrganizationInfo)` directly before `navState = SitesNavState.OrganizationView(org, sitesWithAssets, warning)`:
+
+   ```kotlin
+   android.util.Log.i(
+       "WayfindingApp",
+       "Loaded ${sitesWithAssets.size} VPS-ready Sites for ${org.name}"
+   )
+   ```
+
+### Add overlay imports
+
+In an existing app, update your current map-screen imports. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Import the Compose UI pieces used by the loading overlay.
+- Import the Compose UI pieces used by the Organization menu.
+
+In a new app, add the following imports to the top of `WayfindingSitesView.kt` as shown in the following code example:
+
+```kotlin
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+```
+
+### Create the map overlays
+
+In an existing app, update your current map overlay UI. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show the current Organization in an overlay menu.
+- Show the list of loaded Organizations in that menu.
+- Call the manager when the user selects a different Organization.
+- Show a loading overlay while Organizations or Sites are loading.
+
+In a new app, add the overlay helpers below `WayfindingSitesView(...)` in `WayfindingSitesView.kt` as shown in the following code example:
+
+#### Expand to view the overlay helpers
+
+```kotlin
+@Composable
+private fun ControlsOverlay(
+    sitesManager: WayfindingSitesManager,
+    navState: SitesNavState
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .padding(16.dp)
+    ) {
+        // Show the current Organization only after the manager has loaded data.
+        if (navState is SitesNavState.UserView || navState is SitesNavState.OrganizationView) {
+            OrganizationMenu(
+                sitesManager = sitesManager,
+                modifier = Modifier.align(Alignment.TopEnd)
+            )
+        }
+    }
+}
+
+@Composable
+private fun OrganizationMenu(
+    sitesManager: WayfindingSitesManager,
+    modifier: Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val navState by sitesManager::navState
+
+    // Show the selected Organization name when Sites are loaded.
+    val currentOrgName =
+        (navState as? SitesNavState.OrganizationView)?.org?.name ?: "Select Organization"
+
+    Box(modifier = modifier) {
+        Surface(
+            tonalElevation = 4.dp,
+            shape = WayfindingCapsuleShape,
+            modifier = Modifier.clickable { expanded = true }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(currentOrgName, fontSize = 14.sp)
+            }
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            sitesManager.currentOrganizations.forEach { org ->
+                DropdownMenuItem(
+                    text = { Text(org.name) },
+                    onClick = {
+                        // Reload Sites for the Organization the user selected from the overlay.
+                        sitesManager.onOrganizationClick(org, null)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StateOverlay(navState: SitesNavState) {
+    if (navState is SitesNavState.Loading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(shape = RoundedCornerShape(16.dp)) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
+                    Text("Loading Sites...", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+private val WayfindingCapsuleShape = RoundedCornerShape(50)
+```
+
+### Show the overlays
+
+In an existing app, update your current map layout. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show the current Organization and let the user switch Organizations from the map.
+- Show a loading overlay while Organizations or Sites are loading.
+
+In a new app, replace the placeholder overlay comment at the end of `WayfindingSitesView(...)` `// Later steps add the organization menu, style controls, and site panel here.` with the following code example:
+
+```kotlin
+    Box(modifier = Modifier.fillMaxSize()) {
+        MapboxMap(
+            modifier = Modifier.fillMaxSize(),
+            mapViewportState = viewportState,
+            style = { MapStyle(style = selectedMapStyle.styleUri) },
+        ) {
+            // Later steps add the location puck, Site pins, and tap handling here.
+        }
+
+        // Show the current Organization and let the user switch Organizations from the map.
+        ControlsOverlay(
+            sitesManager = sitesManager,
+            navState = navState
+        )
+
+        // Show a loading overlay while Organizations or Sites are loading.
+        StateOverlay(navState = navState)
+    }
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/sites/SitesView.kt`.
+
+Test this step to validate that the map loads Organizations and filtered VPS-ready Sites for the selected Organization:
+
+- Build and run the app on your device.
+- Tap **Login**, then tap **Browse Sites**.
+- In Logcat, filter by `WayfindingApp` and confirm that `Loaded 1 organizations` or a similar organization-count message appears.
+- Confirm that `Loaded 1 VPS-ready Sites for ...` or a similar Site-count message appears for the selected Organization.
+- Confirm that an Organization menu appears in the top-right corner and lists the returned Organizations.
+- If your account has more than one Organization, select a different one and confirm that a new `Loaded ... VPS-ready Sites for ...` message appears.
+- Confirm that no Site pins appear yet. The next step renders the filtered VPS-ready Sites on the map.
+
+In the next step, you will render the filtered VPS-ready Sites as map pins, let the user select one, and open a site panel that starts VPS2.
+
+## Render Site pins and select a Site
+
+This step renders the filtered VPS-ready Sites on the map, recenters the camera when the user selects one, and opens a bottom sheet-style site panel that launches VPS2 with the selected anchor payload.
+
+This step has five parts:
+
+1. [Add a pin asset](#add-a-pin-asset) so the map has an icon for each VPS-ready Site.
+2. [Add pin and panel imports](#add-pin-and-panel-imports) so the map can render pins and a selected-Site panel.
+3. [Track the selected Site](#track-the-selected-site) so the map can recenter and print a unique checkpoint when the user taps a pin.
+4. [Render Site pins](#render-site-pins) so the map shows one pin for each VPS-ready Site.
+5. [Show the selected Site panel](#show-the-selected-site-panel) so the user can continue into VPS2 with the selected payload.
+
+### Add a pin asset
+
+In an existing app, update your current map resources. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Add a drawable resource for Site pins.
+
+In a new app, add the pin asset with the following steps:
+
+1. In Android Studio, expand `app/src/main/res`. If the `drawable` folder does not already exist, expand `res`, select **New > Android Resource Directory**, set **Resource type** to `drawable`, and click **OK**.
+
+2. Copy the binary PNG file `mapicon_poi_green.png` from the public `vps2e2e` sample at `vps2e2e/src/main/res/drawable/mapicon_poi_green.png` into `app/src/main/res/drawable/`.
+
+### Add pin and panel imports
+
+In an existing app, update your current map-screen imports. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Import the Compose animation and layout pieces used by the selected-Site panel.
+- Import the Mapbox APIs used by the location puck and pin annotations.
+- Import `Uri` so the app can pass the selected payload into the existing VPS2 route.
+
+In a new app, add the following imports to the top of `app/src/main/java/<your app package path>/WayfindingSitesView.kt` as shown in the following code example:
+
+```kotlin
+import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.painterResource
+import com.mapbox.maps.extension.compose.MapEffect
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotationInteractionsState
+import com.mapbox.maps.extension.compose.annotation.rememberIconImage
+import com.mapbox.maps.plugin.animation.MapAnimationOptions
+import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
+import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
+import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
+```
+
+### Track the selected Site
+
+In an existing app, update your current map-screen state. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Track which Site the user selected from the map.
+- Read the filtered `SiteWithVpsAsset` list from manager state.
+- Print a unique checkpoint when the map is ready to render Site pins.
+- Print a unique checkpoint when the user selects a Site.
+- Recenter the camera on the selected Site.
+
+In a new app, update `WayfindingSitesView.kt` with the following steps:
+
+1. Add the following selected-Site state and the filtered `sites` list directly below the existing `selectedMapStyle`:
+
+   ```kotlin
+   // Track the Site the user selected from the map.
+   var selectedSite by remember { mutableStateOf<SiteWithVpsAsset?>(null) }
+
+   // Read the Sites that the manager already filtered to Production VPS assets.
+   val sites = when (val state = navState) {
+       is SitesNavState.OrganizationView -> state.sitesWithAssets
+       else -> emptyList()
+   }
+   ```
+
+2. Add the following selected-Site Logcat and camera update below the existing `LaunchedEffect(sitesManager)` block:
+
+   ```kotlin
+   // Print a checkpoint when the map is ready to render Site pins.
+   LaunchedEffect(sites.size) {
+       android.util.Log.i("WayfindingApp", "Ready to render ${sites.size} Site pins")
+   }
+
+   // Print a checkpoint and recenter the map when the user selects a Site pin.
+   LaunchedEffect(selectedSite) {
+       selectedSite?.let {
+           android.util.Log.i("WayfindingApp", "Selected Site pin: ${it.site.name}")
+           viewportState.flyTo(
+               CameraOptions.Builder()
+                   .center(Point.fromLngLat(it.site.longitude, it.site.latitude))
+                   .zoom(16.0)
+                   .pitch(0.0)
+                   .padding(EdgeInsets(0.0, 0.0, 0.0, 0.0))
+                   .build(),
+               MapAnimationOptions.mapAnimationOptions { duration(1000) }
+           )
+       }
+   }
+   ```
+
+### Render Site pins
+
+In an existing app, update your current `MapboxMap(...)` content. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Enable the device location puck on the map.
+- Render one pin for each Site that has location data.
+- Update the selected Site when the user taps a pin.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingSitesView.kt` and replace the placeholder comment inside the existing `MapboxMap(...)` `// Later steps add map padding, the location puck, and Site pins here.` with the following code example:
+
+#### Expand to view the map pin rendering code
+
+```kotlin
+        MapEffect(Unit) { mapView ->
+            // Turn on the location puck and start following the device location.
+            mapView.setPadding(0, 0, 0, 0)
+            mapView.location.updateSettings {
+                locationPuck = createDefault2DPuck(withBearing = false)
+                enabled = true
+            }
+
+            viewportState.transitionToFollowPuckState(
+                followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
+                    .pitch(0.0)
+                    .padding(EdgeInsets(0.0, 0.0, 0.0, 0.0))
+                    .build(),
+                defaultTransitionOptions = DefaultViewportTransitionOptions.Builder().build()
+            )
+        }
+
+        val pinIcon = rememberIconImage(
+            key = "sitePin",
+            painter = painterResource(R.drawable.mapicon_poi_green)
+        )
+
+        sites.forEach { siteAsset ->
+            if (siteAsset.site.hasLocation) {
+                PointAnnotation(
+                    point = Point.fromLngLat(siteAsset.site.longitude, siteAsset.site.latitude),
+                    init = {
+                        iconImage = pinIcon
+                        interactionsState = PointAnnotationInteractionsState().onClicked {
+                            // Save the Site the user selected from the map pin.
+                            selectedSite = siteAsset
+                            true
+                        }
+                    }
+                )
+            }
+        }
+```
+
+### Show the selected Site panel
+
+In an existing app, update your current map layout. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show a selected-Site panel at the bottom of the map.
+- Pass the selected anchor payload into the existing VPS2 route.
+- Let the user dismiss the panel.
+
+In a new app, update `WayfindingSitesView.kt` with the following steps:
+
+1. Add the selected-Site panel directly below the existing `StateOverlay(navState = navState)` call inside the outer `Box(...)` in `WayfindingSitesView(...)` as shown in the following code example:
+
+   ```kotlin
+   Box(
+       modifier = Modifier
+           .align(Alignment.BottomCenter)
+           .padding(16.dp)
+   ) {
+       AnimatedVisibility(
+           visible = selectedSite != null,
+           enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+           exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+       ) {
+           selectedSite?.let { site ->
+               SiteInfoPanel(
+                   site = site,
+                   onNavigate = {
+                       // Pass the selected anchor payload into the existing VPS2 route.
+                       val anchorPayload = site.asset.vpsData?.anchorPayload.orEmpty()
+                       navHostController.navigate("$VPS2_ROUTE/${Uri.encode(anchorPayload)}")
+                   },
+                   onClose = { selectedSite = null }
+               )
+           }
+       }
+   }
+   ```
+
+2. Add the site-panel helper below the closing `}` of `WayfindingSitesView(...)` in the same file as shown in the following code example:
+
+   #### Expand to view SiteInfoPanel
+
+   ```kotlin
+   @Composable
+   private fun SiteInfoPanel(
+       site: SiteWithVpsAsset,
+       onNavigate: () -> Unit,
+       onClose: () -> Unit
+   ) {
+       Card(
+           shape = RoundedCornerShape(16.dp),
+           colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+           elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+           modifier = Modifier
+               .fillMaxWidth()
+               .heightIn(min = 120.dp)
+       ) {
+           Column(modifier = Modifier.padding(16.dp)) {
+               Row(verticalAlignment = Alignment.Top) {
+                   Column(modifier = Modifier.weight(1f)) {
+                       Text(site.site.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                       Text("VPS Status: Ready", color = Color.Gray, fontSize = 12.sp)
+                   }
+                   TextButton(onClick = onClose) {
+                       Text("Close")
+                   }
+               }
+               Spacer(modifier = Modifier.height(16.dp))
+               Button(
+                   onClick = onNavigate,
+                   modifier = Modifier.fillMaxWidth(),
+                   shape = RoundedCornerShape(8.dp),
+                   colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+               ) {
+                   Text("Localize in AR")
+               }
+           }
+       }
+   }
+   ```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/sites/SitesView.kt`.
+
+Test this step to validate that the map renders VPS-ready Site pins and opens the selected-Site panel:
+
+- Build and run the app on your device.
+- Tap **Login**, then tap **Browse Sites**.
+- In Logcat, filter by `WayfindingApp` and confirm that `Ready to render 1 Site pins` or a similar pin-count message appears.
+- Confirm that VPS-ready Sites appear as pins on the map.
+- Tap a pin and confirm that `Selected Site pin: ...` appears in Logcat.
+- Confirm that the map recenters on the selected Site.
+- Confirm that a selected-Site panel appears at the bottom and shows the selected Site name.
+- Tap **Localize in AR**, then confirm that the app navigates to the `VPS2 screen` and shows the selected anchor payload.
+
+In the next step, you will open the VPS2 screen, configure tracking, and start localization with the selected anchor payload.
+
+## Next steps
+
+Continue to [Start VPS2 localization](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-1/) to configure VPS2 tracking and start localization in the Kotlin sample.
+
+## Next steps
+
+Continue to [Start VPS2 localization](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-1/) to configure VPS2 tracking and start localization in the Kotlin sample.
+
+### Platform: swift
+
+# Select a Site and anchor payload
+
+This page implements the Select a Site and anchor payload step in the wayfinding workflow. In this workflow, the user browses Sites on a map, selects a Site with a Production VPS asset, and passes its anchor payload into the VPS2 screen. The Swift implementation on this page follows the same four responsibilities as the Kotlin page, but uses Apple's built-in `MapKit` instead of Mapbox. That means this page does not add an external map package or a map token. It still creates a full-screen map, loads Organizations and VPS-ready Sites from NSDK, renders Site pins, and passes the selected payload into the placeholder VPS2 route from the previous page.
+
+(image: After initializing a wayfinding app, select a Scaniverse Site and anchor payload.)
+
+*Figure:* Previous steps of the tutorial showed how to initialize the app and route the user into the Sites flow. This step shows how to implement Site selection, and next steps show VPS2 localization and AR wayfinding.
+
+## Files Overview
+
+The Select a Site and anchor payload step has four steps:
+
+1. [Create the map screen](#create-the-map-screen) so the Sites route opens a full-screen map instead of the earlier placeholder screen.
+2. [Manage Sites data and state](#manage-sites-data-and-state) so the app can load Organizations, filter VPS-ready Sites, and keep the current map state in memory.
+3. [Load and filter Sites for VPS2](#load-and-filter-sites-for-vps2) so the map can show loading and Organization controls while NSDK data loads.
+4. [Render Site pins and select a Site](#render-site-pins-and-select-a-site) so the user can tap a pin and pass its payload into the placeholder VPS2 route.
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone app shown in this tutorial, along with the names of the matching files in the Swift `vps2-e2e-swift` sample with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the map screen | `Sites/WayfindingSitesView.swift` SwiftUI map UI, camera state, and the placeholder VPS2 route hook | `Sites/SiteMapView.swift` |
+| Manage Sites data and state | `Sites/WayfindingSitesState.swift`, `Sites/WayfindingSitesService.swift`, and `Sites/WayfindingSitesManager.swift` state models, SDK loading, and selection state | `Sites/SiteAnnotationData.swift`, `Sites/SitesError.swift`, `Sites/SitesService.swift`, and `Sites/SiteMapViewModel.swift` |
+| Load and filter Sites for VPS2 | `Sites/WayfindingSitesManager.swift` loads Organizations, selects the current Organization, and filters Sites for Production VPS assets | `Sites/SiteMapViewModel.swift` |
+| Render Site pins and select a Site | `Sites/WayfindingSitesView.swift` and `Sites/WayfindingSiteInfoPanel.swift` render map markers, a selected-Site panel, and placeholder VPS2 navigation | `Sites/SiteMapView.swift` and `Sites/SiteInfoPanel.swift` |
+
+## Create the map screen
+
+This step creates the map-based Sites screen. Unlike Kotlin, the Swift sample uses Apple's built-in `MapKit`, so there is no package-install or map-token step on this page. This step creates `Sites/WayfindingSitesView.swift` and routes the app into that screen so the next steps can load Organizations, render pins, and launch VPS2 from the map.
+
+This step has two parts:
+
+1. [Create the Sites map screen](#create-the-sites-map-screen) so the Sites route opens a full-screen SwiftUI map.
+2. [Open the map screen](#open-the-map-screen) so the app uses `WayfindingSitesView.swift` instead of the earlier placeholder Sites screen.
+
+### Create the Sites map screen
+
+In an existing app, update your current Sites or destination selection screen so it opens a full-screen map. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The map screen should:
+
+- Receive the shared `NSDKSession`.
+- Receive the closure that continues into the placeholder VPS2 route.
+- Display a full-screen map.
+- Start from a default region and use the user's location when it is available.
+- Reserve space for the overlays and Site-selection UI that later steps add.
+
+In a new app, create a `Sites` group, then create `Sites/WayfindingSitesView.swift` with the following contents:
+
+#### Expand to view WayfindingSitesView.swift
+
+```swift
+import SwiftUI
+import MapKit
+import NSDK
+
+struct WayfindingSitesView: View {
+    // Reuse the shared session that the landing flow already created.
+    let nsdkSession: NSDKSession
+    // Continue into the placeholder VPS2 route from the previous page.
+    let onNavigateToVPS2: (_ siteName: String, _ payload: String, _ nsdkSession: NSDKSession) -> Void
+
+    // Start at the user location and fall back to a default region until the map has Site data.
+    @State private var cameraPosition = MapCameraPosition.userLocation(
+        fallback: .region(WayfindingSitesDefaultRegion)
+    )
+    // Keep local map style state in the view.
+    @State private var selectedMapStyle: WayfindingMapStyleOption = .standard
+
+    var body: some View {
+        ZStack {
+            // Start with only the base map. Later steps add overlays and the selected-Site panel.
+            mapLayer
+            // Later sections add the Organization menu, loading overlay, and selected-Site panel here.
+        }
+        .navigationTitle("Browse Sites")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var mapLayer: some View {
+        // Show the user location immediately, even before Site data is loaded.
+        Map(position: $cameraPosition) {
+            UserAnnotation()
+        }
+        .mapStyle(selectedMapStyle.mapStyle)
+        .ignoresSafeArea()
+    }
+}
+
+private let WayfindingSitesDefaultRegion = MKCoordinateRegion(
+    center: CLLocationCoordinate2D(
+        latitude: 37.7955374600894,
+        longitude: -122.39360033247367
+    ),
+    span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08)
+)
+
+private enum WayfindingMapStyleOption: CaseIterable, Identifiable {
+    case standard
+    case imagery
+    case hybrid
+
+    var id: String { title }
+
+    var title: String {
+        switch self {
+        case .standard:
+            return "Standard"
+        case .imagery:
+            return "Satellite"
+        case .hybrid:
+            return "Hybrid"
+        }
+    }
+
+    var mapStyle: MapStyle {
+        switch self {
+        case .standard:
+            return .standard
+        case .imagery:
+            return .imagery
+        case .hybrid:
+            return .hybrid
+        }
+    }
+}
+```
+
+In the `vps2-e2e-swift` sample, the equivalent implementation starts in `Vps2E2eSample/Vps2E2eSample/Sites/SiteMapView.swift`.
+
+### Open the map screen
+
+In an existing app, update your routing so the Sites route opens your new map screen instead of the earlier placeholder screen. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Open `WayfindingSitesView(...)` from the Sites route.
+- Keep using the placeholder VPS2 route from the previous page.
+- Remove the earlier placeholder Sites screen from the previous page.
+
+In a new app, update `Landing/WayfindingLandingView.swift` with the following steps:
+
+1. In the existing `.navigationDestination(for: WayfindingNavigationStep.self)` block, replace:
+
+   ```swift
+   self.destinationWayfindingSitesPlaceholderView(nsdkSession: nsdkSession)
+   ```
+
+   with:
+
+   ```swift
+   self.destinationWayfindingSitesView(nsdkSession: nsdkSession)
+   ```
+
+2. Replace the placeholder `private func destinationWayfindingSitesPlaceholderView(...) -> some View` block with a real Sites destination builder:
+
+   ```swift
+   private func destinationWayfindingSitesView(
+       nsdkSession: NSDKSession
+   ) -> some View {
+       WayfindingSitesView(
+           nsdkSession: nsdkSession,
+           // Reuse the existing payload-aware VPS2 route from the landing page.
+           onNavigateToVPS2: { siteName, payload, nsdkSession in
+               self.launchWayfindingARView(
+                   siteName: siteName,
+                   payload: payload,
+                   nsdkSession: nsdkSession
+               )
+           }
+       )
+   }
+   ```
+
+Test this step to validate that the Sites route opens the new full-screen map screen:
+
+- Build and run the app to reach `Browse Sites`.
+- Confirm that `WayfindingLanding launched Sites flow` appears in Xcode's console.
+- Confirm that the app opens a full-screen map instead of the earlier button-based Sites screen.
+- Confirm that the map opens near your current location or at the default region from `WayfindingSitesDefaultRegion`.
+
+In the next step, you will create the state models, auth retry helper, and Sites manager that load Organizations and filtered VPS-ready Sites for the map.
+
+## Manage Sites data and state
+
+This step creates the state and logic layer that drives the map screen. The manager owns the Sites session, tracks the current navigation state, keeps the current Organizations in memory for the map overlay, and updates the UI based on SDK responses.
+
+This step has three parts:
+
+1. [Create Sites state](#create-sites-state) so the map screen can represent Organizations, filtered Sites, loading, and errors.
+2. [Create an auth retry helper](#create-an-auth-retry-helper) so Sites requests can wait for authorization and retry once on failure.
+3. [Create a Sites manager](#create-a-sites-manager) so the app can load Organizations and filtered VPS-ready Sites from NSDK.
+
+### Create Sites state
+
+In an existing app, update your current state models so the map can represent the filtered Sites it renders and the loading states it shows. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Represent Sites that contain a valid VPS2 payload.
+- Represent the loading, Organization, and error states used by the map screen.
+- Keep the error-mapping logic outside the SwiftUI view.
+
+In a new app, create `Sites/WayfindingSitesState.swift` with the following contents:
+
+#### Expand to view WayfindingSitesState.swift
+
+```swift
+import Foundation
+import CoreLocation
+import NSDK
+
+// Represent one map pin together with the Production VPS payload the app can use later.
+struct WayfindingSiteAnnotationData: Identifiable {
+    let id: String
+    let siteName: String
+    let canNavigate: Bool
+    let scanCount: Int
+    let vpsAssetVersionCount: Int
+    let coordinate: CLLocationCoordinate2D
+    let payload: String
+}
+
+// Represent the two loading phases the map screen shows.
+enum WayfindingSitesLoadingContext {
+    case organizations
+    case sites(organizationName: String)
+}
+
+// Represent the current state of the Sites map flow.
+enum WayfindingSitesNavState {
+    case uninitialized
+    case loading(WayfindingSitesLoadingContext)
+    case userView(organizations: [OrganizationInfo], warning: String? = nil)
+    case organizationView(
+        organization: OrganizationInfo,
+        sites: [WayfindingSiteAnnotationData],
+        warning: String? = nil
+    )
+    case error(message: String)
+}
+
+// Map SDK and network failures into one error type the SwiftUI view can render.
+enum WayfindingSitesError: Error {
+    case missingCredentials
+    case authorizationRequired
+    case authorizationTimeout
+    case networkError
+    case httpForbidden
+    case httpNotFound
+    case httpTooManyRequests
+    case httpServerError
+    case sdkError(code: String, message: String)
+    case unknown(message: String)
+
+    var code: String {
+        switch self {
+        case .missingCredentials:
+            return "MISSING_CREDENTIALS"
+        case .authorizationRequired:
+            return "AUTH_REQUIRED"
+        case .authorizationTimeout:
+            return "AUTH_TIMEOUT"
+        case .networkError:
+            return "NETWORK_ERROR"
+        case .httpForbidden:
+            return "HTTP_FORBIDDEN"
+        case .httpNotFound:
+            return "HTTP_NOT_FOUND"
+        case .httpTooManyRequests:
+            return "HTTP_TOO_MANY_REQUESTS"
+        case .httpServerError:
+            return "HTTP_SERVER_ERROR"
+        case .sdkError(let code, _):
+            return code
+        case .unknown:
+            return "UNKNOWN_ERROR"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .missingCredentials:
+            return "Authentication is required. Please sign in."
+        case .authorizationRequired:
+            return "Authorization is not ready. Please retry."
+        case .authorizationTimeout:
+            return "Authorization timed out. Please retry."
+        case .networkError:
+            return "A network or authentication error occurred. Please try again."
+        case .httpForbidden:
+            return "Access was forbidden. Please check your credentials."
+        case .httpNotFound:
+            return "The requested resource was not found."
+        case .httpTooManyRequests:
+            return "Too many requests. Please wait a moment and try again."
+        case .httpServerError:
+            return "A server error occurred. Please try again later."
+        case .sdkError(_, let message):
+            return message
+        case .unknown(let message):
+            return message
+        }
+    }
+
+    var displayText: String {
+        "[\(code)] \(message)"
+    }
+
+    static func from(_ error: Error) -> WayfindingSitesError {
+        if let sitesError = error as? WayfindingSitesError {
+            return sitesError
+        }
+
+        if let authRetryError = error as? AuthRetryError {
+            switch authRetryError {
+            case .authorizationTimeout:
+                return .authorizationTimeout
+            }
+        }
+
+        if let nsdkError = error as? NSDKError, nsdkError == .invalidOperation {
+            return .authorizationRequired
+        }
+
+        if let sitesResultError = error as? SitesResult.Error {
+            switch sitesResultError {
+            case .networkError:
+                return .networkError
+            case .httpForbidden:
+                return .httpForbidden
+            case .httpNotFound:
+                return .httpNotFound
+            case .httpTooManyRequests:
+                return .httpTooManyRequests
+            case .httpServerError:
+                return .httpServerError
+            case .invalidRequest:
+                return .sdkError(
+                    code: "INVALID_REQUEST",
+                    message: "The request was invalid."
+                )
+            case .parseError:
+                return .sdkError(
+                    code: "PARSE_ERROR",
+                    message: "Failed to parse the server response."
+                )
+            case .unexpectedError:
+                return .sdkError(
+                    code: "UNEXPECTED_ERROR",
+                    message: "An unexpected error occurred."
+                )
+            case .none:
+                return .sdkError(
+                    code: "SDK_NO_ERROR",
+                    message: "No error reported."
+                )
+            }
+        }
+
+        let nsError = error as NSError
+        if !nsError.localizedDescription.isEmpty {
+            return .unknown(message: nsError.localizedDescription)
+        }
+
+        return .unknown(message: "Unexpected error occurred.")
+    }
+}
+```
+
+In the `vps2-e2e-swift` sample, the equivalent implementations live in `Vps2E2eSample/Vps2E2eSample/Sites/SiteAnnotationData.swift` and `Vps2E2eSample/Vps2E2eSample/Sites/SitesError.swift`.
+
+### Create an auth retry helper
+
+In an existing app, update your current auth or networking helper layer so Sites requests can wait for authorization and retry once on failure. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Wait for `NSDKSession` to become authorized before running Sites requests.
+- Retry a failed Sites request once after a short delay.
+- Keep the retry logic outside `WayfindingSitesManager`.
+
+In a new app, create `Auth/AuthRetryHelper.swift` with the following contents:
+
+#### Expand to view AuthRetryHelper.swift
+
+```swift
+import Foundation
+import NSDK
+
+@MainActor
+final class AuthRetryHelper {
+    private let session: NSDKSession
+    private let initialAuthWaitSeconds: TimeInterval = 30.0
+    private let retryDelaySeconds: TimeInterval = 1.0
+
+    init(session: NSDKSession) {
+        self.session = session
+    }
+
+    func withRetry<T>(_ operation: () async throws -> T) async throws -> T {
+        // Wait for the session to become authorized before running Sites requests.
+        try await waitForAuthorizationIfNeeded(timeout: initialAuthWaitSeconds)
+        do {
+            return try await operation()
+        } catch {
+            // Retry one transient failure after a short delay.
+            print("[AuthRetryHelper] Operation failed: \(error), retrying once...")
+            try await Task.sleep(
+                nanoseconds: UInt64(retryDelaySeconds * 1_000_000_000)
+            )
+            return try await operation()
+        }
+    }
+
+    private func waitForAuthorizationIfNeeded(timeout: TimeInterval) async throws {
+        guard !session.isAuthorized else { return }
+
+        // Poll until authorization is ready or the timeout is reached.
+        let startTime = Date()
+        while !session.isAuthorized {
+            try Task.checkCancellation()
+            if Date().timeIntervalSince(startTime) > timeout {
+                throw AuthRetryError.authorizationTimeout
+            }
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+        }
+    }
+}
+
+enum AuthRetryError: Error, LocalizedError {
+    case authorizationTimeout
+
+    var errorDescription: String? {
+        switch self {
+        case .authorizationTimeout:
+            return "Timeout waiting for NSDK session authorization"
+        }
+    }
+}
+```
+
+In the `vps2-e2e-swift` sample, the equivalent implementation lives in `Vps2E2eSample/Vps2E2eSample/Auth/AuthRetryHelper.swift`.
+
+### Create a Sites manager
+
+In an existing app, update your current data or manager layer so it acquires a Sites session, owns the current Organizations and filtered Sites, and exposes the functions the map screen needs. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Acquire a Sites session from `NSDKSession`.
+- Track navigation state.
+- Keep the current Organizations and selected Organization available for the map overlay.
+- Expose functions that load Organizations, select an Organization, retry a failed request, and track the selected Site.
+- Create the shared Sites manager when the map screen opens.
+
+In a new app, update the Sites manager flow with the following steps:
+
+1. Create `Sites/WayfindingSitesService.swift` to isolate NSDK Sites requests from the view layer:
+
+   #### Expand to view WayfindingSitesService.swift
+
+   ```swift
+   import Foundation
+   import NSDK
+
+   // Keep the NSDK Sites calls out of the SwiftUI view and manager state transitions.
+   @MainActor
+   protocol WayfindingSitesServiceProtocol {
+       func fetchOrganizations() async throws -> [OrganizationInfo]
+       func fetchSites(for organizationId: String) async throws -> [SiteInfo]
+       func fetchAssets(for siteId: String) async throws -> [AssetInfo]
+   }
+
+   @MainActor
+   final class WayfindingSitesService: WayfindingSitesServiceProtocol {
+       private let sitesSession: NSDKSitesSession
+       private let retryHelper: AuthRetryHelper
+
+       init(nsdkSession: NSDKSession, retryHelper: AuthRetryHelper) {
+           self.sitesSession = nsdkSession.acquireSitesSession()
+           self.retryHelper = retryHelper
+       }
+
+       func fetchOrganizations() async throws -> [OrganizationInfo] {
+           // Load the Organizations available to the current access token from the Sites session.
+           let orgResult = try await retryHelper.withRetry {
+               try await self.sitesSession.requestSelfOrganizationInfo()
+           }
+
+           return orgResult.organizations
+       }
+
+       func fetchSites(for organizationId: String) async throws -> [SiteInfo] {
+           // Load all Sites for the selected Organization.
+           let siteResult = try await retryHelper.withRetry {
+               try await self.sitesSession.requestSitesForOrganization(orgId: organizationId)
+           }
+
+           return siteResult.sites
+       }
+
+       func fetchAssets(for siteId: String) async throws -> [AssetInfo] {
+           // Load the assets needed to determine whether the Site supports VPS2 navigation.
+           let assetResult = try await retryHelper.withRetry {
+               try await self.sitesSession.requestAssetsForSite(siteId: siteId)
+           }
+
+           return assetResult.assets
+       }
+   }
+   ```
+
+2. Create `Sites/WayfindingSitesManager.swift` to load Organizations, filter VPS-ready Sites, and track the selected Site:
+
+   #### Expand to view WayfindingSitesManager.swift
+
+   ```swift
+   import Foundation
+   import Observation
+   import NSDK
+
+   @Observable
+   @MainActor
+   final class WayfindingSitesManager {
+       enum RetryScope {
+           case organizations
+           case sites
+       }
+
+       private let sitesService: WayfindingSitesServiceProtocol
+       private var retryScope: RetryScope = .organizations
+       private var loadTask: Task<Void, Never>?
+
+       private(set) var navState: WayfindingSitesNavState = .uninitialized
+       private(set) var currentOrganizations: [OrganizationInfo] = []
+       private(set) var selectedOrganization: OrganizationInfo?
+       private(set) var selectedSite: WayfindingSiteAnnotationData?
+
+       init(sitesService: WayfindingSitesServiceProtocol) {
+           self.sitesService = sitesService
+       }
+
+       var sites: [WayfindingSiteAnnotationData] {
+           switch navState {
+           case .organizationView(_, let sites, _):
+               return sites
+           default:
+               return []
+           }
+       }
+
+       func loadInitialData() {
+           // Avoid starting another request while the current one is still loading.
+           if case .loading = navState { return }
+
+           retryScope = .organizations
+           navState = .loading(.organizations)
+           loadTask?.cancel()
+
+           loadTask = Task { @MainActor in
+               do {
+                   // Load Organizations first, then pick the first one as the initial map context.
+                   let organizations = try await sitesService.fetchOrganizations()
+                   currentOrganizations = organizations
+                   print("Loaded \(organizations.count) organizations")
+
+                   guard let firstOrganization = organizations.first else {
+                       selectedOrganization = nil
+                       selectedSite = nil
+                       navState = .userView(
+                           organizations: organizations,
+                           warning: "No organizations available"
+                       )
+                       return
+                   }
+
+                   selectedOrganization = firstOrganization
+                   try await performSiteLoad(
+                       for: firstOrganization,
+                       using: sitesService
+                   )
+               } catch is CancellationError {
+                   return
+               } catch {
+                   navState = .error(
+                       message: WayfindingSitesError.from(error).displayText
+                   )
+               }
+           }
+       }
+
+       func selectOrganization(_ organization: OrganizationInfo) {
+           // Skip redundant reloads when the user taps the current Organization.
+           guard selectedOrganization?.id != organization.id else { return }
+           selectedOrganization = organization
+           loadSites(for: organization)
+       }
+
+       func selectSite(_ site: WayfindingSiteAnnotationData) {
+           // Save the selected Site so the panel and camera can react to it.
+           selectedSite = site
+           print("Selected Site pin: \(site.siteName)")
+       }
+
+       func clearSelectedSite() {
+           selectedSite = nil
+       }
+
+       func retry() {
+           // Retry the failed phase instead of always reloading everything from scratch.
+           switch retryScope {
+           case .organizations:
+               loadInitialData()
+           case .sites:
+               guard let selectedOrganization else {
+                   loadInitialData()
+                   return
+               }
+               loadSites(for: selectedOrganization)
+           }
+       }
+
+       private func loadSites(for organization: OrganizationInfo) {
+           loadTask?.cancel()
+           loadTask = Task { @MainActor in
+               do {
+                   // Reload the filtered Site list for the selected Organization.
+                   try await performSiteLoad(
+                       for: organization,
+                       using: sitesService
+                   )
+               } catch is CancellationError {
+                   return
+               } catch {
+                   navState = .error(
+                       message: WayfindingSitesError.from(error).displayText
+                   )
+               }
+           }
+       }
+
+       private func performSiteLoad(
+           for organization: OrganizationInfo,
+           using service: WayfindingSitesServiceProtocol
+       ) async throws {
+           retryScope = .sites
+           selectedOrganization = organization
+           selectedSite = nil
+           navState = .loading(.sites(organizationName: organization.name))
+
+           // Load and filter the Sites before the map tries to render them.
+           let annotations = try await fetchAnnotations(
+               for: organization,
+               using: service
+           )
+
+           print("Loaded \(annotations.count) VPS-ready Sites for \(organization.name)")
+
+           if annotations.isEmpty {
+               navState = .organizationView(
+                   organization: organization,
+                   sites: [],
+                   warning: "No Sites with Production VPS asset found for \(organization.name)"
+               )
+           } else {
+               navState = .organizationView(
+                   organization: organization,
+                   sites: annotations,
+                   warning: nil
+               )
+           }
+       }
+
+       private func fetchAnnotations(
+           for organization: OrganizationInfo,
+           using service: WayfindingSitesServiceProtocol
+       ) async throws -> [WayfindingSiteAnnotationData] {
+           // Only Sites with coordinates can appear on the map.
+           let allSites = try await service.fetchSites(for: organization.id)
+           let locatedSites = allSites.filter { $0.location != nil }
+
+           guard !locatedSites.isEmpty else {
+               return []
+           }
+
+           return try await buildAnnotations(
+               from: locatedSites,
+               using: service
+           )
+       }
+
+       private func buildAnnotations(
+           from sites: [SiteInfo],
+           using service: WayfindingSitesServiceProtocol
+       ) async throws -> [WayfindingSiteAnnotationData] {
+           var annotations: [WayfindingSiteAnnotationData] = []
+
+           try await withThrowingTaskGroup(of: WayfindingSiteAnnotationData?.self) { group in
+               for site in sites {
+                   group.addTask {
+                       try Task.checkCancellation()
+                       guard let coordinate = site.location else { return nil }
+
+                       // Keep only Production VPS payloads that can launch the next step.
+                       let assets = try await service.fetchAssets(for: site.id)
+                       let productionPayload = assets.first { asset in
+                           asset.deployment == .production && asset.vpsData != nil
+                       }?.vpsData?.anchorPayload ?? ""
+
+                       guard !productionPayload.isEmpty else {
+                           return nil
+                       }
+
+                       let vpsAssetVersionCount = assets.filter { $0.vpsData != nil }.count
+                       let scanCount = Set(assets.flatMap(\.sourceScanIds)).count
+
+                       return WayfindingSiteAnnotationData(
+                           id: site.id,
+                           siteName: site.name,
+                           canNavigate: true,
+                           scanCount: scanCount,
+                           vpsAssetVersionCount: vpsAssetVersionCount,
+                           coordinate: coordinate,
+                           payload: productionPayload
+                       )
+                   }
+               }
+
+               for try await annotation in group {
+                   if let annotation {
+                       annotations.append(annotation)
+                   }
+               }
+           }
+
+           try Task.checkCancellation()
+
+           return annotations.sorted {
+               $0.siteName.localizedCaseInsensitiveCompare($1.siteName) == .orderedAscending
+           }
+       }
+   }
+   ```
+
+3. Update `Sites/WayfindingSitesView.swift` to create one shared `WayfindingSitesManager` when the map screen opens. Replace the opening property block in `struct WayfindingSitesView: View`, starting at `let nsdkSession: NSDKSession` through the existing `@State private var selectedMapStyle...` line, with:
+
+   ```swift
+   // Reuse the shared session that the landing flow already created.
+   let nsdkSession: NSDKSession
+   // Continue into the placeholder VPS2 route from the previous page.
+   let onNavigateToVPS2: (_ siteName: String, _ payload: String, _ nsdkSession: NSDKSession) -> Void
+
+   // Create one shared Sites manager for this screen instance.
+   @State private var sitesManager: WayfindingSitesManager
+   // Start at the user location and fall back to a default region until the map has Site data.
+   @State private var cameraPosition = MapCameraPosition.userLocation(
+       fallback: .region(WayfindingSitesDefaultRegion)
+   )
+   // Keep local map style state in the view.
+   @State private var selectedMapStyle: WayfindingMapStyleOption = .standard
+
+   @MainActor
+   init(
+       nsdkSession: NSDKSession,
+       onNavigateToVPS2: @escaping (_ siteName: String, _ payload: String, _ nsdkSession: NSDKSession) -> Void
+   ) {
+       self.nsdkSession = nsdkSession
+       self.onNavigateToVPS2 = onNavigateToVPS2
+
+       // Build the retry helper, service, and manager once when the map screen opens.
+       let retryHelper = AuthRetryHelper(session: nsdkSession)
+       let sitesService = WayfindingSitesService(
+           nsdkSession: nsdkSession,
+           retryHelper: retryHelper
+       )
+       _sitesManager = State(
+           initialValue: WayfindingSitesManager(sitesService: sitesService)
+       )
+       print("WayfindingSitesManager created")
+   }
+   ```
+
+In the `vps2-e2e-swift` sample, the equivalent implementations live in `Vps2E2eSample/Vps2E2eSample/Sites/SitesService.swift` and `Vps2E2eSample/Vps2E2eSample/Sites/SiteMapViewModel.swift`.
+
+Test this step to validate that the map flow creates the shared Sites manager and state layer:
+
+- Build and run the app to reach `Browse Sites`.
+- Confirm that the app still opens the full-screen map from the previous step.
+- In Xcode's console, confirm that `WayfindingSitesManager created` appears after the map screen opens.
+
+In the next step, you will connect the manager state to the map so the app can render Organization controls and load filtered VPS-ready Sites.
+
+## Load and filter Sites for VPS2
+
+This step connects the manager state to the map screen so the app can load Organizations, select one of them by default, show a loading overlay while Sites are fetched, and let the user switch Organizations from the map overlay.
+
+This step has two parts:
+
+1. [Observe Sites state](#observe-sites-state) so the map screen can react to the shared manager.
+2. [Add overlay helpers](#add-overlay-helpers) so the map screen can keep loading and Organization UI out of the main map body.
+
+### Observe Sites state
+
+In an existing app, update your current map screen so it reads from the shared Sites manager and starts loading Organizations when the map appears. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Use the shared Sites manager that was created in the previous section.
+- Start loading Organizations when the map screen opens.
+- Keep the current `WayfindingSitesNavState` available to the map overlays.
+
+In a new app, update `Sites/WayfindingSitesView.swift` by replacing `var body: some View` with:
+
+```swift
+var body: some View {
+    ZStack {
+        // Keep the base map behind the overlays and selected-Site panel.
+        mapLayer
+        // Show the current Organization and let the user switch it.
+        WayfindingSitesControlsOverlay(sitesManager: sitesManager)
+        // Show loading, warning, and retry states above the map.
+        WayfindingSitesStateOverlay(
+            navState: sitesManager.navState,
+            onRetry: { sitesManager.retry() }
+        )
+    }
+    .navigationTitle("Browse Sites")
+    .navigationBarTitleDisplayMode(.inline)
+    .task {
+        sitesManager.loadInitialData()
+    }
+}
+```
+
+This `body` replacement already shows both overlay helpers above the map:
+
+- `WayfindingSitesControlsOverlay(sitesManager: sitesManager)`
+- `WayfindingSitesStateOverlay(navState: sitesManager.navState, onRetry: { sitesManager.retry() })`
+
+### Add overlay helpers
+
+In an existing app, update your current map overlay UI so it can render the current Organization and loading or error state outside the map body. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Keep the Organization menu separate from the map body.
+- Keep the loading and retry overlay separate from the map body.
+- Show the current Organization and let the user switch Organizations.
+- Show loading, warning, and retry UI while NSDK data loads.
+
+In a new app, add the overlay helpers below `WayfindingSitesView` in `Sites/WayfindingSitesView.swift`:
+
+#### Expand to view the overlay helpers
+
+```swift
+private struct WayfindingSitesControlsOverlay: View {
+    let sitesManager: WayfindingSitesManager
+
+    var body: some View {
+        VStack {
+            HStack {
+                Spacer()
+                // Show the Organization menu only after Organizations have loaded.
+                if !sitesManager.currentOrganizations.isEmpty {
+                    organizationMenu
+                }
+            }
+            .padding(.top, 8)
+            .padding(.horizontal, 16)
+
+            Spacer()
+        }
+        .ignoresSafeArea()
+    }
+
+    private var organizationMenu: some View {
+        Menu {
+            ForEach(sitesManager.currentOrganizations, id: \.id) { organization in
+                Button {
+                    // Reload the map for the Organization the user selected.
+                    sitesManager.selectOrganization(organization)
+                } label: {
+                    HStack {
+                        Text(organization.name)
+                        if organization.id == sitesManager.selectedOrganization?.id {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "building.2")
+                Text(sitesManager.selectedOrganization?.name ?? "Organization")
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.background, in: Capsule())
+        }
+    }
+}
+
+private struct WayfindingSitesStateOverlay: View {
+    let navState: WayfindingSitesNavState
+    let onRetry: () -> Void
+
+    var body: some View {
+        switch navState {
+        case .uninitialized:
+            EmptyView()
+        case .loading(let context):
+            // Dim the map while Organizations or Sites are loading.
+            ZStack {
+                Color.black.opacity(0.28).ignoresSafeArea()
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.large)
+                    Text(loadingText(for: context))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(18)
+                .background(.black.opacity(0.56))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+        case .userView(_, let warning):
+            if let warning {
+                warningCard(text: warning, onRetry: nil)
+            } else {
+                EmptyView()
+            }
+        case .organizationView(_, let sites, let warning):
+            if sites.isEmpty, let warning {
+                warningCard(text: warning, onRetry: nil)
+            } else {
+                EmptyView()
+            }
+        case .error(let message):
+            // Show one retry action when the request failed.
+            warningCard(text: message, onRetry: onRetry)
+        }
+    }
+
+    private func loadingText(for context: WayfindingSitesLoadingContext) -> String {
+        switch context {
+        case .organizations:
+            return "Loading Organizations..."
+        case .sites(let organizationName):
+            return "Loading Sites for \(organizationName)..."
+        }
+    }
+
+    @ViewBuilder
+    private func warningCard(
+        text: String,
+        onRetry: (() -> Void)?
+    ) -> some View {
+        VStack(spacing: 12) {
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            if let onRetry {
+                Button("Retry") {
+                    onRetry()
+                }
+                .font(.system(size: 16, weight: .semibold))
+            }
+        }
+        .padding(20)
+        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.16), radius: 12, y: 4)
+        .padding(24)
+    }
+}
+```
+
+Test this step to validate that the map loads Organizations and filtered VPS-ready Sites for the selected Organization:
+
+- Build and run the app to reach `Browse Sites`.
+- In Xcode's console, confirm that `Loaded ... organizations` and `Loaded ... VPS-ready Sites for ...` appear.
+- Confirm that an Organization menu appears in the top-right corner and lists the returned Organizations.
+
+In the next step, you will render the filtered VPS-ready Sites as map pins, let the user select one, and open a Site panel that starts VPS2.
+
+## Render Site pins and select a Site
+
+This step renders the filtered VPS-ready Sites on the map, recenters the camera when the user selects one, and opens a bottom-sheet-style Site panel that launches the placeholder VPS2 route with the selected anchor payload. Unlike Kotlin, the SwiftUI `Map` can use built-in `Marker` symbols, so this section does not add a separate pin asset file.
+
+This step has four parts:
+
+1. [Track the selected Site](#track-the-selected-site) so the map can recenter and print a unique checkpoint when the user taps a pin.
+2. [Render Site pins](#render-site-pins) so the map shows one pin for each VPS-ready Site.
+3. [Create the selected-Site panel](#create-the-selected-site-panel) so the user can continue into VPS2 with the selected payload.
+4. [Show the selected-Site panel](#show-the-selected-site-panel) so the user can continue into VPS2 from the map.
+
+### Track the selected Site
+
+In an existing app, update your current map-screen state so it tracks which Site the user selected from the map and recenters the camera on it. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Track which Site the user selected from the map.
+- Print a unique checkpoint when the map is ready to render Site pins.
+- Center the map on the first loaded Site so the pins are visible.
+- Print a unique checkpoint when the user selects a Site.
+- Recenter the camera on the selected Site.
+
+In a new app, update `Sites/WayfindingSitesView.swift` with the following steps:
+
+1. Add the selected-Site state directly below the existing `@State private var selectedMapStyle...` line:
+
+   ```swift
+   // Track which map marker the user last selected.
+   @State private var selectedSiteId: String?
+   ```
+
+2. Add the ready-to-render checkpoint directly after the existing `.task { sitesManager.loadInitialData() }` modifier in `var body: some View`:
+
+```swift
+.onChange(of: sitesManager.sites.count) { _, newCount in
+    // Print one checkpoint when the filtered Site list changes.
+    print("Ready to render \(newCount) Site pins")
+
+    // Center the map on the first loaded Site so the user can immediately see the pins.
+    if selectedSiteId == nil, let firstSite = sitesManager.sites.first {
+        cameraPosition = .region(
+            MKCoordinateRegion(
+                   center: firstSite.coordinate,
+                   span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
+               )
+           )
+       }
+   }
+```
+
+### Render Site pins
+
+In an existing app, update your current `Map` content so it shows the filtered Sites from the shared manager and reacts to the selected Site. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Render one marker for each Site that has a Production VPS payload.
+- Update the selected Site when the user taps a marker.
+- Recenter the map on the selected Site.
+
+In a new app, replace the current `Map(...)` block inside `mapLayer` in `Sites/WayfindingSitesView.swift` with:
+
+```swift
+Map(position: $cameraPosition, selection: $selectedSiteId) {
+    ForEach(sitesManager.sites) { site in
+        // Render one marker for each Site that has a Production VPS payload.
+        Marker(
+            site.siteName,
+            systemImage: "mappin.and.ellipse",
+            coordinate: site.coordinate
+        )
+        .tint(.green)
+        .tag(site.id)
+    }
+
+    UserAnnotation()
+}
+.mapStyle(selectedMapStyle.mapStyle)
+.ignoresSafeArea()
+.onChange(of: selectedSiteId) { _, newId in
+    if let newId, let site = sitesManager.sites.first(where: { $0.id == newId }) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            // Save the selection and recenter the map on the Site the user tapped.
+            sitesManager.selectSite(site)
+            cameraPosition = .camera(
+                MapCamera(centerCoordinate: site.coordinate, distance: 500)
+            )
+        }
+    } else {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            // Clear the selected Site when the user dismisses the marker selection.
+            sitesManager.clearSelectedSite()
+        }
+    }
+}
+```
+
+### Create the selected-Site panel
+
+In an existing app, update your current map layout so it can show a selected-Site panel at the bottom of the map. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show the selected Site name.
+- Show whether a Production VPS payload is ready.
+- Use the selected payload to continue into the placeholder VPS2 route.
+
+In a new app, create `Sites/WayfindingSiteInfoPanel.swift` with the following contents:
+
+#### Expand to view WayfindingSiteInfoPanel.swift
+
+```swift
+import SwiftUI
+
+struct WayfindingSiteInfoPanel: View {
+    let site: WayfindingSiteAnnotationData
+    let onNavigate: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                Button {
+                    // Dismiss the panel and clear the current Site selection.
+                    onClose()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                        .font(.title2)
+                }
+            }
+            .padding(.top, 12)
+            .padding(.trailing, 12)
+
+            Text(site.siteName)
+                .font(.system(size: 18, weight: .semibold))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .padding(.horizontal, 16)
+
+            // Show the VPS asset count that made this Site eligible for the map.
+            Text("VPS asset versions: \(site.vpsAssetVersionCount)")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.secondary)
+                .padding(.top, 8)
+
+            // Continue into the placeholder VPS2 route with the selected payload.
+            Button {
+                onNavigate()
+            } label: {
+                Label("Localize in AR", systemImage: "location.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.top, 16)
+            .padding(.horizontal, 16)
+        }
+        .padding(.bottom, 16)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: .black.opacity(0.2), radius: 14, y: 4)
+    }
+}
+```
+
+### Show the selected-Site panel
+
+In an existing app, update your current map layout so it shows the selected-Site panel and continues into the placeholder VPS2 route from the previous page. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show a selected-Site panel at the bottom of the map.
+- Pass the selected anchor payload into the existing placeholder VPS2 route.
+- Let the user dismiss the panel.
+
+In a new app, update `Sites/WayfindingSitesView.swift` with the following steps:
+
+1. In `var body: some View`, add the selected-Site panel directly after the existing `WayfindingSitesStateOverlay(...)` call:
+
+   ```swift
+   // Show the selected-Site panel above the map when a Site is selected.
+   infoPanelOverlay
+   ```
+
+2. Below `mapLayer` in the same file, add the panel helper:
+
+```swift
+private var infoPanelOverlay: some View {
+    VStack {
+        Spacer()
+        if let site = sitesManager.selectedSite {
+            // Show the selected-Site panel only after the user taps a Site pin.
+            WayfindingSiteInfoPanel(
+                site: site,
+                onNavigate: {
+                    // Reuse the existing payload-aware VPS2 route from the landing page.
+                    onNavigateToVPS2(site.siteName, site.payload, nsdkSession)
+                },
+                onClose: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        // Clear the marker selection when the user closes the panel.
+                        selectedSiteId = nil
+                        sitesManager.clearSelectedSite()
+                    }
+                }
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+    .ignoresSafeArea(edges: .bottom)
+}
+```
+
+In the `vps2-e2e-swift` sample, the equivalent implementations live in `Vps2E2eSample/Vps2E2eSample/Sites/SiteMapView.swift` and `Vps2E2eSample/Vps2E2eSample/Sites/SiteInfoPanel.swift`.
+
+Test this step to validate that the map renders VPS-ready Site pins and opens the selected-Site panel:
+
+- Build and run the app to reach `Browse Sites`.
+- Confirm that `Ready to render ... Site pins` appears in Xcode's console and that Site pins appear on the map.
+- Tap a pin and confirm that the map recenters, `Selected Site pin: ...` appears in the console, and a selected-Site panel appears at the bottom.
+- Tap `Localize in AR`, then confirm that the app navigates to the `VPS2 screen` and shows the selected Site and anchor payload.
+
+## Next steps
+
+Continue to [Start VPS2 localization](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-ar-effect-1/) to configure VPS2 tracking and start localization in the Swift sample.

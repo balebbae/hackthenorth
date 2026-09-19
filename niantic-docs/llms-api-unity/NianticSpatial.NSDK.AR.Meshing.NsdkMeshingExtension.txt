@@ -1,0 +1,50 @@
+# NsdkMeshingExtension
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension/
+
+NsdkMeshingExtension
+> extends UnityEngine.MonoBehaviour
+
+---
+
+## Declaration
+
+public class NsdkMeshingExtension : MonoBehaviour
+
+## Summary
+
+This component allows configuration of the additional functionality available in
+NSDK's implementation of XRMeshingSubsystem.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AllowList | List<SceneSegmentationChannel> | The list of channels included in the mesh. Both the IsMeshFilteringEnabled and IsFilteringAllowListEnabled values must be true in order for the allow list to have an effect. |
+| BlockList | List<SceneSegmentationChannel> | The list of names of channels excluded from the mesh. Both the IsMeshFilteringEnabled and IsFilteringBlockListEnabled values must be true in order for the block list to have an effect. |
+| EnableDistanceBasedVolumetricCleanup | bool | Get or set whether the volumetric representation will be cleaned up once it moves outside the region where new mesh is currently being generated. This saves memory and smooths latency. |
+| EnableLevelsOfDetail | bool | - |
+| EnableMeshDecimation | bool | Get or set whether excess triangles will be removed from the mesh. |
+| FuseKeyframesOnly | bool | Get or set whether only depth keyframes will be fused into the mesh. |
+| IsFilteringAllowListEnabled | bool | Get or set whether to use the AllowList to determine which channels are included in the mesh. This property must be used in conjunction with the IsMeshFilteringEnabled property. |
+| IsFilteringBlockListEnabled | bool | Get or set whether to use the BlockList to determine which channels are included in the mesh. This property must be used in conjunction with the IsMeshFilteringEnabled property. |
+| IsMeshFilteringEnabled | bool | Get or set whether filtering to select which semantic segmentation channels are included in the mesh is currently enabled. |
+| LevelsOfDetail | int | - |
+| MaximumIntegrationDistance | float | Get or set the maximum distance (in m) from the camera at which that the meshing system will integrate depth samples into the 3D scene representation. |
+| MeshBlockSize | float | Get or set the size (in m) of the Mesh Blocks used for generating the Mesh Filter and Mesh Collider. This value will be automatically rounded to be a multiple of the voxel size. |
+| MeshCullingDistance | float | Get or set the distance (in m) from the camera at which Mesh Blocks will be removed from the scene. A value of 0 indicates that Mesh Blocks will not be removed. |
+| TargetFrameRate | int | Get or set the frame rate that meshing will aim to run at. |
+| VoxelSize | float | Get or set the size (in m) of individual voxel elements in the scene representation. Setting this to higher values will reduce memory usage but reduce the precision of the surface. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Configure | void | - |
+| Update | void | - |
+
+---

@@ -1,0 +1,34 @@
+# GetChannelsAt
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetChannelsAt/
+
+GetChannelsAt
+Returns an array of channels that are present for the specified pixel onscreen.
+
+---
+
+## Declaration
+
+public List<SceneSegmentationChannel> GetChannelsAt(int viewportX, int viewportY, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Returns an array of channels that are present for the specified pixel onscreen.
+
+#### Remarks
+
+This query allocates garbage.
+
+#### Returns
+
+An array of channels present for the pixel.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| viewportX | int | Horizontal coordinate in viewport space. |
+| viewportY | int | Vertical coordinate in viewport space. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

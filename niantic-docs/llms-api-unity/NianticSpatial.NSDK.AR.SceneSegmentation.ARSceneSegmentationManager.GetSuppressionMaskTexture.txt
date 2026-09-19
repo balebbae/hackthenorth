@@ -1,0 +1,29 @@
+# GetSuppressionMaskTexture
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetSuppressionMaskTexture/
+
+GetSuppressionMaskTexture
+
+---
+
+## Declaration
+
+public Texture2D GetSuppressionMaskTexture(out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Retrieves the suppression mask texture, where each pixel contains a uint which can be used to interpolate
+    between the predicted depth and the far field depth of the scene. This is useful for enabling smooth occlusion suppression.
+
+#### Returns
+
+The suppression mask texture, owned by the manager, if any. Otherwise, null.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| samplerMatrix | Matrix4x4 | A matrix that converts from viewport to image coordinates according to the latest pose. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

@@ -1,0 +1,25 @@
+# OrganizationInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.OrganizationInfo/
+
+OrganizationInfo
+Represents organization information from the Sites Manager service.
+
+---
+
+## Declaration
+
+data class OrganizationInfo
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| createdTimestamp | Long | - |
+| id | String | - |
+| name | String | - |
+| status | String | - |
+
+---

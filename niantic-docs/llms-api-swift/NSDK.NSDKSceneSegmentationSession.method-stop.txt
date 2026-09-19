@@ -1,0 +1,19 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-stop/
+
+stop
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stops the Scene Segmentation system.
+This halts all semantic processing. The session can be reconfigured and restarted after
+stopping. All @Published properties are reset to .inProgress(nil).
+
+---

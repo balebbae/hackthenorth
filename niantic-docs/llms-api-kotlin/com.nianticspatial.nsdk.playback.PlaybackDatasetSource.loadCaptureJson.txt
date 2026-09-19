@@ -1,0 +1,22 @@
+# loadCaptureJson
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetSource.loadCaptureJson/
+
+loadCaptureJson
+Loads the capture JSON data.
+
+---
+
+## Declaration
+
+fun loadCaptureJson(): ByteArray?
+
+#### Summary
+
+Loads the capture JSON data.
+
+#### Returns
+
+The JSON bytes (UTF-8), or null if loading fails.
+
+---

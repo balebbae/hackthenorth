@@ -1,0 +1,40 @@
+# export
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKRecordingExporter.method-export/
+
+export
+
+---
+
+## Declaration
+
+func export(scanDirPath: String, scanId: String, userData: [String : Any] = [:], exportAsVideo: Bool = true, exportResolution: ExportResolution = .high, pollingInterval: TimeInterval = 0.1, timeout: TimeInterval = 300.0, progressCallback: ((Float) -> Void)? = nil) async throws -> String
+
+#### Summary
+
+Exports a scan recording asynchronously.
+Starts the export process for a scan recording and suspends until the export
+completes successfully, fails, or times out.
+
+#### Returns
+
+The file path to the exported recording.
+
+#### Throws
+
+  - CancellationError if the Task running this function was cancelled.   - TimeoutError if the function timed out before it could complete execution.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| scanDirPath | String | - |
+| scanId | String | The unique identifier of the scan to export. |
+| userData | [String : ] | Dictionary containing custom metadata to include in the export. |
+| exportAsVideo | Bool | If true, the RGB frames in the scan will be exported as an .mp4 video. If false, they will be individual image files. |
+| exportResolution | ExportResolution | Resolution option for exported images (default: `ExportResolution/high`). |
+| pollingInterval | TimeInterval | Time between progress checks (default: 0.5s). |
+| timeout | TimeInterval | Maximum duration to wait before failing (default: 5 minutes). |
+| progressCallback | ((Float) -> Void)? | - |
+
+---

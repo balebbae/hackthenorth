@@ -1,0 +1,52 @@
+# ImageType
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKImage.enum-ImageType/
+
+ImageType
+Enum representing various image types supported by NSDK.
+
+---
+
+## Declaration
+
+enum ImageType
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case BGR | BGR | - |
+| case BGRX | BGRX | - |
+| case depthConfidence | depthConfidence | - |
+| case depthRawFloat | depthRawFloat | - |
+| case Gray | Gray | - |
+| case I420 | I420 | - |
+| case JPEG | JPEG | - |
+| case NV12 | NV12 | - |
+| case NV21 | NV21 | - |
+| case PNG | PNG | - |
+| case raycastNormals | raycastNormals | - |
+| case raycastPositionAndConfidence | raycastPositionAndConfidence | - |
+| case RGB | RGB | - |
+| case RGBX | RGBX | - |
+| case sceneSegmentationBoolMask | sceneSegmentationBoolMask | - |
+| case sceneSegmentationConfidence | sceneSegmentationConfidence | - |
+| case unspecified | unspecified | - |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable

@@ -1,0 +1,38 @@
+# UserInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-UserInfo/
+
+UserInfo
+Represents user information from the Sites Manager service.
+
+---
+
+## Declaration
+
+struct UserInfo
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_SitesManager_UserInfo)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let createdTimestamp | Int64 | Timestamp when the user was created (Unix timestamp in seconds). |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let email | String | User's email address. |
+| let firstName | String | User's first name. |
+| let id | String | User identifier. |
+| let lastName | String | User's last name. |
+| let status | String | User status. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible

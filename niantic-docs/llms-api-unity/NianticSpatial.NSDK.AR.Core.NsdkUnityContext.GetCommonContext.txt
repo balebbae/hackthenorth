@@ -1,0 +1,19 @@
+# GetCommonContext
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Core.NsdkUnityContext.GetCommonContext/
+
+GetCommonContext
+
+---
+
+## Declaration
+
+public static nint GetCommonContext(nint unityContext)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| unityContext | nint | - |
+
+---

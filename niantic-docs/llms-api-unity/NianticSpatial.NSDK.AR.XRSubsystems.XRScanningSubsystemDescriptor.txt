@@ -1,0 +1,22 @@
+# XRScanningSubsystemDescriptor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystemDescriptor/
+
+XRScanningSubsystemDescriptor
+> extends UnityEngine.SubsystemsImplementation.SubsystemDescriptorWithProvider
+
+---
+
+## Declaration
+
+public class XRScanningSubsystemDescriptor : SubsystemDescriptorWithProvider<XRScanningSubsystem, Provider>
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Create | void | Creates a new subsystem descriptor and registers it with the SubsystemManager. |
+
+---

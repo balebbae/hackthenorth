@@ -1,0 +1,18 @@
+# StopARLocationTracking
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR.ARLocationManager.StopARLocationTracking/
+
+StopARLocationTracking
+Stops tracking all currently tracked locations.
+
+---
+
+## Declaration
+
+public void StopARLocationTracking()
+
+#### Summary
+
+Stops tracking all currently tracked locations.
+
+---

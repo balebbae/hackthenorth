@@ -1,0 +1,15 @@
+# NianticSpatial.NSDK.AR.Subsystems.XR
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.XR/
+
+XR
+
+---
+
+## Interfaces
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ISubsystemWithModelMetadata | ISubsystemWithModelMetadata | - |
+
+---

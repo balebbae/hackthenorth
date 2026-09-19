@@ -1,0 +1,21 @@
+# ReciprocalExtension
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ReciprocalExtension/
+
+ReciprocalExtension
+
+---
+
+## Declaration
+
+public static class ReciprocalExtension
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static ZeroOrReciprocal | float | - |
+
+---

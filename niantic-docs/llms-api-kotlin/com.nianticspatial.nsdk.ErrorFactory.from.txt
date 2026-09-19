@@ -1,0 +1,13 @@
+# from
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ErrorFactory.from/
+
+from
+
+---
+
+## Declaration
+
+fun from(code: Int): E?
+
+---

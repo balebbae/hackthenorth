@@ -1,0 +1,26 @@
+# IsAuthorized
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthClient.IsAuthorized/
+
+IsAuthorized
+
+---
+
+## Declaration
+
+public static bool IsAuthorized()
+
+#### Summary
+
+Checks if auth tokens are valid and ready for use.
+    Returns true if a valid, non-expired access token is available.
+
+#### Returns
+
+True if authorized, false otherwise.
+
+#### Throws
+
+InvalidOperationException -- Thrown if the NSDK context is not initialized or the operation fails.
+
+---

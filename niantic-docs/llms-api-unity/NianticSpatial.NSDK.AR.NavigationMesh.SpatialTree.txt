@@ -1,0 +1,39 @@
+# SpatialTree
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.SpatialTree/
+
+SpatialTree
+
+---
+
+## Declaration
+
+public partial class SpatialTree
+
+---
+
+## Constructors
+
+public SpatialTree(int approximateQuadSize)
+
+#### Summary
+
+Creates a new spatial tree instance.
+    A spatial tree consists of a grid of quads, which themselves can subdivide.
+    @param approximateQuadSize Defines the size of a quad. The actual size will
+      be less than or equal to this number.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Clear | void | - |
+| DrawGizmos | void | Visualizes the quad-tree in the editor's scene view. @param setting The NsdkNavMesh's configuration. |
+| GetElement | bool | Returns the grid node at the specified location if exists. @param atPosition The location of the grid node. @param result The element stored at the specified location. @returns True, if the grid node could be located. |
+| Insert | bool | Inserts the provided elements to the tree. @param gridNodes Grid nodes to insert. @returns Whether all nodes were inserted successfully. |
+| Query | IEnumerable<GridNode> | - |
+| Remove | HashSet<Vector2Int> | Removes the provided elements from the tree. @param gridNodes Grid nodes to remove. |
+
+---

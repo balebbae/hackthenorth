@@ -1,0 +1,27 @@
+# requestSelfOrganizationInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession.requestSelfOrganizationInfo/
+
+requestSelfOrganizationInfo
+Requests organizations for the current authenticated session.
+
+---
+
+## Declaration
+
+suspend fun requestSelfOrganizationInfo( timeoutMs: Long = DEFAULT_TIMEOUT_MS ): OrganizationResult
+
+#### Summary
+
+Requests organizations for the current authenticated session.
+
+#### Returns
+
+OrganizationResult containing the list of organizations.
+
+#### Throws
+
+SitesException -- if the request fails with an error.
+kotlinx.coroutines.CancellationException -- if the coroutine is cancelled.
+
+---

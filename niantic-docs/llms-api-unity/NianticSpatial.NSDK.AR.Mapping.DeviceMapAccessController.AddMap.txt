@@ -1,0 +1,34 @@
+# AddMap
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController.AddMap/
+
+AddMap
+Add serialized map data to the map storage.
+
+---
+
+## Declaration
+
+public bool AddMap(byte[] mapData)
+
+#### Summary
+
+Add serialized map data to the map storage.
+
+#### Returns
+
+True if successful, false otherwise.
+
+> **Info:**
+>
+> **Notice**
+>
+> This is an experimental feature, and is subject to breaking changes or deprecation without notice
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| mapData | byte[] | The serialized map data to add. |
+
+---

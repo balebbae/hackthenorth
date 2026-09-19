@@ -1,0 +1,25 @@
+# Update
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common.RenderComponent.Update/
+
+Update
+Performs render feature related logic and updates the target material.
+
+---
+
+## Declaration
+
+public void Update(Camera camera, bool isRendering)
+
+#### Summary
+
+Performs render feature related logic and updates the target material.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| camera | Camera | The camera that is rendering the material. |
+| isRendering | bool | Whether the material is being rendered. |
+
+---

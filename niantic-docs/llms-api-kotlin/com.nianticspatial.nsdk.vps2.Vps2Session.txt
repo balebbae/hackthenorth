@@ -1,0 +1,49 @@
+# Vps2Session
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session/
+
+Vps2Session
+> extends SessionBase 
+A session for VPS2 localization.
+
+---
+
+## Declaration
+
+class Vps2Session
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorUpdates | Flow<AnchorUpdate> | Flow of anchor updates for all tracked anchors.Anchors are automatically added when created via [trackAnchor] or [createAnchor]. |
+| localizationRequestRecords | Flow<Vps2LocalizationRequestRecord> | Flow of localization request records.Each emission is a single [Vps2LocalizationRequestRecord] from the latest batch.Records are emitted only when new ones are available. |
+| localizationUpdates | Flow<Vps2Localization> | Flow of the latest localization snapshot.This is useful for consumers that want to reactively drive UI or downstream computationswithout manually polling [getLatestLocalization]. |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorIdToString | String | Convert a VPS2 anchor id (32-byte ASCII hex) to a printable string. |
+| configure | void | Configure VPS2. Must be called while stopped. |
+| createAnchor | UUID | Create and start tracking an anchor at the specified pose. |
+| featureStatus | FeatureStatus | - |
+| getAnchorPayload | String? | Gets the payload data of a specified anchor.The payload encodes the data needed to localize an anchor across multiple devices or sessions.It can be shared or stored for later use with [trackAnchor]. |
+| getAnchorUpdate | AnchorUpdate | Gets the latest tracking update for a specified anchor. |
+| getDeviceGeolocation | Vps2GeolocationData? | Get the geolocation of the device's last known camera pose. |
+| getLatestLocalization | Vps2Localization | Gets the most recent VPS2 localization result.The returned localization contains the spatial mapping betweenthe device's AR coordinate space and real-world geolocation. |
+| getLatestLocalizationRequestRecords | List<Vps2LocalizationRequestRecord> | Get diagnostic localization request records since the last call. |
+| getPose | Pose | Convert a geolocation to an AR pose using a localization snapshot. |
+| getTrackedAnchors | Set<UUID> | Get the set of all tracked anchors. |
+| onDestroy | void | - |
+| onInit | void | - |
+| removeAnchor | void | Stop tracking an anchor. |
+| start | void | - |
+| stop | void | - |
+| trackAnchor | UUID | Start tracking an anchor specified by a base64 payload. |
+
+---

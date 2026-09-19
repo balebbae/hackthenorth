@@ -1,0 +1,32 @@
+# PlaybackDatasetLoader
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetLoader/
+
+PlaybackDatasetLoader
+> extends PlaybackDatasetSource 
+
+---
+
+## Declaration
+
+abstract class PlaybackDatasetLoader 
+
+## Summary
+
+Base class for loading playback dataset data from various sources.
+Subclasses override [loadCaptureJson], [loadImage], [loadDepthData], [loadDepthConfidence] to provide concrete implementations.
+Use [loadDataset] to parse the capture JSON and create a [PlaybackDataset] that uses this loader for on-demand frame loading.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| loadDataset | PlaybackDataset? | Loads the dataset: reads capture JSON from this source and returns a [PlaybackDataset] that uses this loader for on-demand frame loading. |
+
+---
+
+## Relationships
+
+derived:  AssetPlaybackDatasetLoader

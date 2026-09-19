@@ -1,0 +1,28 @@
+# latestDepthMapSample
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSessionDataSource.method-latestDepthMapSample/
+
+latestDepthMapSample
+Returns the most recent platform depth sample, if available.
+
+---
+
+## Declaration
+
+func latestDepthMapSample() -> (image: CVPixelBuffer, confidence: CVPixelBuffer?, intrinsics: NSDKCameraIntrinsics, pose: NSDKCameraExtrinsics, orientation: NSDKScreenOrientation, timestamp: UInt64)?
+
+#### Summary
+
+Returns the most recent platform depth sample, if available.
+
+#### Returns
+
+A tuple containing:
+  - image: A retained CVPixelBuffer representing the captured image.
+  - confidence: A pixel buffer containing the confidence level for each depth value in the image.
+  - intrinsics: Camera intrinsic parameters for the image.
+  - pose: The pose (extrinsics) of the camera associated with the image.
+  - orientation: The device orientation of the camera associated with the image.
+  - timestamp: Camera timestamp in milliseconds.
+
+---

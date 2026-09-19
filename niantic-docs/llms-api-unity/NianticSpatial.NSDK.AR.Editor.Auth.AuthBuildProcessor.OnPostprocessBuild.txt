@@ -1,0 +1,19 @@
+# OnPostprocessBuild
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.AuthBuildProcessor.OnPostprocessBuild/
+
+OnPostprocessBuild
+
+---
+
+## Declaration
+
+public void OnPostprocessBuild(BuildReport report)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| report | BuildReport | - |
+
+---

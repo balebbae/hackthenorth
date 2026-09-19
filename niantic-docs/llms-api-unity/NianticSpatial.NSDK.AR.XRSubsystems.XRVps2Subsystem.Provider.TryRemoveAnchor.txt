@@ -1,0 +1,19 @@
+# TryRemoveAnchor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.Provider.TryRemoveAnchor/
+
+TryRemoveAnchor
+
+---
+
+## Declaration
+
+public virtual bool TryRemoveAnchor(TrackableId trackableId)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| trackableId | TrackableId | - |
+
+---

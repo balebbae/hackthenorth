@@ -1,0 +1,28 @@
+# MapSubGraph
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.MapSubGraph/
+
+MapSubGraph
+
+---
+
+## Declaration
+
+public readonly struct MapSubGraph : ValueType
+
+---
+
+## Constructors
+
+public MapSubGraph(byte[] data, OutputEdgeType edgeType)
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| GetData | byte[] | - |
+| GetEdgeType | OutputEdgeType | - |
+
+---

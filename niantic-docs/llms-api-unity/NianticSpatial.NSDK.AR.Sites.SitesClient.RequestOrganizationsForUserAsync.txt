@@ -1,0 +1,26 @@
+# RequestOrganizationsForUserAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.RequestOrganizationsForUserAsync/
+
+RequestOrganizationsForUserAsync
+
+---
+
+## Declaration
+
+public async Task<OrganizationResult> RequestOrganizationsForUserAsync(string userId, int timeoutMs = DefaultTimeoutMs, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Requests all organizations for a user.
+    Consider using RequestSelfOrganizationInfoAsync instead.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| userId | string | - |
+| timeoutMs | int | - |
+| cancellationToken | CancellationToken | - |
+
+---

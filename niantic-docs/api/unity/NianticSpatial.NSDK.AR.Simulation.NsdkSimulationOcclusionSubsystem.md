@@ -1,0 +1,48 @@
+---
+source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationOcclusionSubsystem/
+title: NsdkSimulationOcclusionSubsystem
+---
+
+<div class="mobile-docs-controls">
+
+<div class="mobile-docs-controls__main">
+
+UnitySwiftKotlin
+
+</div>
+
+</div>
+
+<div class="docContentTransition">
+
+<div class="theme-doc-markdown markdown">
+
+<div class="api-breadcrumbs">
+
+<span class="api-breadcrumbs-nav">←</span>[API Reference](https://www.nianticspatial.com/docs/api/unity/ "Return to API Reference index") <span class="api-breadcrumbs-nav">←</span>[NianticSpatial.NSDK.AR.Simulation](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation/ "NianticSpatial.NSDK.AR.Simulation") 
+
+</div>
+
+<div class="api-title">
+
+#  NsdkSimulationOcclusionSubsystem
+
+<div class="api-extends">
+
+↳ extends UnityEngine.XR.ARSubsystems.XROcclusionSubsystem
+
+</div>
+
+</div>
+
+------------------------------------------------------------------------
+
+## Declaration<a href="#declaration" class="hash-link" aria-label="Direct link to Declaration" title="Direct link to Declaration">​</a>
+
+<span class="ctoken-line"><span class="ctoken keyword">public</span><span class="ctoken plain"> </span><span class="ctoken keyword">class</span><span class="ctoken plain"> </span><span class="ctoken class-name">NsdkSimulationOcclusionSubsystem</span><span class="ctoken plain"> </span><span class="ctoken punctuation">:</span><span class="ctoken plain"> </span><span class="ctoken class-name"><a href="https://docs.unity3d.com/Packages/com.unity.xr.arsubsystems@4.2/api/UnityEngine.XR.ARSubsystems.XROcclusionSubsystem.html" target="_blank" rel="noopener noreferrer" title="Opens an external reference">XROcclusionSubsystem</a></span></span>
+
+------------------------------------------------------------------------
+
+</div>
+
+</div>

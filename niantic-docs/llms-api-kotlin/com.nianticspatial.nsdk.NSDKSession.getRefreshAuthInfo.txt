@@ -1,0 +1,22 @@
+# getRefreshAuthInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession.getRefreshAuthInfo/
+
+getRefreshAuthInfo
+
+---
+
+## Declaration
+
+fun getRefreshAuthInfo(): AuthInfo?
+
+#### Summary
+
+Gets refresh token authentication information.
+Returns authentication information containing information about the current refresh token.
+
+#### Returns
+
+AuthInfo containing refresh token claims, or null if the operation fails
+
+---

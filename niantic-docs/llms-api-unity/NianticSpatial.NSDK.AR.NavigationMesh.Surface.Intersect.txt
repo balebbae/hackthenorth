@@ -1,0 +1,19 @@
+# Intersect
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Surface.Intersect/
+
+Intersect
+
+---
+
+## Declaration
+
+public void Intersect(IEnumerable<GridNode> nodes)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| nodes | IEnumerable<GridNode> | - |
+
+---

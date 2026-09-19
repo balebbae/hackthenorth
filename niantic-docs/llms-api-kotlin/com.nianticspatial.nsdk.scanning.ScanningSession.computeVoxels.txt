@@ -1,0 +1,27 @@
+# computeVoxels
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.ScanningSession.computeVoxels/
+
+computeVoxels
+
+---
+
+## Declaration
+
+fun computeVoxels()
+
+#### Summary
+
+Compute the voxelization of the scanned scene.
+
+Processing is asynchronous. Call this function and then call voxelBuffer
+to retrieve voxel data.
+
+> Note: Voxel visualization must have been enabled in the configuration.
+
+#### See also
+
+voxelBuffer
+configure
+
+---

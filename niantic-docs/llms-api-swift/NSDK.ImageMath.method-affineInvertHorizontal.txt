@@ -1,0 +1,18 @@
+# affineInvertHorizontal
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineInvertHorizontal/
+
+affineInvertHorizontal
+Returns an (u, v) -> (u', v') transformation that represents a horizontal mirroring, i.e. (u, v) -> (1 - u, v).
+
+---
+
+## Declaration
+
+static func affineInvertHorizontal() -> CGAffineTransform
+
+#### Summary
+
+Returns an (u, v) -> (u', v') transformation that represents a horizontal mirroring, i.e. (u, v) -> (1 - u, v).
+
+---

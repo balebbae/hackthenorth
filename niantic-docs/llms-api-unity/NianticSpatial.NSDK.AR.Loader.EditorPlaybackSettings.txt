@@ -1,0 +1,30 @@
+# EditorPlaybackSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.EditorPlaybackSettings/
+
+EditorPlaybackSettings
+
+---
+
+## Declaration
+
+public class EditorPlaybackSettings : INsdkPlaybackSettings
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| EndFrame | int | - |
+| LoopInfinitely | bool | - |
+| PlaybackDatasetPath | string | - |
+| RunManually | bool | - |
+| StartFrame | int | - |
+| UsePlayback | bool | - |
+
+---
+
+## Relationships
+
+implements:  INsdkPlaybackSettings

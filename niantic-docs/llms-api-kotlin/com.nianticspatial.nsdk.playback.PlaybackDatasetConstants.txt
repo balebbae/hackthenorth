@@ -1,0 +1,28 @@
+# PlaybackDatasetConstants
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetConstants/
+
+PlaybackDatasetConstants
+
+---
+
+## Declaration
+
+object PlaybackDatasetConstants
+
+## Summary
+
+Constants for playback dataset file names and structure.
+Matches the cross-platform capture.json spec.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CAPTURE_JSON_FILE_EXTENSION | CAPTURE_JSON_FILE_EXTENSION | File extension for the capture JSON file. |
+| CAPTURE_JSON_FILE_NAME | CAPTURE_JSON_FILE_NAME | Filename (without extension) for the capture JSON file. |
+| CAPTURE_JSON_FULL_NAME | CAPTURE_JSON_FULL_NAME | Full filename for the capture JSON file. |
+
+---

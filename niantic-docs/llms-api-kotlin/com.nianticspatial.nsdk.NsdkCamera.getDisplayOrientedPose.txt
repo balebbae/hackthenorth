@@ -1,0 +1,18 @@
+# getDisplayOrientedPose
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkCamera.getDisplayOrientedPose/
+
+getDisplayOrientedPose
+Display-oriented camera pose for overlays and UI. Matches ARCore [com.google.ar.core.Camera.getDisplayOrientedPose].
+
+---
+
+## Declaration
+
+abstract fun getDisplayOrientedPose(): Pose
+
+#### Summary
+
+Display-oriented camera pose for overlays and UI. Matches ARCore com.google.ar.core.Camera.getDisplayOrientedPose.
+
+---

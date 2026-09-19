@@ -1,0 +1,34 @@
+# Vps2GeolocationData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-Vps2GeolocationData/
+
+Vps2GeolocationData
+Location and heading data calculated by VPS2.
+
+---
+
+## Declaration
+
+struct Vps2GeolocationData
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var clHeading | CLHeading | The heading represented as a `CLHeading` (via `Vps2Heading`).`trueHeading` is the VPS2-computed heading in degrees clockwise from true north.`headingAccuracy` is derived from `rotationAccuracyDeg`. The magnetometer componentvalues (`x`, `y`, `z`) are zero because VPS2 does not use a magnetometer. |
+| var clLocation | CLLocation | The position represented as a `CLLocation` (`Vps2Location`).`coordinate` and `horizontalAccuracy` carry the VPS2-computed values.`ellipsoidalAltitude` holds the WGS84 height from VPS2; `verticalAccuracy` is its precision. |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| var geolocationData | GeolocationData | Contains the GPS and heading data. |
+| var horizontalAccuracyMetres | Float | Horizontal accuracy in metres. |
+| var rotationAccuracyDeg | Float | Rotation accuracy in degrees. |
+| let timestamp | Date | The time at which this geolocation was acquired. |
+| var trackingState | Vps2TrackingState | The state of VPS2 tracking. The other fields in this struct areonly valid if the tracking state is **not** .unavailable. |
+| var verticalAccuracyMetres | Float | Vertical accuracy in metres. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible

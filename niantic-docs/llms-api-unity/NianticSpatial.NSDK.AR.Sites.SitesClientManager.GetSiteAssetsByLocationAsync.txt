@@ -1,0 +1,32 @@
+# GetSiteAssetsByLocationAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClientManager.GetSiteAssetsByLocationAsync/
+
+GetSiteAssetsByLocationAsync
+Gets sites and their assets near a GPS coordinate.
+
+---
+
+## Declaration
+
+public Task<SiteAssetsResult> GetSiteAssetsByLocationAsync(double latitude, double longitude, double radiusMeters, AssetType assetType, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Gets sites and their assets near a GPS coordinate.
+
+#### Returns
+
+The site-assets result ordered by distance.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| latitude | double | Latitude of the query coordinate, in degrees. |
+| longitude | double | Longitude of the query coordinate, in degrees. |
+| radiusMeters | double | Search radius around the coordinate, in meters. |
+| assetType | AssetType | The type of assets to filter results by. |
+| cancellationToken | CancellationToken | Token to cancel the operation. |
+
+---

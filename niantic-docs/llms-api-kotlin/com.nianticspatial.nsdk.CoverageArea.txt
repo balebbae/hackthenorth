@@ -1,0 +1,24 @@
+# CoverageArea
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CoverageArea/
+
+CoverageArea
+
+---
+
+## Declaration
+
+data class CoverageArea
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| center | LatLng | - |
+| localizability | Localizability | - |
+| localizationTargets | Array<String> | - |
+| shape | Array<LatLng> | - |
+
+---

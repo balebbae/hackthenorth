@@ -1,0 +1,13 @@
+# ==
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.LatLng.op_Equality/
+
+\==
+
+---
+
+## Declaration
+
+public static bool operator ==(LatLng l1, LatLng l2)
+
+---

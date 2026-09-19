@@ -1,0 +1,18 @@
+# resume
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper.resume/
+
+resume
+Registers sensor listeners. Call from [androidx.lifecycle.DefaultLifecycleObserver.onResume].
+
+---
+
+## Declaration
+
+fun resume()
+
+#### Summary
+
+Registers sensor listeners. Call from androidx.lifecycle.DefaultLifecycleObserver.onResume.
+
+---

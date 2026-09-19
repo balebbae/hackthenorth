@@ -1,0 +1,13 @@
+# !=
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.GridNode.op_Inequality/
+
+!=
+
+---
+
+## Declaration
+
+public static bool operator !=(GridNode left, GridNode right)
+
+---

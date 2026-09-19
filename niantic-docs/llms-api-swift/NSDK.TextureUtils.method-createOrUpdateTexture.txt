@@ -1,0 +1,30 @@
+# createOrUpdateTexture
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.TextureUtils.method-createOrUpdateTexture/
+
+createOrUpdateTexture
+Creates or updates a Metal texture using a `NSDKImage`.
+
+---
+
+## Declaration
+
+@discardableResult static func createOrUpdateTexture(from image: NSDKImage?, texture: inout MTLTexture?, device: MTLDevice) -> Bool
+
+#### Summary
+
+Creates or updates a Metal texture using a NSDKImage.
+
+#### Returns
+
+true if the texture was allocated or updated this call.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| image | NSDKImage? | - |
+| texture | MTLTexture? | An existing Metal texture to update, or `nil` to create a new one. |
+| device | MTLDevice | The Metal device used to allocate textures. |
+
+---

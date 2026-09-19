@@ -1,0 +1,23 @@
+# affineInvertVertical
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath.affineInvertVertical/
+
+affineInvertVertical
+
+---
+
+## Declaration
+
+fun affineInvertVertical(): Matrix
+
+#### Summary
+
+Returns an affine matrix for vertical mirroring.
+
+Maps (u, v) -> (u, 1 - v).
+
+#### Returns
+
+An affine Matrix that flips coordinates vertically.
+
+---

@@ -1,0 +1,29 @@
+# requestSelfUserInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession.requestSelfUserInfo/
+
+requestSelfUserInfo
+
+---
+
+## Declaration
+
+suspend fun requestSelfUserInfo( timeoutMs: Long = DEFAULT_TIMEOUT_MS ): UserResult
+
+#### Summary
+
+Requests information for the currently authenticated user.
+
+Uses the user ID from the access token to fetch user information.
+To fetch organizations, consider using requestSelfOrganizationInfo instead.
+
+#### Returns
+
+UserResult containing the user information if successful.
+
+#### Throws
+
+SitesException -- if the request fails with an error.
+kotlinx.coroutines.CancellationException -- if the coroutine is cancelled.
+
+---

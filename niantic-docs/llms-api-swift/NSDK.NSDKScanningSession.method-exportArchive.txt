@@ -1,0 +1,42 @@
+# exportArchive
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-exportArchive/
+
+exportArchive
+
+---
+
+## Declaration
+
+func exportArchive(metadata: [String : Any]? = nil, exportAsVideo: Bool = true, exportResolution: ExportResolution = .high) throws -> String?
+
+#### Summary
+
+Exports the scan data as an archive file.
+This method processes the saved scan data and exports it to a standard archive format
+that can be used with external 3D processing tools or Niantic's VPS map.
+
+#### Returns
+
+The path of the archive file, if the export was successful, nil if otherwise.
+  Export failure indicates something was wrong with the saved scan.
+
+#### Throws
+
+  - NSDKError.invalidOperation if the scanning session did not have a saved scan to export.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: This function is blocking and may take a while to execute. See
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| metadata | [String : ]? | Metadata dictionary to include with the export. Can be left empty. |
+| exportAsVideo | Bool | If true, the RGB frames in the scan will be exported as an .mp4 video. If false, they will be individual image files. |
+| exportResolution | ExportResolution | - |
+
+---

@@ -1,0 +1,24 @@
+# GetButtonUp
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Input.GetButtonUp/
+
+GetButtonUp
+Returns true the first frame the user releases the virtual button identified by buttonName.
+
+---
+
+## Declaration
+
+public static bool GetButtonUp(string buttonName)
+
+#### Summary
+
+Returns true the first frame the user releases the virtual button identified by buttonName.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| buttonName | string | - |
+
+---

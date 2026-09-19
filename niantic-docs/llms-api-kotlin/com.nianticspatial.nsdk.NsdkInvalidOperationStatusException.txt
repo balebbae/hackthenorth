@@ -1,0 +1,19 @@
+# NsdkInvalidOperationStatusException
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkInvalidOperationStatusException/
+
+NsdkInvalidOperationStatusException
+> extends NsdkStatusException 
+
+---
+
+## Declaration
+
+class NsdkInvalidOperationStatusException
+
+## Summary
+
+Thrown when a native operation is not valid in the current state.
+Corresponds to [NSDKStatus.INVALID_OPERATION].
+
+---

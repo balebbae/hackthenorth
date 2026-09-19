@@ -1,0 +1,25 @@
+# DeleteScan
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanStore.DeleteScan/
+
+DeleteScan
+
+---
+
+## Declaration
+
+public void DeleteScan(SavedScan scan)
+
+#### Summary
+
+Delete the given saved scan from disk.
+    This must not be a scan that is currently in progress. Deleting a scan in progress is undefined behavior.
+    The scan is invalid after deletion.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| scan | SavedScan | The scan to delete. |
+
+---

@@ -1,0 +1,26 @@
+# RequestSitesForOrganizationAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.RequestSitesForOrganizationAsync/
+
+RequestSitesForOrganizationAsync
+Requests all sites for an organization.
+
+---
+
+## Declaration
+
+public async Task<SiteResult> RequestSitesForOrganizationAsync(string orgId, int timeoutMs = DefaultTimeoutMs, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Requests all sites for an organization.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orgId | string | - |
+| timeoutMs | int | - |
+| cancellationToken | CancellationToken | - |
+
+---

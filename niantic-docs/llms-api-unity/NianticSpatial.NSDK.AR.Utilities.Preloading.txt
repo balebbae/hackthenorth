@@ -1,0 +1,27 @@
+# NianticSpatial.NSDK.AR.Utilities.Preloading
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading/
+
+Preloading
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| IModelPreloader | IDisposable | Interface for the NSDK class that pre-downloads necessary neural network model files for awareness features. If the files are not preloaded, they will take time to download when an AR session configured to use those features is run. |
+| ModelPreloaderFactory | ModelPreloaderFactory | - |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| DepthMode | byte | The NSDK depth model to use. |
+| PreloaderStatusCode | PreloaderStatusCode | Return status codes for the model preloader |
+| ScanningSQCMode | byte | The NSDK Scanning SQC model to use. |
+| SceneSegmentationMode | byte | The NSDK semantic segmentation model to use. |
+
+---

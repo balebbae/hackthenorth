@@ -1,0 +1,24 @@
+# TryGetPose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryGetPose/
+
+TryGetPose
+
+---
+
+## Declaration
+
+public bool TryGetPose(XRVps2Localization localization, double latitude, double longitude, double altitude, Quaternion orientationEdn, out XRVps2Pose poseOut)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| localization | XRVps2Localization | - |
+| latitude | double | - |
+| longitude | double | - |
+| altitude | double | - |
+| orientationEdn | Quaternion | - |
+| poseOut | XRVps2Pose | - |
+
+---

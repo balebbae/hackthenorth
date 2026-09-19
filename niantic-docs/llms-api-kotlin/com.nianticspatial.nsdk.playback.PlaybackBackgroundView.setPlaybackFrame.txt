@@ -1,0 +1,21 @@
+# setPlaybackFrame
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackBackgroundView.setPlaybackFrame/
+
+setPlaybackFrame
+
+---
+
+## Declaration
+
+fun setPlaybackFrame(frame: PlaybackFrame?)
+
+#### Summary
+
+Updates the background image from the given playback frame.
+Call on the main thread when PlaybackSession delivers a new frame.
+If frame is null or frame.image is null, the view is cleared.
+Applies a display transform so the image orientation matches the current device orientation.
+Uses frame metadata screenOrientation when present, with fallback to resolution-based inference.
+
+---

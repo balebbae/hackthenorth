@@ -1,0 +1,19 @@
+# computeVoxels
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-computeVoxels/
+
+computeVoxels
+
+---
+
+## Declaration
+
+func computeVoxels()
+
+#### Summary
+
+Triggers asynchronous voxel computation. Subscribe to $latestVoxelBuffer to receive
+the result once processing completes.
+- Precondition: Voxel visualization must have been enabled in the configuration.
+
+---

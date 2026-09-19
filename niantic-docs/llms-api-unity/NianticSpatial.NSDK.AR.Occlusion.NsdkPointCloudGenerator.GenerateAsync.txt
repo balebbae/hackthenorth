@@ -1,0 +1,31 @@
+# GenerateAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkPointCloudGenerator.GenerateAsync/
+
+GenerateAsync
+A coroutine to generate a point cloud from a depth texture using the given intrinsics and extrinsics.
+
+---
+
+## Declaration
+
+public IEnumerator GenerateAsync(Texture depth, Matrix4x4 intrinsics, Matrix4x4 extrinsics, Action<Vector4[]> onComplete)
+
+#### Summary
+
+A coroutine to generate a point cloud from a depth texture using the given intrinsics and extrinsics.
+
+#### Remarks
+
+This is an allocating, non-blocking call.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depth | Texture | The depth image. |
+| intrinsics | Matrix4x4 | The camera intrinsic parameters for the depth image. |
+| extrinsics | Matrix4x4 | The camera to world transform. |
+| onComplete | Action<Vector4[]> | Callback for when the task completes. |
+
+---

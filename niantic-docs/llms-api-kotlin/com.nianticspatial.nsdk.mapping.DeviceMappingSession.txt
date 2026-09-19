@@ -1,0 +1,36 @@
+# DeviceMappingSession
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession/
+
+DeviceMappingSession
+> extends SessionBase 
+
+---
+
+## Declaration
+
+class DeviceMappingSession
+
+## Summary
+
+A session for locally creating VPS maps from AR data.
+The device mapping feature provides capabilities for locally building persistent maps that can
+be used for Visual Positioning System (VPS) localization. These maps capture the visual features
+and spatial structure of an environment.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configure | void | Configure the session with the specified settings.> Note: It is only valid to call this when the session is stopped.> Note: Configuration is asynchronous and can fail later, even if this calldoes not throw an error. Use [featureStatus()] to check there are no issues. |
+| featureStatus | FeatureStatus | Reports errors that have occurred within processes running inside this feature.Check this periodically to see if any errors have occurred with processes runninginside this feature. Once an error has been flagged, it will remain flagged until theculprit process has been run again and completed successfully. |
+| onDestroy | void | - |
+| onInit | void | - |
+| start | void | Start the mapping session.This starts some underlying processes that need to be running before actual mapping can begin,downloading the model containing the mapping algorithm. It does not actually start the mapbuilding process, which needs to be invoked separately with [startCreating]. |
+| startCreating | void | Begin a mapping sequence.This begins building an on-device map that can be used for VPS. |
+| stop | void | Stop all mapping processes.This halts active mapping while keeping the mapping instance alive.You can restart mapping later with [start]. |
+| stopCreating | void | Stop the current mapping sequence.This stops adding new frames to the current on-device VPS Map. |
+
+---

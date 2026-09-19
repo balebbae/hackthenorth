@@ -1,0 +1,18 @@
+# update
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession.update/
+
+update
+
+---
+
+## Declaration
+
+fun update()
+
+#### Summary
+
+Pulls sensor samples from dataSource and submits a frame for native processing.
+No-op if dataSource is null or not ready. Call once per camera frame.
+
+---

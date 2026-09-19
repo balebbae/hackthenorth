@@ -1,0 +1,39 @@
+# XRVps2Localization
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Localization/
+
+XRVps2Localization
+
+---
+
+## Declaration
+
+public struct XRVps2Localization : ValueType, IEquatable<XRVps2Localization>
+
+## Summary
+
+Spatial mapping between the device's AR coordinate space and real-world geolocation,
+as determined by VPS2.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| TrackingState | Vps2TrackingState | The state of VPS2 tracking. The other fields in this struct are only valid if the tracking state is not Unavailable. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Equals | bool | - |
+| GetHashCode | int | - |
+
+---
+
+## Relationships
+
+implements:  System.IEquatable

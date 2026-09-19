@@ -1,0 +1,36 @@
+# latestPackedChannels
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-latestPackedChannels/
+
+latestPackedChannels
+
+---
+
+## Declaration
+
+func latestPackedChannels() -> NSDKAsyncState<SceneSegmentationResult, AwarenessError>
+
+#### Summary
+
+Retrieves the latest packed semantic channels data.
+This method returns a multi-channel image where each channel represents a different
+semantic category. Packed channels provide an efficient way to access multiple
+semantic classifications in a single image, reducing the need for multiple API calls.
+
+#### Returns
+
+An NSDKAsyncState containing either the latest SceneSegmentationResult,
+  or an AwarenessError.
+
+#### Packed Channels Format
+
+The packed channels image contains multiple semantic categories encoded as separate
+channels in a single image. Each channel corresponds to a semantic category, and
+pixel values represent classification confidence or probability scores.
+
+#### Performance Benefits
+
+Using packed channels is more efficient than calling `latestConfidence` multiple
+times, as it reduces the number of API calls and data transfers required.
+
+---

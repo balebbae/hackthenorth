@@ -1,0 +1,22 @@
+# ErrorFactory
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ErrorFactory/
+
+ErrorFactory
+
+---
+
+## Declaration
+
+interface ErrorFactory<E : ErrorCodeProvider>
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| defaultOnError | E | - |
+| from | E? | - |
+
+---

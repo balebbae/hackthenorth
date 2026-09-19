@@ -1,0 +1,21 @@
+# INsdkPlaybackSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.INsdkPlaybackSettings/
+
+INsdkPlaybackSettings
+
+---
+
+## Declaration
+
+public interface INsdkPlaybackSettings
+
+---
+
+## Relationships
+
+implemented by:  OverloadPlaybackSettings 
+
+implemented by:  DevicePlaybackSettings 
+
+implemented by:  EditorPlaybackSettings

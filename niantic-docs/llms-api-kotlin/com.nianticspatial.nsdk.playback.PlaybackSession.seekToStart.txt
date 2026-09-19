@@ -1,0 +1,18 @@
+# seekToStart
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackSession.seekToStart/
+
+seekToStart
+Resets playback to the first frame. Call before [play] to begin from the beginning; safe to call while paused.
+
+---
+
+## Declaration
+
+fun seekToStart()
+
+#### Summary
+
+Resets playback to the first frame. Call before play to begin from the beginning; safe to call while paused.
+
+---

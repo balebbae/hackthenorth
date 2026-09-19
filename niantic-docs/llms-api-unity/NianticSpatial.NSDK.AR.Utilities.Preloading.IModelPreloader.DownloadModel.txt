@@ -1,0 +1,79 @@
+# DownloadModel
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.IModelPreloader.DownloadModel/
+
+DownloadModel
+
+---
+
+## Declaration
+
+public abstract PreloaderStatusCode DownloadModel(DepthMode depthMode)
+
+#### Summary
+
+Begins downloading the requested model file to the cache if not already present. The request status can be
+    polled with CurrentProgress or ExistsInCache.
+
+#### Returns
+
+Returns a PreloaderStatusCode indicating the initial status of the request. The final result of the request
+    may be deferred due to asynchronous network operations, so if this request returns Success or
+    RequestInProgress, the user should continue to query CurrentProgress
+    every frame to confirm that the network request completes successfully.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthMode | DepthMode | - |
+
+---
+
+## Overload 1
+
+public abstract PreloaderStatusCode DownloadModel(SceneSegmentationMode sceneSegmentationMode)
+
+#### Summary
+
+Begins downloading the requested model file to the cache if not already present. The request status can be
+    polled with CurrentProgress or ExistsInCache.
+
+#### Returns
+
+Returns a PreloaderStatusCode indicating the initial status of the request. The final result of the request
+    may be deferred due to asynchronous network operations, so if this request returns Success or
+    RequestInProgress, the user should continue to query CurrentProgress
+    every frame to confirm that the network request completes successfully.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthMode | DepthMode | - |
+
+---
+
+## Overload 2
+
+public abstract PreloaderStatusCode DownloadModel(ScanningSQCMode scanningSQCMode)
+
+#### Summary
+
+Begins downloading the requested model file to the cache if not already present. The request status can be
+    polled with CurrentProgress or ExistsInCache.
+
+#### Returns
+
+Returns a PreloaderStatusCode indicating the initial status of the request. The final result of the request
+    may be deferred due to asynchronous network operations, so if this request returns Success or
+    RequestInProgress, the user should continue to query CurrentProgress
+    every frame to confirm that the network request completes successfully.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthMode | DepthMode | - |
+
+---

@@ -1,0 +1,32 @@
+# NianticSpatial.NSDK.AR.Auth
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth/
+
+Auth
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AuthClient | AuthClient | Static client for interacting with the Auth Manager service. Provides methods to manage authentication tokens and check authorization status. |
+| AuthRuntimeRefreshManager | AuthRuntimeRefreshManager | Manager to ensure that the access token is refreshed in the background (assuming we have a valid refresh token). |
+
+---
+
+## Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AuthInfo | ValueType | Authentication information containing token claims. Contains parsed JWT claims including token string, expiration, user information, and other standard JWT fields. |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AuthEnvironmentType | AuthEnvironmentType | The type of environment to use for authentication (selects which portal and identity server to use) |
+
+---

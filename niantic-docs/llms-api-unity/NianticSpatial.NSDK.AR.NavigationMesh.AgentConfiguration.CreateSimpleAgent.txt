@@ -1,0 +1,13 @@
+# CreateSimpleAgent
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.AgentConfiguration.CreateSimpleAgent/
+
+CreateSimpleAgent
+
+---
+
+## Declaration
+
+public static AgentConfiguration CreateSimpleAgent()
+
+---

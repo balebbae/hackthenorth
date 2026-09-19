@@ -1,0 +1,13 @@
+# Create
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM.NsdkCpuImage.Create/
+
+Create
+
+---
+
+## Declaration
+
+public static NsdkCpuImage Create()
+
+---

@@ -1,0 +1,30 @@
+# TryAcquireSuppressionMaskCpuImage
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.TryAcquireSuppressionMaskCpuImage/
+
+TryAcquireSuppressionMaskCpuImage
+
+---
+
+## Declaration
+
+public bool TryAcquireSuppressionMaskCpuImage(out XRCpuImage cpuImage, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Tries to acquire the latest suppression mask XRCpuImage. Each element of the XRCpuImage is a uint32 value
+    which can be used to interpolate between instantaneous depth and far field depth.
+
+#### Returns
+
+True if the CPU image was acquired. Otherwise, false
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| cpuImage | XRCpuImage | If this method returns `true`, an acquired XRCpuImage. The CPU image must be disposed by the caller. |
+| samplerMatrix | Matrix4x4 | A matrix that converts from viewport to image coordinates according to the latest pose. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

@@ -1,0 +1,43 @@
+# AssetMeshData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AssetMeshData/
+
+AssetMeshData
+
+---
+
+## Declaration
+
+struct AssetMeshData
+
+## Summary
+
+Mesh-specific asset data.
+Maps to proto message AssetMeshData.
+
+---
+
+## Constructors
+
+init?(fromC cValue: UnsafePointer<ARDK_SitesManager_AssetMeshData>?)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let meshCoverage | Double | Mesh coverage in square meters. |
+| let nodeIds | [String] | All node IDs from the space. |
+| let rootNodeId | String | Root node ID of the first valid space. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible 
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

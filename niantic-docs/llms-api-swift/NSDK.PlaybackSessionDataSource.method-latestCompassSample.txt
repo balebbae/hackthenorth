@@ -1,0 +1,18 @@
+# latestCompassSample
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackSessionDataSource.method-latestCompassSample/
+
+latestCompassSample
+Returns the most recent compass (heading) sample, if available.
+
+---
+
+## Declaration
+
+func latestCompassSample() -> NSDKFrameData.CompassData?
+
+#### Summary
+
+Returns the most recent compass (heading) sample, if available.
+
+---

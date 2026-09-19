@@ -1,0 +1,30 @@
+# LocationMetadata
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.LocationMetadata/
+
+LocationMetadata
+Location metadata for a frame. All fields optional for varying capture formats.
+
+---
+
+## Declaration
+
+data class LocationMetadata
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| altitude | Double? | - |
+| altitudeAccuracy | Double? | - |
+| heading | Double? | - |
+| headingAccuracy | Double? | - |
+| headingTimestamp | Double? | - |
+| latitude | Double? | - |
+| longitude | Double? | - |
+| positionAccuracy | Double? | - |
+| positionTimestamp | Double? | - |
+
+---

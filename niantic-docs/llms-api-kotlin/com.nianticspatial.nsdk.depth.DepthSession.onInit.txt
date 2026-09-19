@@ -1,0 +1,13 @@
+# onInit
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.depth.DepthSession.onInit/
+
+onInit
+
+---
+
+## Declaration
+
+override fun onInit()
+
+---

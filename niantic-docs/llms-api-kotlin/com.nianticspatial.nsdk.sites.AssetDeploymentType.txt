@@ -1,0 +1,35 @@
+# AssetDeploymentType
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetDeploymentType/
+
+AssetDeploymentType
+
+---
+
+## Declaration
+
+enum class AssetDeploymentType
+
+## Summary
+
+Asset deployment type.
+Maps to proto enum AssetDeploymentType.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| PRODUCTION | PRODUCTION | - |
+| UNSPECIFIED | UNSPECIFIED | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| toString | String | - |
+
+---

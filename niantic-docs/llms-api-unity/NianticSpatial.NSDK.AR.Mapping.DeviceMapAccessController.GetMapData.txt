@@ -1,0 +1,34 @@
+# GetMapData
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController.GetMapData/
+
+GetMapData
+Get the current map data.
+
+---
+
+## Declaration
+
+public bool GetMapData(out byte[] mapData)
+
+#### Summary
+
+Get the current map data.
+
+#### Returns
+
+True if successful, false otherwise.
+
+> **Info:**
+>
+> **Notice**
+>
+> This is an experimental feature, and is subject to breaking changes or deprecation without notice
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| mapData | byte[] | The serialized map data will be written here. |
+
+---

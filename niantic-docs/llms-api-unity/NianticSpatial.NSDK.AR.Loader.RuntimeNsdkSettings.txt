@@ -1,0 +1,60 @@
+# RuntimeNsdkSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.RuntimeNsdkSettings/
+
+RuntimeNsdkSettings
+
+---
+
+## Declaration
+
+public class RuntimeNsdkSettings : IAuthSettings
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly AccessExpiresAt | int | - |
+| AccessToken | string | - |
+| readonly AuthEnvironment | AuthEnvironmentType | - |
+| EndFrame | int | - |
+| FileNsdkLogLevel | LogLevel | The highest log level to print for a file logger |
+| IsRuntimeLogin | bool | - |
+| LocationAndCompassDataSource | LocationDataSource | Source of location and compass data fetched from the NianticSpatial.NSDK.AR.Input APIs |
+| LoopPlaybackInfinitely | bool | - |
+| readonly NsdkSimulationParams | NsdkSimulationParams | - |
+| PlaybackDatasetPath | string | - |
+| PreferLidarIfAvailable | bool | When enabled, LiDAR depth will be used instead of NSDK depth on devices where LiDAR is available. Features unique to the NsdkOcclusionExtension cannot be used. |
+| readonly RefreshExpiresAt | int | - |
+| RefreshToken | string | - |
+| RunPlaybackManually | bool | - |
+| readonly SpoofCompassInfo | SpoofCompassInfo | Values returned by compass service when in Spoof mode |
+| readonly SpoofLocationInfo | SpoofLocationInfo | Values returned by location service when in Spoof mode |
+| StartFrame | int | - |
+| StdOutNsdkLogLevel | LogLevel | The highest log level to print for the stdout logger - typically for internal testing. Keep this off unless you know what you are looking for |
+| UnityNsdkLogLevel | LogLevel | The highest log level to print for Unity logger |
+| UseNsdkDepth | bool | When enabled, NSDK's depth and occlusion features can be used via ARFoundation. Additional occlusion features unique to NSDK can be configured in the NsdkOcclusionExtension component. |
+| UseNsdkDeviceMapping | bool | When enabled, NSDK's device mapping features can be used. |
+| UseNsdkMeshing | bool | When enabled, NSDK's meshing features can be used via ARFoundation. Additional mesh features unique to NSDK can be configured in the LightshipMeshingExtension component. |
+| UseNsdkScanning | bool | When enabled, NSDK's scanning features can be used. |
+| UseNsdkSceneSegmentation | bool | When enabled, NSDK's scene segmentation features can be used. |
+| UseNsdkVps2 | bool | When enabled, NSDK's VPS2 feature can be used. |
+| UsePlayback | bool | - |
+| readonly UsingAccessTokenOverride | bool | Whether an access token override was provided and is being used instead of developer auth. When true, the refresh loop should not run. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ToString | string | - |
+| UpdateAccess | void | - |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.Auth.IAuthSettings

@@ -1,0 +1,18 @@
+# Dispose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.IModelPreloader.Dispose/
+
+Dispose
+Dispose the handle to the native model preloader.
+
+---
+
+## Declaration
+
+public abstract void Dispose()
+
+#### Summary
+
+Dispose the handle to the native model preloader.
+
+---

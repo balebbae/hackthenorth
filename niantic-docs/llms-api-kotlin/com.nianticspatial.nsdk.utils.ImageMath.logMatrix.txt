@@ -1,0 +1,20 @@
+# logMatrix
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath.logMatrix/
+
+logMatrix
+
+---
+
+## Declaration
+
+fun Matrix.logMatrix(tag: String = "Matrix", label: String = "Matrix")
+
+#### Summary
+
+Logs the contents of this Matrix as a 3x3 matrix.
+
+The matrix values are printed in row-major order, as used internally by android.graphics.Matrix.
+Useful for debugging transformations like scale, rotation, skew, and perspective.
+
+---

@@ -1,0 +1,27 @@
+# GetElement
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.SpatialTree.GetElement/
+
+GetElement
+
+---
+
+## Declaration
+
+public bool GetElement(Vector2Int atPosition, out GridNode result)
+
+#### Summary
+
+Returns the grid node at the specified location if exists.
+    @param atPosition The location of the grid node.
+    @param result The element stored at the specified location.
+    @returns True, if the grid node could be located.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| atPosition | Vector2Int | - |
+| result | GridNode | - |
+
+---

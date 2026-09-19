@@ -1,0 +1,48 @@
+# PlaybackFrame
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-PlaybackFrame/
+
+PlaybackFrame
+
+---
+
+## Declaration
+
+struct PlaybackFrame
+
+## Summary
+
+One "frame" of playback: metadata (pose, intrinsics, orientation, etc.), optional camera image, optional depth.
+Exposes `.camera` -> **PlaybackCamera**. Created by PlaybackSession and delivered to the delegate and PlaybackRenderer.
+Relation to Apple AR: Not an Apple type. Delivered **instead of ARFrame** when in playback; the app gets
+frame-like data (image, camera, etc.) from the delegate so app code can stay uniform.
+
+---
+
+## Constructors
+
+init(metadata: PlaybackDataset.FrameMetadata, image: CGImage?, depthData: CVPixelBuffer? = nil, depthConfidence: CVPixelBuffer? = nil)
+
+#### Summary
+
+Creates a playback frame with the given metadata and optional image/depth buffers.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let camera | PlaybackCamera | Camera representation for this frame (view/projection/viewport). Created once when the frame is built; use without branching on session type. |
+| let depthConfidence | CVPixelBuffer? | Per-pixel depth confidence (UInt8) when available; nil if not present in the dataset. |
+| let depthData | CVPixelBuffer? | Depth buffer (Float32, meters) for this frame if the dataset includes LiDAR depth; otherwise nil. |
+| let image | CGImage? | The RGB camera image for this frame (e.g. for background display). Nil if the dataset has no image for this index. |
+| let metadata | PlaybackDataset.FrameMetadata | Frame metadata from the dataset: pose4x4, intrinsics, resolution, tracking state, orientation, timestamps, location. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Sendable 
+
+conforms to:  Swift.SendableMetatype

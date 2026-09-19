@@ -1,0 +1,18 @@
+# GetLatestLocalizationRequestRecords
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.GetLatestLocalizationRequestRecords/
+
+GetLatestLocalizationRequestRecords
+Get all the network request records since the last time this method was called.
+
+---
+
+## Declaration
+
+public List<XRVps2LocalizationRequestRecord> GetLatestLocalizationRequestRecords()
+
+#### Summary
+
+Get all the network request records since the last time this method was called.
+
+---

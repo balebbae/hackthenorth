@@ -1,0 +1,15 @@
+# NianticSpatial.NSDK.AR.Utilities.Auth
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Auth/
+
+Auth
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AuthPublicUtils | AuthPublicUtils | Static class for auth-related utility functions that are shared as part of the public API |
+
+---

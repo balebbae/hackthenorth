@@ -1,0 +1,18 @@
+# Clear
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh.Clear/
+
+Clear
+Removes all surfaces from the NsdkNavMesh.
+
+---
+
+## Declaration
+
+public void Clear()
+
+#### Summary
+
+Removes all surfaces from the NsdkNavMesh.
+
+---

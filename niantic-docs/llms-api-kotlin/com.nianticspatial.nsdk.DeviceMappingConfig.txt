@@ -1,0 +1,25 @@
+# DeviceMappingConfig
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.DeviceMappingConfig/
+
+DeviceMappingConfig
+
+---
+
+## Declaration
+
+class DeviceMappingConfig
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| slickLearnedFeaturesEnabled | Boolean | - |
+| slickMapperFrameRate | Int | - |
+| splitterMaxDistanceMeters | Float | - |
+| splitterMaxDurationSeconds | Float | - |
+| trackingEdgesDisabled | Boolean | - |
+
+---

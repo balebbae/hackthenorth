@@ -1,0 +1,53 @@
+# ImageFormat
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.enum-ImageFormat/
+
+ImageFormat
+
+---
+
+## Declaration
+
+enum ImageFormat
+
+## Summary
+
+Supported image formats for camera and depth data.
+These formats define how pixel data is organized in memory and what
+each pixel value represents. Different formats are used for color
+images versus depth images.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case ARGB32 | ARGB32 | 32-bit ARGB color format.8 bits each for alpha, red, green, and blue channels. |
+| case BGRA32 | BGRA32 | 32-bit BGRA color format.8 bits each for blue, green, red, and alpha channels. |
+| case depthFloat32 | depthFloat32 | Depth data as 32-bit floating point values.High-precision depth format, typically with values in meters. |
+| case depthUInt16 | depthUInt16 | Depth data as 16-bit unsigned integers.Common format for depth cameras, with depth values in millimeters. |
+| case oneComponent32 | oneComponent32 | Single 32-bit component per pixel.Used for high-precision single-channel data. |
+| case oneComponent8 | oneComponent8 | Single 8-bit component per pixel.Typically used for grayscale images or single-channel data. |
+| case RGB24 | RGB24 | 24-bit RGB color format.8 bits each for red, green, and blue channels (no alpha). |
+| case RGBA32 | RGBA32 | 32-bit RGBA color format.8 bits each for red, green, blue, and alpha channels. |
+| case unknown | unknown | Unknown or unsupported image format. |
+| case YUV420888 | YUV420888 | YUV 4:2:0 format with separate Y, U, V planes.Each color component is stored in a separate plane. |
+| case YUV420NV12 | YUV420NV12 | YUV 4:2:0 format with NV12 plane arrangement.Common format for camera data with Y plane followed by interleaved UV plane. |
+| case YUV420NV21 | YUV420NV21 | YUV 4:2:0 format with NV21 plane arrangement.Similar to NV12 but with interleaved VU plane instead of UV. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable

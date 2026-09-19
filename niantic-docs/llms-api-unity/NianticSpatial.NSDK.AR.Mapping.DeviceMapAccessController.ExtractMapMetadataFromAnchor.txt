@@ -1,0 +1,37 @@
+# ExtractMapMetadataFromAnchor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController.ExtractMapMetadataFromAnchor/
+
+ExtractMapMetadataFromAnchor
+Extract the metadata from a map relative to an anchor on the map.
+
+---
+
+## Declaration
+
+public bool ExtractMapMetadataFromAnchor(string anchorPayload, byte[] mapData, out Vector3[] points, out float[] errors)
+
+#### Summary
+
+Extract the metadata from a map relative to an anchor on the map.
+
+#### Returns
+
+True if successful, false otherwise.
+
+> **Info:**
+>
+> **Notice**
+>
+> This is an experimental feature, and is subject to breaking changes or deprecation without notice
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorPayload | string | The anchor payload as a byte array. The returned map metadata will be relative to this anchor. |
+| mapData | byte[] | The map to extract the metadata from. |
+| points | Vector3[] | The positions of the feature points in the map. |
+| errors | float[] | The error metric for each of the points in the map. |
+
+---

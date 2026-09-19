@@ -1,0 +1,21 @@
+# NsdkSimulationNavigationUtility
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationNavigationUtility/
+
+NsdkSimulationNavigationUtility
+
+---
+
+## Declaration
+
+public static class NsdkSimulationNavigationUtility
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static SetArfSimulationNavigation | void | - |
+
+---

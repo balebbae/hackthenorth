@@ -1,0 +1,14 @@
+# CameraIntrinsicsFromARCore
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CameraIntrinsicsFromARCore/
+
+CameraIntrinsicsFromARCore
+> extends CameraIntrinsics 
+
+---
+
+## Declaration
+
+class CameraIntrinsicsFromARCore
+
+---

@@ -1,0 +1,13 @@
+# GetLatestLocalization
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.Provider.GetLatestLocalization/
+
+GetLatestLocalization
+
+---
+
+## Declaration
+
+public virtual XRVps2Localization GetLatestLocalization()
+
+---

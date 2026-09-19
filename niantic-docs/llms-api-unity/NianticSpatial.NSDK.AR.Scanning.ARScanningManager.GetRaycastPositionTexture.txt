@@ -1,0 +1,18 @@
+# GetRaycastPositionTexture
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager.GetRaycastPositionTexture/
+
+GetRaycastPositionTexture
+Read the current raycast position texture.
+
+---
+
+## Declaration
+
+public Texture2D GetRaycastPositionTexture()
+
+#### Summary
+
+Read the current raycast position texture.
+
+---

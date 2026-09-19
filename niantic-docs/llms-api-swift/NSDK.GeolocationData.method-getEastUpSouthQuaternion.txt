@@ -1,0 +1,18 @@
+# getEastUpSouthQuaternion
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.GeolocationData.method-getEastUpSouthQuaternion/
+
+getEastUpSouthQuaternion
+Returns the orientation converted to East-Up-South (EUS) frame.
+
+---
+
+## Declaration
+
+func getEastUpSouthQuaternion() -> simd_quatf
+
+#### Summary
+
+Returns the orientation converted to East-Up-South (EUS) frame.
+
+---

@@ -1,0 +1,22 @@
+# LocationDataSource
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationDataSource/
+
+LocationDataSource
+
+---
+
+## Declaration
+
+public enum LocationDataSource
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Sensors | LocationDataSource | - |
+| static Spoof | LocationDataSource | - |
+
+---

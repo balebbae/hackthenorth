@@ -1,0 +1,29 @@
+# IsOnNavMesh
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh.IsOnNavMesh/
+
+IsOnNavMesh
+Checks if a particular 3d position is on the NsdkNavMesh (within a certain threshold).
+
+---
+
+## Declaration
+
+public bool IsOnNavMesh(Vector3 position, float delta)
+
+#### Summary
+
+Checks if a particular 3d position is on the NsdkNavMesh (within a certain threshold).
+
+#### Returns
+
+true if the position provided is within delta meters of the NsdkNavMesh grid plane.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| position | Vector3 | The 3d position to check for. |
+| delta | float | The threshold distance from the NsdkNavMesh to check against. |
+
+---

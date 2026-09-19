@@ -1,0 +1,13 @@
+# GetNodeId
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.XRDeviceMap.GetNodeId/
+
+GetNodeId
+
+---
+
+## Declaration
+
+public TrackableId GetNodeId()
+
+---

@@ -1,0 +1,24 @@
+# PositionFromMatrix
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MatrixUtils.PositionFromMatrix/
+
+PositionFromMatrix
+
+---
+
+## Declaration
+
+public static Vector3 PositionFromMatrix(Matrix4x4 matrix)
+
+#### Summary
+
+Returns the position from a transform matrix.
+    @param matrix The matrix from which to extract the position.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| matrix | Matrix4x4 | - |
+
+---

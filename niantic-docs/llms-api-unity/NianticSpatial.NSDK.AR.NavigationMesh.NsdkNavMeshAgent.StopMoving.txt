@@ -1,0 +1,13 @@
+# StopMoving
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgent.StopMoving/
+
+StopMoving
+
+---
+
+## Declaration
+
+public void StopMoving()
+
+---

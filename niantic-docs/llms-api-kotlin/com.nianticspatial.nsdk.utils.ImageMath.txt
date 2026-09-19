@@ -1,0 +1,40 @@
+# ImageMath
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath/
+
+ImageMath
+
+---
+
+## Declaration
+
+object ImageMath
+
+## Summary
+
+Kotlin wrapper for ARDK ImageMath functions.
+Each function returns an [android.graphics.Matrix] corresponding to a 3x3 affine or projective transformation.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| affineCrop | Matrix | Returns an affine transformation that crops the source sizeto match the aspect ratio of the target size. |
+| affineFit | Matrix | Returns an affine transformation that maps normalized coordinatesin the source frame to normalized coordinates in the target frame. |
+| affineInvertHorizontal | Matrix | Returns an affine matrix for horizontal mirroring.Maps `(u, v)` -> `(1 - u, v)`. |
+| affineInvertVertical | Matrix | Returns an affine matrix for vertical mirroring.Maps `(u, v)` -> `(u, 1 - v)`. |
+| affineRotation | Matrix | Returns an (u, v) -> (u', v') transformation that represents a 2D affine rotation. |
+| affineScaling | Matrix | Returns an (u, v) -> (u', v') transformation that represents a 2D affine scaling. |
+| affineTranslation | Matrix | Returns an (u, v) -> (u', v') transformation that represents a 2D affine translation. |
+| calculateDeviceRotation | Matrix | Returns an affine transform that rotates between two interface orientations around the center.This method models physical device rotation. |
+| calculateViewRotation | Matrix | Returns an affine transform that rotates between two interface orientations around the center.This method models UI rotation (opposite to physical device rotation). |
+| concatenating | Matrix | Returns a new [Matrix] representing the concatenation of this matrixwith another matrix, mimicking the behavior of CoreGraphics'`concatenating(_:)` method on iOS. |
+| displayTransform | Matrix | Returns an affine transform [Matrix] that maps normalized image coordinatesinto a coordinate space suitable for rendering the camera image in thegiven viewport and orientation. |
+| logAffine | void | Logs the affine components of this [Matrix] in a readable format.Prints the matrix in iOS-style notation:a, b, c, d, tx, tycorresponding to the 2x3 affine transform:[ a c tx ][ b d ty ] |
+| logMatrix | void | Logs the contents of this [Matrix] as a 3x3 matrix.The matrix values are printed in row-major order, as used internally by [android.graphics.Matrix].Useful for debugging transformations like scale, rotation, skew, and perspective. |
+| reprojection | Matrix | Returns a 3x3 homography matrix (`android.graphics.Matrix`) that reprojects image coordinatesfrom a reference camera view into a target camera view.This is typically used to transform 2D image-space coordinates (normalized in [0..1])from one camera perspective to another, e.g. for aligning visual overlays between AR frames. |
+| reprojectPoints | void | Applies a full 3x3 projective transformation (homography) to a set of 2D points,using this [Matrix] as a homography matrix.Unlike [Matrix.mapPoints], this method correctly applies the bottom row of the matrixand performs the required perspective divide.Transformed points are clamped to the [-1f..2f] range to ensure compatibility withUI constraints. |
+
+---

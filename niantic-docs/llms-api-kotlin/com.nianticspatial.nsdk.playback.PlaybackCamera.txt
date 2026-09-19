@@ -1,0 +1,43 @@
+# PlaybackCamera
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackCamera/
+
+PlaybackCamera
+
+---
+
+## Declaration
+
+class PlaybackCamera
+
+## Summary
+
+Camera representation for playback, built from frame [metadata]. Exposes transform, intrinsics, resolution,
+tracking state, and orientation. Use [toArCorePose] to build a [Pose] for [FrameData.cameraPose].
+Use [getViewMatrix] and [getProjectionMatrix] to drive a virtual camera for playback rendering.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| imageResolution | Pair<Int, Int> | Image resolution (width, height) in pixels. |
+| intrinsics | CameraIntrinsics | Camera intrinsics (focal length, principal point, dimensions). |
+| orientation | Orientation | Screen orientation from metadata. |
+| trackingState | TrackingState | ARCore tracking state for this frame. |
+| transform | FloatArray | Camera-to-world 4x4 transform (column-major) as FloatArray of 16 elements. |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| displayOrientedTransform | FloatArray | Display-oriented camera-to-world transform with Z rotation applied for the given orientation.Sensor frame is landscape-right; portrait adds π/2, portrait-upside-down adds -π/2, landscape-left adds π.Use for rendering so the camera matches on-screen orientation. |
+| getDisplayOrientedPose | Pose | Display-oriented camera pose (Z rotation applied for the given orientation).Use for VPS2 and UI that need heading aligned with the display. |
+| getProjectionMatrix | FloatArray | OpenGL-style projection matrix (column-major) from intrinsics for the given viewport and near/far.Use with [getViewMatrix] to render 3D content aligned with the playback camera. |
+| getViewMatrix | FloatArray | World-to-camera view matrix (column-major) for the given display orientation.Inverse of [displayOrientedTransform]. Pass to OpenGL/GLES as the view matrix. |
+| toArCorePose | Pose | Builds an ARCore [Pose] from this frame's 4x4 transform (column-major).Use for [FrameData.cameraPose] when building frame data from playback. |
+
+---

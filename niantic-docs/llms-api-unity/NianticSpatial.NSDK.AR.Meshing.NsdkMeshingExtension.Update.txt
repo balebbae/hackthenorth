@@ -1,0 +1,13 @@
+# Update
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension.Update/
+
+Update
+
+---
+
+## Declaration
+
+public void Update()
+
+---

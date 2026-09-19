@@ -1,0 +1,37 @@
+# LocationService
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationService/
+
+LocationService
+Interface into location service functionality.
+
+---
+
+## Declaration
+
+public class LocationService : IPlaybackDatasetUser
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly isEnabledByUser | bool | Indicates whether the device allows access the application to access the location service. |
+| readonly lastData | LocationInfo | The last geographical location that the device registered. |
+| readonly status | LocationServiceStatus | Returns the location service status. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Start | void | Starts location service updates. |
+| Stop | void | Stops location service updates. This is useful to save battery power when the application doesn't require the location service. |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.Subsystems.Playback.IPlaybackDatasetUser

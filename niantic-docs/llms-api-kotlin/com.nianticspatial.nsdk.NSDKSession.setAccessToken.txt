@@ -1,0 +1,18 @@
+# setAccessToken
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession.setAccessToken/
+
+setAccessToken
+Set the access token at runtime. Invalid/empty tokens are ignored by native.
+
+---
+
+## Declaration
+
+fun setAccessToken(token: String)
+
+#### Summary
+
+Set the access token at runtime. Invalid/empty tokens are ignored by native.
+
+---

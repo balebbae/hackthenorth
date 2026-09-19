@@ -1,0 +1,44 @@
+# XRDeviceMappingSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem/
+
+XRDeviceMappingSubsystem
+> extends UnityEngine.SubsystemsImplementation.SubsystemWithProvider
+
+---
+
+## Declaration
+
+public class XRDeviceMappingSubsystem : SubsystemWithProvider<XRDeviceMappingSubsystem, XRDeviceMappingSubsystemDescriptor, Provider>
+
+---
+
+## Constructors
+
+public XRDeviceMappingSubsystem()
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly IsMapping | bool | Whether mapping is currently in progress. |
+| SplitterMaxDistanceMeters | float | Node splitter config for max distance travelled before creating a new map node. |
+| SplitterMaxDurationSeconds | float | Node splitter config for max duration exceeded before creating a new map node. |
+| TargetFrameRate | uint | Target framerate to run mappers. A value of 0 indicates maximum framerate. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| StartMapping | void | Start map generation. |
+| StopMapping | void | Stop map generation. |
+
+---
+
+## Relationships
+
+derived:  NsdkDeviceMappingSubsystem

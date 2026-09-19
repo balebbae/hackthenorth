@@ -1,0 +1,26 @@
+# trackAnchor
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.trackAnchor/
+
+trackAnchor
+Start tracking an anchor specified by a base64 payload.
+
+---
+
+## Declaration
+
+fun trackAnchor(payload: String): UUID
+
+#### Summary
+
+Start tracking an anchor specified by a base64 payload.
+
+#### Returns
+
+The anchor's unique id -- an NSDK UUID (typealias UUID = ByteArray, a 32-byte ASCII uppercase-hex id, not java.util.UUID). Use anchorIdToString for a printable string.
+
+#### Throws
+
+NsdkInvalidArgumentStatusException -- if the payload is invalid. Check NSDK's C logs for more information.
+
+---

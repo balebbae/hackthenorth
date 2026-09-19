@@ -1,0 +1,19 @@
+# URPMaterialSetter
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.URPMaterialSetter/
+
+URPMaterialSetter
+> extends UnityEngine.MonoBehaviour
+
+---
+
+## Declaration
+
+public class URPMaterialSetter : MonoBehaviour
+
+## Summary
+
+Controls URP related execution paths in the material's shader to prevent
+compilation errors when the Universal RP package is not present.
+
+---

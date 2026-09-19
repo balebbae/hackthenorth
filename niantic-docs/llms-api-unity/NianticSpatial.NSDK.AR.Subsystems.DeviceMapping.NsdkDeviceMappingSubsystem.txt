@@ -1,0 +1,26 @@
+# NsdkDeviceMappingSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.DeviceMapping.NsdkDeviceMappingSubsystem/
+
+NsdkDeviceMappingSubsystem
+> extends XRDeviceMappingSubsystem 
+
+---
+
+## Declaration
+
+public sealed class NsdkDeviceMappingSubsystem : XRDeviceMappingSubsystem, ISubsystemWithMutableApi<IApi>
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SwitchToInternalMockImplementation | void | - |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.ISubsystemWithMutableApi

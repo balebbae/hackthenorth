@@ -1,0 +1,30 @@
+# Metadata
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Settings.Metadata/
+
+Metadata
+Contains metadata and properties regarding the current instance of NSDK
+
+---
+
+## Declaration
+
+public static class Metadata
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static readonly Version | string | Returns the nsdk version that you are using |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static SetAccessToken | void | Sets the access token for authentication with NSDK services. This token will be used for API Gateway requests instead of the API key. |
+
+---

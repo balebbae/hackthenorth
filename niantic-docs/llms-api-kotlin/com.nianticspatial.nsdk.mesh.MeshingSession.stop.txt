@@ -1,0 +1,23 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshingSession.stop/
+
+stop
+
+---
+
+## Declaration
+
+fun stop()
+
+#### Summary
+
+Stops the meshing feature.
+
+> Note: This will clear the mesh data.
+
+#### See also
+
+start
+
+---

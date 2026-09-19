@@ -1,0 +1,24 @@
+# AssetResult
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetResult/
+
+AssetResult
+Result of an asset information request.
+
+---
+
+## Declaration
+
+public readonly struct AssetResult : ValueType
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly Assets | AssetInfo[] | The assets returned by the request. Empty array if the request failed or is in progress. |
+| readonly Error | SitesError | The error code if the request failed. |
+| readonly Status | SitesRequestStatus | The status of the request. |
+
+---

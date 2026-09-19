@@ -1,0 +1,24 @@
+# MapMetadata
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MapMetadata/
+
+MapMetadata
+
+---
+
+## Declaration
+
+data class MapMetadata
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| errors | FloatArray | - |
+| points | FloatArray | - |
+| pointsCount | Int | - |
+| usesLearnedFeatures | Boolean | - |
+
+---

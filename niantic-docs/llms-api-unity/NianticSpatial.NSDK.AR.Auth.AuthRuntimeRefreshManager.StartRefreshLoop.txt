@@ -1,0 +1,19 @@
+# StartRefreshLoop
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthRuntimeRefreshManager.StartRefreshLoop/
+
+StartRefreshLoop
+
+---
+
+## Declaration
+
+public static async Task StartRefreshLoop(string userSessionRefreshToken)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| userSessionRefreshToken | string | - |
+
+---

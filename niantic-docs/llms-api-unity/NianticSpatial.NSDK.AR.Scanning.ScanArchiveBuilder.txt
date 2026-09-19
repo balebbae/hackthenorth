@@ -1,0 +1,43 @@
+# ScanArchiveBuilder
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanArchiveBuilder/
+
+ScanArchiveBuilder
+
+---
+
+## Declaration
+
+public class ScanArchiveBuilder : IDisposable
+
+---
+
+## Constructors
+
+public ScanArchiveBuilder(SavedScan scan, UploadUserInfo uploadUserInfo, int maxFramesPerChunk)
+
+#### Summary
+
+Creates an ScanArchiveBuilder for getting scan archive paths for async uploading.
+
+#### Returns
+
+An instance of ScanArchiveBuilder. Only one should be used at a time.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CancelGetNextChunkTask | void | Cancel the current in-progress task from CreateTaskToGetNextChunk. Notice that it is possible for the chunk building to succeed before cancellation occurs. If cancelled, the task will be in "failed" state. |
+| CreateTaskToGetNextChunk | Task<string> | Creates a task for packing the next chunk. Must only be called if HasMoreChunks is true, and no other task is currently running. The task is not started automatically. The caller of this method should start the task. The task does not block. |
+| Dispose | void | Dispose the object and its internal resources. User MUST call this function to explicitly dispose the resources otherwise memories will be leaking. |
+| HasMoreChunks | bool | - |
+| IsValid | bool | Return if the ScanArchiveBuilder class is valid. Users must called this function and only use the other ScanArchiveBuilder APIs when it return true. |
+
+---
+
+## Relationships
+
+implements:  System.IDisposable

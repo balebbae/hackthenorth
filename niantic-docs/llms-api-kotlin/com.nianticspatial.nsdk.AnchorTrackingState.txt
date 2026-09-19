@@ -1,0 +1,57 @@
+# AnchorTrackingState
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AnchorTrackingState/
+
+AnchorTrackingState
+
+---
+
+## Declaration
+
+enum class AnchorTrackingState
+
+## Summary
+
+Represents the current tracking state of a VPS anchor.
+The tracking state indicates how well the system is able to track an anchor's position
+and orientation in the current environment. This information is crucial for determining
+the reliability of anchor pose data.
+
+### Overview
+
+Tracking states progress from not tracked to fully tracked, with limited tracking
+representing an intermediate state where tracking is possible but may be less reliable.
+
+### Example
+
+```kotlin
+val update = vpsSession.getAnchorUpdate(anchorId)
+when (update.trackingState) {
+AnchorTrackingState.NOT_TRACKED ->
+println("Anchor is not currently being tracked")
+AnchorTrackingState.LIMITED ->
+println("Anchor tracking is limited - pose may be unreliable")
+AnchorTrackingState.TRACKED ->
+println("Anchor is fully tracked - pose is reliable")
+}
+```
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| LIMITED | LIMITED | The anchor is being tracked with limited accuracy.In this state, the system can provide pose estimates but they may be lessreliable than fully tracked anchors. This often occurs during initializationor when visual conditions are challenging. |
+| NOT_TRACKED | NOT_TRACKED | The anchor is not currently being tracked.This state indicates that the system cannot determine the anchor's positionand orientation. This may occur when the device is not in the mapped areaor when visual features are insufficient for tracking. |
+| TRACKED | TRACKED | The anchor is being tracked with full accuracy.This is the optimal tracking state where the system can provide reliablepose estimates for the anchor. The anchor's position and orientationshould be considered accurate for AR applications. |
+
+---

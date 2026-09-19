@@ -1,0 +1,21 @@
+# setThrottleEnabled
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.logging.Logging.setThrottleEnabled/
+
+setThrottleEnabled
+
+---
+
+## Declaration
+
+fun setThrottleEnabled(enabled: Boolean)
+
+#### Summary
+
+Enables or disables log throttling globally.
+
+When disabled, all throttled log callsites log unconditionally regardless of their
+configured interval. Useful for debugging noisy per-frame logs. Throttling is enabled
+by default.
+
+---

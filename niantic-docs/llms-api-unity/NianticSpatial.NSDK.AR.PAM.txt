@@ -1,0 +1,24 @@
+# NianticSpatial.NSDK.AR.PAM
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM/
+
+PAM
+
+---
+
+## Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| NsdkCpuImage | ValueType | A Niantic Spatial Development Kit intermediate class to hold image data before sending down to native via NsdkFrameData. Should be able to hold references to XRCpuImage, MagicLeap and others' data. Does not own any of it. Is not related to NsdkCpuImageApi. |
+| NsdkCpuImagePlane | ValueType | - |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ImageFormatCEnum | uint | - |
+
+---

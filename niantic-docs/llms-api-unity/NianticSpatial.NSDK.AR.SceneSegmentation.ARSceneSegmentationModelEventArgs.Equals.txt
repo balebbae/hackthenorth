@@ -1,0 +1,49 @@
+# Equals
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationModelEventArgs.Equals/
+
+Equals
+Tests for equality.
+
+---
+
+## Declaration
+
+public override bool Equals(object obj)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if obj is of type ARSceneSegmentationModelEventArgs and
+    Equals also returns true; otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| obj | object | The `object` to compare against. |
+
+---
+
+## Overload
+
+public bool Equals(ARSceneSegmentationModelEventArgs other)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if every field in other is equal to this ARSceneSegmentationModelEventArgs, otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| obj | object | The `object` to compare against. |
+
+---

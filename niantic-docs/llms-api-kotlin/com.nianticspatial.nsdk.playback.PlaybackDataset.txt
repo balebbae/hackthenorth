@@ -1,0 +1,52 @@
+# PlaybackDataset
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDataset/
+
+PlaybackDataset
+
+---
+
+## Declaration
+
+class PlaybackDataset
+
+## Summary
+
+A playback dataset loaded from a capture JSON file.
+Uses on-demand loading for frame images and depth: only the requested frame is loaded and cached (1-frame cache).
+Create via [PlaybackDataset.loadFrom] with a [PlaybackDatasetSource] (e.g. [AssetPlaybackDatasetLoader]).
+Use [loadFrom][PlaybackDataset.loadFrom] with a custom [imageDecoder] in unit tests to avoid [BitmapFactory] (not mocked on JVM).
+**Thread safety:** This class is NOT thread-safe. All methods must be called from a single thread.
+The 1-frame cache ([cachedFrameIndex], [cachedImageBytes], [cachedDepthData], [cachedConfidenceData])
+is not protected by a lock; concurrent reads and writes will produce inconsistent results.
+[PlaybackSession] satisfies this constraint by funneling all frame loads through a single coroutine dispatcher.
+If you introduce additional callers, ensure they are serialized.
+Cache fields are marked [@Volatile][Volatile] so that a value written on a background thread is
+immediately visible to any thread that subsequently reads it (e.g. the main thread checking
+[cachedFrameIndex] before deciding to reload). This is a visibility guarantee only -- it does
+not make compound check-then-act sequences atomic.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| frameCount | Int | - |
+| frameInterval | Double | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| getDepthConfidenceAtIndex | ByteArray? | Loads depth confidence (UInt8 binary) at [index] on-demand. Returns null if not available. |
+| getDepthDataAtIndex | ByteArray? | Loads depth data (Float32 binary) at [index] on-demand. Returns null if this frame has no depth. |
+| getFrameImageAtIndex | android.graphics.Bitmap? | Loads the frame image at [index] on-demand (and caches it). Returns decoded bitmap, or null if no image. |
+| getFrameImageBytesAtIndex | ByteArray | Returns raw image bytes at [index] (on-demand, cached). Use when you need bytes instead of Bitmap. |
+| getFrameMetadataAtIndex | FrameMetadata | Returns frame metadata at [index]. |
+| getPlaybackFrameAtIndex | PlaybackFrame | Loads a single frame at [index] as a [PlaybackFrame] (metadata, camera, optional image and depth).Image load failure yields a frame with [PlaybackFrame.image] null; depth is null when not available. |
+| hasDepth | Boolean | True if the dataset declares LiDAR depth ([depthSource] == "lidar"). |
+
+---

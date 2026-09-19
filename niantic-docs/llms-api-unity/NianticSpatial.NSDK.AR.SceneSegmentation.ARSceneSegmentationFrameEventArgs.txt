@@ -1,0 +1,18 @@
+# ARSceneSegmentationFrameEventArgs
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationFrameEventArgs/
+
+ARSceneSegmentationFrameEventArgs
+
+---
+
+## Declaration
+
+public readonly struct ARSceneSegmentationFrameEventArgs : ValueType
+
+## Summary
+
+A structure for camera-related information pertaining to a particular frame.
+This is used to communicate information in the frameReceived event.
+
+---

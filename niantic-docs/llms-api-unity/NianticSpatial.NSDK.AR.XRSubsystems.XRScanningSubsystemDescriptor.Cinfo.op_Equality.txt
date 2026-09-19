@@ -1,0 +1,22 @@
+# ==
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystemDescriptor.Cinfo.op_Equality/
+
+\==
+Tests for equality. Same as Equals.
+
+---
+
+## Declaration
+
+public static bool operator ==(Cinfo lhs, Cinfo rhs)
+
+#### Summary
+
+Tests for equality. Same as Equals.
+
+#### Returns
+
+True if lhs is equal to rhs, otherwise false.
+
+---

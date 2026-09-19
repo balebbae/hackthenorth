@@ -1,0 +1,33 @@
+# AssetPipelineJobStatus
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetPipelineJobStatus/
+
+AssetPipelineJobStatus
+
+---
+
+## Declaration
+
+public enum AssetPipelineJobStatus
+
+## Summary
+
+Asset pipeline job status.
+Maps to proto enum AssetPipelineJobStatus.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Failed | AssetPipelineJobStatus | Job failed. |
+| static NotFound | AssetPipelineJobStatus | Job not found. |
+| static Pending | AssetPipelineJobStatus | Job is pending. |
+| static Ready | AssetPipelineJobStatus | Job is ready. |
+| static Running | AssetPipelineJobStatus | Job is running. |
+| static Succeeded | AssetPipelineJobStatus | Job succeeded. |
+| static Unknown | AssetPipelineJobStatus | Job status is unknown. |
+| static Unspecified | AssetPipelineJobStatus | Status not specified. |
+
+---

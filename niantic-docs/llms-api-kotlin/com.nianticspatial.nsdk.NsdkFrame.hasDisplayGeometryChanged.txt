@@ -1,0 +1,18 @@
+# hasDisplayGeometryChanged
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkFrame.hasDisplayGeometryChanged/
+
+hasDisplayGeometryChanged
+True if display rotation or viewport changed since the previous frame. Matches ARCore [Frame.hasDisplayGeometryChanged]. Playback always returns false.
+
+---
+
+## Declaration
+
+abstract fun hasDisplayGeometryChanged(): Boolean
+
+#### Summary
+
+True if display rotation or viewport changed since the previous frame. Matches ARCore Frame.hasDisplayGeometryChanged. Playback always returns false.
+
+---

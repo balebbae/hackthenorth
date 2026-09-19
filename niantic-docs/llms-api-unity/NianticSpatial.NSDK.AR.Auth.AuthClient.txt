@@ -1,0 +1,30 @@
+# AuthClient
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthClient/
+
+AuthClient
+
+---
+
+## Declaration
+
+public static class AuthClient
+
+## Summary
+
+Static client for interacting with the Auth Manager service.
+Provides methods to manage authentication tokens and check authorization status.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static GetAccessAuthInfo | AuthInfo | Gets access token authentication information. Returns authentication information containing information about the current access token. |
+| static GetRefreshAuthInfo | AuthInfo | Gets refresh token authentication information. Returns authentication information containing information about the current refresh token. |
+| static IsAuthorized | bool | Checks if auth tokens are valid and ready for use. Returns true if a valid, non-expired access token is available. |
+| static SetAccessToken | void | Sets the access token for authentication with NSDK services. This token will be used for API Gateway requests instead of the API key. |
+| static StaticLogout | void | Clears cached auth tokens from persistent storage without requiring an NSDK context. This is the preferred logout path -- safe to call before NSDK is initialized or after it has been destroyed. Any running session will pick up the cleared tokens on its next reconciliation cycle. |
+
+---

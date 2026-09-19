@@ -1,0 +1,24 @@
+# PlaybackDatasetConstants
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-PlaybackDatasetConstants/
+
+PlaybackDatasetConstants
+Constants for playback dataset file names and extensions.
+
+---
+
+## Declaration
+
+enum PlaybackDatasetConstants
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static let captureJSONFileExtension | String | The file extension for the capture JSON file. |
+| static let captureJSONFileName | String | The filename (without extension) for the capture JSON file. |
+| static var captureJSONFullName | String | The full filename for the capture JSON file (filename.extension). |
+
+---

@@ -1,0 +1,55 @@
+# GpsData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-GpsData/
+
+GpsData
+
+---
+
+## Declaration
+
+struct GpsData
+
+## Summary
+
+GPS location data for geographic positioning.
+This structure contains location information from the device's GPS system,
+providing geographic coordinates and accuracy estimates for location-based
+AR features and location positioning.
+
+---
+
+## Constructors
+
+init(timestampMs: UInt64, latitude: Double, longitude: Double, altitude: Double, verticalAccuracy: Float, horizontalAccuracy: Float)
+
+#### Summary
+
+Creates GPS data with the specified location parameters.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var altitude | Double | Altitude above sea level in meters.This value may be negative for locations below sea level.Accuracy depends on GPS signal quality and atmospheric conditions. |
+| var horizontalAccuracy | Float | Horizontal accuracy of the position measurement in meters.Lower values indicate more accurate position readings. Values under5 meters are considered good accuracy for most AR applications. |
+| var latitude | Double | Latitude coordinate in decimal degrees.Positive values represent locations north of the equator,negative values represent locations south of the equator. |
+| var longitude | Double | Longitude coordinate in decimal degrees.Positive values represent locations east of the Prime Meridian,negative values represent locations west of the Prime Meridian. |
+| var timestampMs | UInt64 | Timestamp when the GPS reading was captured (in milliseconds). |
+| var verticalAccuracy | Float | Vertical accuracy of the altitude measurement in meters.Lower values indicate more accurate altitude readings. GPS altitudeis typically less accurate than horizontal position. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable

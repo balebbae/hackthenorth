@@ -1,0 +1,18 @@
+# hasDepth
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDataset.hasDepth/
+
+hasDepth
+True if the dataset declares LiDAR depth ([depthSource] == "lidar").
+
+---
+
+## Declaration
+
+fun hasDepth(): Boolean
+
+#### Summary
+
+True if the dataset declares LiDAR depth (depthSource == "lidar").
+
+---

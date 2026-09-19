@@ -1,0 +1,25 @@
+# com.nianticspatial.nsdk.awareness.scenesegmentation
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation/
+
+scenesegmentation
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SceneSegmentationConfig | SceneSegmentationConfig | Configuration for the scene segmentation feature.This class provides configuration options for the scene segmentation processing system,allowing customization of frame rate, processing mode, and other parameters.Non-boolean fields left at default values will be internally converted toappropriate defaults by the system. |
+| SceneSegmentationResult | SceneSegmentationResult | Represents the result of the scene segmentation processor.This class encapsulates all the data returned from a processed scene segmentation frame,including the semantic image data, camera pose, intrinsics, and timing information. |
+| SceneSegmentationSession | SceneSegmentationSession | Creates a SceneSegmentation session for semantic understanding.The SceneSegmentation feature allows you to understand the semantic content of the environment,identifying objects, surfaces, and other meaningful elements in the scene. |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SceneSegmentationChannel | SceneSegmentationChannel | Represents the different semantic segmentation channels that can be detected.This mirrors the native ARDK_Semantics_Channel enum. |
+
+---

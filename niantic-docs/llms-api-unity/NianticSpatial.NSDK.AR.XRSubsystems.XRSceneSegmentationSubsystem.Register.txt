@@ -1,0 +1,28 @@
+# Register
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.Register/
+
+Register
+Register the descriptor for the semantics subsystem implementation.
+
+---
+
+## Declaration
+
+public static bool Register(XRSceneSegmentationSubsystemCinfo sceneSegmentationSubsystemCinfo)
+
+#### Summary
+
+Register the descriptor for the semantics subsystem implementation.
+
+#### Returns
+
+true if the descriptor was registered. Otherwise, false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| sceneSegmentationSubsystemCinfo | XRSceneSegmentationSubsystemCinfo | The semantics subsystem implementation construction information. |
+
+---

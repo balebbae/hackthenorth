@@ -1,0 +1,20 @@
+# dispose
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackSession.dispose/
+
+dispose
+
+---
+
+## Declaration
+
+fun dispose()
+
+#### Summary
+
+Stops playback and releases all held references. Call from the owning component's teardown
+(e.g. androidx.lifecycle.ViewModel.onCleared or android.app.Activity.onDestroy) to
+prevent the listener lambda from retaining a reference to a destroyed component.
+After dispose, this session should not be reused.
+
+---

@@ -1,0 +1,19 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFeatureSession.method-start/
+
+start
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts the feature session.
+After starting, the session will begin processing incoming frame data according to
+its configured behavior. The session must be configured before starting.
+
+---

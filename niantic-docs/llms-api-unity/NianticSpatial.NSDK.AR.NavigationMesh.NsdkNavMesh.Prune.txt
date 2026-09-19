@@ -1,0 +1,20 @@
+# Prune
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh.Prune/
+
+Prune
+
+---
+
+## Declaration
+
+public void Prune(Vector3 keepNodesOrigin, float range)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| keepNodesOrigin | Vector3 | - |
+| range | float | - |
+
+---

@@ -1,0 +1,22 @@
+# removeAnchor
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.removeAnchor/
+
+removeAnchor
+Stop tracking an anchor.
+
+---
+
+## Declaration
+
+fun removeAnchor(anchorId: UUID)
+
+#### Summary
+
+Stop tracking an anchor.
+
+#### Throws
+
+NsdkInvalidArgumentStatusException -- if no anchor with the id anchorId has been created or added for tracking. Check NSDK's C logs for more information.
+
+---

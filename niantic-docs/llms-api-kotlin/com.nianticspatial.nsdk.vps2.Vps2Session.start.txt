@@ -1,0 +1,13 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.start/
+
+start
+
+---
+
+## Declaration
+
+fun start()
+
+---

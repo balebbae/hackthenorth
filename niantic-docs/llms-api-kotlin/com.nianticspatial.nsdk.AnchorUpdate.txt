@@ -1,0 +1,54 @@
+# AnchorUpdate
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AnchorUpdate/
+
+AnchorUpdate
+
+---
+
+## Declaration
+
+data class AnchorUpdate
+
+## Summary
+
+Contains the latest tracking information for a VPS anchor.
+`AnchorUpdate` provides comprehensive information about an anchor's current state,
+including its pose, tracking quality, and status information. This data is updated
+as VPS refines its localization.
+
+### Overview
+
+Anchor updates are retrieved via `getAnchorUpdate(uuid)` and provide the
+most current information about an anchor's position, orientation, and tracking status.
+The data includes confidence metrics and timestamps for quality assessment.
+
+### Example
+
+```kotlin
+val update = vpsSession.getAnchorUpdate(anchorId)
+println("Anchor ID: ${update.uuid}")
+println("Pose: ${update.anchorToLocalTrackingTransform}")
+println("Tracking State: ${update.trackingState}")
+println("Confidence: ${update.trackingConfidence}")
+if (update.trackingState == AnchorTrackingState.TRACKED && update.trackingConfidence > 0.8f) {
+// Use anchor pose for AR content placement
+placeARContent(update.anchorToLocalTrackingTransform)
+}
+```
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchorToLocalTrackingTransform | Pose | The 4x4 transformation matrix from anchor space to local tracking space.This matrix represents the anchor's position and orientation relative to thedevice's current local coordinate system. Use this for placing AR contentrelative to the anchor. |
+| geolocation | GeolocationData? | Geolocation data of the anchor, or null if unavailable. |
+| timestampMs | Long | Timestamp when this update was generated (in milliseconds since epoch). |
+| trackingConfidence | Float | Confidence score for the current tracking estimate.A value between 0.0 and 1.0 indicating the reliability of the pose estimate.Higher values indicate more reliable tracking. Use this to determine whetherthe pose data is suitable for your application. |
+| trackingState | AnchorTrackingState | The current tracking state of the anchor.Indicates whether the anchor is being tracked and how reliable the pose data is.See [AnchorTrackingState] for detailed information about each state. |
+| trackingStateReason | AnchorTrackingStateReason | Additional context about the tracking state.Provides specific reasons for tracking issues or state changes, helpingapplications understand and respond to tracking problems. |
+| uuid | UUID | The unique identifier of the anchor. |
+
+---

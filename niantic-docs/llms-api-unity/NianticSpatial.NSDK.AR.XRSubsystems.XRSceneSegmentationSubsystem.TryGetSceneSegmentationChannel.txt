@@ -1,0 +1,36 @@
+# TryGetSceneSegmentationChannel
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.TryGetSceneSegmentationChannel/
+
+TryGetSceneSegmentationChannel
+Get the XRTextureDescriptor for the specified semantic channel.
+
+---
+
+## Declaration
+
+public bool TryGetSceneSegmentationChannel(SceneSegmentationChannel channel, out XRTextureDescriptor sceneSegmentationChannelDescriptor, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Get the XRTextureDescriptor for the specified semantic channel.
+
+#### Returns
+
+true if the semantic channel texture descriptor is available and is returned. Otherwise,
+    false.
+
+#### Throws
+
+NotSupportedException -- Thrown if the implementation does not support semantics channel     texture.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channel | SceneSegmentationChannel | The semantics channel to acquire. |
+| sceneSegmentationChannelDescriptor | XRTextureDescriptor | The resulting semantic channel texture descriptor, if available. |
+| samplerMatrix | Matrix4x4 | The matrix that transforms from normalized viewport coordinates to normalized texture coordinates. |
+| cameraParams | Nullable<XRCameraParams> | Describes the viewport the texture is to be displayed on. |
+
+---

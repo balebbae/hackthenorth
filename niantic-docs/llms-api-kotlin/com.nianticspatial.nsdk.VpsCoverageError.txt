@@ -1,0 +1,41 @@
+# VpsCoverageError
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.VpsCoverageError/
+
+VpsCoverageError
+
+---
+
+## Declaration
+
+enum class VpsCoverageError
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CURL_CLIENT_ERROR | CURL_CLIENT_ERROR | - |
+| HTTP_RESPONSE_ERROR_FORBIDDEN | HTTP_RESPONSE_ERROR_FORBIDDEN | - |
+| HTTP_RESPONSE_ERROR_NOT_FOUND | HTTP_RESPONSE_ERROR_NOT_FOUND | - |
+| HTTP_RESPONSE_ERROR_TOO_MANY_REQUESTS | HTTP_RESPONSE_ERROR_TOO_MANY_REQUESTS | - |
+| INTERNAL_SERVER_ERROR | INTERNAL_SERVER_ERROR | - |
+| INVALID_REQUEST | INVALID_REQUEST | - |
+| NONE | NONE | - |
+| TOO_MANY_ENTITIES_REQUESTED | TOO_MANY_ENTITIES_REQUESTED | - |
+| UNKNOWN_ERROR | UNKNOWN_ERROR | - |
+
+---
+
+## Relationships
+
+implements:  ErrorCodeProvider

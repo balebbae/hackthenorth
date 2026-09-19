@@ -1,0 +1,18 @@
+# isDeviceFlat
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper.isDeviceFlat/
+
+isDeviceFlat
+Returns true when the device is roughly flat (face-up or face-down).
+
+---
+
+## Declaration
+
+fun isDeviceFlat(): Boolean
+
+#### Summary
+
+Returns true when the device is roughly flat (face-up or face-down).
+
+---

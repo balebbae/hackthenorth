@@ -1,0 +1,39 @@
+# Vps2LocalizationRequestType
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationRequestType/
+
+Vps2LocalizationRequestType
+
+---
+
+## Declaration
+
+enum class Vps2LocalizationRequestType
+
+## Summary
+
+VPS2 localization request type.
+Mirrors `ARDK_VPS2_LocalizationRequestType`.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| GET_GRAPH | GET_GRAPH | - |
+| GET_REPLACED_NODES | GET_REPLACED_NODES | - |
+| REGISTER_NODE | REGISTER_NODE | - |
+| UNIVERSAL_LOCALIZE | UNIVERSAL_LOCALIZE | - |
+| UNKNOWN | UNKNOWN | - |
+| VPS_LOCALIZE | VPS_LOCALIZE | - |
+
+---

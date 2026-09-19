@@ -1,0 +1,25 @@
+# Dispose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.Dispose/
+
+Dispose
+Releases native resources.
+
+---
+
+## Declaration
+
+public void Dispose()
+
+#### Summary
+
+Releases native resources.
+
+#### Remarks
+
+The Unity SDK does not explicitly destroy the SitesManager component because
+    we can't easily guarantee the component will be destroyed before NsdkUnityContext is.
+    The native NSDK holds a shared pointer to its components, so when it is destroyed,
+    all its components will be released too.
+
+---

@@ -1,0 +1,13 @@
+# DestroySubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkStandaloneLoader.DestroySubsystem/
+
+DestroySubsystem
+
+---
+
+## Declaration
+
+public new void DestroySubsystem<T>() where T : class, ISubsystem
+
+---

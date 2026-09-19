@@ -1,0 +1,56 @@
+# Bounds
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Bounds/
+
+Bounds
+Specifies an area in a top-down 2D grid using a square.
+
+---
+
+## Declaration
+
+public readonly struct Bounds : ValueType, IEquatable<Bounds>
+
+---
+
+## Constructors
+
+public Bounds(Vector2Int bottomLeft, int size)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly BottomLeft | Vector2Int | Returns the bottom left corner point (this is also the anchor of this square). |
+| readonly BottomRight | Vector2Int | Returns the bottom right corner point. |
+| readonly Center | Vector2Int | Returns the center of the square. |
+| readonly TopLeft | Vector2Int | Returns the top left corner point. |
+| readonly TopRight | Vector2Int | Returns the top right corner point. |
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Size | int | The size of each side. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ContainsPoint | bool | Returns true if the specified point is within bounds. |
+| DrawGizmos | void | - |
+| Equals | bool | - |
+| GetHashCode | int | - |
+| Intersects | bool | Returns true if the specified bounds overlap with this one. |
+
+---
+
+## Relationships
+
+implements:  System.IEquatable

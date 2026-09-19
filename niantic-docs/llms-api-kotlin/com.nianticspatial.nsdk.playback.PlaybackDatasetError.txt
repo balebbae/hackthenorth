@@ -1,0 +1,15 @@
+# PlaybackDatasetError
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetError/
+
+PlaybackDatasetError
+> extends Exception 
+Errors that can occur when loading or accessing playback dataset data.
+
+---
+
+## Declaration
+
+sealed class PlaybackDatasetError 
+
+---

@@ -1,0 +1,28 @@
+# save
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.ScanningSession.save/
+
+save
+
+---
+
+## Declaration
+
+suspend fun save( timeoutMillis: Long = TIMEOUT_MS ): AsyncResult<ScanSaveInfo, ScanSaveError>
+
+#### Summary
+
+Asynchronously saves the current scan and polls until the operation is complete.
+
+This function initiates the save operation and then suspends until the save
+process finishes, either with a success, a failure, or a timeout.
+
+#### Returns
+
+An AsyncResult which will be either AsyncResult.Success containing the final ScanSaveInfo on success, AsyncResult.Error detailing the failure reason, or AsyncResult.Timeout indicating a timeout in the scanning process
+
+#### Throws
+
+ArdkInvalidOperationStatusException -- if there were no frames to save. Call getRecordingInfo to check there are frames before calling this function.
+
+---

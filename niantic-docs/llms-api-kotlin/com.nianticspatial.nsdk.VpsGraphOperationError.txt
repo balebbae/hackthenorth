@@ -1,0 +1,46 @@
+# VpsGraphOperationError
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.VpsGraphOperationError/
+
+VpsGraphOperationError
+
+---
+
+## Declaration
+
+enum class VpsGraphOperationError
+
+## Summary
+
+Error codes for VPS graph operations.
+These errors can occur during VPS operations that query the internal graph structure,
+such as converting device poses to geolocations. Each error provides specific information
+about why the operation failed.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| NONE | NONE | No error occurred - the operation completed successfully. |
+| NOT_INITIALIZED | NOT_INITIALIZED | The VPS system has not been initialized yet. |
+| NOT_LOCALIZED | NOT_LOCALIZED | The device has not successfully localized to a VPS location. |
+| NO_GEOREFERENCE_DATA | NO_GEOREFERENCE_DATA | The VPS location does not have GPS georeference data.This can occur when trying to get geolocation for private/test scansthat don't have GPS coordinates associated with them. |
+| NO_TRANSFORM_TO_TRACKING_NODE | NO_TRANSFORM_TO_TRACKING_NODE | No transform path exists between the requested node and the tracking node. |
+| TARGET_NODE_NOT_FOUND | TARGET_NODE_NOT_FOUND | The requested target node was not found in the VPS graph. |
+| UNKNOWN_ERROR | UNKNOWN_ERROR | An unknown error occurred during the operation. |
+
+---
+
+## Relationships
+
+implements:  ErrorCodeProvider

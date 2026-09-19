@@ -1,0 +1,13 @@
+# SwitchToInternalMockImplementation
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.DeviceMapping.NsdkDeviceMappingSubsystem.SwitchToInternalMockImplementation/
+
+SwitchToInternalMockImplementation
+
+---
+
+## Declaration
+
+public void SwitchToInternalMockImplementation()
+
+---

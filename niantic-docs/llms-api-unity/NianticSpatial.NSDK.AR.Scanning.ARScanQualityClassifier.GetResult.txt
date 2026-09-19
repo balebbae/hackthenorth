@@ -1,0 +1,29 @@
+# GetResult
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanQualityClassifier.GetResult/
+
+GetResult
+
+---
+
+## Declaration
+
+public ScanQualityResult GetResult(string scanPath)
+
+#### Summary
+
+Returns a ScanQualityResult of current quality compute,
+    Scores are in range of [0, 1.0]. Higher values means high scan quality.
+    Categories are within ScanQualityCategory.
+
+#### Returns
+
+A ScanQualityResult with list of Scores and CategoriesFailRequirement.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| scanPath | string | - |
+
+---

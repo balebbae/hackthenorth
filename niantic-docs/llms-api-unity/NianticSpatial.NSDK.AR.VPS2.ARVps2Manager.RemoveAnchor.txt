@@ -1,0 +1,19 @@
+# RemoveAnchor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.RemoveAnchor/
+
+RemoveAnchor
+
+---
+
+## Declaration
+
+public void RemoveAnchor(ARVps2Anchor anchor)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchor | ARVps2Anchor | - |
+
+---

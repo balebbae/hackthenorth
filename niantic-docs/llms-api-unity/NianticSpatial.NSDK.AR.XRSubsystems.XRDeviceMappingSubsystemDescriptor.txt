@@ -1,0 +1,22 @@
+# XRDeviceMappingSubsystemDescriptor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystemDescriptor/
+
+XRDeviceMappingSubsystemDescriptor
+> extends UnityEngine.SubsystemsImplementation.SubsystemDescriptorWithProvider
+
+---
+
+## Declaration
+
+public class XRDeviceMappingSubsystemDescriptor : SubsystemDescriptorWithProvider<XRDeviceMappingSubsystem, Provider>
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Create | void | Creates a new subsystem descriptor and registers it with the SubsystemManager. |
+
+---

@@ -1,0 +1,38 @@
+# PlaybackGpsLocation
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackGpsLocation/
+
+PlaybackGpsLocation
+
+---
+
+## Declaration
+
+data class PlaybackGpsLocation
+
+## Summary
+
+GPS location from playback metadata (no Android dependency). Use [toLocation] to obtain
+[android.location.Location] for [FrameData.location]. Testable without mocking Android.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| accuracy | Float? | - |
+| altitude | Double? | - |
+| latitude | Double | - |
+| longitude | Double | - |
+| timeMs | Long? | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| toLocation | Location | Builds [android.location.Location] for use with [FrameData.location]. |
+
+---

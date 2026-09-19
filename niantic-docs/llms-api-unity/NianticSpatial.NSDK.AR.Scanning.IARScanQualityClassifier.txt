@@ -1,0 +1,17 @@
+# IARScanQualityClassifier
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.IARScanQualityClassifier/
+
+IARScanQualityClassifier
+
+---
+
+## Declaration
+
+public interface IARScanQualityClassifier : IDisposable
+
+---
+
+## Relationships
+
+implemented by:  ARScanQualityClassifier

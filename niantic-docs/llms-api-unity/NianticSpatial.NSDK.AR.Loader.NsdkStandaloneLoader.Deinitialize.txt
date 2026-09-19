@@ -1,0 +1,22 @@
+# Deinitialize
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkStandaloneLoader.Deinitialize/
+
+Deinitialize
+Destroys each subsystem.
+
+---
+
+## Declaration
+
+public override bool Deinitialize()
+
+#### Summary
+
+Destroys each subsystem.
+
+#### Returns
+
+Always returns true.
+
+---

@@ -1,0 +1,28 @@
+# XRDeviceMap
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.XRDeviceMap/
+
+XRDeviceMap
+
+---
+
+## Declaration
+
+public readonly struct XRDeviceMap : ValueType
+
+---
+
+## Constructors
+
+public XRDeviceMap(TrackableId nodeId, byte[] data)
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CopyData | byte[] | - |
+| GetNodeId | TrackableId | - |
+
+---

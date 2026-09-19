@@ -1,0 +1,23 @@
+# TryPrepareSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.Provider.TryPrepareSubsystem/
+
+TryPrepareSubsystem
+If the semantic segmentation model is ready, prepare the subsystem's data structures.
+
+---
+
+## Declaration
+
+public virtual bool TryPrepareSubsystem()
+
+#### Summary
+
+If the semantic segmentation model is ready, prepare the subsystem's data structures.
+
+#### Returns
+
+true if the semantic segmentation model is ready and the subsystem has prepared its data structures. Otherwise,
+    false.
+
+---

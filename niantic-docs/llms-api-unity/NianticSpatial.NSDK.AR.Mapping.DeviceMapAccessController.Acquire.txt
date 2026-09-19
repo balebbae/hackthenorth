@@ -1,0 +1,22 @@
+# Acquire
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController.Acquire/
+
+Acquire
+Gets or creates the shared map access object.
+
+---
+
+## Declaration
+
+public static DeviceMapAccessController Acquire()
+
+#### Summary
+
+Gets or creates the shared map access object.
+
+#### Returns
+
+The shared DeviceMapAccessController instance, or null if one could not be acquired.
+
+---

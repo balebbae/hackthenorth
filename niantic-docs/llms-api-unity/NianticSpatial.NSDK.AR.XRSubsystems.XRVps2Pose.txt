@@ -1,0 +1,29 @@
+# XRVps2Pose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Pose/
+
+XRVps2Pose
+
+---
+
+## Declaration
+
+public struct XRVps2Pose : ValueType
+
+## Summary
+
+Structure describing device location in local AR coordinate space as
+calculated by VPS2.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| HeadingAccuracy | float | Accuracy of yaw rotation in degrees. |
+| HorizontalAccuracy | float | Horizontal accuracy radius of the pose in meters. |
+| Pose | Pose | Device location in local AR coordinate space. |
+| VerticalAccuracy | float | Vertical accuracy radius of the pose in meters. |
+
+---

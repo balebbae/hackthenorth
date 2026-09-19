@@ -1,0 +1,18 @@
+# GetDataAsBytes
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Anchor.GetDataAsBytes/
+
+GetDataAsBytes
+
+---
+
+## Declaration
+
+public byte[] GetDataAsBytes()
+
+#### Summary
+
+The payload for this anchor as bytes[]
+    This is an expensive call!
+
+---

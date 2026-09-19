@@ -1,0 +1,38 @@
+# MappingStorageSession
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.MappingStorageSession/
+
+MappingStorageSession
+> extends SessionBase 
+
+---
+
+## Declaration
+
+class MappingStorageSession
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| mapUpdates | Flow<ByteArray?> | Flow of map updates. This is the primary way to receive map updates in Kotlin.The Flow emits [ByteArray] whenever new map updates are available, or `null` if no update is available.This provides incremental updates to the map that have been made since the last update. |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| add | void | Add serialized map data to the map storage. |
+| clear | void | Clear the map storage.Removes all stored map data and resets the storage to an empty state.> Note: Must not be called if VPS is running. |
+| createRootAnchor | String? | Creates an anchor on the existing map located at the origin of the current AR session,if possible.The root anchor represents the origin point of the map coordinate system and can beused with VPS for localization. |
+| extractMetadata | MapMetadata? | Extract the metadata from a map relative to a specified anchor.Render the feature points in the metadata relative to the specified anchor to visualize the map.This is only possible when the anchor is linked directly to the map's node(s), or if theanchor's nodes are reachable to the map's nodes from the currently active transform graph. |
+| getData | ByteArray? | Get the complete map data.This function returns all the map data accumulated during the AR session, serialized as aDeviceMap protobuf. This data can be saved, shared, and/or used for localization. |
+| getUpdate | ByteArray? | Get the latest map update data.This function returns the incremental map changes (new nodes and edges) that have been addedsince the last update, encoded as a DeviceMap protobuf. |
+| mergeUpdate | ByteArray? | Merge a map update into an existing map.Combines incremental map updates with existing map data to create an updated completemap dataset. |
+| onDestroy | void | - |
+| onInit | void | - |
+
+---

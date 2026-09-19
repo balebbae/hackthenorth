@@ -1,0 +1,41 @@
+# Configuration
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMeshingSession.struct-Configuration/
+
+Configuration
+The type of configuration used by this session
+
+---
+
+## Declaration
+
+struct Configuration
+
+---
+
+## Constructors
+
+init(frameRate: UInt32 = 0, fuseKeyframesOnly: Bool = false, maximumIntegrationDistance: Float = 0, voxelSize: Float = 0, enableDistanceBasedVolumetricCleanup: Bool = false, numVoxelLevels: Int32 = 0, meshBlockSize: Float = 0, meshCullingDistance: Float = 0, enableMeshDecimation: Bool = true, filterMeshWithSceneSegmentation: Bool = false, enableAllowlist: Bool = false, packedAllowlist: SceneSegmentationChannels = SceneSegmentationChannels(), enableBlocklist: Bool = false, packedBlocklist: SceneSegmentationChannels = SceneSegmentationChannels())
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var enableAllowlist | Bool | If true, packedAllowlist will be used to filter the mesh.Requires filterMeshWithSceneSegmentation to be true. |
+| var enableBlocklist | Bool | If true, packedBlocklist will be used to filter the mesh.Requires filterMeshWithSceneSegmentation to be true. |
+| var enableDistanceBasedVolumetricCleanup | Bool | If true, the feature will clean up internal data that is far away from the userto improve performance. This will not remove previously-generated mesh. |
+| var enableMeshDecimation | Bool | If true, mesh surfaces will be simplified to save compute and memory |
+| var filterMeshWithSceneSegmentation | Bool | If true, the mesh will be filtered according to the packedAllowlist and/or packedBlocklist. |
+| var frameRate | UInt32 | Target frame rate for the meshing feature |
+| var fuseKeyframesOnly | Bool | If true, only high-quality frames will be integrated into the mesh,but updates will be less frequent |
+| var maximumIntegrationDistance | Float | The maximum distance from the device sensor to incorporate depth data, in meters |
+| var meshBlockSize | Float | The size of the mesh blocks, in meters |
+| var meshCullingDistance | Float | Mesh culling distance, in metersSetting meshCullingDistance less than maximumIntegrationDistance may leadto unexpected behaviour. |
+| var numVoxelLevels | Int32 | The levels of detail in the voxel gridBy default, this is 0.Setting this to a value greater than 1 will allow lower detail levels to be usedin areas with less thorough coverage. |
+| var packedAllowlist | SceneSegmentationChannels | Semantic channels to include in the mesh (e.g. `[.ground, .grass]`). |
+| var packedBlocklist | SceneSegmentationChannels | Semantic channels to exclude from the mesh (e.g. `[.sky]`). |
+| var voxelSize | Float | Voxel size for the meshing engine, in meters |
+
+---

@@ -1,0 +1,19 @@
+# GetSessionId
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.GetSessionId/
+
+GetSessionId
+
+---
+
+## Declaration
+
+public bool GetSessionId(out string sessionId)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| sessionId | string | - |
+
+---

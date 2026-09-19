@@ -1,0 +1,17 @@
+# ISubsystemWithModelMetadata
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.XR.ISubsystemWithModelMetadata/
+
+ISubsystemWithModelMetadata
+
+---
+
+## Declaration
+
+public interface ISubsystemWithModelMetadata
+
+---
+
+## Relationships
+
+implemented by:  XRSceneSegmentationSubsystem

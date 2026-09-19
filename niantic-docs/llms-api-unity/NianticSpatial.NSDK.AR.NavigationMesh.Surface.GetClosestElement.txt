@@ -1,0 +1,19 @@
+# GetClosestElement
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Surface.GetClosestElement/
+
+GetClosestElement
+
+---
+
+## Declaration
+
+public GridNode GetClosestElement(Vector2Int reference)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| reference | Vector2Int | - |
+
+---

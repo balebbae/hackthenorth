@@ -1,0 +1,24 @@
+# setFileLogLevel
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.logging.Logging.setFileLogLevel/
+
+setFileLogLevel
+
+---
+
+## Declaration
+
+fun setFileLogLevel(ardkHandle: Long, level: LogLevel)
+
+#### Summary
+
+Sets the log level for file logs.
+
+This function filters out logs of less severity than the specified level
+for the file logger.
+
+#### Throws
+
+NsdkStatusException -- if there was an internal error
+
+---

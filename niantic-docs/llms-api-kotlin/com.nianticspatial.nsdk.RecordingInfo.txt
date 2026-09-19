@@ -1,0 +1,21 @@
+# RecordingInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.RecordingInfo/
+
+RecordingInfo
+
+---
+
+## Declaration
+
+data class RecordingInfo
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| frameCount | Int | - |
+
+---

@@ -1,0 +1,19 @@
+# InjectNsdkLoaderHelper
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSimulationLoader.InjectNsdkLoaderHelper/
+
+InjectNsdkLoaderHelper
+
+---
+
+## Declaration
+
+public void InjectNsdkLoaderHelper(NsdkLoaderHelper nsdkLoaderHelper)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| nsdkLoaderHelper | NsdkLoaderHelper | - |
+
+---

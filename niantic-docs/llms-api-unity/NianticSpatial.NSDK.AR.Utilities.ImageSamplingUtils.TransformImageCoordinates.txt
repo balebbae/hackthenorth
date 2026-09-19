@@ -1,0 +1,32 @@
+# TransformImageCoordinates
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ImageSamplingUtils.TransformImageCoordinates/
+
+TransformImageCoordinates
+Transforms pixel coordinates using the specified matrix.
+
+---
+
+## Declaration
+
+public static Vector2Int TransformImageCoordinates(Vector2Int coordinates, Vector2Int sourceContainer, Vector2Int targetContainer, Matrix4x4 transform, bool clampToContainer = false)
+
+#### Summary
+
+Transforms pixel coordinates using the specified matrix.
+
+#### Returns
+
+The transformed pixel coordinates.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| coordinates | Vector2Int | The pixel coordinates to transform. |
+| sourceContainer | Vector2Int | The resolution of the container the coordinates are interpreted in. |
+| targetContainer | Vector2Int | The resolution of the container the resulting coordinates are interpreted in. |
+| transform | Matrix4x4 | The transformation matrix. |
+| clampToContainer | bool | Whether to clamp the resulting coordinates to the bounds of the target container. |
+
+---

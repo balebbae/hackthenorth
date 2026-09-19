@@ -1,0 +1,22 @@
+# GetVoxelSize
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.GetVoxelSize/
+
+GetVoxelSize
+Get the current voxel size in meters.
+
+---
+
+## Declaration
+
+public float GetVoxelSize()
+
+#### Summary
+
+Get the current voxel size in meters.
+
+#### Returns
+
+The current voxel size in meters, or 0 if voxel visualization is not enabled.
+
+---

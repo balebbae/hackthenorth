@@ -1,0 +1,14 @@
+# IAuthEditorSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.Auth.IAuthEditorSettings/
+
+IAuthEditorSettings
+Interface to the class that holds editor-only authentication settings.
+
+---
+
+## Declaration
+
+public interface IAuthEditorSettings
+
+---

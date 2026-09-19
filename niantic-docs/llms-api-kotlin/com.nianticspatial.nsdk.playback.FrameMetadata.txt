@@ -1,0 +1,38 @@
+# FrameMetadata
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.FrameMetadata/
+
+FrameMetadata
+Per-frame metadata from the capture JSON. Required fields per spec; optional may be null.
+
+---
+
+## Declaration
+
+data class FrameMetadata
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depth | String? | - |
+| depthConfidence | String? | - |
+| depthResolution | List<Int>? | - |
+| depthTimestamp | Double? | - |
+| image | String | - |
+| intrinsics | List<Double> | - |
+| location | LocationMetadata? | - |
+| pose | List<Double> | - |
+| pose4x4 | List<Double> | - |
+| projection | List<Double>? | - |
+| resolution | List<Int> | - |
+| saveDuration | Double? | - |
+| screenOrientation | String? | - |
+| sequence | Int | - |
+| timestamp | Double | - |
+| tracking | Int | - |
+| trackingReason | Int? | - |
+
+---

@@ -1,0 +1,24 @@
+# com.nianticspatial.nsdk.scanning
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning/
+
+scanning
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ScanningSession | ScanningSession | A session for 3D scanning and visualization functionality.The scanning feature capabilities for capturing, processing, and exporting3D scan data from AR sessions. Scans of a location can be processed by the VisualPositioning System's (VPS's) cloud services to enable VPS localization. |
+
+---
+
+## Data Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| RaycastBuffer | RaycastBuffer | A read-only container for the raycast buffer information generated during scanning. |
+| VoxelBuffer | VoxelBuffer | A read-only container for the voxel buffer information generated during scanning. |
+
+---

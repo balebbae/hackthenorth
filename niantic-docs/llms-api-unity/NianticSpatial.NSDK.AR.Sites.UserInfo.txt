@@ -1,0 +1,33 @@
+# UserInfo
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.UserInfo/
+
+UserInfo
+Information about a user.
+
+---
+
+## Declaration
+
+public readonly struct UserInfo : ValueType
+
+---
+
+## Constructors
+
+public UserInfo(string id, string firstName, string lastName, string email, string status, long createdTimestamp)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly CreatedTimestamp | long | The Unix timestamp (in seconds) when the user was created. |
+| readonly Email | string | The user's email address. |
+| readonly FirstName | string | The user's first name. |
+| readonly Id | string | The unique identifier for the user. |
+| readonly LastName | string | The user's last name. |
+| readonly Status | string | The user's status. |
+
+---

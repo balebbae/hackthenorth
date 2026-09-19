@@ -1,0 +1,49 @@
+# Equals
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2AnchorPayload.Equals/
+
+Equals
+Tests for equality.
+
+---
+
+## Declaration
+
+public bool Equals(XRVps2AnchorPayload other)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if every field in other is equal to this XRVps2AnchorPayload, otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | XRVps2AnchorPayload | The other XRVps2AnchorPayload to compare against. |
+
+---
+
+## Overload
+
+public override bool Equals(object obj)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if obj is of type XRVps2AnchorPayload and
+    Equals also returns true; otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | XRVps2AnchorPayload | The other XRVps2AnchorPayload to compare against. |
+
+---

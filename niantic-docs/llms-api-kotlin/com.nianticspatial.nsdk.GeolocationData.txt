@@ -1,0 +1,34 @@
+# GeolocationData
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.GeolocationData/
+
+GeolocationData
+
+---
+
+## Declaration
+
+data class GeolocationData
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| altitude | Double | - |
+| heading | Double | - |
+| latitude | Double | - |
+| longitude | Double | - |
+| orientationEdn | FloatArray | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| getEastDownNorthQuaternion | FloatArray | Returns the orientation in East-Down-North (EDN) frame.The returned quaternion is agnostic to the orientation of the display. |
+| getEastUpSouthQuaternion | FloatArray | Returns the orientation converted to East-Up-South (EUS) frame.The returned quaternion is agnostic to the orientation of the display. |
+
+---

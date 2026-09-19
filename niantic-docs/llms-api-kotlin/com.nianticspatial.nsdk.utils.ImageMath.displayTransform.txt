@@ -1,0 +1,23 @@
+# displayTransform
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath.displayTransform/
+
+displayTransform
+
+---
+
+## Declaration
+
+fun displayTransform( orientation: Orientation, viewportSize: Size, imageSize: Size, imageOrientationOverride: Orientation? = null ): Matrix
+
+#### Summary
+
+Returns an affine transform Matrix that maps normalized image coordinates
+into a coordinate space suitable for rendering the camera image in the
+given viewport and orientation.
+
+#### Returns
+
+A Matrix that converts normalized image coordinates (origin top-left, range 0.0-1.0) into the coordinate space of the viewport.
+
+---

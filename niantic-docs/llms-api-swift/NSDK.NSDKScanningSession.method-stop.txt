@@ -1,0 +1,20 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-stop/
+
+stop
+
+---
+
+## Declaration
+
+func stop()
+
+#### Summary
+
+Stops scanning and discards any unsaved scan data.
+Halts any active scanning while keeping the scanner instance alive.
+You can restart scanning later by calling start().
+- SeeAlso: start()
+
+---

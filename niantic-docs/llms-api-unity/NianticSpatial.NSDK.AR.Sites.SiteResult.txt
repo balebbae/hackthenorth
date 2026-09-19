@@ -1,0 +1,24 @@
+# SiteResult
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SiteResult/
+
+SiteResult
+Result of a site information request.
+
+---
+
+## Declaration
+
+public readonly struct SiteResult : ValueType
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly Error | SitesError | The error code if the request failed. |
+| readonly Sites | SiteInfo[] | The sites returned by the request. Empty array if the request failed or is in progress. |
+| readonly Status | SitesRequestStatus | The status of the request. |
+
+---

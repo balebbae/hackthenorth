@@ -1,0 +1,26 @@
+# featureStatus
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshingSession.featureStatus/
+
+featureStatus
+
+---
+
+## Declaration
+
+fun featureStatus(): FeatureStatus
+
+#### Summary
+
+Reports errors that have occurred with processes running inside this feature.
+
+Check this periodically to see if any errors have occurred with
+processes running inside this feature. Once an error has been
+flagged, it will remain flagged until the culprit process has
+been run again and completed successfully.
+
+#### Returns
+
+Status that may occur within the process of feature
+
+---

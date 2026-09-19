@@ -1,0 +1,13 @@
+# CopyData
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.XRDeviceMapGraph.CopyData/
+
+CopyData
+
+---
+
+## Declaration
+
+public byte[] CopyData()
+
+---

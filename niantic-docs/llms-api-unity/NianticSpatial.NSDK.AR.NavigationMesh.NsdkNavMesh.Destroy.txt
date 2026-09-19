@@ -1,0 +1,13 @@
+# Destroy
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh.Destroy/
+
+Destroy
+
+---
+
+## Declaration
+
+public void Destroy()
+
+---

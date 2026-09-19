@@ -1,0 +1,13 @@
+# Configure
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension.Configure/
+
+Configure
+
+---
+
+## Declaration
+
+public void Configure()
+
+---

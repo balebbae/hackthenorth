@@ -1,0 +1,26 @@
+# NsdkPlaybackSessionSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.NsdkPlaybackSessionSubsystem/
+
+NsdkPlaybackSessionSubsystem
+> extends UnityEngine.XR.ARSubsystems.XRSessionSubsystem
+
+---
+
+## Declaration
+
+public class NsdkPlaybackSessionSubsystem : XRSessionSubsystem, IPlaybackDatasetUser
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| TryMoveToNextFrame | bool | - |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.Subsystems.Playback.IPlaybackDatasetUser

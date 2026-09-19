@@ -1,0 +1,18 @@
+# currentFrameIndex
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackSession.currentFrameIndex/
+
+currentFrameIndex
+Current frame index (0 until [dataset][PlaybackDataset].frameCount).
+
+---
+
+## Declaration
+
+fun currentFrameIndex(): Int
+
+#### Summary
+
+Current frame index (0 until datasetPlaybackDataset.frameCount).
+
+---

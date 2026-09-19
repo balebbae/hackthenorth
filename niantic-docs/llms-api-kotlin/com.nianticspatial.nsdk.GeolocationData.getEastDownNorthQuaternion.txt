@@ -1,0 +1,18 @@
+# getEastDownNorthQuaternion
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.GeolocationData.getEastDownNorthQuaternion/
+
+getEastDownNorthQuaternion
+
+---
+
+## Declaration
+
+fun getEastDownNorthQuaternion(): FloatArray
+
+#### Summary
+
+Returns the orientation in East-Down-North (EDN) frame.
+The returned quaternion is agnostic to the orientation of the display.
+
+---

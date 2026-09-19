@@ -1,0 +1,18 @@
+# getViewMatrix
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackCamera.getViewMatrix/
+
+getViewMatrix
+
+---
+
+## Declaration
+
+fun getViewMatrix(deviceDisplayOrientation: Orientation? = null): FloatArray
+
+#### Summary
+
+World-to-camera view matrix (column-major) for the given display orientation.
+Inverse of displayOrientedTransform. Pass to OpenGL/GLES as the view matrix.
+
+---

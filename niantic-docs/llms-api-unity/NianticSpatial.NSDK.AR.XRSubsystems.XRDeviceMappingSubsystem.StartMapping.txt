@@ -1,0 +1,18 @@
+# StartMapping
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem.StartMapping/
+
+StartMapping 
+Start map generation.
+
+---
+
+## Declaration
+
+public void StartMapping()
+
+#### Summary
+
+Start map generation.
+
+---

@@ -1,0 +1,459 @@
+# Adding Meshing to Your Project
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/adding_meshing/
+
+### Platform: unity
+
+By placing the standard [`ARMeshManager`](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.ARMeshManager.html) in a scene, developers can access a live mesh that allows virtual objects to interact with the real-world environment.
+For example, a virtual ball thrown into a meshed scene will realistically bounce off of the floor and walls.
+
+When the Niantic Spatial SDK (NSDK) is enabled in Unity, meshing is still provided through Unity's [AR Foundation Meshing Subsystem](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/manual/features/meshing.html) and enabled with the standard [`ARMeshManager`](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.ARMeshManager.html).
+NSDK overrides the default implementation and provides Niantic Spatial's proprietary meshing technology through the standard interface.
+
+> **Note:**
+>
+> Niantic Spatial Meshing works on lidar and non-lidar devices running either Android or iOS.
+> For support on lidar devices, ensure that the `Prefer LiDAR if Available` setting is checked in **Niantic Spatial Development Kit Settings** and an [AROcclusionManager](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.AROcclusionManager.html) is present in your scene.
+
+## Mesh Chunks
+
+To lighten the application's compute workload as the mesh grows, NSDK breaks the mesh up into chunks.
+The three-dimensional world is divided into a regular grid of "blocks" of a fixed size.
+When meshing is running, new mesh chunks will be created in the scene Hierarchy underneath `XROrigin` > `Trackables`.
+Each block has its own renderer and collider defined by the Mesh Prefab specified in the `ARMeshManager`.
+Mesh chunks are continually updated as new data is added to the 3D representation.
+
+## Meshing Extensions
+
+To offer more configurability than the standard `ARMeshManager`, NSDK provides an optional **`Nsdk Meshing Extension`** component.
+`Nsdk Meshing Extension` provides extra options to allow you to tweak meshing rules for distance, quality and clean-up.
+
+Add a `Nsdk Meshing Extension` component to the same game object as `ARMeshManager` to gain access to these settings:
+
+(image: Nsdk Meshing Extension settings)
+
+- **Target Frame Rate:** The number of times per second to run the mesh update routine. This should be no higher than the AR Session update rate.
+- **Fuse Keyframes Only:** Enabling this improves mesh accuracy at the cost of a lower update frequency.
+- **AR Fusion Parameters:**
+  - **Maximum Integration Distance:** The far distance threshold from the device sensor for integrating depth samples into the 3D scene, in meters. New mesh blocks will not be generated further than this distance from the camera.
+  - **Voxel Size:** The size of individual voxel elements in the scene, in meters. Higher values will save memory but also reduce the precision of the surfaces.
+  - **Enable Distance-Based Volumetric Cleanup:** Enable this to save memory and smooth latency by cleaning up already-processed elements in the feature's volumetric representation (once they move outside the region where new meshes are generated). This will not remove previously-generated mesh.
+- **AR Meshing Parameters:**
+  - **Mesh Block Size:** The size of the mesh blocks used for generating the mesh filter and mesh collider.
+  - **Mesh Culling Distance:** The distance from the user where mesh blocks will be removed from the scene. Set to 0 to disable distance-based culling.
+  - **Enable Mesh Decimation:** Enable to save memory by removing excess triangles from the mesh.
+- **Mesh Filtering:**
+  - **Is Mesh Filtering Enabled:** Check this box to enable mesh filtering. See [Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) for more information.
+  - **Semantic Segmentation Manager:** When mesh filtering is enabled, an `AR Semantic Segmentation Manager` component is required in the scene.
+  - **Allow List:** If populated, only these semantic classes will be allowed in the mesh.
+  - **Block List:** If populated, these semantic classes will be excluded from the mesh.
+- **Experimental Meshing Options:**
+  - **Enable Levels of Detail:** Check this box to enable the experimental level of detail meshing feature which saves memory and reduces latency. For more information, see the [Meshing Level of Detail](https://www.nianticspatial.com/docs/nsdk/experimental/level_of_detail_meshing/) feature page.
+
+## Mesh Filtering
+
+Mesh Filtering uses [semantic segmentation](https://www.nianticspatial.com/docs/nsdk/features/semantics/) to identify sections of a mesh as common parts of the world, such as `ground` or `sky`, then uses that information to determine what should be part of the final mesh with a user-defined allowlist and blocklist.
+For example, a blocklist containing `sky` would remove the sky from the final mesh, while an allowlist containing `ground` would exclude everything but the ground.
+See [How to Exclude Semantic Channels with Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) for more information.
+
+(image: Example usage of a semantic filtering allowlist)
+
+(image: Example of Mesh Filtering being turned on and off)
+
+## Long-Distance Meshing
+
+> **Caution:**
+>
+> These settings are only recommended for high-end devices.
+> For information on supported devices, see the [Google ARCore device list](https://developers.google.com/ar/devices) and [Apple ARKit device list](https://www.apple.com/augmented-reality).
+
+You can configure your application to mesh over much longer distances by increasing the **Voxel Size**, turning on **Enable Distance-Based Volumetric Cleanup** and increasing the **Maximum Integration Distance** and **Mesh Culling Distance** to between 20 and 40 meters.
+For example, try out the following settings:
+
+- **Target Frame Rate**: 20
+- **AR Fusion Parameters**:
+  - **Maximum Integration Distance**: 40
+  - **Voxel Size**: 0.05
+  - **Enable Distance-Based Volumetric Cleanup**: True
+- **AR Meshing Parameters**:
+  - **Mesh Block Size**: 1.4
+  - **Mesh Culling Distance**: 40 (should be >= Maximum integration distance)
+  - **Enable Mesh Decimation**: True
+
+If you use these settings, increase the **Concurrent Queue Size** setting in the `ARMeshManager` component as well to make sure that the manager can keep up with the amount of tiles being surfaced.
+This will increase CPU and GPU usage, so we recommend testing thoroughly on a variety of devices.
+
+(image: Long Distance Meshing example)
+
+(image: Long Distance Meshing example)
+
+## Lidar Devices
+
+On lidar devices, it is possible to use Niantic Spatial Meshing with either lidar depth or NSDK depth.
+To use lidar depth, ensure that **Prefer LiDAR if Available** is enabled in the Niantic Spatial Development Kit settings menu (**NSDK** top menu > **Settings**) and that an [AROcclusionManager](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.AROcclusionManager.html) is present in the scene.
+(Note that meshing will still be supported even if **No Occlusion** is selected as the **Occlusion Preference Mode**.)
+
+Lidar depth will only support a maximum integration distance of around five meters.
+If you wish to generate mesh blocks farther away from the user, disable **Prefer LiDAR if Available** to use NSDK depth instead.
+
+## More Information
+
+The [NSDK sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) includes an example of running meshing.
+
+See [How to Exclude Semantic Channels with Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) for a guide of how to set up a project with meshing.
+
+See [How to Add Physics to a Meshed Scene](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/adding_meshing/) for how to use meshing to simulate realistic collisions.
+
+### Platform: swift
+
+Niantic Spatial SDK (NSDK) exposes its meshing functionality on native iOS through the **`NsdkMeshingSession`** API.
+When the application calls `NSDKSession.update()`, an active `NsdkMeshingSession` ingests depth and device pose data and builds a mesh from it.
+
+> **Note:**
+>
+> Niantic Spatial Meshing works on lidar and non-lidar iOS devices.
+> For support on lidar devices, ensure that `NSDKSession` is configured with **`useLidar=true`** and that `sceneDepth` is added to `ARWorldTrackingConfiguration.frameSemantics`. `DefaultSessionDataSource` reads `ARFrame.sceneDepth` automatically when available.
+> See the [Swift sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) for a complete example.
+>
+> Lidar depth will only support a maximum integration distance of around five meters.
+> If you wish to generate mesh blocks farther away from the user, disable `useLidar` to use NSDK depth from RGB frames instead.
+
+## Mesh Chunks
+
+To lighten the application's compute workload as the mesh grows, NSDK breaks the mesh up into chunks.
+The three-dimensional world is divided into a regular grid of "blocks" of a fixed size.
+When meshing is running, new mesh chunks will be created as the user explores their surroundings.
+Mesh chunks are continually updated as new data is added to the 3D representation.
+
+The application should regularly read `NsdkMeshingSession.updatedMeshInfos` to get the list of updated mesh chunks:
+
+- **`ids`:** An array of all mesh chunk IDs
+- **`updated`:** An array indicating whether each chunk was updated. For each corresponding ID in `ids`, this array indicates:
+  - **Non-zero value**: The chunk has been updated since the last call to `meshDataById`. Call `meshDataById` to read the latest mesh data. Calling `meshDataById` will reset the update status for that chunk to 0.
+  - **Zero value**: The chunk has not been updated since the last call to `meshDataById`, so there is no need to read its mesh data.
+
+To get the latest mesh data, call `NsdkMeshingSession.meshDataById` for each updated chunk.
+`meshDataById` returns a `MeshData` containing the raw data for one mesh chunk:
+
+- **`verticesPtr`:** A pointer to a float array in native memory of all vertices in the mesh chunk.
+  - The position of each vertex is given by three floats in the vertices array. For example, the position of the first vertex in the chunk is stored in the first three elements of the vertices array in (x, y, z) order.
+- **`indicesPtr`:** A pointer to a float array in native memory of all indices, or faces, in the mesh chunk.
+  - Each face of the mesh is defined by three indices in the indices array. For example, the first face in the chunk is defined by the first three elements of the indices array. The index values correspond to the indices of the vertices array.
+- **`normalsPtr`:** A pointer to a UInt32 array in native memory of all vertex normals in the mesh chunk.
+  - Each vertex in the vertices array has a normal which corresponds to three floats in the normals array. For example, the normal for the first vertex in the vertices array is stored in the first three elements of the normals array in (x, y, z) order.
+- `uvsPtr`: *Only available for VPS mesh downloader--not used for the live meshing feature.*
+
+There is also a helper function, `MeshData.toSCNGeometry`, that creates a SceneKit `SCNGeometry` from the mesh chunk.
+
+---
+
+## Creating and Configuring a Meshing Session
+
+**`NsdkMeshingSession`** manages the meshing feature lifecycle and data retrieval.
+It is created from an existing `NsdkSession` instance and works independently of other AR features.
+
+```swift
+
+// Assume an NSDK session is set up
+let nsdk = NSDKSession()
+
+// Enable meshing functionality for this session
+let meshingSession = nsdk.acquireMeshingSession()
+
+// Configure and start meshing
+var config = NSDKMeshingSession.Configuration()
+// Optionally set any config options
+config.fuseKeyframesOnly = true
+config.enableDistanceBasedVolumetricCleanup = true
+do {
+    try meshingSession.configure(with: config)
+    meshingSession.start()
+} catch {
+    print("Failed to configure meshing session: \(error)")
+}
+
+```
+
+## Retrieving Mesh Data
+
+Subscribe to `meshUpdates` to receive incremental mesh changes each frame. Each emission contains a non-empty array of chunk insertions, updates, and removals since the previous frame.
+
+```swift
+meshingSession.meshUpdates
+    .receive(on: DispatchQueue.main)
+    .sink { updates in
+        for chunkUpdate in updates {
+            switch chunkUpdate {
+            case .insert(let id, let data), .update(let id, let data):
+                // Process the inserted or updated mesh chunk
+                // e.g., create or update a scene entity from `data`
+            case .remove(let id):
+                // Remove the mesh chunk from the scene
+            }
+        }
+    }
+    .store(in: &cancellables)
+```
+
+Each `MeshChunkUpdate` is one of:
+
+- **.insert(id:data:)** -- A new chunk has been added to the mesh.
+- **.update(id:data:)** -- An existing chunk has been updated with new geometry.
+- **.remove(id:)** -- A chunk has been removed from the mesh.
+
+The `MeshData` provided with each insert or update contains the raw geometry (`verticesPtr`, `indicesPtr`, `normalsPtr`) and helpers for creating scene geometry: `toSCNGeometry` for SceneKit and `toMeshResource` for RealityKit.
+
+## Configuring Meshing
+
+NSDK provides `NsdkMeshingSession.Configuration` to allow you to tweak meshing rules for distance, quality and clean-up:
+
+- **frameRate:** The number of times per second to run the mesh update routine. This should be no higher than the ARSession update rate.
+- **fuseKeyframesOnly:** Enabling this improves mesh accuracy at the cost of a lower update frequency.
+- **AR Fusion Parameters:**
+  - **maximumIntegrationDistance:** The far distance threshold from the device sensor for integrating depth samples into the 3D scene, in meters. New mesh blocks will not be generated further than this distance from the camera.
+  - **voxelSize:** The size of individual voxel elements in the scene, in meters. Higher values will save memory but also reduce the precision of the surfaces.
+  - **enableDistanceBasedVolumetricCleanup:** Enable this to save memory and smooth latency by cleaning up already-processed elements in the feature's volumetric representation (once they move outside the region where new meshes are generated). This will not remove previously-generated mesh.
+- **AR Meshing Parameters:**
+  - **meshBlockSize:** The size of the mesh blocks used for generating the mesh filter and mesh collider.
+  - **meshCullingDistance:** The distance from the user where mesh blocks will be removed from the scene. Set to 0 to disable distance-based culling.
+  - **enableMeshDecimation:** Enable this to save memory by removing excess triangles from the mesh.
+- **Mesh Filtering:**
+  - **filterMeshWithSemantics:** This enables semantic mesh filtering. See [Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) for more information.
+  - **enableAllowlist:** If populated, only these semantic classes will be allowed in the mesh.
+  - **packedAllowlist:** If enableAllowlist is true, only these semantic classes will be allowed in the mesh. (bitmask)
+  - **enableBlocklist:** If populated, these semantic classes will be excluded from the mesh.
+  - **packedBlocklist:** If enableBlocklist is true, these semantic classes will be excluded from the mesh. (bitmask)
+- **Experimental Meshing Options:**
+  - **numVoxelLevels:** Setting this to >= 1 enables the experimental level of detail meshing feature which saves memory and reduces latency. For more information, see the [Meshing Level of Detail](https://www.nianticspatial.com/docs/nsdk/experimental/level_of_detail_meshing/) page.
+
+`NsdkMeshingSession.configure` should be called before starting the feature.
+
+## Long-Distance Meshing
+
+> **Caution:**
+>
+> These settings are only recommended for high-end devices.
+> For information on supported devices, see the [Apple ARKit device list](https://www.apple.com/augmented-reality).
+
+You can configure your application to mesh over much longer distances by increasing the **Voxel Size**, turning on **Distance-Based Volumetric Cleanup** and increasing the **Maximum Integration Distance** and **Mesh Culling Distance** to between 20 and 40 meters.
+For example, try out the following settings:
+
+- **frameRate**: 20
+- **maximumIntegrationDistance**: 40
+- **voxelSize**: 0.05
+- **enableDistanceBasedVolumetricCleanup**: True
+- **meshBlockSize**: 1.4
+- **meshCullingDistance**: 40 (should be >= Maximum integration distance)
+- **enableMeshDecimation**: True
+
+This will increase CPU, GPU and memory usage, so we recommend testing thoroughly on a variety of devices.
+
+## More Information
+
+The [NSDK sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) includes an example of running meshing.
+
+Also, see [How to Exclude Semantic Channels with Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) for a guide of how to set up a project with meshing.
+
+### Platform: kotlin
+
+Niantic Spatial SDK (NSDK) exposes its meshing functionality on native Android through the **`MeshingSession`** API.
+When the application calls `NSDKSession.update()`, an active `MeshingSession` ingests depth and device pose data and builds a mesh from it.
+
+> **Note:**
+>
+> Niantic Spatial Meshing currently does not support lidar on Android.
+> Ensure that `NsdkSession` is configured with **`useLidar=false`** before attempting meshing.
+
+## Mesh Chunks
+
+To lighten the application's compute workload as the mesh grows, NSDK breaks the mesh up into chunks.
+The three-dimensional world is divided into a regular grid of "blocks" of a fixed size.
+When meshing is running, new mesh chunks will be created as the user explores their surroundings.
+Mesh chunks are continually updated as new data is added to the 3D representation.
+
+The application should regularly read the latest `MeshingUpdateInfo` from `MeshingSession.getUpdatedInfos` to get the list of updated mesh chunks:
+
+- **`ids`:** An array of all mesh chunk IDs
+- **`updated`:** An array indicating whether each chunk was updated. For each corresponding ID in `ids`, this array indicates:
+  - **Non-zero value**: The chunk has been updated since the last call to `MeshingSession.getData`. Call `getData` to read the latest mesh data. Calling `getData` will reset the update status for that chunk to 0.
+  - **Zero value**: The chunk has not been updated since the last call to `MeshingSession.getData`, so there is no need to read its mesh data.
+
+To get the latest mesh data, call `MeshingSession.getData` for each updated chunk.
+`getData` returns a `MeshData` containing the raw data for one mesh chunk:
+
+- **`vertices`:** A FloatArray of all vertices in the mesh chunk.
+  - The position of each vertex is given by three floats in the vertices array. For example, the position of the first vertex in the chunk is stored in the first three elements of the vertices array in (x, y, z) order.
+- **`uvs`:** A FloatArray of all UVs in the mesh chunk. Note that this array can be null if there is no UV data.
+- **`indicesPtr`:** An IntArray of all indices, or faces, in the mesh chunk.
+  - Each face of the mesh is defined by three indices in the indices array. For example, the first face in the chunk is defined by the first three elements of the indices array. The index values correspond to the indices of the vertices array.
+- **`normalsPtr`:** A FloatArray of all vertex normals in the mesh chunk. Note that this array can be null if there is no Normal data.
+  - Each vertex in the vertices array has a normal which corresponds to three floats in the normals array. For example, the normal for the first vertex in the vertices array is stored in the first three elements of the normals array in (x, y, z) order.
+
+---
+
+## Creating and Configuring a Meshing Session
+
+**`MeshingSession`** manages the meshing feature lifecycle and data retrieval.
+It is created from an existing `NsdkSession` instance and works independently of other AR features.
+
+```kotlin
+// Set up the NSDKSession. Note that for Android, useLidar must be false
+val nsdkSession = NSDKSession(apiKey = "YOUR_API_KEY", useLidar = false)
+
+// Enable meshing functionality for this session
+val meshingSession = nsdkSession.meshingSession.acquire()
+
+// Configure and start meshing
+meshingSession.configure(
+    MeshingConfig(
+        fuseKeyframesOnly = true,
+    )
+)
+
+meshingSession.start()
+```
+
+## Retrieving Mesh Data
+
+Use `MeshingUpdatedInfo` to check which mesh chunks have been updated.
+
+```kotlin
+val updatedMeshInfo = meshingSession.getUpdatedInfos()
+if (updatedMeshInfo != null) {
+    val updateInfo: MeshingUpdateInfo = updatedMeshInfo
+
+    // Iterate through the IDs provided in the updateInfo
+    updateInfo.ids.forEachIndexed { index, meshId ->
+        val isUpdated = (updateInfo.updated.getOrNull(index) == 1.toByte())// Get corresponding updated flag, convert to bool
+        // Get the MeshData for this specific meshId if its updated
+        if (isUpdated) {
+            val meshDataResult = meshingSession.getData(meshId)
+            // Use the new mesh data
+            // ...
+        }
+    }
+}
+```
+
+It is recommended to keep track of the **chunk IDs** to delete portions of the mesh that have been removed by the NSDK feature.
+A **`lastMeshUpdateTime`** counter is also available to avoid unnecessary copies of the `MeshingUpdatedInfo`.
+
+The following function is an example of starting the meshing session, and launching a coroutine that will listen for updates to the mesh info, gather the changes in an array, and pass it to a callback for your app to use.
+
+```kotlin
+val meshIdToMeshData = mutableStateMapOf<Long, MeshData>()
+
+var meshingStarted by mutableStateOf(false)
+
+var lastUpdateTime by mutableLongStateOf(0)
+
+fun startMeshing(updateMeshCallback: (MutableMap<Long, MeshData>) -> Unit) {
+    meshingStarted = true
+    meshingSession.start()
+
+    // Periodically poll the meshingSession for updated info, and pass that along to the View.
+    // This will also post messages about the meshing update status that Views can listen for.
+    coroutineScope.launch {
+        while (meshingStarted) {
+
+            delay(100L) // Update every 100ms
+            val latestUpdateTime = meshingSession.getLastUpdateTime()
+            if (latestUpdateTime != null) {
+
+                if (latestUpdateTime > lastUpdateTime) {
+
+                    lastUpdateTime = latestUpdateTime
+                    Log.d("Meshing", "New Meshing Update Time: $latestUpdateTime")
+
+                    val updatedMeshInfo = meshingSession.getUpdatedInfos()
+
+                    if (updatedMeshInfo != null) {
+
+                        Log.d("Meshing", "Updated Mesh Infos: ${updatedMeshInfo}")
+
+                        val updateInfo: MeshingUpdateInfo =
+                            updatedMeshInfo // Type is MeshingUpdateInfo
+
+                        Log.d("Meshing", "Received MeshingUpdateInfo: $updateInfo")
+
+                        // Iterate through the IDs provided in the updateInfo
+                        updateInfo.ids.forEachIndexed { index, meshId ->
+                            val isUpdated = (updateInfo.updated.getOrNull(index) == 1.toByte())// Get the value as a bool
+
+                            // Get the MeshData for this specific meshId if its updated
+                            if (isUpdated) {
+                                try {
+                                    val meshDataResult = meshingSession.getData(meshId)
+                                    val meshData: MeshData = meshDataResult!!
+                                    meshIdToMeshData[meshId] = meshData // Add/update in your state map
+                                } catch (e: NsdkStatusException) {
+                                    Log.d("Meshing", "Exception getting MeshData for ID $meshId: $e")
+                                }
+                            }
+                        }
+
+                        updateMeshCallback.invoke(meshIdToMeshData)
+                    } 
+                    else {
+                        Log.d("Meshing", "No mesh info available.")
+                    }
+                } 
+                else {
+                    Log.d("Meshing", "Waiting for new meshing update")
+                }
+            } 
+            else {
+                Log.d("Meshing", "Mesh update time not yet available.")
+            }
+        }
+    }
+}
+```
+
+## Configuring Meshing
+
+NSDK provides `MeshingConfig` to allow you to tweak meshing rules for distance, quality and clean-up:
+
+- **frameRate:** The number of times per second to run the mesh update routine. This should be no higher than the ARSession update rate.
+- **fuseKeyframesOnly:** Enabling this improves mesh accuracy at the cost of a lower update frequency.
+- **AR Fusion Parameters:**
+  - **maximumIntegrationDistance:** The far distance threshold from the device sensor for integrating depth samples into the 3D scene, in meters. New mesh blocks will not be generated further than this distance from the camera.
+  - **voxelSize:** The size of individual voxel elements in the scene, in meters. Higher values will save memory but also reduce the precision of the surfaces.
+  - **enableDistanceBasedVolumetricCleanup:** Enable this to save memory and smooth latency by cleaning up already-processed elements in the feature's volumetric representation (once they move outside the region where new meshes are generated). This will not remove previously-generated mesh.
+- **AR Meshing Parameters:**
+  - **meshBlockSize:** The size of the mesh blocks used for generating the mesh filter and mesh collider.
+  - **meshCullingDistance:** The distance from the user where mesh blocks will be removed from the scene. Set to 0 to disable distance-based culling.
+  - **disableMeshDecimation:** Enable this will disable the default optimization setting of removing excess triangles from the mesh. Disabling decimation consumes more memory.
+- **Mesh Filtering:**
+  - **filterMeshWithSemantics:** This enables semantic mesh filtering. See [Mesh Filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) for more information.
+  - **enableAllowlist:** If populated, only these semantic classes will be allowed in the mesh.
+  - **packedAllowlist:** If enableAllowlist is true, only these semantic classes will be allowed in the mesh. (bitmask)
+  - **enableBlocklist:** If populated, these semantic classes will be excluded from the mesh.
+  - **packedBlocklist:** If enableBlocklist is true, these semantic classes will be excluded from the mesh. (bitmask)
+- **Experimental Meshing Options:**
+  - **numVoxelLevels:** Setting this to >= 1 enables the experimental level of detail meshing feature which saves memory and reduces latency. For more information, see the [Meshing Level of Detail](https://www.nianticspatial.com/docs/nsdk/experimental/level_of_detail_meshing/) page.
+
+`MeshingSession.configure` should be called before starting the feature.
+
+## Long-Distance Meshing
+
+> **Caution:**
+>
+> These settings are only recommended for high-end devices.
+
+You can configure your application to mesh over much longer distances by increasing the **Voxel Size**, turning on **Distance-Based Volumetric Cleanup** and increasing the **Maximum Integration Distance** and **Mesh Culling Distance** to between 20 and 40 meters.
+For example, try out the following settings:
+
+- **frameRate**: 20
+- **maximumIntegrationDistance**: 40
+- **voxelSize**: 0.05
+- **enableDistanceBasedVolumetricCleanup**: True
+- **meshBlockSize**: 1.4
+- **meshCullingDistance**: 40 (should be >= Maximum integration distance)
+- **enableMeshDecimation**: True
+
+This will increase CPU, GPU and memory usage, so we recommend testing thoroughly on a variety of devices.
+
+## More Information
+
+The [NSDK sample project](https://www.nianticspatial.com/docs/nsdk/sample_projects/) includes an example of running meshing.

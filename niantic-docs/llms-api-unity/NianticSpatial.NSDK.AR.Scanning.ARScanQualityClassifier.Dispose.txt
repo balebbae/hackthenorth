@@ -1,0 +1,18 @@
+# Dispose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanQualityClassifier.Dispose/
+
+Dispose
+Dispose the object and its internal resources.
+
+---
+
+## Declaration
+
+public void Dispose()
+
+#### Summary
+
+Dispose the object and its internal resources.
+
+---

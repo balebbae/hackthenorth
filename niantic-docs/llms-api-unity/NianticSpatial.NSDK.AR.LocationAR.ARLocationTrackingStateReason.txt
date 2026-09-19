@@ -1,0 +1,24 @@
+# ARLocationTrackingStateReason
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR.ARLocationTrackingStateReason/
+
+ARLocationTrackingStateReason
+
+---
+
+## Declaration
+
+public enum ARLocationTrackingStateReason : uint
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Limited | ARLocationTrackingStateReason | - |
+| static None | ARLocationTrackingStateReason | - |
+| static Removed | ARLocationTrackingStateReason | - |
+| static Unknown | ARLocationTrackingStateReason | - |
+
+---

@@ -1,0 +1,13 @@
+# onAccuracyChanged
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper.onAccuracyChanged/
+
+onAccuracyChanged
+
+---
+
+## Declaration
+
+override fun onAccuracyChanged(p0: Sensor?, p1: Int)
+
+---

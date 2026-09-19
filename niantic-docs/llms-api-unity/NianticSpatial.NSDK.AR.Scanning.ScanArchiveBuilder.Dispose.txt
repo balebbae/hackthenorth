@@ -1,0 +1,19 @@
+# Dispose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanArchiveBuilder.Dispose/
+
+Dispose
+
+---
+
+## Declaration
+
+public void Dispose()
+
+#### Summary
+
+Dispose the object and its internal resources.
+    User MUST call this function to explicitly dispose the resources otherwise memories
+    will be leaking.
+
+---

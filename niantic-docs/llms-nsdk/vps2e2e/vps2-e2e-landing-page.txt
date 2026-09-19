@@ -1,0 +1,2825 @@
+# Initialize the wayfinding app
+
+Source: https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-landing-page/
+
+This guide is the second part of a five-part series on creating a wayfinding experience to help a user understand where they are, choose a destination, localize to that location, and follow AR guidance in the space. The first section to [set up the project](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-getting-started/) shows how to configure an existing project to add and embed the Niantic Software Development Kit (NSDK).
+
+This section shows you how to initialize a wayfinding app's entry flow. Specifically, this part of the guide shows you how to:
+
+- [Create the app entry point](#create-the-app-entry-point) - set the wayfinding app as the root UI, create a listener to deliver frames to the NSDK, and create long-lived session managers and objects.
+- [Present authorization](#present-authorization) - add sign-in state and display authorization UI when needed.
+- [Request permissions](#request-permissions) - check and request required camera and location permissions.
+- [Route to Sites flow](#route-to-sites-flow) - define navigation that moves the user from the entry screen into the Sites screen.
+
+(image: In the app entry point, you will initialize a shared NSDK session and managers.)
+
+*Figure:* This part of the tutorial shows how to initialize the app and route the user into the Sites flow. The steps in the next pages implement Site selection, VPS2 localization, and AR wayfinding.
+
+### Platform: kotlin
+
+## Files overview
+
+The app entry flow in the initialization step has five responsibilities:
+
+1. Create the app entry point.
+2. Present authorization.
+3. Request permissions.
+4. Route to Sites flow.
+5. Select a Site and return payload.
+
+Your app can organize those responsibilities in different files. The following table shows one way to structure them in a standalone app shown in this tutorial, along with the names of the matching files in the public `vps2e2e` sample app with the corresponding functionalities.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the app entry point | `MainActivity.kt`, `OnFrameUpdateListener.kt`, `ARSessionManager.kt`, `NSDKSessionManager.kt`, and `WayfindingApp.kt` create the root UI and shared NSDK session objects | `MainActivity.kt`, `LandingView.kt`, `ARSessionManager.kt`, and `NSDKSessionManager.kt` |
+| Present authorization | `auth/WayfindingAuthManager.kt`, `auth/WayfindingAuthView.kt`, and `WayfindingApp.kt` present auth state and auth UI | `LandingView.kt`, `auth/AuthManager.kt`, and `auth/AuthView.kt` |
+| Request permissions | `permissions/PermissionHelper.kt` and `WayfindingApp.kt` gate the flow on required camera and location permissions | `MainActivity.kt`, `LandingView.kt`, and `common/PermissionsView.kt` |
+| Route to Sites flow | `WayfindingApp.kt` defines the top-level navigation and opens the Sites screen after auth and permissions are ready | `MainActivity.kt`, `LandingView.kt`, and `SitesRoute.kt` |
+| Select a Site and return payload | `WayfindingApp.kt` receives the selected payload from the Sites screen and passes it into the `vps2` route | `LandingView.kt`, `SitesRoute.kt`, and `VPS2Route.kt` |
+
+## Create the app entry point
+
+To create the shared-session part of the app entry flow, set up the app entry point so it initializes the shared NSDK session and managers once. Later steps in this tutorial reuse those objects when they add authentication, permissions, and the Sites flow.
+
+There are five steps to create an app entry point, shown in detail in the following sections:
+
+1. [Set the root UI](#set-the-root-ui) for your wayfinding app.
+2. [Create a listener](#create-a-listener) to send frames to the NSDK.
+3. [Create an AR session manager](#create-an-ar-session-manager) helper to track playback and forward frames to listeners to update the NSDK.
+4. [Create an NSDK session manager](#create-an-nsdk-session-manager) to forward frames to the NSDK.
+5. [Create a wayfinding app](#create-a-wayfinding-app) in a top-level compossable that integrates the session and managers into an app.
+
+The examples in this tutorial can use either live AR or a playback dataset. For a normal on-device walkthrough, leave playback disabled and use live AR. If you want to test playback mode, download the sample dataset [`gandhi_statue.tgz`](https://storage.googleapis.com/nianticweb-epos-web-staging/gandhi_statue.tgz), extract it, and copy the extracted folder into `app/src/main/assets/playback/gandhi_statue/` so the folder contains `capture.json`.
+
+Use the following steps to create or update your app entry point:
+
+### Set the root UI
+
+In an existing app, update the file that currently calls `setContent` so it shows `WayfindingApp()` as the root UI for this feature. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show `WayfindingApp()` as the root composable.
+- Keep the activity as the entry point for the wayfinding flow.
+- Replace the default Android Studio template UI.
+
+In a new app, update `app/src/main/java/<your app package path>/MainActivity.kt` to update `MainActivity.kt` so the activity launches `WayfindingApp()` as the root composable:
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            WayfindingTheme {
+                // Start the wayfinding flow from a single top-level composable
+                WayfindingApp(activity = this)
+            }
+        }
+    }
+}
+```
+
+### Create a listener
+
+In an existing app, add a small listener interface that both live AR and playback can use to deliver frames into NSDK. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The listener should:
+
+- Accept one prepared frame at a time.
+- Work for both live ARCore frames and playback frames.
+- Give the rest of the app one shared callback type for NSDK updates.
+
+In a new app, create `app/src/main/java/<your app package path>/OnFrameUpdateListener.kt` to define a shared callback interface for both live ARCore frames and playback frames:
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import com.nianticspatial.nsdk.NsdkFrame
+
+// Forward one prepared frame at a time into the rest of the app
+fun interface OnFrameUpdateListener {
+    fun onFrameUpdate(frame: NsdkFrame)
+}
+```
+
+This listener gives the app one shared callback type for both live ARCore frames and playback frames.
+
+### Create an AR session manager
+
+In an existing app, update your current AR session owner or create a helper file in the same package as your AR code. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The AR session manager should:
+
+- Track whether the app is using live AR or playback.
+- Load a playback dataset only when one is configured.
+- Forward each frame to any listeners that need to update NSDK.
+
+In a new app, create `app/src/main/java/<your app package path>/ARSessionManager.kt` to optionally load a playback dataset, track device orientation, and forward live or playback frames to the rest of the app:
+
+#### Expand to view `ARSessionManager.kt`
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.app.Activity
+import android.hardware.display.DisplayManager
+import android.view.Display
+import android.view.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.google.ar.core.Frame
+import com.google.ar.core.Session
+import com.nianticspatial.nsdk.NsdkFrame
+import com.nianticspatial.nsdk.Orientation
+import com.nianticspatial.nsdk.playback.AssetPlaybackDatasetLoader
+import com.nianticspatial.nsdk.playback.PlaybackDataset
+import com.nianticspatial.nsdk.playback.PlaybackFrame
+import com.nianticspatial.nsdk.playback.PlaybackSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+enum class SessionMode { LIVE, PLAYBACK }
+
+class ARSessionManager(
+    private val activity: Activity,
+    playbackDatasetPath: String = ""
+) : DefaultLifecycleObserver {
+    // Track whether the AR flow is currently active.
+    var active: Boolean by mutableStateOf(false)
+        private set
+
+    // Track whether the app is using live AR or playback.
+    var mode: SessionMode by mutableStateOf(SessionMode.LIVE)
+        private set
+
+     private var playbackSession: PlaybackSession? = null
+
+    // Track whether a configured playback dataset is still loading.
+    var isPlaybackLoading: Boolean by mutableStateOf(false)
+        private set
+
+    var depthAvailability: Boolean by mutableStateOf(false)
+        private set
+
+    var deviceOrientation: Orientation by mutableStateOf(Orientation.PORTRAIT)
+        private set
+
+    var currentLiveFrame: Frame? = null
+        private set
+
+    var currentPlaybackFrame: PlaybackFrame? by mutableStateOf(null)
+        private set
+
+    // Expose whichever frame source is active so downstream code can stay mode-agnostic.
+    val currentFrame: NsdkFrame?
+        get() = when (mode) {
+            SessionMode.PLAYBACK -> currentPlaybackFrame?.let { NsdkFrame.Playback(it) }
+            SessionMode.LIVE -> currentLiveFrame?.let { NsdkFrame.Live(it) }
+        }
+
+    // Register the listeners that need every frame in order to update NSDK.
+    private val frameUpdateListeners = mutableListOf<OnFrameUpdateListener>()
+
+    fun addFrameUpdateListener(listener: OnFrameUpdateListener) {
+        frameUpdateListeners.add(listener)
+    }
+
+    fun removeFrameUpdateListener(listener: OnFrameUpdateListener) {
+        frameUpdateListeners.remove(listener)
+    }
+
+    private val playbackScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayChanged(displayId: Int) { updateDisplayRotation() }
+        override fun onDisplayAdded(displayId: Int) {}
+        override fun onDisplayRemoved(displayId: Int) {}
+    }
+
+    init {
+        // Track device orientation so NSDK can consume the correct screen rotation.
+        val displayManager = activity.getSystemService(Activity.DISPLAY_SERVICE) as DisplayManager
+        displayManager.registerDisplayListener(displayListener, null)
+        updateDisplayRotation()
+
+        // Load a playback dataset only when one is configured.
+        if (playbackDatasetPath.isNotEmpty()) {
+            mode = SessionMode.PLAYBACK
+            android.util.Log.i("WayfindingApp", "ARSessionManager using playback mode")
+            isPlaybackLoading = true
+            val path = playbackDatasetPath
+            val act = activity
+            playbackScope.launch {
+                val dataset = AssetPlaybackDatasetLoader(act, path).loadDataset()
+                withContext(Dispatchers.Main.immediate) {
+                    if (!act.isFinishing && !act.isDestroyed && dataset != null) {
+                        setPlaybackDataset(dataset)
+                    } else {
+                        mode = SessionMode.LIVE
+                        android.util.Log.i("WayfindingApp", "ARSessionManager falling back to live AR mode")
+                    }
+                    isPlaybackLoading = false
+                }
+            }
+        } else {
+            android.util.Log.i("WayfindingApp", "ARSessionManager using live AR mode")
+        }
+    }
+
+    fun updateFrame(frame: Frame) {
+        synchronized(this) {
+            currentLiveFrame = frame
+        }
+        // Forward each live frame to listeners that will update NSDK.
+        if (active) {
+            frameUpdateListeners.forEach { it.onFrameUpdate(NsdkFrame.Live(frame)) }
+        }
+    }
+
+    fun setEnabled(value: Boolean) {
+        val wasActive = active
+        active = value
+        // Start or pause playback when the AR screen becomes active or inactive.
+        if (wasActive != value && mode == SessionMode.PLAYBACK) {
+            if (value) {
+                playbackSession?.seekToStart()
+                playbackSession?.play()
+            } else {
+                playbackSession?.pause()
+            }
+        }
+    }
+
+    private fun setPlaybackDataset(dataset: PlaybackDataset?) {
+        // Reset the current playback state before switching datasets or returning to live AR.
+        playbackSession?.dispose()
+        playbackSession = null
+        currentPlaybackFrame = null
+
+        if (dataset == null) {
+            mode = SessionMode.LIVE
+            depthAvailability = false
+            return
+        }
+
+        mode = SessionMode.PLAYBACK
+        depthAvailability = dataset.hasDepth()
+
+        // Create the playback session and route each playback frame through the same listener path.
+        playbackSession = PlaybackSession(dataset)
+        playbackSession?.setOnFrameListener { frame ->
+            playbackScope.launch {
+                withContext(Dispatchers.Main.immediate) {
+                    currentPlaybackFrame = frame
+                    // Forward each playback frame to listeners that will update NSDK.
+                    if (active) {
+                        frameUpdateListeners.forEach { it.onFrameUpdate(NsdkFrame.Playback(frame)) }
+                    }
+                }
+            }
+        }
+
+        if (active) {
+            playbackSession?.seekToStart()
+            playbackSession?.play()
+        }
+    }
+
+    fun setSession(arSession: Session) {
+        // Keep this method so ARSceneView can hand the live ARCore session to this manager
+    }
+
+    private fun updateDisplayRotation() {
+        // Convert the current display rotation into the NSDK orientation enum.
+        val display: Display = activity.windowManager.defaultDisplay
+        deviceOrientation = when (display.rotation) {
+            Surface.ROTATION_0 -> Orientation.PORTRAIT
+            Surface.ROTATION_90 -> Orientation.LANDSCAPE_LEFT
+            Surface.ROTATION_180 -> Orientation.PORTRAIT_UPSIDE_DOWN
+            Surface.ROTATION_270 -> Orientation.LANDSCAPE_RIGHT
+            else -> Orientation.PORTRAIT
+        }
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        // Clean up the display listener and playback resources when the host is destroyed.
+        val displayManager = activity.getSystemService(Activity.DISPLAY_SERVICE) as DisplayManager
+        displayManager.unregisterDisplayListener(displayListener)
+        playbackSession?.dispose()
+        playbackScope.cancel()
+    }
+}
+```
+
+The code in this step contains the minimal helper needed for this tutorial. In the `vps2e2e` sample, the fuller implementation appears in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/ARSessionManager.kt`.
+
+### Create an NSDK session manager
+
+In an existing app, update your current NSDK bridge or create a helper file in the same package as your session code. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The NSDK session manager should:
+
+- Receive frames from `ARSessionManager`.
+- Choose the correct live or playback data source.
+- Call `NSDKSession.update()` off the main thread.
+
+In a new app, create `app/src/main/java/<your app package path>/NSDKSessionManager.kt` to receive frames from `ARSessionManager`, choose the right live or playback data source, and call `NSDKSession.update()` off the main thread:
+
+#### Working example: NSDKSessionManager.kt
+
+The following code example creates an `NSDKSessionManager` that chooses the right live or playback data source and updates NSDK on a background thread:
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.content.Context
+import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.nianticspatial.nsdk.NSDKSession
+import com.nianticspatial.nsdk.NsdkFrame
+import com.nianticspatial.nsdk.NsdkSessionDataSource
+import com.nianticspatial.nsdk.Orientation
+import com.nianticspatial.nsdk.helpers.createLiveDataSource
+import com.nianticspatial.nsdk.helpers.createPlaybackDataSource
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class NSDKSessionManager(
+    context: Context,
+    val session: NSDKSession,
+    val arManager: ARSessionManager
+) : DefaultLifecycleObserver, OnFrameUpdateListener {
+
+    companion object {
+        private const val TAG = "NSDKSessionManager"
+    }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val updateExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "NSDK-Frame-Update").apply { isDaemon = true }
+    }
+    private val updateDispatcher = updateExecutor.asCoroutineDispatcher()
+    private val updateInFlight = AtomicBoolean(false)
+
+    // Build one data source for live AR and one for playback
+    private val liveDataSource: NsdkSessionDataSource by lazy {
+        createLiveDataSource(
+            context = context,
+            frameProvider = { arManager.currentLiveFrame },
+            orientationProvider = { arManager.deviceOrientation }
+        )
+    }
+
+    private val playbackDataSource: NsdkSessionDataSource by lazy {
+        createPlaybackDataSource(
+            frameProvider = { arManager.currentPlaybackFrame },
+            orientationProvider = { arManager.deviceOrientation }
+        )
+    }
+
+    private var activeMode: SessionMode? = null
+
+    val currentFrame: NsdkFrame?
+        get() = arManager.currentFrame
+
+    val currentImageOrientation: Orientation
+        get() = arManager.deviceOrientation
+
+    init {
+        // Listen for frames as soon as the bridge is created
+        arManager.addFrameUpdateListener(this)
+    }
+
+    override fun onFrameUpdate(frame: NsdkFrame) {
+        if (!updateInFlight.compareAndSet(false, true)) return
+
+        val mode = arManager.mode
+        val dataSource = when (mode) {
+            SessionMode.LIVE -> liveDataSource
+            SessionMode.PLAYBACK -> playbackDataSource
+        }
+
+        // Swap the session data source only when the session mode changes
+        if (activeMode != mode) {
+            session.dataSource = dataSource
+            activeMode = mode
+        }
+
+        scope.launch {
+            try {
+                val prepared = dataSource.prepareFrame()
+                if (prepared) {
+                    withContext(updateDispatcher) {
+                        session.update()
+                    }
+                }
+            } catch (e: Throwable) {
+                Log.w(TAG, "Frame update failed", e)
+            } finally {
+                updateInFlight.set(false)
+            }
+        }
+    }
+
+    override fun onResume(owner: LifecycleOwner) {
+        (liveDataSource as? DefaultLifecycleObserver)?.onResume(owner)
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        (liveDataSource as? DefaultLifecycleObserver)?.onPause(owner)
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        arManager.removeFrameUpdateListener(this)
+        scope.cancel()
+        updateExecutor.shutdown()
+        updateExecutor.awaitTermination(5, TimeUnit.SECONDS)
+        (liveDataSource as? DefaultLifecycleObserver)?.onDestroy(owner)
+        (playbackDataSource as? DefaultLifecycleObserver)?.onDestroy(owner)
+    }
+}
+```
+
+### Create a wayfinding app
+
+In an existing app, add the following logic to the root composable for your wayfinding flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The top-level composable should:
+
+- Create and register one shared `ARSessionManager`.
+- Wait for playback loading to finish.
+- Create one shared `NSDKSession`.
+- Create and register one shared `NSDKSessionManager`.
+- Render a temporary placeholder screen until later pages add authentication, Sites, and AR navigation.
+
+You will need a token that the NSDK can use for the `NSDKSession` created in this step. For testing this standalone walkthrough, the simplest option is a developer token. For production apps, use backend-issued access tokens. See [Generate developer tokens](https://www.nianticspatial.com/docs/nsdk/auth_developer_token/) and [Generate access tokens](https://www.nianticspatial.com/docs/nsdk/auth_backend/).
+
+In a new app, create `app/src/main/java/<your app package path>/WayfindingApp.kt` as follows:
+
+#### Expand to view `WayfindingApp.kt`
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.app.Activity
+import android.util.Log
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.nianticspatial.nsdk.NSDKSession
+
+private const val TAG = "WayfindingApp"
+// Leave this empty to use live AR mode.
+// Set a playback dataset path only if you want to test playback mode.
+private const val PLAYBACK_DATASET_PATH = ""
+private const val ACCESS_TOKEN = "REPLACE_WITH_YOUR_ACCESS_TOKEN"
+
+@Composable
+fun WayfindingApp(activity: Activity) {
+    // Read lifecycle events from the current composable host so helper objects can
+    // start and stop cleanly with the screen
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Create one shared AR session manager for the whole wayfinding flow
+    // This object owns live ARCore state or playback state for the screen
+    val sessionManager = remember {
+        ARSessionManager(
+            activity = activity,
+         playbackDatasetPath = PLAYBACK_DATASET_PATH
+        ).also {
+            Log.i(TAG, "ARSessionManager created")
+        }
+    }
+
+    // Keep the AR session manager in sync with the composable lifecycle so
+    // it can register listeners and clean up correctly
+    DisposableEffect(lifecycleOwner, sessionManager) {
+        lifecycleOwner.lifecycle.addObserver(sessionManager)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(sessionManager)
+        }
+    }
+
+    // Stop here until the playback dataset finishes loading in the background
+    // This prevents the app from creating NSDK objects before playback is ready
+    val isPlaybackLoading = sessionManager.isPlaybackLoading
+    if (isPlaybackLoading) return
+
+    // Match NSDK depth behavior to the current live or playback dataset, then
+    // create one shared NSDK session for the rest of the app to reuse
+    val depthAvailability = sessionManager.depthAvailability
+    val nsdkSession = remember(depthAvailability) {
+        NSDKSession(
+            accessToken = ACCESS_TOKEN,
+            useLidar = depthAvailability
+        ).also {
+            Log.i(TAG, "NSDKSession created")
+        }
+    }
+
+    // Forward frames from the AR session manager into NSDK through one shared bridge
+    // This is the object that prepares frames and calls NSDKSession.update()
+    val nsdkSessionManager = remember(nsdkSession, sessionManager) {
+        NSDKSessionManager(activity, nsdkSession, sessionManager).also {
+            Log.i(TAG, "NSDKSessionManager created")
+        }
+    }
+
+    // Register the bridge for cleanup when the composable leaves the screen
+    DisposableEffect(lifecycleOwner, nsdkSessionManager) {
+        lifecycleOwner.lifecycle.addObserver(nsdkSessionManager)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(nsdkSessionManager)
+        }
+    }
+    // Show a simple placeholder while later pages add the Sites flow and AR screens
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Wayfinding app initialized")
+    }
+}
+```
+
+If `LocalLifecycleOwner` is unresolved in your project, add `implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")` to your app module dependencies before continuing.
+
+The previous `WayfindingApp.kt` uses placeholders for UI with the Sites flow and VPS2 screens so that it compiles at this stage of the tutorial.
+
+The steps in the next pages replace these placeholders. In the `vps2e2e` sample, the fuller startup flow is split across `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/MainActivity.kt`, `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/LandingView.kt`, and `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/NSDKSessionManager.kt`.
+
+Test this step to validate that the app entry point creates the shared AR and NSDK session objects:
+
+- Build and run the app on your device.
+- Confirm that the app launches and shows the `Wayfinding app initialized` placeholder text.
+- Confirm that `ARSessionManager created`, `NSDKSession created`, and `NSDKSessionManager created` appear in the logs, in that order.
+- If you left `PLAYBACK_DATASET_PATH` empty in `WayfindingApp.kt`, confirm that `ARSessionManager using live AR mode` appears in Logcat.
+- If you configured a playback dataset, confirm that `ARSessionManager using playback mode` appears in Logcat.
+
+For the complete sample-app implementation of this startup flow, see `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/MainActivity.kt`, `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/LandingView.kt`, and `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/common/PermissionsView.kt` in the `vps2e2e` sample.
+
+After this step, the rest of your app should be able to receive the same shared session objects from the entry point. The `WayfindingApp` composable owns the shared NSDKSession and managers. All later screens reuse these objects.
+
+## Present authorization
+
+This step adds placeholder authorization UI to the standalone Kotlin tutorial path. In this guide, the app uses a [developer token](https://www.nianticspatial.com/docs/nsdk/auth_developer_token/) in `WayfindingApp.kt` for testing, and the top-level authorization structure that later pages build on. This step shows how you to add authorization state, present authorization UI, and reopen that UI later, even before you implement a full browser-based sign-in flow.
+
+This step adds sign-in state to the app entry flow. Before the app can load organization and Site data, it should check whether the user already has a valid session and present authorization UI if one is not available.
+
+This step has four parts:
+
+1. [Create an auth manager](#create-an-auth-manager) to own authorization state.
+2. [Create the auth UI](#create-the-auth-ui) to show sign-in state and actions.
+3. [Show the auth sheet](#show-the-auth-sheet) to open the authorization UI when needed.
+4. [Reopen authorization](#reopen-authorization) so the user can open the authorization UI later.
+
+### Create an auth manager
+
+In an existing app, update your current authorization manager. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The auth manager should:
+
+- Tracks sign-in state.
+- Starts sign-in.
+- Signs the user out.
+- Exposes the auth state that the UI needs.
+
+In a new app, create a new `WayfindingAuthManager` package under `app/src/main/java/<your app package path>/auth/` as follows:
+
+1. In Android Studio, expand `app/src/main/java`.
+2. Expand your app package, for example `com.example.wayfinding`.
+3. Open the package menu and select **New > Package**.
+4. Enter `auth`.
+5. Open the new `auth` package menu and select **New > Kotlin Class/File**.
+6. Create `WayfindingAuthManager.kt` inside that package.
+
+The following code example creates a minimal standalone `WayfindingAuthManager` that compiles and gives the rest of the tutorial a working auth state to build on:
+
+#### Expand to view `WayfindingAuthManager.kt`
+
+```kotlin
+package com.example.wayfinding.auth // Replace with your app package name and auth package
+
+import android.app.Activity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.nianticspatial.nsdk.NSDKSession
+
+class WayfindingAuthManager(
+    private val nsdkSession: NSDKSession,
+) : DefaultLifecycleObserver {
+
+    // Keep track of whether the user is currently signed in
+    var isLoggedIn by mutableStateOf(false)
+        private set
+
+    // Show a short status string in the auth UI
+    var statusMessage by mutableStateOf("Not Logged In")
+        private set
+
+    // Show login controls in this standalone example
+    val showLoginControls = true
+
+    // Show the signed-in email address when one is available
+    var emailMessage by mutableStateOf("")
+        private set
+
+    // Replace this placeholder with your app's real sign-in flow
+    fun login(activity: Activity) {
+        isLoggedIn = true
+        statusMessage = "Logged In"
+        emailMessage = ""
+    }
+
+    // Sign out and clear the NSDK access token
+    fun logout() {
+        nsdkSession.setAccessToken("")
+        isLoggedIn = false
+        statusMessage = "Not Logged In"
+        emailMessage = ""
+    }
+
+    // Keep this hook so the manager can still be attached to the screen lifecycle
+    override fun onDestroy(owner: LifecycleOwner) = Unit
+}
+```
+
+In the `vps2e2e` sample, the complete authorization implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/auth/AuthManager.kt`.
+
+### Create the auth UI
+
+In an existing app, update the authentication UI you already use. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The authentication UI should:
+
+- Shows whether the user is signed in.
+- Shows signed-in account details when they are available.
+- Lets the user start sign-in.
+- Lets the user sign out.
+
+In a new app, create `WayfindingAuthView.kt` under `app/src/main/java/<your app package path>/auth/` to show an auth sheet UI that reads state from `WayfindingAuthManager` and delegates login or logout actions back to it:
+
+#### Expand to view `WayfindingAuthView.kt`
+
+```kotlin
+package com.example.wayfinding.auth // Replace with your app package name and auth package
+
+import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun WayfindingAuthView(
+    manager: WayfindingAuthManager,
+    modifier: Modifier = Modifier,
+) {
+    val activity = LocalActivity.current
+    val isLoggedIn = manager.isLoggedIn
+    val statusMessage = manager.statusMessage
+    val emailMessage = manager.emailMessage
+    val showLoginControls = manager.showLoginControls
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(32.dp)
+    ) {
+        // Show the current auth status at the top of the sheet
+        Text(
+            text = statusMessage,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isLoggedIn) Color(0xFF4CAF50) else Color(0xFFFF9800),
+            textAlign = TextAlign.Center
+        )
+
+        // Show the signed-in email address when one is available
+        if (emailMessage.isNotEmpty()) {
+            Text(
+                text = emailMessage,
+                fontSize = 14.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        // Show either a login or logout button based on the current auth state
+        if (showLoginControls && isLoggedIn) {
+            Button(onClick = { manager.logout() }) {
+                Text("Logout")
+            }
+        } else if (showLoginControls) {
+            Button(onClick = { activity?.let { manager.login(it) } }) {
+                Text("Login")
+            }
+        }
+    }
+}
+```
+
+In the `vps2e2e` sample, the equivalent implementation lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/auth/AuthView.kt`.
+
+### Show the auth sheet
+
+In an existing app, update the top-level composable or screen that owns your wayfinding startup flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The app entry flow should:
+
+- Creates one shared `WayfindingAuthManager`.
+- Keeps that auth manager attached to the screen lifecycle.
+- Opens authentication when no session is active.
+- Shows the authentication UI in a bottom sheet or equivalent container.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` to present `WayfindingAuthView` when the user is not signed in.
+
+1. In `WayfindingApp.kt`, add these imports at the top of the file:
+
+   ```kotlin
+   import androidx.compose.foundation.layout.padding
+   import androidx.compose.material3.ExperimentalMaterial3Api
+   import androidx.compose.material3.ModalBottomSheet
+   import androidx.compose.runtime.LaunchedEffect
+   import androidx.compose.runtime.getValue
+   import androidx.compose.runtime.mutableStateOf
+   import androidx.compose.runtime.setValue
+   import androidx.compose.ui.unit.dp
+   import com.example.wayfinding.auth.WayfindingAuthManager
+   import com.example.wayfinding.auth.WayfindingAuthView
+   ```
+
+2. Add `@OptIn(ExperimentalMaterial3Api::class)` above `@Composable fun WayfindingApp(...)` in the same file.
+
+3. Then, inside `WayfindingApp()`, add the following code which shows how the sample keeps one shared `WayfindingAuthManager` at the root, observes it for the life of the screen, and automatically opens the auth sheet when no session is active. Place this code immediately after the `DisposableEffect(lifecycleOwner, nsdkSessionManager)` block and before the final placeholder `Box(...)` block:
+
+   ```kotlin
+   // Create one shared auth manager for the whole entry flow
+   val authManager = remember(nsdkSession) { WayfindingAuthManager(nsdkSession) }
+   val isLoggedIn = authManager.isLoggedIn
+   var showAuthSheet by remember { mutableStateOf(false) }
+
+   // Keep the auth manager attached to the screen lifecycle
+   DisposableEffect(lifecycleOwner, authManager) {
+       lifecycleOwner.lifecycle.addObserver(authManager)
+       onDispose {
+           lifecycleOwner.lifecycle.removeObserver(authManager)
+       }
+   }
+
+   // Open the auth sheet automatically when no session is active
+   LaunchedEffect(Unit) {
+       if (!isLoggedIn) {
+           showAuthSheet = true
+       }
+   }
+
+   // Close the auth sheet after the placeholder login flow marks the user as signed in
+   LaunchedEffect(isLoggedIn) {
+       if (isLoggedIn) {
+           showAuthSheet = false
+       }
+   }
+
+   if (showAuthSheet) {
+       ModalBottomSheet(
+           onDismissRequest = { showAuthSheet = false },
+       ) {
+           // Show the shared auth UI in a bottom sheet
+           WayfindingAuthView(
+               manager = authManager,
+               modifier = Modifier.padding(bottom = 32.dp),
+           )
+       }
+   }
+   ```
+
+   In the `vps2e2e` sample, the equivalent code lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/LandingView.kt`.
+
+### Reopen authorization
+
+In an existing app, update your existing account or overflow UI so it lets the user reopen authentication after the app has already started. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The app should:
+
+- Show an account affordance after startup.
+- Let the user reopen the auth sheet later.
+- Reflect whether the user is currently signed in.
+
+1. In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` to add the following imports to the top of `WayfindingApp.kt`:
+
+   ```kotlin
+   import androidx.compose.foundation.background
+   import androidx.compose.foundation.layout.size
+   import androidx.compose.foundation.shape.CircleShape
+   import androidx.compose.material.icons.Icons
+   import androidx.compose.material.icons.filled.AccountCircle
+   import androidx.compose.material3.Icon
+   import androidx.compose.material3.IconButton
+   import androidx.compose.ui.graphics.Color
+   ```
+
+2. Then, inside `WayfindingApp()`, add the following code immediately after the auth sheet code from [Show the auth sheet](#show-the-auth-sheet) and before the final placeholder `Box(...)` block to render an account icon overlay so the user can reopen the auth sheet after the app has started:
+
+   ```kotlin
+   val authIconOverlay: @Composable () -> Unit = {
+       Box(
+           modifier = Modifier.fillMaxSize(),
+           contentAlignment = Alignment.TopEnd
+       ) {
+           // Let the user reopen the auth sheet after the app has already launched
+           IconButton(
+               onClick = { showAuthSheet = true },
+               modifier = Modifier
+                   .padding(top = 8.dp, end = 16.dp, bottom = 8.dp, start = 8.dp)
+                   .size(40.dp)
+                   .background(
+                       // Highlight the icon background when the user is already signed in
+                       color = if (isLoggedIn) Color(0xFF4CAF50) else Color.Transparent,
+                       shape = CircleShape
+                   )
+           ) {
+               Icon(
+                   imageVector = Icons.Default.AccountCircle,
+                   contentDescription = if (isLoggedIn) "Account (logged in)" else "Account (logged out)",
+                   tint = if (isLoggedIn) Color.White else Color.Gray
+               )
+           }
+       }
+   }
+   ```
+
+   In the `vps2e2e` sample, the equivalent code lives in `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/LandingView.kt`.
+
+3. Then update the final placeholder `Box(...)` block in `WayfindingApp()` so it renders the account icon overlay:
+
+   ```kotlin
+   Box(
+       modifier = Modifier.fillMaxSize(),
+       contentAlignment = Alignment.Center
+   ) {
+       Text("Wayfinding app initialized")
+       authIconOverlay()
+   }
+   ```
+
+In your own app, keep the same pattern across this authentication flow: create one shared auth manager, present authorization when no valid session is available, and provide a way to reopen authentication later.
+
+Test this step to validate that the placeholder authorization flow opens, closes, and reopens correctly:
+
+- Build and run the app on your device.
+- Confirm that the authentication UI appears.
+- In this standalone placeholder implementation, tap **Login** and confirm that the authentication UI dismisses and the auth state changes to `Logged In`.
+- Confirm that after the auth sheet closes, the app stays on the `Wayfinding app initialized` screen without crashing or navigating away.
+- Confirm that an account icon appears in the top-right corner after the auth sheet closes.
+- Confirm that after the auth sheet closes, tapping the account icon opens the authentication sheet again.
+- After reopening the authentication sheet, tap **Logout** and confirm that the auth state changes back to `Not Logged In`.
+
+The standalone code in this page does not yet implement the full authorization flow. It only validates the UI state changes and screen setup.
+
+In the `vps2e2e` sample, the full reference implementation for this authentication flow lives across `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/MainActivity.kt`, `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/LandingView.kt`, `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/auth/AuthManager.kt`, and `src/main/java/com/nianticspatial/nsdk/vps2e2ekotlin/auth/AuthView.kt`.
+
+## Request permissions
+
+This step adds runtime permission checks to the app entry flow when the feature is first used. Before the app can enter the Sites flow and AR features, it should confirm that required permissions are granted and request any that are missing while keeping the user in a safe blocked or loading state until the permission result is known.
+
+For this tutorial, the app requires:
+
+- Camera access for AR
+- Location access for Sites and VPS2 localization
+
+This step has two parts:
+
+1. [Create a permission helper](#create-a-permission-helper) to check whether camera and location access are already granted and request them when needed.
+2. [Check permissions](#check-permissions) from the app entry flow before the user enters the rest of the app.
+
+### Create a permission helper
+
+In an existing app, update your current permission handling. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The permission helper should:
+
+- Check whether required permissions are already granted.
+- Request any missing permissions before continuing.
+- Block navigation until the permission result is known.
+
+In a new app, create a new `permissions` package under `app/src/main/java/<your app package path>`, then create `PermissionHelper.kt` in that package to check permission state and request missing permissions:
+
+#### Expand to view `PermissionHelper.kt`
+
+```kotlin
+package com.example.wayfinding.permissions // Replace with your app package name
+
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+
+object PermissionHelper {
+    // Request code used by the Android system to identify this permission request
+    private const val REQUEST_CODE = 1001
+    
+    // Check whether all required runtime permissions are already granted
+    // Returns true only if both camera and location permissions are available
+    fun hasRequiredPermissions(activity: Activity): Boolean {
+        val cameraGranted = ContextCompat.checkSelfPermission(
+            activity,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        val locationGranted = ContextCompat.checkSelfPermission(
+            activity,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        return cameraGranted && locationGranted
+    }
+    // Request any missing permissions from the user
+    // This triggers the Android system permission dialog
+    fun requestRequiredPermissions(activity: Activity) {
+        ActivityCompat.requestPermissions(
+            activity,
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ),
+            REQUEST_CODE
+        )
+    }
+}
+```
+
+### Check permissions
+
+In an existing app, update your app entry composable or root screen so it checks permissions before continuing into the next flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The app entry flow should:
+
+- Check whether required permissions are already granted.
+- Request any missing permissions.
+- Block the rest of the flow until permissions are granted.
+
+In a new app, update `WayfindingApp.kt` to block the flow until permissions are granted.
+
+1. Add the following imports to the top of `WayfindingApp.kt`:
+
+   ```kotlin
+   import androidx.compose.runtime.getValue
+   import androidx.compose.runtime.LaunchedEffect
+   import androidx.compose.runtime.mutableStateOf
+   import androidx.compose.runtime.setValue
+   import androidx.lifecycle.Lifecycle
+   import androidx.lifecycle.LifecycleEventObserver
+   import com.example.wayfinding.permissions.PermissionHelper
+   ```
+
+2. Then, inside `WayfindingApp.kt`, add the following code after the `DisposableEffect(lifecycleOwner, nsdkSessionManager)` block:
+
+   #### Expand to view the permission gate code
+
+   ```kotlin
+   // Keep the current permission state in Compose so the UI can react to changes
+   var hasPermissions by remember {
+       mutableStateOf(PermissionHelper.hasRequiredPermissions(activity))
+   }
+
+   // Re-check permissions when the app resumes after the system permission dialog closes
+   DisposableEffect(lifecycleOwner) {
+       val observer = LifecycleEventObserver { _, event ->
+           if (event == Lifecycle.Event.ON_RESUME) {
+               hasPermissions = PermissionHelper.hasRequiredPermissions(activity)
+           }
+       }
+
+       lifecycleOwner.lifecycle.addObserver(observer)
+       onDispose {
+           lifecycleOwner.lifecycle.removeObserver(observer)
+       }
+   }
+
+   // Request permissions if they are missing
+   // LaunchedEffect ensures this runs when the permission state changes
+   LaunchedEffect(hasPermissions) {
+       if (!hasPermissions) {
+           PermissionHelper.requestRequiredPermissions(activity)
+       }
+   }
+
+   // Block the rest of the app flow until permissions are granted
+   // This prevents navigation into features that depend on camera or location
+   if (!hasPermissions) {
+       Box(
+           modifier = Modifier.fillMaxSize(),
+           contentAlignment = Alignment.Center
+       ) {
+           Text("Requesting permissions...")
+       }
+
+       return
+   }
+   ```
+
+Test this step to validate that the app requests permissions and handles both the grant path and the deny path:
+
+- To test the grant path, open **Settings > Apps > Wayfaring > Permissions** on your device and revoke **Camera** and **Location** before launching the app.
+- Launch the app and confirm that the system permission dialogs appear.
+- Grant both permissions and confirm that the app continues to the Wayfinding app initialized screen after the app resumes from the system permission dialog.
+- To test the deny path, open **Settings > Apps > Wayfaring > Permissions** again and revoke **Camera** and **Location** before launching the app a second time.
+- Launch the app again, deny a permission, and confirm that the app remains on the **Requesting permissions...** screen and does not crash.
+
+## Route to Sites flow
+
+This step connects the app entry flow to the rest of the wayfinding experience by defining how the app moves the user from the entry screen into the Sites screen. After the shared NSDK session and permission checks are in place, the app needs a shared navigation structure that routes the user into a selector screen and then into the Sites screen. The next section extends that flow so the selected Site can return a VPS2 payload.
+
+This step has three parts:
+
+1. [Create navigation](#create-navigation) to define the entry, Sites, and VPS2 routes.
+2. [Create the entry screen](#create-the-entry-screen) to route the user into the Sites flow.
+3. [Share session objects](#share-session-objects) so each route receives the same shared session state.
+
+### Create navigation
+
+In an existing app, update your current navigation structure. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The navigation structure should:
+
+- Define a start destination for the entry screen.
+- Register routes for the Sites flow and VPS2 screen.
+- Pass shared session objects to each destination.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` with the following steps:
+
+1. Add the navigation dependency to the `dependencies { ... }` block in your app's `build.gradle` file as shown in the following code example:
+
+   ```kotlin
+   implementation("androidx.navigation:navigation-compose:2.7.7")
+   ```
+
+2. Add the navigation imports to the top of `WayfindingApp.kt` as shown in the following code example:
+
+   ```kotlin
+   import androidx.compose.runtime.MutableState
+   import androidx.compose.runtime.mutableStateOf
+   import androidx.navigation.NavHostController
+   import androidx.navigation.compose.NavHost
+   import androidx.navigation.compose.composable
+   import androidx.navigation.compose.rememberNavController
+   ```
+
+3. Create a `NavController` inside `WayfindingApp()` after the auth sheet and account icon code and immediately before the final placeholder `Box(...)` block as shown in the following code example:
+
+   ```kotlin
+   val navController = rememberNavController()
+   ```
+
+4. Replace the final placeholder `Box(...)` in `WayfindingApp()` with the following `NavHost` as shown in the following code example:
+
+   #### Expand to view the `NavHost`
+
+   ```kotlin
+   NavHost(
+       // Start the app on the entry screen for the Sites flow
+       navController = navController,
+       startDestination = "selector"
+   ) {
+       composable("selector") {
+           // Register the entry route and pass the shared session objects into it
+           SelectorView(
+               navController = navController,
+               nsdkSessionManager = nsdkSessionManager
+           )
+       }
+
+       composable("sites") {
+           // Register the Sites route and reuse the same shared session objects
+           WayfindingSitesView(
+               nsdkSessionManager = nsdkSessionManager,
+               navHostController = navController,
+               helpContentState = remember { mutableStateOf(null) }
+           )
+       }
+
+       composable("vps2") {
+           // Register the VPS2 route and reuse the same shared AR pipeline
+           VPS2View(
+               context = activity,
+               nsdkManager = nsdkSessionManager,
+               helpContentState = remember { mutableStateOf(null) },
+               initialPayload = null
+           )
+       }
+   }
+   ```
+
+   This `NavHost` defines three routes:
+
+   - `selector` -- the entry screen that lets the user choose how to proceed.
+   - `sites` -- the Sites browser placeholder from this section.
+   - `vps2` -- the VPS2 placeholder from this section.
+
+### Create the entry screen
+
+In an existing app, update your current first screen so it navigates to the Sites flow when the user selects it. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The entry screen should:
+
+- Show an entry action for the Sites flow.
+- Navigate to the Sites route when the user selects it.
+
+In a new app, create `app/src/main/java/<your app package path>/SelectorView.kt` as shown in the following code example:
+
+#### Expand to view `SelectorView.kt`
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+
+@Composable
+fun SelectorView(
+    navController: NavHostController,
+    nsdkSessionManager: NSDKSessionManager
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Button(
+            // Show one entry action for the Sites flow
+             onClick = { navController.navigate("sites") }
+         ) {
+            // Move the user into the Sites route when they select it
+             Text("Browse Sites")
+         }
+    }
+}
+```
+
+### Share session objects
+
+In an existing app, update your navigation destinations so each screen receives the same shared session objects. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The navigation flow should:
+
+- Reuse the same `NSDKSessionManager` across all screens.
+- Let the Sites flow access shared session state.
+- Let the VPS2 screen reuse the same AR pipeline.
+- Avoid creating duplicate sessions.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` to add the placeholder screen stubs in `WayfindingApp.kt` after `fun WayfindingApp(activity: Activity)` and before any later helper composables as shown in the following code example:
+
+#### Expand to view the placeholder screen stubs
+
+```kotlin
+@Composable
+fun WayfindingSitesView(
+    nsdkSessionManager: NSDKSessionManager,
+    navHostController: NavHostController,
+    helpContentState: MutableState<Any?>
+) {
+    // Receive the shared NSDKSessionManager so the Sites flow can reuse shared session state
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Sites screen loaded")
+    }
+}
+
+@Composable
+fun VPS2View(
+    context: Activity,
+    nsdkManager: NSDKSessionManager,
+    helpContentState: MutableState<Any?>,
+    initialPayload: String?
+) {
+    // Receive the same shared AR pipeline instead of creating a duplicate session
+    Text("VPS2 screen")
+}
+```
+
+Test this step to validate that the app routes from the entry screen into the placeholder Sites screen:
+
+- Build and run the app on your device.
+- Confirm that the authorization sheet appears first.
+- Tap **Login** and confirm that the authorization sheet dismisses.
+- Confirm that the app then shows a screen with a centered button labeled **Browse Sites**.
+- Tap **Browse Sites** and confirm that the app navigates to a new screen showing centered text **Sites screen loaded**.
+- Confirm that the app does not crash when navigating between screens.
+
+In the next step, you will replace the placeholder Sites screen with a working Site-selection flow that passes a VPS2 anchor payload into the next screen.
+
+## Select a Site and return payload
+
+This step replaces the placeholder Sites screen with a temporary Site-selection flow that proves payload handoff works. On this page, the app does not load real Sites yet. Instead, it uses a placeholder Site button that returns a sample anchor payload into the `vps2` route. The next page replaces that temporary flow with the full Sites browser and real Site data.
+
+This step has three parts:
+
+1. [Create a payload route](#create-a-payload-route) so the VPS2 route can receive the selected anchor payload.
+2. [Create a placeholder Site action](#create-a-placeholder-site-action) so the Sites screen can navigate to the payload-aware VPS2 route.
+3. [Show the payload](#show-the-payload) so the placeholder VPS2 screen confirms the payload handoff works.
+
+### Create a payload route
+
+In an existing app, update your routing so the VPS2 screen can receive the selected Site's anchor payload. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The route should:
+
+- Accept a payload argument.
+- Decode the selected anchor payload.
+- Pass the decoded payload into the VPS2 screen.
+
+In a new app, update `app/src/main/java/<your app package path>/WayfindingApp.kt` with the following steps:
+
+1. Add the payload-route imports to the top of `WayfindingApp.kt` as shown in the following code example:
+
+   ```kotlin
+   import android.net.Uri
+   import androidx.navigation.NavType
+   import androidx.navigation.navArgument
+   ```
+
+2. Add the payload route constants near the top of `WayfindingApp.kt`, directly after the existing `private const val ...` declarations, as shown in the following code example:
+
+   ```kotlin
+   const val VPS2_ROUTE = "vps2"
+   private const val VPS2_PAYLOAD_ARG = "payload"
+   ```
+
+3. Replace the simple `composable("vps2") { ... }` route inside the `NavHost(...)` block in `WayfindingApp.kt` as shown in the following code example:
+
+   #### Expand to view the payload-aware vps2 route
+
+   ```kotlin
+   composable(
+       route = "$VPS2_ROUTE/{$VPS2_PAYLOAD_ARG}",
+       arguments = listOf(
+           navArgument(VPS2_PAYLOAD_ARG) {
+               type = NavType.StringType
+               nullable = true
+               defaultValue = ""
+           }
+       )
+   ) { backStackEntry ->
+       // Read the encoded payload from the route argument
+       val encodedPayload = backStackEntry.arguments?.getString(VPS2_PAYLOAD_ARG).orEmpty()
+
+       // Decode the payload before passing it into the VPS2 screen
+       val initialPayload = Uri.decode(encodedPayload)
+
+       // Pass the decoded payload into the placeholder VPS2 screen
+       VPS2View(
+           context = activity,
+           nsdkManager = nsdkSessionManager,
+           helpContentState = remember { mutableStateOf(null) },
+           initialPayload = initialPayload
+       )
+   }
+   ```
+
+### Create a placeholder Site action
+
+In an existing app, update your placeholder Sites screen so it provides one temporary Site action that navigates to the payload-aware VPS2 route. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The Sites screen should:
+
+- Show a selectable placeholder Site action.
+- Use a placeholder anchor payload.
+- Navigate to the payload-aware VPS2 route with that payload.
+
+In a new app, update the placeholder `WayfindingSitesView(...)` stub in `app/src/main/java/<your app package path>/WayfindingApp.kt` with the following steps:
+
+1. Add the button import to the top of `WayfindingApp.kt` as shown in the following code example:
+
+   ```kotlin
+   import androidx.compose.material3.Button
+   ```
+
+2. Replace the placeholder `WayfindingSitesView(...)` stub after `fun WayfindingApp(activity: Activity)` and before any later helper composables as shown in the following code example:
+
+   #### Expand to view the placeholder WayfindingSitesView action
+
+   ```kotlin
+   @Composable
+   fun WayfindingSitesView(
+       nsdkSessionManager: NSDKSessionManager,
+       navHostController: NavHostController,
+       helpContentState: MutableState<Any?>
+   ) {
+       // Use a placeholder payload until the next page adds real Site loading
+       val placeholderPayload = "sample-anchor-payload"
+
+       Box(
+           modifier = Modifier
+               .fillMaxSize()
+               .padding(24.dp),
+           contentAlignment = Alignment.Center
+       ) {
+           Button(
+               onClick = {
+                   // Encode the placeholder payload before passing it into the route
+                   navHostController.navigate("$VPS2_ROUTE/${Uri.encode(placeholderPayload)}")
+               }
+           ) {
+               // Show one temporary Site action on this page
+               Text("Select placeholder Site")
+           }
+       }
+   }
+   ```
+
+### Show the payload
+
+In an existing app, update your placeholder VPS2 screen so it confirms which payload was passed in from the selected Site before you add the full localization flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The placeholder VPS2 screen should:
+
+- Receive the selected payload.
+- Show whether a payload was selected.
+- Display the selected payload text for verification.
+
+In a new app, update the placeholder `VPS2View` stub in `app/src/main/java/<your app package path>/WayfindingApp.kt` with the following steps:
+
+1. Add the column import to the top of `WayfindingApp.kt` as shown in the following code example:
+
+   ```kotlin
+   import androidx.compose.foundation.layout.Column
+   ```
+
+2. Replace the placeholder `VPS2View` stub after `fun WayfindingApp(activity: Activity)` and before any later helper composables as shown in the following code example:
+
+   #### Expand to view the updated VPS2View placeholder
+
+   ```kotlin
+   @Composable
+   fun VPS2View(
+       context: Activity,
+       nsdkManager: NSDKSessionManager,
+       helpContentState: MutableState<Any?>,
+       initialPayload: String?
+   ) {
+       Box(
+           modifier = Modifier.fillMaxSize(),
+           contentAlignment = Alignment.Center
+       ) {
+           Column(
+               horizontalAlignment = Alignment.CenterHorizontally
+           ) {
+               Text("VPS2 screen")
+
+               // Show whether a Site passed an anchor payload into this screen
+               Text(
+                   text = if (initialPayload.isNullOrBlank()) {
+                       "No anchor payload selected"
+                   } else {
+                       "Selected anchor payload:\n$initialPayload"
+                   },
+                   modifier = Modifier.padding(24.dp)
+               )
+           }
+       }
+   }
+   ```
+
+Test this step to validate that the placeholder Sites flow passes a payload into the VPS2 route:
+
+- Build and run the app on your device with a fresh developer token in `WayfindingApp.kt`.
+- Confirm that the authorization sheet appears first.
+- Tap **Login** and confirm that the authorization sheet dismisses.
+- Tap **Browse Sites**.
+- Confirm that the placeholder Sites screen shows a button labeled **Select placeholder Site**.
+- Tap **Select placeholder Site** and confirm that the app navigates to the **VPS2 screen**.
+- Confirm that the placeholder payload text **Selected anchor payload: sample-anchor-payload** is displayed on the VPS2 screen.
+
+In the next step, you will replace the placeholder Site action with the full map-based Sites browser and return real Site payloads into the Kotlin VPS2 localization flow.
+
+## Full source for WayfindingApp.kt
+
+This assembled reference copy contains the final `WayfindingApp.kt` from this page, including the shared session setup, auth sheet, permission gate, navigation routes, and placeholder Sites and VPS2 screens. Use it to compare your final file and recover from incremental paste mistakes. `SelectorView.kt`, `WayfindingAuthManager.kt`, `WayfindingAuthView.kt`, and `PermissionHelper.kt` remain in their own files.
+
+#### Expand to reveal full `WayfindingApp.kt`
+
+```kotlin
+package com.example.wayfinding // Replace with your app package name
+
+import android.app.Activity
+import android.net.Uri
+import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.wayfinding.auth.WayfindingAuthManager
+import com.example.wayfinding.auth.WayfindingAuthView
+import com.example.wayfinding.permissions.PermissionHelper
+import com.nianticspatial.nsdk.NSDKSession
+
+private const val TAG = "WayfindingApp"
+private const val PLAYBACK_DATASET_PATH = ""
+private const val ACCESS_TOKEN = "REPLACE_WITH_YOUR_ACCESS_TOKEN"
+const val VPS2_ROUTE = "vps2"
+private const val VPS2_PAYLOAD_ARG = "payload"
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WayfindingApp(activity: Activity) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val sessionManager = remember {
+        ARSessionManager(
+            activity = activity,
+            playbackDatasetPath = PLAYBACK_DATASET_PATH
+        ).also {
+            Log.i(TAG, "ARSessionManager created")
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, sessionManager) {
+        lifecycleOwner.lifecycle.addObserver(sessionManager)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(sessionManager)
+        }
+    }
+
+    val isPlaybackLoading = sessionManager.isPlaybackLoading
+    if (isPlaybackLoading) return
+
+    val depthAvailability = sessionManager.depthAvailability
+    val nsdkSession = remember(depthAvailability) {
+        NSDKSession(
+            accessToken = ACCESS_TOKEN,
+            useLidar = depthAvailability
+        ).also {
+            Log.i(TAG, "NSDKSession created")
+        }
+    }
+
+    val nsdkSessionManager = remember(nsdkSession, sessionManager) {
+        NSDKSessionManager(activity, nsdkSession, sessionManager).also {
+            Log.i(TAG, "NSDKSessionManager created")
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, nsdkSessionManager) {
+        lifecycleOwner.lifecycle.addObserver(nsdkSessionManager)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(nsdkSessionManager)
+        }
+    }
+
+    val authManager = remember(nsdkSession) { WayfindingAuthManager(nsdkSession) }
+    val isLoggedIn = authManager.isLoggedIn
+    var showAuthSheet by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner, authManager) {
+        lifecycleOwner.lifecycle.addObserver(authManager)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(authManager)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!isLoggedIn) {
+            showAuthSheet = true
+        }
+    }
+
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            showAuthSheet = false
+        }
+    }
+
+    if (showAuthSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAuthSheet = false }
+        ) {
+            WayfindingAuthView(
+                manager = authManager,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+        }
+    }
+
+    val authIconOverlay: @Composable () -> Unit = {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            IconButton(
+                onClick = { showAuthSheet = true },
+                modifier = Modifier
+                    .padding(top = 8.dp, end = 16.dp, bottom = 8.dp, start = 8.dp)
+                    .size(40.dp)
+                    .background(
+                        color = if (isLoggedIn) Color(0xFF4CAF50) else Color.Transparent,
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = if (isLoggedIn) {
+                        "Account (logged in)"
+                    } else {
+                        "Account (logged out)"
+                    },
+                    tint = if (isLoggedIn) Color.White else Color.Gray
+                )
+            }
+        }
+    }
+
+    var hasPermissions by remember {
+        mutableStateOf(PermissionHelper.hasRequiredPermissions(activity))
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasPermissions = PermissionHelper.hasRequiredPermissions(activity)
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(hasPermissions) {
+        if (!hasPermissions) {
+            PermissionHelper.requestRequiredPermissions(activity)
+        }
+    }
+
+    if (!hasPermissions) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Requesting permissions...")
+            authIconOverlay()
+        }
+        return
+    }
+
+    val navController = rememberNavController()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = "selector"
+        ) {
+            composable("selector") {
+                SelectorView(
+                    navController = navController,
+                    nsdkSessionManager = nsdkSessionManager
+                )
+            }
+
+            composable("sites") {
+                WayfindingSitesView(
+                    nsdkSessionManager = nsdkSessionManager,
+                    navHostController = navController,
+                    helpContentState = remember { mutableStateOf(null) }
+                )
+            }
+
+            composable(
+                route = "$VPS2_ROUTE/{$VPS2_PAYLOAD_ARG}",
+                arguments = listOf(
+                    navArgument(VPS2_PAYLOAD_ARG) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = ""
+                    }
+                )
+            ) { backStackEntry ->
+                val encodedPayload = backStackEntry.arguments?.getString(VPS2_PAYLOAD_ARG).orEmpty()
+                val initialPayload = Uri.decode(encodedPayload)
+
+                VPS2View(
+                    context = activity,
+                    nsdkManager = nsdkSessionManager,
+                    helpContentState = remember { mutableStateOf(null) },
+                    initialPayload = initialPayload
+                )
+            }
+        }
+
+        authIconOverlay()
+    }
+}
+
+@Composable
+fun WayfindingSitesView(
+    nsdkSessionManager: NSDKSessionManager,
+    navHostController: NavHostController,
+    helpContentState: MutableState<Any?>
+) {
+    val placeholderPayload = "sample-anchor-payload"
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Button(
+            onClick = {
+                navHostController.navigate("$VPS2_ROUTE/${Uri.encode(placeholderPayload)}")
+            }
+        ) {
+            Text("Select placeholder Site")
+        }
+    }
+}
+
+@Composable
+fun VPS2View(
+    context: Activity,
+    nsdkManager: NSDKSessionManager,
+    helpContentState: MutableState<Any?>,
+    initialPayload: String?
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("VPS2 screen")
+
+            Text(
+                text = if (initialPayload.isNullOrBlank()) {
+                    "No anchor payload selected"
+                } else {
+                    "Selected anchor payload:\n$initialPayload"
+                },
+                modifier = Modifier.padding(24.dp)
+            )
+        }
+    }
+}
+```
+
+## Next Step
+
+Continue to [Select a Site and anchor payload](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-map-view/) to build the Kotlin Sites screen in more detail and connect it to VPS2 localization.
+
+### Platform: swift
+
+## Files overview
+
+The app entry flow has five responsibilities:
+
+1. Create the app entry point.
+2. Present authorization.
+3. Request permissions.
+4. Route to Sites flow.
+5. Select a Site and return payload.
+
+Your app can organize those responsibilities in different files. The following table shows one working structure for the standalone Swift app in this tutorial and the matching files in the `vps2-e2e-swift` sample.
+
+| Responsibility | Standalone app | Sample reference |
+|------|------|------|
+| Create the app entry point | `AppDelegate.swift` and `Landing/WayfindingLandingView.swift` | `AppDelegate.swift` and `Landing/LandingView.swift` |
+| Present authorization | `Auth/WayfindingLoginManager.swift` plus the sample session helpers in `Auth/` | `Auth/LoginManager.swift` and `Auth/NSSampleSessionManager.swift` |
+| Request permissions | `Permissions/WayfindingPermissionManager.swift` and `Landing/WayfindingLandingView.swift` | `PermissionManager.swift` and `Landing/LandingView.swift` |
+| Route to Sites flow | `Landing/WayfindingLandingView.swift` creates the shared `NSDKSession` and opens the placeholder Sites screen after auth and permissions are ready | `Landing/LandingView.swift` and `Sites/SiteMapViewModel.swift` |
+| Select a Site and return payload | `Landing/WayfindingLandingView.swift` receives the selected Site and payload and pushes the placeholder VPS2 screen | `Landing/LandingView.swift`, `NSDK/ARManager.swift`, and `AR/VPS2ARViewControllerRepresentable.swift` |
+
+## Create the app entry point
+
+To create the app-entry part of the Swift wayfinding flow, set up the root UI so it opens one shared landing screen. Later steps on this page reuse that screen when they add authorization, permissions, Sites navigation, and the AR destination.
+
+There are three steps to create the app entry point, shown in detail in the following sections:
+
+1. [Set the root UI](#set-the-root-ui-1) for your wayfinding app.
+2. [Add Landing state](#add-landing-state) to store navigation, sign-in, and alert state in one root screen.
+3. [Build the shell UI](#build-the-shell-ui-1) that later steps extend with authorization, permissions, Sites navigation, and the AR destination.
+
+Use the following steps to create or update your app entry point:
+
+### Set the root UI
+
+In an existing app, update the file that currently opens the first screen for this feature so it shows `WayfindingLandingView()` as the root UI for this flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Start the wayfinding flow from one shared SwiftUI root view.
+- Keep one clear root screen for the wayfinding flow.
+- Host `WayfindingLandingView()` from the first screen your app opens.
+- Replace the default Xcode AR template UI.
+
+In a new app created from the Xcode AR App template, update `AppDelegate.swift` to open `WayfindingLandingView()` from a SwiftUI app scene. Replace the file contents with:
+
+```swift
+import SwiftUI
+
+@main
+struct WayfindingApp: App {
+    var body: some Scene {
+        WindowGroup {
+            // Start the wayfinding flow from one shared landing screen.
+            WayfindingLandingView()
+        }
+    }
+}
+```
+
+### Add Landing state
+
+In an existing app, update the SwiftUI view that owns your landing flow so it stores the navigation, login, alert, and cleanup state for this flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Track the navigation stack that pushes the Sites and AR destinations.
+- Track whether the Sign in button should be visible.
+- Track whether the location Settings alert should be visible.
+- Track whether logout should keep the user on the Landing screen.
+- Retain auth helpers and Combine subscriptions for the lifetime of the screen.
+
+In a new app, create `Landing/WayfindingLandingView.swift` and replace the file contents with the following starter declaration to hold the landing state and temporary compile-safe stubs for later steps:
+
+#### Expand to view the `WayfindingLandingView.swift` starter
+
+```swift
+import SwiftUI
+import Combine
+import NSDK
+
+struct WayfindingLandingView: View {
+
+    // Drive the NavigationStack for the Sites and AR destinations.
+    @State private var navigationPath = NavigationPath()
+    // Show or hide the Sign in button based on auth state.
+    @State private var isLoginButtonVisible = false
+    // Show a Settings alert when location access is denied or restricted.
+    @State private var isShowingLocationAlert = false
+    // Keep the user on Landing after logout instead of auto-launching the map again.
+    @State private var suppressAutoLaunchToMap = false
+
+    // Retain the browser auth helper while sign-in is active. Use a temporary
+    // generic reference until the next section creates WayfindingLoginManager.
+    @State private var loginManager: AnyObject?
+    // Retain the NSDK access-token subscription for the shared session.
+    @State private var tokenSubscription: AnyCancellable?
+    // Retain one-shot Combine subscriptions used by the Landing flow.
+    @State private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Interaction Functions
+
+    // Use temporary stubs so each later step can replace one part of the file
+    // while the project continues to compile.
+    var body: some View {
+        EmptyView()
+    }
+
+    private func startWayfindingLogin() {}
+
+    private func wayfindingNeedsAuth() -> Bool { true }
+
+    func onViewAppear() {}
+
+    private func refreshLandingStateForPermissionsAndSession() {}
+
+    private func launchWayfindingSitesView() {}
+
+    private func launchWayfindingARView(
+        siteName: String,
+        payload: String,
+        nsdkSession: NSDKSession
+    ) {}
+
+    private func completeWayfindingLogout() {}
+
+    @ViewBuilder
+    private func destinationWayfindingSitesPlaceholderView(
+        nsdkSession: NSDKSession
+    ) -> some View {
+        EmptyView()
+    }
+
+    @ViewBuilder
+    private func destinationWayfindingVPS2PlaceholderView(
+        siteName: String,
+        payload: String,
+        nsdkSession: NSDKSession
+    ) -> some View {
+        EmptyView()
+    }
+}
+```
+
+Later steps on this page replace the temporary `body` and helper stubs in the `// MARK: - Interaction Functions` section.
+
+### Build the shell UI
+
+In an existing app, update the root landing screen so it renders the landing chrome and the Sign in button before later steps add navigation destinations and alerts. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Host the landing flow inside a `NavigationStack`.
+- Show the landing background, icon, and title.
+- Show a Sign in button only when auth is required.
+- Call `startWayfindingLogin()` when the user selects the button.
+
+In a new app, copy the sample icon asset before you replace the temporary body. In Xcode, create an image set named `spatial-icon` in your app's `Assets.xcassets`, then copy the sample's icon file `Vps2E2eSample/Vps2E2eSample/Assets.xcassets/spatial-icon.imageset/spatial-icon.png` into it.
+
+Then update `Landing/WayfindingLandingView.swift` by replacing the temporary `var body: some View { EmptyView() }` block to show the landing screen chrome and a placeholder Sign in action:
+
+#### Expand to view the shell `body`
+
+```swift
+var body: some View {
+    NavigationStack(path: $navigationPath) {
+        // Host the landing flow inside one shared navigation stack.
+        ZStack {
+            // Fill the landing screen with the sample background gradient.
+            LinearGradient(
+                colors: [.white, Color(red: 0.53, green: 0.74, blue: 0.95)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                // Show the sample brand icon above the title.
+                Image("spatial-icon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: UIScreen.main.bounds.width * 0.45)
+
+                Spacer().frame(height: 60)
+
+                // Show the landing title for the wayfinding flow.
+                Text("Niantic Spatial VPS2\nWayfinding Sample")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(Color(red: 0.26, green: 0.43, blue: 0.71))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+
+                Spacer()
+
+                if isLoginButtonVisible {
+                    Button(action: { self.startWayfindingLogin() }) {
+                        // Start the browser sign-in flow when auth is required.
+                        Text("Sign in to get started")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.27, green: 0.53, blue: 0.82))
+                            .cornerRadius(14)
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 40)
+                }
+            }
+        }
+        .navigationBarHidden(true)
+        .ignoresSafeArea()
+    }
+}
+```
+
+Test this step to validate that the app entry point opens the root Landing screen:
+
+- Build the app successfully before continuing.
+- Run the app and confirm that the landing screen opens without crashing.
+- Confirm that the landing gradient, icon, and `Niantic Spatial VPS2 Wayfinding Sample` title are visible.
+
+## Present authorization
+
+This step adds sign-in state to the app entry flow into `WayfindingLandingView` so the landing screen can show Sign in when a valid sample session is not already available. Before the app can open the Sites flow, it should check whether the user already has a valid sample session and present authorization UI if one is not available.
+
+This step has four parts:
+
+1. [Create a login manager](#create-a-login-manager) to open the browser-based sign-in flow and store the returned sample session.
+2. [Start the login flow](#start-the-login-flow) when the user selects Sign in and continue into the Sites flow after the sample session becomes available.
+3. [Check whether auth is still required](#check-whether-auth-is-still-required) before deciding whether the landing screen should show Sign in or continue directly into the Sites flow.
+4. [Show Sign in when auth is required](#show-sign-in-when-auth-is-required) so the landing screen actually presents the authorization action created in this section.
+
+### Create a login manager
+
+In an existing app, update your browser-based sign-in helper so it opens the auth portal and forwards the returned sample-session token into the shared session manager.
+
+This step should:
+
+- Open the browser-based sign-in flow.
+- Receive the callback URL after sign-in completes.
+- Extract the returned sample-session token.
+- Pass that token into `NSSampleSessionManager`.
+
+The standalone Swift flow on this page uses the sample browser-based sign-in path and sample-session refresh helpers so you can validate the landing flow before later pages add the real Sites and VPS2 screens.
+For more detail about the auth models used by NSDK, see [Generate developer tokens](https://www.nianticspatial.com/docs/nsdk/auth_developer_token/) and [Generate access tokens](https://www.nianticspatial.com/docs/nsdk/auth_backend/).
+
+In a new app, create an `Auth` group. Before you create `Auth/WayfindingLoginManager.swift`, copy these support files from the sample into your app's `Auth` group so the landing page compiles:
+
+- `AuthConstants.swift`
+- `AuthUtils.swift`
+- `NSSampleSessionManager.swift`
+- `RequestNsdkAccessToken.swift`
+- `RequestRuntimeRefreshToken.swift`
+- `RequestSampleSessionAccess.swift`
+
+Then create `Auth/WayfindingLoginManager.swift` and add the following code to open browser sign-in and store the returned sample session:
+
+#### Expand to view `WayfindingLoginManager.swift`
+
+```swift
+import AuthenticationServices
+import UIKit
+
+final class WayfindingLoginManager: NSObject, ASWebAuthenticationPresentationContextProviding {
+
+    func startAuth() {
+        // Build the browser sign-in URL used by the sample auth flow.
+        guard let authURL = URL(
+            string: AuthConstants.EndPointUrls.SignIn + "?redirectType=\(AuthConstants.callbackUrlScheme)"
+        ) else {
+            return
+        }
+
+        // Open the browser-based sign-in flow and wait for the callback URL.
+        let session = ASWebAuthenticationSession(
+            url: authURL,
+            callbackURLScheme: AuthConstants.callbackUrlScheme
+        ) { callbackURL, error in
+            if let error = error {
+                print("Auth error: \(error.localizedDescription)")
+                return
+            }
+            if let callbackURL {
+                self.handleCallback(url: callbackURL)
+            }
+        }
+
+        session.presentationContextProvider = self
+        session.start()
+    }
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        // Present the auth browser from the active app window.
+        let scene = UIApplication.shared.connectedScenes
+            .first { $0.activationState == .foregroundActive } as? UIWindowScene
+        return scene?.windows.first { $0.isKeyWindow } ?? ASPresentationAnchor()
+    }
+
+    private func handleCallback(url: URL) {
+        // Extract the returned sample-session token and store it for the Landing flow.
+        let tokens = AuthUtils.extractTokens(from: url.absoluteString)
+        NSSampleSessionManager.setNSSampleSession(sessionToken: tokens.refreshToken)
+    }
+}
+```
+
+After you create `Auth/WayfindingLoginManager.swift`, update `Landing/WayfindingLandingView.swift` so the Landing screen can retain the real login helper. Replace:
+
+```swift
+@State private var loginManager: AnyObject?
+```
+
+with:
+
+```swift
+@State private var loginManager: WayfindingLoginManager?
+```
+
+### Start the login flow
+
+In an existing app, update the landing screen so the Sign in button subscribes to the session-ready notification, starts the browser-based auth flow, and then opens the Sites flow after the session becomes available.
+
+This step should:
+
+- Keep the user on Landing while sign-in is in progress.
+- Wait for the sample session to become available.
+- Launch the browser-based auth flow.
+- Continue into the Sites flow after login succeeds.
+
+In a new app, update `Landing/WayfindingLandingView.swift` by replacing the temporary `private func startWayfindingLogin() {}` stub so the Sign in button can wait for the sample session and continue into Sites after login succeeds:
+
+#### Expand to view `startWayfindingLogin()`
+
+```swift
+private func startWayfindingLogin() {
+    // Allow the Landing screen to auto-launch the map again after sign-in succeeds.
+    suppressAutoLaunchToMap = false
+    print("WayfindingLanding login started")
+
+    // Wait for the shared sample session to be set, then continue into the Sites flow.
+    NotificationCenter.default.publisher(for: nsSampleSessionDidSetNotification)
+        .first()
+        .receive(on: DispatchQueue.main)
+        .sink { _ in
+            self.launchWayfindingSitesView()
+        }
+        .store(in: &cancellables)
+
+    // Start the browser sign-in flow.
+    loginManager = WayfindingLoginManager()
+    loginManager?.startAuth()
+}
+```
+
+### Check whether auth is still required
+
+Before the landing screen opens the Sites flow, it should decide whether the current app state already has valid authorization. Without this check, the app could force the user through browser sign-in every time even when a reusable access token or sample session is already available.
+
+In an existing app, update the Landing screen so it can decide whether to show Sign in or continue directly into the Sites flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Reuse the access token when it is still valid.
+- Reuse the sample session when it is still in progress.
+- Return `true` only when the landing screen still needs auth.
+
+In a new app, update `Landing/WayfindingLandingView.swift` by replacing the temporary `private func wayfindingNeedsAuth() -> Bool { true }` stub so the Landing screen can decide whether to show Sign in or continue with existing auth state:
+
+```swift
+private func wayfindingNeedsAuth() -> Bool {
+    // Skip the browser auth flow when the current access token is still valid.
+    if !AuthUtils.isTokenEmptyOrExpiring(AuthConstants.accessToken, minUnexpiredTimeLeft: 0) {
+        return false
+    }
+    // Otherwise rely on the shared sample-session state.
+    return !NSSampleSessionManager.isSessionInProgress
+}
+```
+
+### Show Sign in when auth is required
+
+Until the next section adds the full permission-aware refresh flow, the landing screen still needs one temporary checkpoint that decides whether it should show the Sign in button. Without this step, the auth helpers exist but the screen never exposes them to the user.
+
+In an existing app, update the landing screen so it checks `wayfindingNeedsAuth()` when the screen opens and shows the Sign in button when auth is required. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Check whether auth is required when the landing screen appears.
+- Show the Sign in button when no valid auth state is available.
+- Keep the landing screen visible until the user selects Sign in.
+
+In a new app, update `Landing/WayfindingLandingView.swift` as follows:
+
+1. Replace the temporary `func onViewAppear() {}` to update the Landing screen when it first opens.
+
+   ```swift
+   func onViewAppear() {
+       isLoginButtonVisible = wayfindingNeedsAuth()
+   }
+   ```
+
+2. Update `var body: some View` in `Landing/WayfindingLandingView.swift` by adding `.onAppear { self.onViewAppear() }` immediately after `.ignoresSafeArea()` to call the auth check when the Landing screen appears:
+
+   ```swift
+   .onAppear {
+       self.onViewAppear()
+   }
+   ```
+
+Test this step to validate that the landing screen presents authorization when needed:
+
+- Build the app successfully before continuing.
+- If you previously signed in while testing this app, delete the app from your device or simulator to clear the stored sample session before you run it again.
+- Run the app and confirm that `Sign in to get started` appears on Landing.
+- Tap `Sign in to get started` and confirm that the browser sign-in flow opens.
+- Complete sign-in and confirm that the app returns without crashing.
+- In Xcode, confirm that `WayfindingLanding login started` appears in the console.
+- If the auth flow is cancelled or fails, confirm that Landing stays visible and the app does not crash.
+
+## Request permissions
+
+This step requests location access and refreshes `WayfindingLandingView` when the app returns from Settings. The next section connects that state to the placeholder Sites route.
+
+This step has three parts:
+
+1. [Create a permission manager](#create-a-permission-manager-1) to request location access and report whether Settings is required.
+2. [Refresh landing state](#refresh-landing-state) so the screen re-checks permissions after returning from Settings.
+3. [Refresh auth and permission state](#refresh-auth-and-permission-state) so the landing screen requests permissions and restores session state before the Sites route is added.
+
+### Create a permission manager
+
+In an existing app, update your permission helper so it requests the location access that the Sites flow needs and exposes whether the user must return to Settings.
+
+This step should:
+
+- Request the permissions required by the landing flow.
+- Report whether location access is already granted.
+- Report whether the user must use Settings to enable location.
+
+In a new app, create a `Permissions` group, then create `Permissions/WayfindingPermissionManager.swift` and replace the file contents with the following code to request and report the location state used by Landing:
+
+#### Expand to view `WayfindingPermissionManager.swift`
+
+```swift
+import CoreLocation
+
+final class WayfindingPermissionManager {
+    static let shared = WayfindingPermissionManager()
+
+    private let locationManager = CLLocationManager()
+
+    private init() {}
+
+    func requestAllPermissions() {
+        // Request the location permission used by the Sites flow.
+        requestLocationPermission()
+    }
+
+    func requestLocationPermission() {
+        guard locationManager.authorizationStatus == .notDetermined else { return }
+        locationManager.requestWhenInUseAuthorization()
+    }
+
+    var isLocationAuthorized: Bool {
+        let status = locationManager.authorizationStatus
+        return status == .authorizedWhenInUse || status == .authorizedAlways
+    }
+
+    var isLocationDeniedOrRestricted: Bool {
+        switch locationManager.authorizationStatus {
+        case .denied, .restricted:
+            return true
+        case .notDetermined, .authorizedWhenInUse, .authorizedAlways:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+}
+```
+
+### Refresh landing state
+
+In an existing app, update the landing screen so it refreshes permission and session state when the screen appears and when the app returns from Settings.
+
+This step should:
+
+- Refresh landing state when the screen first appears.
+- Refresh landing state again when the app becomes active.
+- Re-check permissions after the user returns from Settings.
+
+In a new app, update `Landing/WayfindingLandingView.swift` as follows:
+
+1. Replace the temporary `func onViewAppear() {}` stub to refresh landing state when the screen first opens.
+
+   ```swift
+   func onViewAppear() {
+       // Refresh auth and permission state when Landing first appears.
+       print("WayfindingLanding appeared")
+       refreshLandingStateForPermissionsAndSession()
+   }
+   ```
+
+2. Update `var body: some View` in `Landing/WayfindingLandingView.swift` by adding these modifiers immediately after `.ignoresSafeArea()` to refresh landing state after returning from Settings and show the location alert when the Sites flow is blocked.
+
+   ```swift
+   .onAppear {
+       self.onViewAppear()
+   }
+   .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+       // Refresh landing state after the user returns from Settings.
+       refreshLandingStateForPermissionsAndSession()
+   }
+   .alert("Location Access Required", isPresented: $isShowingLocationAlert) {
+       Button("Cancel", role: .cancel) { }
+       Button("Settings") {
+           if let url = URL(string: UIApplication.openSettingsURLString) {
+               UIApplication.shared.open(url)
+           }
+       }
+   } message: {
+       Text("This app needs location access to function. Please enable it in Settings.")
+   }
+   ```
+
+### Refresh auth and permission state
+
+In an existing app, update the landing refresh logic so it requests permissions, restores the sample session, and then decides whether to show Sign in or continue into the Sites flow.
+
+This step should:
+
+- Request permissions before routing into the Sites flow.
+- Restore the sample session before checking auth state.
+- Show Sign in when auth is still required.
+- Continue into the Sites flow only when auth is ready.
+
+In a new app, update `Landing/WayfindingLandingView.swift` by replacing the temporary `private func refreshLandingStateForPermissionsAndSession() {}` stub so Landing can request permissions, restore session state, and decide whether to show Sign in or continue:
+
+#### Expand to view `refreshLandingStateForPermissionsAndSession()`
+
+```swift
+private func refreshLandingStateForPermissionsAndSession() {
+    // Request permissions before the Landing flow tries to open the Sites screen.
+    WayfindingPermissionManager.shared.requestAllPermissions()
+    print("WayfindingLanding requested permissions")
+
+    // Restore or refresh the sample session before checking whether auth is still required.
+    NSSampleSessionManager.start()
+
+    if !wayfindingNeedsAuth() {
+        if suppressAutoLaunchToMap {
+            isLoginButtonVisible = true
+        } else {
+            launchWayfindingSitesView()
+        }
+    } else {
+        print("WayfindingLanding auth required")
+        isLoginButtonVisible = true
+    }
+}
+```
+
+Test this step to validate that the app requests permissions and refreshes correctly:
+
+- Build the app.
+- Run the app and confirm that `WayfindingLanding requested permissions` appears in the console.
+- Send the app to the background, reopen it, and confirm that `WayfindingLanding requested permissions` appears again.
+- Confirm that the app stays on the landing screen without crashing.
+
+## Route to Sites flow
+
+This step connects the landing flow to the rest of the wayfinding experience by defining how the app moves the user from the landing screen into a placeholder Sites screen and then into a placeholder VPS2 screen. On this page, the Swift walkthrough does not build the real `SiteMapView` or `VPS2ARViewControllerRepresentable` flow yet. It uses placeholder screens so the page compiles and proves that the selected payload moves through the landing flow. Later pages replace those placeholders with the real Sites browser and AR destination.
+
+This step has five parts:
+
+1. [Launch the Sites destination](#launch-the-sites-destination) by creating one shared `NSDKSession` and opening the placeholder Sites screen.
+2. [Create navigation destinations](#create-navigation-destinations) that register the placeholder Sites and VPS2 screens.
+3. [Create a placeholder Sites screen](#create-a-placeholder-sites-screen) that lets the user select a temporary Site.
+4. [Show the selected payload](#show-the-selected-payload) in a placeholder VPS2 screen.
+5. [Implement logout](#implement-logout-1) so the placeholder Sites screen can return to Landing.
+
+### Launch the Sites destination
+
+In an existing app, update the landing screen so it creates one shared `NSDKSession` and opens the placeholder Sites destination only after location access is available. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Avoid pushing the Sites destination twice.
+- Block the Sites flow until location access is granted.
+- Create one shared `NSDKSession` for the Sites and VPS2 placeholder flows.
+- Push the placeholder Sites destination.
+
+In a new app, update `Landing/WayfindingLandingView.swift` by replacing the temporary `private func launchWayfindingSitesView() {}` stub so the landing page can create one shared `NSDKSession` and open the placeholder Sites screen:
+
+#### Expand to view `launchWayfindingSitesView()`
+
+```swift
+private func launchWayfindingSitesView() {
+    guard navigationPath.isEmpty else { return }
+    guard WayfindingPermissionManager.shared.isLocationAuthorized else {
+        if WayfindingPermissionManager.shared.isLocationDeniedOrRestricted {
+            isShowingLocationAlert = true
+        }
+        print("WayfindingLanding waiting for location permission")
+        return
+    }
+
+    // Create one shared NSDK session for the Sites and VPS2 placeholder destinations.
+    let nsdkSession = NSDKSession(
+        accessToken: AuthConstants.accessToken,
+        useLidar: true
+    )
+    tokenSubscription = NSSampleSessionManager.setupSessionAccess(for: nsdkSession)
+
+    navigationPath.append(WayfindingNavigationStep.sites(nsdkSession: nsdkSession))
+    print("WayfindingLanding launched Sites flow")
+}
+```
+
+### Create navigation destinations
+
+In an existing app, update your SwiftUI navigation state so it can push the Sites and AR destinations from the Landing screen.
+
+This step should:
+
+- Define one navigation type for the Sites and AR destinations.
+- Register destination builders for the Sites and AR cases.
+- Keep the navigation state in `WayfindingLandingView`.
+
+In a new app, update `Landing/WayfindingLandingView.swift` as follows:
+
+1. Add `WayfindingNavigationStep` after the closing `}` of `WayfindingLandingView` to gives the Landing screen one navigation type for the Sites and AR destinations as follows:
+
+   #### Expand to view `WayfindingNavigationStep`
+
+   ```swift
+   enum WayfindingNavigationStep: Hashable {
+       case sites(nsdkSession: NSDKSession)
+       case ar(siteName: String, payload: String, nsdkSession: NSDKSession)
+
+       func hash(into hasher: inout Hasher) {
+           switch self {
+           case .sites:
+               // Hash the Sites route without exposing NSDKSession itself.
+               hasher.combine(0)
+           case .ar(let siteName, let payload, _):
+               // Hash the AR route from the selected Site and payload.
+               hasher.combine(1)
+               hasher.combine(siteName)
+               hasher.combine(payload)
+           }
+       }
+
+       static func == (lhs: WayfindingNavigationStep, rhs: WayfindingNavigationStep) -> Bool {
+           switch (lhs, rhs) {
+           case (.sites, .sites):
+               return true
+           case (.ar(let lName, let lPayload, _), .ar(let rName, let rPayload, _)):
+               // Compare only the values that define the AR destination.
+               return lName == rName && lPayload == rPayload
+           default:
+               return false
+           }
+       }
+   }
+   ```
+
+2. Update `var body: some View` in `Landing/WayfindingLandingView.swift` by adding `.navigationDestination(for: WayfindingNavigationStep.self)` immediately below the closing `}` of the `.alert("Location Access Required"... )` block, after the `message: { Text("This app needs location access to function. Please enable it in Settings.") }` section, to connect those navigation cases to placeholder Sites and VPS2 destination builders:
+
+   ```swift
+   .navigationDestination(for: WayfindingNavigationStep.self) { step in
+       switch step {
+       case .sites(let nsdkSession):
+           // Open the placeholder Sites screen.
+           self.destinationWayfindingSitesPlaceholderView(nsdkSession: nsdkSession)
+       case .ar(let siteName, let payload, let nsdkSession):
+           // Open the placeholder VPS2 screen with the selected Site and payload.
+           self.destinationWayfindingVPS2PlaceholderView(
+               siteName: siteName,
+               payload: payload,
+               nsdkSession: nsdkSession
+           )
+       }
+   }
+   ```
+
+### Create a placeholder Sites screen
+
+In an existing app, update your placeholder Sites screen so it provides one temporary Site action that navigates to the placeholder VPS2 route and one logout action that returns the user to Landing. If you are unsure how to implement this step, use the following new app example as a reference.
+
+This step should:
+
+- Show a selectable placeholder Site action.
+- Use a placeholder anchor payload.
+- Reuse the shared `NSDKSession` created in `launchWayfindingSitesView()`.
+- Let the user log out from the placeholder Sites screen.
+
+In a new app, update `Landing/WayfindingLandingView.swift` so the placeholder Sites screen can select one temporary Site and push the placeholder VPS2 route.
+
+1. Replace the temporary `private func launchWayfindingARView(...) {}` stub with:
+
+   ```swift
+   private func launchWayfindingARView(
+       siteName: String,
+       payload: String,
+       nsdkSession: NSDKSession
+   ) {
+       // Push the placeholder VPS2 destination with the selected Site and payload.
+       navigationPath.append(
+           WayfindingNavigationStep.ar(
+               siteName: siteName,
+               payload: payload,
+               nsdkSession: nsdkSession
+           )
+       )
+       print("WayfindingLanding launched AR destination")
+   }
+   ```
+
+2. Replace the temporary `private func destinationWayfindingSitesPlaceholderView(...) -> some View { EmptyView() }` stub with:
+
+   #### Expand to view `destinationWayfindingSitesPlaceholderView(...)`
+
+   ```swift
+   private func destinationWayfindingSitesPlaceholderView(
+       nsdkSession: NSDKSession
+   ) -> some View {
+       // Use a placeholder payload until the next page adds real Site loading.
+       let placeholderPayload = "sample-anchor-payload"
+
+       VStack(spacing: 24) {
+           // Confirm that the placeholder Sites screen opened.
+           Text("Sites screen loaded")
+
+           Button("Select placeholder Site") {
+               // Reuse the shared NSDK session when the placeholder Site is selected.
+               self.launchWayfindingARView(
+                   siteName: "Placeholder Site",
+                   payload: placeholderPayload,
+                   nsdkSession: nsdkSession
+               )
+           }
+
+           Button("Log Out") {
+               // Return to Landing and clear the placeholder auth state.
+               self.completeWayfindingLogout()
+           }
+       }
+       .frame(maxWidth: .infinity, maxHeight: .infinity)
+       .navigationTitle("Browse Sites")
+       .navigationBarTitleDisplayMode(.inline)
+   }
+   ```
+
+### Show the selected payload
+
+In an existing app, update your placeholder VPS2 screen so it confirms which payload was passed in from the selected Site before you add the full localization flow. If you are unsure how to implement this step, use the following new app example as a reference.
+
+The placeholder VPS2 screen should:
+
+- Receive the selected payload.
+- Show whether a placeholder Site was selected.
+- Display the selected payload text for verification.
+
+In a new app, update `Landing/WayfindingLandingView.swift` by replacing the temporary `@ViewBuilder private func destinationWayfindingVPS2PlaceholderView(...) -> some View { EmptyView() }` block so the placeholder VPS2 screen can confirm which Site and payload were passed in:
+
+#### Expand to view `destinationWayfindingVPS2PlaceholderView(...)`
+
+```swift
+@ViewBuilder
+private func destinationWayfindingVPS2PlaceholderView(
+    siteName: String,
+    payload: String,
+    nsdkSession: NSDKSession
+) -> some View {
+    VStack(spacing: 16) {
+        // Confirm that the placeholder VPS2 destination opened.
+        Text("VPS2 screen")
+
+        Text("Selected Site: \(siteName)")
+
+        // Show the payload passed in from the placeholder Sites screen.
+        Text("Selected anchor payload:\n\(payload)")
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 24)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .navigationTitle(siteName)
+    .navigationBarTitleDisplayMode(.inline)
+}
+```
+
+### Implement logout
+
+In an existing app, update the Landing screen so logout clears the shared sample session, stops auto-launching the map, and returns the user to the Landing screen.
+
+This step should:
+
+- Stop the shared sample session.
+- Clear the session access subscription.
+- Show the Sign in button again.
+- Reset the navigation stack back to Landing.
+
+In a new app, update `Landing/WayfindingLandingView.swift` by replacing the temporary `private func completeWayfindingLogout() {}` stub so logout returns the user to Landing and shows Sign in again:
+
+```swift
+private func completeWayfindingLogout() {
+    // Stop the shared sample session and remove the access-token subscription.
+    NSSampleSessionManager.stopNSSampleSession()
+    tokenSubscription = nil
+    // Show Sign in again and keep Landing visible after logout.
+    isLoginButtonVisible = true
+    suppressAutoLaunchToMap = true
+    // Reset the navigation stack back to Landing.
+    navigationPath = NavigationPath()
+    print("WayfindingLanding completed logout")
+}
+```
+
+Test this step to validate that the Landing flow routes into the Sites and AR destinations:
+
+- Build the app.
+- Run the app, sign in, and grant location permission.
+- Confirm that `Browse Sites`, `Sites screen loaded`, `Select placeholder Site`, and `Log Out` appear.
+- Tap `Select placeholder Site`, then confirm that `VPS2 screen`, `Selected Site: Placeholder Site`, and `Selected anchor payload: sample-anchor-payload` appear.
+- Return to `Browse Sites`, tap `Log Out`, and confirm that the landing screen appears.
+
+## Full source for WayfindingLandingView.swift
+
+This assembled reference copy contains the final `WayfindingLandingView.swift` from this page, including landing state, auth flow hooks, permission refresh logic, and the placeholder Sites and VPS2 routes. Use it to compare your final file and recover from incremental paste mistakes.
+
+#### Expand to reveal full `WayfindingLandingView.swift`
+
+```swift
+import SwiftUI
+import Combine
+import NSDK
+
+struct WayfindingLandingView: View {
+
+    @State private var navigationPath = NavigationPath()
+    @State private var isLoginButtonVisible = false
+    @State private var isShowingLocationAlert = false
+    @State private var suppressAutoLaunchToMap = false
+
+    @State private var loginManager: WayfindingLoginManager?
+    @State private var tokenSubscription: AnyCancellable?
+    @State private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Interaction Functions
+
+    func onViewAppear() {
+        print("WayfindingLanding appeared")
+        refreshLandingStateForPermissionsAndSession()
+    }
+
+    private func refreshLandingStateForPermissionsAndSession() {
+        WayfindingPermissionManager.shared.requestAllPermissions()
+        print("WayfindingLanding requested permissions")
+
+        NSSampleSessionManager.start()
+
+        if !wayfindingNeedsAuth() {
+            if suppressAutoLaunchToMap {
+                isLoginButtonVisible = true
+            } else {
+                launchWayfindingSitesView()
+            }
+        } else {
+            print("WayfindingLanding auth required")
+            isLoginButtonVisible = true
+        }
+    }
+
+    private func startWayfindingLogin() {
+        suppressAutoLaunchToMap = false
+        print("WayfindingLanding login started")
+        NotificationCenter.default.publisher(for: nsSampleSessionDidSetNotification)
+            .first()
+            .receive(on: DispatchQueue.main)
+            .sink { _ in self.launchWayfindingSitesView() }
+            .store(in: &cancellables)
+
+        loginManager = WayfindingLoginManager()
+        loginManager?.startAuth()
+    }
+
+    private func launchWayfindingSitesView() {
+        guard navigationPath.isEmpty else { return }
+        guard WayfindingPermissionManager.shared.isLocationAuthorized else {
+            if WayfindingPermissionManager.shared.isLocationDeniedOrRestricted {
+                isShowingLocationAlert = true
+            }
+            print("WayfindingLanding waiting for location permission")
+            return
+        }
+
+        let nsdkSession = NSDKSession(
+            accessToken: AuthConstants.accessToken,
+            useLidar: true
+        )
+        self.tokenSubscription = NSSampleSessionManager.setupSessionAccess(for: nsdkSession)
+
+        navigationPath.append(WayfindingNavigationStep.sites(nsdkSession: nsdkSession))
+        print("WayfindingLanding launched Sites flow")
+    }
+
+    private func launchWayfindingARView(siteName: String, payload: String, nsdkSession: NSDKSession) {
+        navigationPath.append(WayfindingNavigationStep.ar(siteName: siteName, payload: payload, nsdkSession: nsdkSession))
+        print("WayfindingLanding launched AR destination")
+    }
+
+    private func wayfindingNeedsAuth() -> Bool {
+        if !AuthUtils.isTokenEmptyOrExpiring(AuthConstants.accessToken, minUnexpiredTimeLeft: 0) {
+            return false
+        }
+        return !NSSampleSessionManager.isSessionInProgress
+    }
+
+    private func completeWayfindingLogout() {
+        NSSampleSessionManager.stopNSSampleSession()
+        tokenSubscription = nil
+        isLoginButtonVisible = true
+        suppressAutoLaunchToMap = true
+        navigationPath = NavigationPath()
+        print("WayfindingLanding completed logout")
+    }
+
+    var body: some View {
+        NavigationStack(path: $navigationPath) {
+            ZStack {
+                // Background Gradient
+                LinearGradient(
+                    colors: [.white, Color(red: 0.53, green: 0.74, blue: 0.95)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                VStack(spacing: 0) {
+                    Spacer()
+
+                    // Icon
+                    Image("spatial-icon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: UIScreen.main.bounds.width * 0.45)
+
+                    Spacer().frame(height: 60)
+
+                    // Title
+                    Text("Niantic Spatial VPS2\nWayfinding Sample")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(Color(red: 0.26, green: 0.43, blue: 0.71))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+
+                    Spacer()
+
+                    // Login Button
+                    if isLoginButtonVisible {
+                        Button(action: { self.startWayfindingLogin() }) {
+                            Text("Sign in to get started")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color(red: 0.27, green: 0.53, blue: 0.82))
+                                .cornerRadius(14)
+                        }
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 40)
+                    }
+                }
+            }
+            .navigationBarHidden(true)
+            .ignoresSafeArea()
+            .onAppear {
+                self.onViewAppear()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                refreshLandingStateForPermissionsAndSession()
+            }
+            .alert("Location Access Required", isPresented: $isShowingLocationAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            } message: {
+                Text("This app needs location access to function. Please enable it in Settings.")
+            }
+            .navigationDestination(for: WayfindingNavigationStep.self) { step in
+                switch step {
+                case .sites(let nsdkSession):
+                    self.destinationWayfindingSitesPlaceholderView(nsdkSession: nsdkSession)
+                case .ar(let siteName, let payload, let nsdkSession):
+                    self.destinationWayfindingVPS2PlaceholderView(siteName: siteName, payload: payload, nsdkSession: nsdkSession)
+                }
+            }
+        }
+    }
+
+    // MARK: - Destination Builders
+
+    @ViewBuilder
+    private func destinationWayfindingSitesPlaceholderView(nsdkSession: NSDKSession) -> some View {
+        let placeholderPayload = "sample-anchor-payload"
+
+        VStack(spacing: 24) {
+            Text("Sites screen loaded")
+
+            Button("Select placeholder Site") {
+                self.launchWayfindingARView(
+                    siteName: "Placeholder Site",
+                    payload: placeholderPayload,
+                    nsdkSession: nsdkSession
+                )
+            }
+
+            Button("Log Out") {
+                self.completeWayfindingLogout()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("Browse Sites")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func destinationWayfindingVPS2PlaceholderView(siteName: String, payload: String, nsdkSession: NSDKSession) -> some View {
+        VStack(spacing: 16) {
+            Text("VPS2 screen")
+            Text("Selected Site: \(siteName)")
+            Text("Selected anchor payload:\n\(payload)")
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle(siteName)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Navigation State
+
+enum WayfindingNavigationStep: Hashable {
+    case sites(nsdkSession: NSDKSession)
+    case ar(siteName: String, payload: String, nsdkSession: NSDKSession)
+
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .sites:
+            hasher.combine(0)
+        case .ar(let siteName, let payload, _):
+            hasher.combine(1)
+            hasher.combine(siteName)
+            hasher.combine(payload)
+        }
+    }
+
+    static func == (lhs: WayfindingNavigationStep, rhs: WayfindingNavigationStep) -> Bool {
+        switch (lhs, rhs) {
+        case (.sites, .sites):
+            return true
+        case (.ar(let lName, let lPayload, _), .ar(let rName, let rPayload, _)):
+            return lName == rName && lPayload == rPayload
+        default:
+            return false
+        }
+    }
+}
+```
+
+## Next Step
+
+Continue to [Select a Site and anchor payload](https://www.nianticspatial.com/docs/nsdk/vps2e2e/vps2-e2e-map-view/) to build the Swift Sites screen in more detail and connect it to VPS2 localization.

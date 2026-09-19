@@ -1,0 +1,19 @@
+# ToBytes
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.TrackableIdExtension.ToBytes/
+
+ToBytes
+
+---
+
+## Declaration
+
+public static byte[] ToBytes(this TrackableId trackableId)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| trackableId | TrackableId | - |
+
+---

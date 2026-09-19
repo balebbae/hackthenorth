@@ -1,0 +1,30 @@
+# TryAcquirePackedSceneSegmentationChannelsCpuImage
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.TryAcquirePackedSceneSegmentationChannelsCpuImage/
+
+TryAcquirePackedSceneSegmentationChannelsCpuImage
+Acquire the latest packed semantic channels XRCpuImage.
+
+---
+
+## Declaration
+
+public bool TryAcquirePackedSceneSegmentationChannelsCpuImage(out XRCpuImage cpuImage, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Acquire the latest packed semantic channels XRCpuImage.
+
+#### Returns
+
+Returns true if an XRCpuImage was successfully acquired. Returns false otherwise.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| cpuImage | XRCpuImage | The resulting XRCpuImage. The XRCpuImage must be disposed by the caller. |
+| samplerMatrix | Matrix4x4 | The matrix that transforms from normalized viewport coordinates to normalized image coordinates. |
+| cameraParams | Nullable<XRCameraParams> | Describes the viewport the image is to be displayed on. |
+
+---

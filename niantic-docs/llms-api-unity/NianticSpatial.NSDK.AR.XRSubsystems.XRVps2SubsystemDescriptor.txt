@@ -1,0 +1,15 @@
+# XRVps2SubsystemDescriptor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2SubsystemDescriptor/
+
+XRVps2SubsystemDescriptor
+> extends UnityEngine.SubsystemsImplementation.SubsystemDescriptorWithProvider
+Descriptor for the XRVps2Subsystem.
+
+---
+
+## Declaration
+
+public class XRVps2SubsystemDescriptor : SubsystemDescriptorWithProvider<XRVps2Subsystem, Provider>
+
+---

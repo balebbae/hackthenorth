@@ -1,0 +1,24 @@
+# getUpdate
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.MappingStorageSession.getUpdate/
+
+getUpdate
+
+---
+
+## Declaration
+
+fun getUpdate(): ByteArray?
+
+#### Summary
+
+Get the latest map update data.
+
+This function returns the incremental map changes (new nodes and edges) that have been added
+since the last update, encoded as a DeviceMap protobuf.
+
+#### Returns
+
+The map update data if successful, or null if no update data exists.
+
+---

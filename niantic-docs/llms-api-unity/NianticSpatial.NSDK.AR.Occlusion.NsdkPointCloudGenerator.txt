@@ -1,0 +1,34 @@
+# NsdkPointCloudGenerator
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkPointCloudGenerator/
+
+NsdkPointCloudGenerator
+A utility class to generate a point cloud from a depth texture.
+
+---
+
+## Declaration
+
+public sealed class NsdkPointCloudGenerator : IDisposable
+
+---
+
+## Constructors
+
+public NsdkPointCloudGenerator()
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Dispose | void | - |
+| Generate | Vector4[] | Generate a point cloud from a depth texture using the given intrinsics and extrinsics. |
+| GenerateAsync | IEnumerator | A coroutine to generate a point cloud from a depth texture using the given intrinsics and extrinsics. |
+
+---
+
+## Relationships
+
+implements:  System.IDisposable

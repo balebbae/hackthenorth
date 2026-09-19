@@ -1,0 +1,28 @@
+# getAnchorPayload
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.getAnchorPayload/
+
+getAnchorPayload
+
+---
+
+## Declaration
+
+fun getAnchorPayload(anchorId: UUID): String?
+
+#### Summary
+
+Gets the payload data of a specified anchor.
+
+The payload encodes the data needed to localize an anchor across multiple devices or sessions.
+It can be shared or stored for later use with trackAnchor.
+
+#### Returns
+
+Base64-encoded payload if available, null if the anchor is not yet tracked.
+
+#### Throws
+
+NsdkInvalidArgumentStatusException -- if no anchor with the id anchorId has been created or added for tracking. Check NSDK's C logs for more information.
+
+---

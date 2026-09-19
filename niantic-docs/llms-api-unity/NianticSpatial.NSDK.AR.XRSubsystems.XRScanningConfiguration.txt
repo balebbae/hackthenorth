@@ -1,0 +1,48 @@
+# XRScanningConfiguration
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningConfiguration/
+
+XRScanningConfiguration
+Configuration for scanning.
+
+---
+
+## Declaration
+
+public class XRScanningConfiguration
+
+## See also
+
+XRScanningConfiguration
+
+---
+
+## Constructors
+
+public XRScanningConfiguration()
+
+#### Summary
+
+Default constructor for the XRScanningConfiguration.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| FarDepth | float | - |
+| Framerate | int | - |
+| FullResolutionEnabled | bool | - |
+| FullResolutionFramerate | int | - |
+| NearDepth | float | - |
+| RaycasterVisualizationEnabled | bool | - |
+| RaycasterVisualizationResolution | Vector2 | The resolution of the raycast visualization's output images. The output quality is bound by both this resolution as well as the quality of the underlying 3D reconstruction data. On devices without native depth support, the underlying data is unlikely to be good enough to support resolution larger than 256x144. |
+| RecordAllSensors | bool | - |
+| ScanBasePath | string | - |
+| ScanTargetId | string | - |
+| UseEstimatedDepth | bool | - |
+| VoxelSize | float | - |
+| VoxelVisualizationEnabled | bool | - |
+
+---

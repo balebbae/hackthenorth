@@ -1,0 +1,22 @@
+# !=
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationModelEventArgs.op_Inequality/
+
+!=
+Tests for inequality. Same as `!`Equals.
+
+---
+
+## Declaration
+
+public static bool operator !=(ARSceneSegmentationModelEventArgs lhs, ARSceneSegmentationModelEventArgs rhs)
+
+#### Summary
+
+Tests for inequality. Same as !Equals.
+
+#### Returns
+
+True if lhs is not equal to rhs, otherwise false.
+
+---

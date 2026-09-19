@@ -1,0 +1,23 @@
+# AgentNavigationState
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgent.AgentNavigationState/
+
+AgentNavigationState
+
+---
+
+## Declaration
+
+public enum AgentNavigationState
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static HasPath | AgentNavigationState | - |
+| static Idle | AgentNavigationState | - |
+| static Paused | AgentNavigationState | - |
+
+---

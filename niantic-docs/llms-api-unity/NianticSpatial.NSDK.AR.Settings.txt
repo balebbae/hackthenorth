@@ -1,0 +1,16 @@
+# NianticSpatial.NSDK.AR.Settings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Settings/
+
+Settings
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Metadata | Metadata | Contains metadata and properties regarding the current instance of NSDK |
+| PrivacyData | PrivacyData | This class contains all the data required for data management requests. |
+
+---

@@ -1,0 +1,31 @@
+# getData
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshingSession.getData/
+
+getData
+
+---
+
+## Declaration
+
+fun getData(id: Long): MeshData?
+
+#### Summary
+
+Gets the data for a single mesh chunk.
+
+Calling this function will reset the updated flag for the mesh chunk; i.e. after
+calling this function, future calls of getUpdatedInfos will only mark the
+chunk with id as having updated if its mesh data has changed since the call to
+this function.
+
+#### Returns
+
+The mesh data if a mesh chunk with id exists, null if otherwise.
+
+#### See also
+
+getUpdatedInfos
+MeshData
+
+---

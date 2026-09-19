@@ -1,0 +1,19 @@
+# Overlaps
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Surface.Overlaps/
+
+Overlaps
+
+---
+
+## Declaration
+
+public bool Overlaps(Surface other)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Surface | - |
+
+---

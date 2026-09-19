@@ -1,0 +1,13 @@
+# Stop
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Telemetry.TelemetryPublishingNative.Stop/
+
+Stop
+
+---
+
+## Declaration
+
+public static void Stop()
+
+---

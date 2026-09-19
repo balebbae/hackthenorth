@@ -1,0 +1,13 @@
+# Within
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags.Within/
+
+Within
+
+---
+
+## Declaration
+
+infix fun Within(other: Int): Boolean
+
+---

@@ -1,0 +1,34 @@
+# isSubset
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.SceneSegmentationChannels.method-isSubset/
+
+isSubset
+
+---
+
+## Declaration
+
+func isSubset(of other: Self) -> Bool
+
+#### Summary
+
+Returns a Boolean value that indicates whether the set is a subset of
+another set.
+Set *A* is a subset of another set *B* if every member of *A* is also a
+member of *B*.
+    let employees: Set = ["Alicia", "Bethany", "Chris", "Diana", "Eric"]
+    let attendees: Set = ["Alicia", "Bethany", "Diana"]
+    print(attendees.isSubset(of: employees))
+    // Prints "true"
+
+#### Returns
+
+true if the set is a subset of other; otherwise, false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | - |
+
+---

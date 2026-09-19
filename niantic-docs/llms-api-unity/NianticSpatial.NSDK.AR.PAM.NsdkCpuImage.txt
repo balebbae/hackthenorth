@@ -1,0 +1,46 @@
+# NsdkCpuImage
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.PAM.NsdkCpuImage/
+
+NsdkCpuImage
+
+---
+
+## Declaration
+
+public struct NsdkCpuImage : ValueType
+
+## Summary
+
+A Niantic Spatial Development Kit intermediate class to hold image data before sending down to native via NsdkFrameData.
+Should be able to hold references to XRCpuImage, MagicLeap and others' data. Does not own any of it.
+Is not related to NsdkCpuImageApi.
+
+---
+
+## Constructors
+
+public NsdkCpuImage(ImageFormatCEnum format, uint width, uint height)
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Format | ImageFormatCEnum | - |
+| Height | uint | - |
+| static MaxPlanes | int | - |
+| Planes | NsdkCpuImagePlane[] | - |
+| Width | uint | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Create | NsdkCpuImage | - |
+| static TryGetFromXRCpuImage | bool | - |
+
+---

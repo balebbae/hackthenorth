@@ -1,0 +1,23 @@
+# ExternalTextureUtils
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Textures.ExternalTextureUtils/
+
+ExternalTextureUtils
+
+---
+
+## Declaration
+
+public static class ExternalTextureUtils
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static CreateFromExternalTexture | Texture2D | Creates a new Texture2D object from the provided external texture. |
+| static LoadMirroredOverXAxis | void | - |
+| static ReadFromExternalTexture | void | Reads the entirety of the source external texture into the destination texture. |
+
+---

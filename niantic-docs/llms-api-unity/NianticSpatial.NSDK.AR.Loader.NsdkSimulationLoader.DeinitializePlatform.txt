@@ -1,0 +1,13 @@
+# DeinitializePlatform
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSimulationLoader.DeinitializePlatform/
+
+DeinitializePlatform
+
+---
+
+## Declaration
+
+public bool DeinitializePlatform()
+
+---

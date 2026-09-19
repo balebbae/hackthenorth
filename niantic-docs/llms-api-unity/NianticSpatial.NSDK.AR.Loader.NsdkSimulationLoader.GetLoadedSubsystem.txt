@@ -1,0 +1,13 @@
+# GetLoadedSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSimulationLoader.GetLoadedSubsystem/
+
+GetLoadedSubsystem
+
+---
+
+## Declaration
+
+public new T GetLoadedSubsystem<T>() where T : class, ISubsystem
+
+---

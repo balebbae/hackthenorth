@@ -1,0 +1,22 @@
+# getDepthConfidenceAtIndex
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDataset.getDepthConfidenceAtIndex/
+
+getDepthConfidenceAtIndex
+Loads depth confidence (UInt8 binary) at [index] on-demand. Returns null if not available.
+
+---
+
+## Declaration
+
+fun getDepthConfidenceAtIndex(index: Int): ByteArray?
+
+#### Summary
+
+Loads depth confidence (UInt8 binary) at index on-demand. Returns null if not available.
+
+#### Throws
+
+PlaybackDatasetError.IndexOutOfBounds -- if index is invalid.
+
+---

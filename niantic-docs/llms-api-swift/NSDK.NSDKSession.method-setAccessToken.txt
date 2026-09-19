@@ -1,0 +1,30 @@
+# setAccessToken
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-setAccessToken/
+
+setAccessToken
+
+---
+
+## Declaration
+
+@MainActor func setAccessToken(_ token: String)
+
+#### Summary
+
+Sets the access token on native (routed through AuthManagerApi via C-ABI).
+Empty or whitespace-only tokens are ignored by native.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| token | String | - |
+
+---

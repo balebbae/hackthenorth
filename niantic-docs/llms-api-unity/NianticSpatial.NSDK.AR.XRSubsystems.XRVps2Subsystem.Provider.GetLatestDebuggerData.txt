@@ -1,0 +1,13 @@
+# GetLatestDebuggerData
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.Provider.GetLatestDebuggerData/
+
+GetLatestDebuggerData
+
+---
+
+## Declaration
+
+public virtual List<VpsDebuggerDataEvent> GetLatestDebuggerData()
+
+---

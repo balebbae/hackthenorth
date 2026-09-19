@@ -1,0 +1,43 @@
+# Vps2LocalizationRequestRecord
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2LocalizationRequestRecord/
+
+Vps2LocalizationRequestRecord
+
+---
+
+## Declaration
+
+data class Vps2LocalizationRequestRecord
+
+## Summary
+
+Diagnostics record describing a VPS2 localization request.
+The identifier is a 32-byte ASCII hex string (uppercase) returned by native.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| endTimeMs | Long | - |
+| error | Vps2LocalizationError | - |
+| errorValue | Int | - |
+| frameId | Long | - |
+| identifier | UUID | - |
+| startTimeMs | Long | - |
+| status | Vps2LocalizationRequestStatus | - |
+| statusValue | Int | - |
+| type | Vps2LocalizationRequestType | - |
+| typeValue | Int | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| identifierString | String | Interprets [identifier] as a UTF-8 string.For VPS2 identifiers, this will be a 32-character uppercase hexadecimal string. |
+
+---

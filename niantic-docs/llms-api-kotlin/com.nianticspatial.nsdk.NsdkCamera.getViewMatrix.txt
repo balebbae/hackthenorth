@@ -1,0 +1,18 @@
+# getViewMatrix
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkCamera.getViewMatrix/
+
+getViewMatrix
+View matrix (column-major, 16 floats) for this frame. Matches ARCore [com.google.ar.core.Camera.getViewMatrix].
+
+---
+
+## Declaration
+
+abstract fun getViewMatrix(): FloatArray
+
+#### Summary
+
+View matrix (column-major, 16 floats) for this frame. Matches ARCore com.google.ar.core.Camera.getViewMatrix.
+
+---

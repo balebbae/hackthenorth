@@ -1,0 +1,13 @@
+# convertToCArdk
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScreenOrientation.method-convertToCArdk/
+
+convertToCArdk
+
+---
+
+## Declaration
+
+func convertToCArdk() -> ARDK_Orientation
+
+---

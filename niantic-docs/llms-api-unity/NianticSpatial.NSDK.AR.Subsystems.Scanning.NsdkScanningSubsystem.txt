@@ -1,0 +1,23 @@
+# NsdkScanningSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Scanning.NsdkScanningSubsystem/
+
+NsdkScanningSubsystem
+> extends XRScanningSubsystem 
+
+---
+
+## Declaration
+
+public sealed class NsdkScanningSubsystem : XRScanningSubsystem, ISubsystemWithMutableApi<IApi>
+
+## Summary
+
+The NSDK implementation of the XRScanningSubsystem. Do not create this directly.
+Use the SubsystemManager instead.
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.ISubsystemWithMutableApi

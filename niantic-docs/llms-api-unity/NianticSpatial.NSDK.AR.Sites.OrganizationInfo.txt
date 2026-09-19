@@ -1,0 +1,31 @@
+# OrganizationInfo
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.OrganizationInfo/
+
+OrganizationInfo
+Information about an organization.
+
+---
+
+## Declaration
+
+public readonly struct OrganizationInfo : ValueType
+
+---
+
+## Constructors
+
+public OrganizationInfo(string id, string name, string status, long createdTimestamp)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly CreatedTimestamp | long | The Unix timestamp (in seconds) when the organization was created. |
+| readonly Id | string | The unique identifier for the organization. |
+| readonly Name | string | The organization's name. |
+| readonly Status | string | The organization's status. |
+
+---

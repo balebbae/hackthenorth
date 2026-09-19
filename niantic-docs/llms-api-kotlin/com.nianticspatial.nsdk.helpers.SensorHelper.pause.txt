@@ -1,0 +1,18 @@
+# pause
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper.pause/
+
+pause
+Unregisters all sensor listeners. Call from [androidx.lifecycle.DefaultLifecycleObserver.onPause].
+
+---
+
+## Declaration
+
+fun pause()
+
+#### Summary
+
+Unregisters all sensor listeners. Call from androidx.lifecycle.DefaultLifecycleObserver.onPause.
+
+---

@@ -1,0 +1,22 @@
+# MeshingUpdateInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.MeshingUpdateInfo/
+
+MeshingUpdateInfo
+
+---
+
+## Declaration
+
+data class MeshingUpdateInfo
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ids | LongArray | - |
+| updated | ByteArray | - |
+
+---

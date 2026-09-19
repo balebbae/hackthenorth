@@ -1,0 +1,34 @@
+# AuthInfo
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthInfo/
+
+AuthInfo
+
+---
+
+## Declaration
+
+public readonly struct AuthInfo : ValueType
+
+## Summary
+
+Authentication information containing token claims.
+Contains parsed JWT claims including token string, expiration, user information, and other standard JWT fields.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly Audience | string | Audience claim. |
+| readonly Email | string | Email claim. |
+| readonly ExpirationTime | int | Expiration time (seconds since epoch). |
+| readonly IssuedAtTime | int | Issued at time (seconds since epoch). |
+| readonly Issuer | string | Issuer claim. |
+| readonly Name | string | Name claim. |
+| readonly Subject | string | Subject claim. |
+| readonly Token | string | Raw JWT token string; may be empty. |
+| readonly UserId | string | User ID claim. |
+
+---

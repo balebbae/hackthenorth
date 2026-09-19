@@ -1,0 +1,16 @@
+# com.nianticspatial.nsdk.helpers
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers/
+
+helpers
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| LocationHelper | LocationHelper | Subscribes to GPS updates via the Fused Location Provider and notifies an [OnUpdateListener]on each new fix. Used internally by [DefaultSessionDataSource]. |
+| SensorHelper | SensorHelper | Reads compass (heading) and raw magnetometer data from Android sensors and exposes it as a[Compass] snapshot. Used internally by [DefaultSessionDataSource].Call [resume] when the owning component becomes active and [pause] when it is paused toconserve battery. |
+
+---

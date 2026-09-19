@@ -1,0 +1,25 @@
+# configure
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession.configure/
+
+configure
+
+---
+
+## Declaration
+
+fun configure(config: DeviceMappingConfig)
+
+#### Summary
+
+Configure the session with the specified settings.
+
+> Note: It is only valid to call this when the session is stopped.
+> Note: Configuration is asynchronous and can fail later, even if this call
+does not throw an error. Use featureStatus() to check there are no issues.
+
+#### See also
+
+DeviceMappingConfig
+
+---

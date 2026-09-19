@@ -1,0 +1,28 @@
+# GetButton
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Input.GetButton/
+
+GetButton
+Returns true while the virtual button identified by buttonName is held down.
+
+---
+
+## Declaration
+
+public static bool GetButton(string buttonName)
+
+#### Summary
+
+Returns true while the virtual button identified by buttonName is held down.
+
+#### Returns
+
+True when an axis has been pressed and not released.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| buttonName | string | The name of the button such as Jump. |
+
+---

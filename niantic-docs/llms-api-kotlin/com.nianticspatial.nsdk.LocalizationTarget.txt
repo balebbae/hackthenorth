@@ -1,0 +1,25 @@
+# LocalizationTarget
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.LocalizationTarget/
+
+LocalizationTarget
+
+---
+
+## Declaration
+
+data class LocalizationTarget
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| center | LatLng | - |
+| defaultAnchorPayload | String | - |
+| hintImageUrl | String | - |
+| identifier | String | - |
+| name | String | - |
+
+---

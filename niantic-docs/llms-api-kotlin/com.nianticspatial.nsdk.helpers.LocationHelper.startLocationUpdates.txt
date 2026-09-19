@@ -1,0 +1,20 @@
+# startLocationUpdates
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.LocationHelper.startLocationUpdates/
+
+startLocationUpdates
+
+---
+
+## Declaration
+
+@SuppressLint("MissingPermission") fun startLocationUpdates()
+
+#### Summary
+
+Begins receiving GPS updates. Delivers the last known location immediately (if available),
+then streams new fixes at ~5-second intervals via OnUpdateListener.onLocationUpdate.
+Requires ACCESS_FINE_LOCATIONandroid.Manifest.permission.ACCESS_FINE_LOCATION; no-op if
+the permission is not granted.
+
+---

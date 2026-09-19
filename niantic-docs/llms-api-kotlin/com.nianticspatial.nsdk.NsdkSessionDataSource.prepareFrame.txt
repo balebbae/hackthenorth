@@ -1,0 +1,28 @@
+# prepareFrame
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkSessionDataSource.prepareFrame/
+
+prepareFrame
+
+---
+
+## Declaration
+
+suspend fun prepareFrame(): Boolean
+
+#### Summary
+
+Snapshots the current frame data so that latestCameraSample and the other accessors
+can be called from any thread. Returns true when a frame is ready to be consumed, false
+if no frame was available -- in which case the caller should skip NSDKSession.update.
+
+The default implementation returns true and does nothing; data sources that hold no
+per-frame state do not need to override it.
+
+**Threading contract**: the caller must ensure that prepareFrame, NSDKSession.update,
+and any latest* accessor calls are serialized -- i.e., a complete
+prepareFrame -> update -> (accessors finish) cycle must complete before the next
+prepareFrame call begins. This is typically achieved by driving the cycle from a
+single-threaded executor or a coroutine with an in-flight gate.
+
+---

@@ -1,0 +1,32 @@
+# Download SDK
+
+Source: https://www.nianticspatial.com/docs/nsdk/downloads/
+
+The Niantic Spatial SDK (NSDK) is built to work with iOS, Android, and Unity. For the best experience, please ensure your development environment meets the minimum system requirements. A Scaniverse business account is required to use the NSDK.
+
+# Download NSDK
+
+#### Unity
+
+- [NSDK for Unity package repository](https://github.com/nianticspatial/nsdk-library-upm)
+- [Download NSDK Samples for Unity](https://github.com/nianticspatial/nsdk-samples-csharp)
+
+For Unity package installation, the official path is the Git URL flow in [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity). If you want a local installation instead, do the following:
+
+1. Download and unzip the **Source code (zip)** from the Unity package [release](https://github.com/nianticspatial/nsdk-library-upm/releases) repository.
+2. In Unity, open **Window > Package Management > Package Manager**.
+3. Open the drop-down menu next to the **+** in the top-left main window.
+4. Select **Install Package From Disk** in Unity Package Manager
+5. Select the root `package.json` file.
+
+Do not use GitHub source archives from **Download ZIP / tar.gz** or **Add package from tarball** for this workflow.
+
+#### Swift
+
+- [Download NSDK for Swift](https://github.com/nianticspatial/nsdk-library-xcframework)
+- [Download NSDK Samples for Swift](https://github.com/nianticspatial/nsdk-samples-swift)
+
+#### Kotlin
+
+- [Download NSDK for Kotlin](https://github.com/nianticspatial/nsdk-library-aar)
+- [Kotlin NSDK Samples for Kotlin](https://github.com/nianticspatial/nsdk-samples-kotlin)

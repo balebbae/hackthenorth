@@ -1,0 +1,24 @@
+# UserResult
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.UserResult/
+
+UserResult
+Result of a user information request from the Sites Manager service.
+
+---
+
+## Declaration
+
+data class UserResult
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| error | SitesError | - |
+| status | SitesRequestStatus | - |
+| user | UserInfo? | - |
+
+---

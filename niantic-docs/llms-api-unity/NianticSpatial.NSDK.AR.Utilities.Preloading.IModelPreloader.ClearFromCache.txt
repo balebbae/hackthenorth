@@ -1,0 +1,79 @@
+# ClearFromCache
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.IModelPreloader.ClearFromCache/
+
+ClearFromCache
+
+---
+
+## Declaration
+
+public abstract bool ClearFromCache(DepthMode depthMode)
+
+#### Summary
+
+Clears this model file from the application's cache.
+    This function will fail if the download is currently in progress or if the file is not present in the
+    cache.
+    Calling this while the specified model is currently being loaded into a NSDK AR session is invalid
+    and will result in undefined behavior.
+
+#### Returns
+
+True if the specified feature was present in the application's cache and was successfully removed.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthMode | DepthMode | - |
+
+---
+
+## Overload 1
+
+public abstract bool ClearFromCache(SceneSegmentationMode sceneSegmentationMode)
+
+#### Summary
+
+Clears this model file from the application's cache.
+    This function will fail if the download is currently in progress or if the file is not present in the
+    cache.
+    Calling this while the specified model is currently being loaded into a NSDK AR session is invalid
+    and will result in undefined behavior.
+
+#### Returns
+
+True if the specified feature was present in the application's cache and was successfully removed.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthMode | DepthMode | - |
+
+---
+
+## Overload 2
+
+public abstract bool ClearFromCache(ScanningSQCMode scanningSQCMode)
+
+#### Summary
+
+Clears this model file from the application's cache.
+    This function will fail if the download is currently in progress or if the file is not present in the
+    cache.
+    Calling this while the specified model is currently being loaded into a NSDK AR session is invalid
+    and will result in undefined behavior.
+
+#### Returns
+
+True if the specified feature was present in the application's cache and was successfully removed.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| depthMode | DepthMode | - |
+
+---

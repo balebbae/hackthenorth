@@ -1,0 +1,24 @@
+# DisposeVoxelBuffer
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.DisposeVoxelBuffer/
+
+DisposeVoxelBuffer
+Dispose a voxel buffer previously obtained from TryGetVoxelBuffer
+
+---
+
+## Declaration
+
+public void DisposeVoxelBuffer(XRScanningVoxelData voxelData)
+
+#### Summary
+
+Dispose a voxel buffer previously obtained from TryGetVoxelBuffer
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| voxelData | XRScanningVoxelData | - |
+
+---

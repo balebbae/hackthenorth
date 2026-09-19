@@ -1,0 +1,33 @@
+# FeatureStatus
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.FeatureStatus/
+
+FeatureStatus
+
+---
+
+## Declaration
+
+enum class FeatureStatus
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| BAD_API_KEY | BAD_API_KEY | - |
+| CONFIGURATION_FAILED | CONFIGURATION_FAILED | - |
+| INITIALIZING | INITIALIZING | - |
+| NONE | NONE | Operation completed successfully |
+| NULL_ARDK_HANDLE | NULL_ARDK_HANDLE | - |
+
+---

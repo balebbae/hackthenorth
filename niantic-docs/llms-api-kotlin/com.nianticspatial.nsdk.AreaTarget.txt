@@ -1,0 +1,22 @@
+# AreaTarget
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AreaTarget/
+
+AreaTarget
+
+---
+
+## Declaration
+
+data class AreaTarget
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| coverageArea | CoverageArea | - |
+| localizationTarget | LocalizationTarget | - |
+
+---

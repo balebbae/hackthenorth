@@ -1,0 +1,34 @@
+# GetMapUpdate
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController.GetMapUpdate/
+
+GetMapUpdate
+
+---
+
+## Declaration
+
+public bool GetMapUpdate(out byte[] mapUpdateData)
+
+#### Summary
+
+Get the latest map update data, which consists of the new nodes and edges
+    that have been added since the last call to this function.
+
+#### Returns
+
+True if successful, false otherwise.
+
+> **Info:**
+>
+> **Notice**
+>
+> This is an experimental feature, and is subject to breaking changes or deprecation without notice
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| mapUpdateData | byte[] | The serialized map update data will be written here. |
+
+---

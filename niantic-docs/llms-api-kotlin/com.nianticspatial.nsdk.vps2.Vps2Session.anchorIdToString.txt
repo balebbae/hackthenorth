@@ -1,0 +1,22 @@
+# anchorIdToString
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.anchorIdToString/
+
+anchorIdToString
+Convert a VPS2 anchor id (32-byte ASCII hex) to a printable string.
+
+---
+
+## Declaration
+
+fun anchorIdToString(anchorId: UUID): String
+
+#### Summary
+
+Convert a VPS2 anchor id (32-byte ASCII hex) to a printable string.
+
+#### Returns
+
+The printable string representation of the anchor id.
+
+---

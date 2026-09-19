@@ -1,0 +1,20 @@
+# TryGetAnchorPayload
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.VPS2.ARVps2Manager.TryGetAnchorPayload/
+
+TryGetAnchorPayload
+
+---
+
+## Declaration
+
+public bool TryGetAnchorPayload(ARVps2Anchor anchor, out string payload)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| anchor | ARVps2Anchor | - |
+| payload | string | - |
+
+---

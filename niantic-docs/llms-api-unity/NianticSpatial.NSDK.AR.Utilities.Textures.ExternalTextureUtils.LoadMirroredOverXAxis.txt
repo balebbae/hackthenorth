@@ -1,0 +1,21 @@
+# LoadMirroredOverXAxis
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Textures.ExternalTextureUtils.LoadMirroredOverXAxis/
+
+LoadMirroredOverXAxis
+
+---
+
+## Declaration
+
+public static void LoadMirroredOverXAxis(this Texture2D destination, Texture2D source, int stride)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| destination | Texture2D | - |
+| source | Texture2D | - |
+| stride | int | - |
+
+---

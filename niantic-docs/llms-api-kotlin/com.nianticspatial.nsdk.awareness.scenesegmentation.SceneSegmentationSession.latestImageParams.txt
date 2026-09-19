@@ -1,0 +1,34 @@
+# latestImageParams
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationSession.latestImageParams/
+
+latestImageParams
+
+---
+
+## Declaration
+
+fun latestImageParams(): NSDKResult<AwarenessImageParams, AwarenessStatus>
+
+#### Summary
+
+Gets the latest image parameters for scene segmentation processing.
+
+This retrieves the most recent image parameters used for
+semantic analysis of the current frame.
+
+#### Returns
+
+ARDKResult containing image parameters if successful, or error information
+
+#### Throws
+
+NsdkStatusException -- if there was an internal error
+
+#### See also
+
+latestConfidence
+latestPackedChannel
+latestSuppressionMask
+
+---

@@ -1,0 +1,25 @@
+# viewportRect
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackCamera.method-viewportRect/
+
+viewportRect
+
+---
+
+## Declaration
+
+func viewportRect(fittingIn drawableSize: CGSize, displayOrientation: UIInterfaceOrientation? = nil) -> CGRect
+
+#### Summary
+
+Viewport rect that covers the drawable via aspect-fill, matching how NSDKView renders the camera background.
+ARKit sensor images are always in landscape orientation.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| drawableSize | CGSize | - |
+| displayOrientation | UIInterfaceOrientation? | The current device interface orientation. When provided, the content aspect is computed for that orientation so the viewport fits the drawable when the device is in portrait or landscape. When nil, uses the frame's recorded orientation (backward compatibility). |
+
+---

@@ -1,0 +1,28 @@
+# !=
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.Vps2LocalizationRequestStatus.operator-op_Inequality/
+
+!=
+
+---
+
+## Declaration
+
+static func != (lhs: Self, rhs: Self) -> Bool
+
+#### Summary
+
+Returns a Boolean value indicating whether two values are not equal.
+Inequality is the inverse of equality. For any values a and b, a != b
+implies that a == b is false.
+This is the default implementation of the not-equal-to operator (!=)
+for any type that conforms to Equatable.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| lhs | Self | A value to compare. |
+| rhs | Self | Another value to compare. |
+
+---

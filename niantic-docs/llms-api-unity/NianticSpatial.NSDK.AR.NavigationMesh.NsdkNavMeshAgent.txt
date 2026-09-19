@@ -1,0 +1,40 @@
+# NsdkNavMeshAgent
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMeshAgent/
+
+NsdkNavMeshAgent
+> extends UnityEngine.MonoBehaviour
+
+---
+
+## Declaration
+
+public class NsdkNavMeshAgent : MonoBehaviour
+
+## Summary
+
+NsdkNavMeshAgent is an example agent implementation that navigates a NsdkNavMesh based on logic programmed here.
+You place this MonoBehaviour on a GameObject to have that GameObject navigate autonomously through your real environment.
+You can create new versions of this to change how your creatures navigate the NsdkNavMesh.
+For example you may want to use physics/forces or add splines rather than straight lines.
+This is a basic example that uses linear interpolation and coroutines.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly path | Path | - |
+| State | AgentNavigationState | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SetDestination | void | - |
+| StopMoving | void | - |
+
+---

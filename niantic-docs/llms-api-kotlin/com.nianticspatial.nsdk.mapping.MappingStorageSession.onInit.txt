@@ -1,0 +1,13 @@
+# onInit
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.MappingStorageSession.onInit/
+
+onInit
+
+---
+
+## Declaration
+
+@MainThread override fun onInit()
+
+---

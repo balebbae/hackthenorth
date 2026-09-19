@@ -1,0 +1,38 @@
+# NsdkSettingsHelper
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSettingsHelper/
+
+NsdkSettingsHelper
+
+---
+
+## Declaration
+
+public static class NsdkSettingsHelper
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static readonly ActiveSettings | RuntimeNsdkSettings | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static ClearRuntimeSettings | void | - |
+| static CreateDefaultRuntimeSettings | void | - |
+
+---
+
+## Events
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static OnRuntimeSettingsCreated | Action | - |
+
+---

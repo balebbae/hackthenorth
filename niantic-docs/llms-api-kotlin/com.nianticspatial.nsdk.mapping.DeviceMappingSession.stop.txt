@@ -1,0 +1,24 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession.stop/
+
+stop
+
+---
+
+## Declaration
+
+fun stop()
+
+#### Summary
+
+Stop all mapping processes.
+
+This halts active mapping while keeping the mapping instance alive.
+You can restart mapping later with start.
+
+#### See also
+
+start
+
+---

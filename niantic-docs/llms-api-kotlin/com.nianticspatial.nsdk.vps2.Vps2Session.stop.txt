@@ -1,0 +1,13 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.stop/
+
+stop
+
+---
+
+## Declaration
+
+fun stop()
+
+---

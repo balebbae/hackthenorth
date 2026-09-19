@@ -1,0 +1,18 @@
+# NsdkPlaybackOcclusionSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.NsdkPlaybackOcclusionSubsystem/
+
+NsdkPlaybackOcclusionSubsystem
+> extends UnityEngine.XR.ARSubsystems.XROcclusionSubsystem
+
+---
+
+## Declaration
+
+public class NsdkPlaybackOcclusionSubsystem : XROcclusionSubsystem, IPlaybackDatasetUser
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.Subsystems.Playback.IPlaybackDatasetUser

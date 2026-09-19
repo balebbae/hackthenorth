@@ -1,0 +1,19 @@
+# IsValidHandle
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NativeHandleValidation.IsValidHandle/
+
+IsValidHandle
+
+---
+
+## Declaration
+
+public static bool IsValidHandle(this nint handle)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| handle | nint | - |
+
+---

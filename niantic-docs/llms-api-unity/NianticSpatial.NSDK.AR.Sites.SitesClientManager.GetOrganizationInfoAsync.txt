@@ -1,0 +1,29 @@
+# GetOrganizationInfoAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClientManager.GetOrganizationInfoAsync/
+
+GetOrganizationInfoAsync
+Gets organization information by organization ID.
+
+---
+
+## Declaration
+
+public Task<OrganizationResult> GetOrganizationInfoAsync(string orgId, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Gets organization information by organization ID.
+
+#### Returns
+
+The organization result.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orgId | string | The organization ID to query. |
+| cancellationToken | CancellationToken | Token to cancel the operation. |
+
+---

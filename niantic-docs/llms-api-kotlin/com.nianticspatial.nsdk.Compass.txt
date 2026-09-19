@@ -1,0 +1,27 @@
+# Compass
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Compass/
+
+Compass
+
+---
+
+## Declaration
+
+data class Compass
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| headingAccuracy | Float | - |
+| magneticHeading | Float | - |
+| rawDataX | Float | - |
+| rawDataY | Float | - |
+| rawDataZ | Float | - |
+| timestampMs | Long | - |
+| trueHeading | Float | - |
+
+---

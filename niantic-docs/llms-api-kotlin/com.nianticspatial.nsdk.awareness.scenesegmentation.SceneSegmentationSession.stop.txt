@@ -1,0 +1,28 @@
+# stop
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationSession.stop/
+
+stop
+
+---
+
+## Declaration
+
+fun stop()
+
+#### Summary
+
+Stops the scene segmentation session.
+
+This halts scene segmentation processing while keeping the native scene segmentation session loaded.
+You can restart scene segmentation later with start.
+
+#### Throws
+
+NsdkStatusException -- if there was an internal error
+
+#### See also
+
+start
+
+---

@@ -1,0 +1,50 @@
+# ARScanQualityClassifier
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanQualityClassifier/
+
+ARScanQualityClassifier
+
+---
+
+## Declaration
+
+public class ARScanQualityClassifier : IARScanQualityClassifier
+
+## Summary
+
+ARScanQualityClassifier is responsible for computing the scan quality.
+
+- Run() will start a quality compute asynchronously.
+- CancelCurrentRun() will interrupt the current compute, if any.
+
+---
+
+## Constructors
+
+public ARScanQualityClassifier()
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly Progress | float | Progress of current quality compute, range is in percent between [0, 100.0]. |
+| readonly Running | bool | Flag tells if a scan quality compute is running or not. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CancelCurrentRun | void | Cancel current run. When the function returns, it is guaranteed the ARScanQualityClassifier is not running a scan. Do nothing if it is not running. |
+| Dispose | void | Dispose the object and its internal resources. |
+| GetResult | ScanQualityResult | Returns a ScanQualityResult of current quality compute, Scores are in range of [0, 1.0]. Higher values means high scan quality. Categories are within ScanQualityCategory. |
+| Run | bool | Start a run to compute the scan quality asynchoursly. |
+
+---
+
+## Relationships
+
+implements:  IARScanQualityClassifier

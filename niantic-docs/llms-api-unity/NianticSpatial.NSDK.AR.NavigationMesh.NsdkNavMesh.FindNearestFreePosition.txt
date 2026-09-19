@@ -1,0 +1,35 @@
+# FindNearestFreePosition
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.NsdkNavMesh.FindNearestFreePosition/
+
+FindNearestFreePosition
+
+---
+
+## Declaration
+
+public bool FindNearestFreePosition(Vector3 sourcePosition, out Vector3 nearestPosition)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| sourcePosition | Vector3 | - |
+| range | float | - |
+| nearestPosition | Vector3 | - |
+
+---
+
+## Overload
+
+public bool FindNearestFreePosition(Vector3 sourcePosition, float range, out Vector3 nearestPosition)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| sourcePosition | Vector3 | - |
+| range | float | - |
+| nearestPosition | Vector3 | - |
+
+---

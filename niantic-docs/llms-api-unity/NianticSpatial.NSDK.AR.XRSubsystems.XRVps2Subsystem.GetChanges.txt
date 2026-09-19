@@ -1,0 +1,19 @@
+# GetChanges
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.GetChanges/
+
+GetChanges
+
+---
+
+## Declaration
+
+public override TrackableChanges<XRVps2Anchor> GetChanges(Allocator allocator)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| allocator | Allocator | - |
+
+---

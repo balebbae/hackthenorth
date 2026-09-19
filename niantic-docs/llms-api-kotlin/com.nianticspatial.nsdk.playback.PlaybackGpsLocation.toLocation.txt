@@ -1,0 +1,18 @@
+# toLocation
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackGpsLocation.toLocation/
+
+toLocation
+Builds [android.location.Location] for use with [FrameData.location].
+
+---
+
+## Declaration
+
+fun toLocation(): Location
+
+#### Summary
+
+Builds android.location.Location for use with FrameData.location.
+
+---

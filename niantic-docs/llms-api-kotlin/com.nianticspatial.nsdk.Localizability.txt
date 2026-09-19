@@ -1,0 +1,31 @@
+# Localizability
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.Localizability/
+
+Localizability
+
+---
+
+## Declaration
+
+enum class Localizability
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| EXPERIMENTAL | EXPERIMENTAL | - |
+| PRODUCTION | PRODUCTION | - |
+| UNSET | UNSET | - |
+
+---

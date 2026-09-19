@@ -1,0 +1,45 @@
+# AuthInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-AuthInfo/
+
+AuthInfo
+
+---
+
+## Declaration
+
+struct AuthInfo
+
+## Summary
+
+Authentication information containing token claims.
+Contains parsed JWT claims including token string, expiration, user information, and other standard JWT fields.
+
+---
+
+## Constructors
+
+init?(fromC cValue: ARDK_AuthManager_AuthInfo)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let audience | String | Audience claim. |
+| var debugDescription | String | A textual representation of this instance, suitable for debugging.Calling this property directly is discouraged. Instead, convert aninstance of any type to a string by using the `String(reflecting:)`initializer. This initializer works with any type, and uses the custom`debugDescription` property for types that conform to`CustomDebugStringConvertible`: struct Point: CustomDebugStringConvertible { let x: Int, y: Int var debugDescription: String { return "((x), (y))" } } let p = Point(x: 21, y: 30) let s = String(reflecting: p) print(s) // Prints "(21, 30)"The conversion of `p` to a string in the assignment to `s` uses the`Point` type's `debugDescription` property. |
+| let email | String | Email claim. |
+| let expirationTime | Int32 | Expiration time (seconds since epoch). |
+| let issuedAtTime | Int32 | Issued at time (seconds since epoch). |
+| let issuer | String | Issuer claim. |
+| let name | String | Name claim. |
+| let subject | String | Subject claim. |
+| let token | String | Raw JWT token string; may be empty. |
+| let userId | String | User ID claim. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.CustomDebugStringConvertible

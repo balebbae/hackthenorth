@@ -1,0 +1,45 @@
+# NianticSpatial.NSDK.AR.Scanning
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning/
+
+Scanning
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ARScanningManager | SubsystemLifecycleManager<XRScanningSubsystem, XRScanningSubsystemDescriptor, Provider> | A manager for recording scans of the AR scene for Playback. The recording will start when the manager is enabled. Use SaveScan() to stop and save the recording into the ScanPath. |
+| ARScanQualityClassifier | IARScanQualityClassifier | ARScanQualityClassifier is responsible for computing the scan quality. - Run() will start a quality compute asynchronously. - CancelCurrentRun() will interrupt the current compute, if any. |
+| SavedScan | SavedScan | - |
+| ScanArchiveBuilder | IDisposable | - |
+| ScanQualityResult | ScanQualityResult | Scan Quality Result. |
+| ScanStore | ScanStore | - |
+| UploadUserInfo | UploadUserInfo | Additional metadata relating to an uploaded scan. |
+
+---
+
+## Interfaces
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| IARScanQualityClassifier | IDisposable | - |
+
+---
+
+## Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ScanningSqcScores | ValueType | This struct is used by publicly and internally. For internal usage, we will pass down an array of struct to native. |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ScanQualityCategory | uint | Scan quality categories. Note, if changing this category, it needs to change the relevant native enum. |
+
+---

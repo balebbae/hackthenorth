@@ -1,0 +1,25 @@
+# getLatestLocalization
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-getLatestLocalization/
+
+getLatestLocalization
+
+---
+
+## Declaration
+
+func getLatestLocalization() -> Vps2Localization
+
+#### Summary
+
+Gets a copy of the latest VPS2 localization.
+The localization contains all data required to convert between AR space and geolocation.
+If VPS2 has not yet localized, the localization's trackingState will be .unavailable
+and the other fields should be considered invalid.
+For reactive use, subscribe to $latestLocalization instead of calling this directly.
+
+#### Returns
+
+The latest VPS2 localization.
+
+---

@@ -1,0 +1,25 @@
+# AwarenessImageParams
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessImageParams/
+
+AwarenessImageParams
+Describes inferred image results.
+
+---
+
+## Declaration
+
+class AwarenessImageParams
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| extrinsics | Pose | Camera world pose at the time of inference. |
+| imageHeight | Int | The height of the image. |
+| imageWidth | Int | The width of the image. |
+| intrinsics | CameraIntrinsics | The camera calibration matrix. |
+
+---

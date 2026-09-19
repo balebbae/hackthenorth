@@ -1,0 +1,29 @@
+# GetSitesForOrganizationAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClientManager.GetSitesForOrganizationAsync/
+
+GetSitesForOrganizationAsync
+Gets all sites for an organization.
+
+---
+
+## Declaration
+
+public Task<SiteResult> GetSitesForOrganizationAsync(string orgId, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Gets all sites for an organization.
+
+#### Returns
+
+The site result.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| orgId | string | The organization ID to query sites for. |
+| cancellationToken | CancellationToken | Token to cancel the operation. |
+
+---

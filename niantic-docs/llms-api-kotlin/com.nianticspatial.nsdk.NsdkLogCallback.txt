@@ -1,0 +1,28 @@
+# NsdkLogCallback
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkLogCallback/
+
+NsdkLogCallback
+
+---
+
+## Declaration
+
+interface NsdkLogCallback
+
+## Summary
+
+Functional interface for receiving log messages from NSDK.
+This callback is invoked by the native NSDK library to send log messages
+to the Kotlin/Java layer. The callback receives the log level, message,
+and optional source location information.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| onLog | void | - |
+
+---

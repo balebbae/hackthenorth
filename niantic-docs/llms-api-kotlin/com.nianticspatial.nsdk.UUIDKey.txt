@@ -1,0 +1,30 @@
+# UUIDKey
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.UUIDKey/
+
+UUIDKey
+
+---
+
+## Declaration
+
+class UUIDKey
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| bytes | ByteArray | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| equals | Boolean | - |
+| hashCode | Int | - |
+
+---

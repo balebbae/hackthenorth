@@ -1,0 +1,62 @@
+# NSDKSession
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession/
+
+NSDKSession
+> extends Closeable 
+
+---
+
+## Declaration
+
+class NSDKSession 
+
+## Summary
+
+Creates a new NSDK instance with auth tokens or a configuration file.
+This is the primary entry point for initializing NSDK functionality.
+You must call this before using any other NSDK features.
+Only one [NSDKSession] may be active at a time. Creating a second instance while one is
+active will throw [IllegalStateException]. Call [close] on the existing session before
+creating a new one.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| dataSource | NsdkSessionDataSource? | The data source that supplies sensor samples to [update].Assign a [NsdkSessionDataSource] before calling [update]. Set to null to release it. |
+| depthSession | DepthSession | - |
+| isAuthorized | Boolean | Indicates whether the ARDK session is authorized with valid tokens.Use this property to check if authentication is complete before makingAPI calls that require authorization. You can poll this property to waitfor token refresh to complete.Example usage: |
+| mapping | DeviceMappingSession | - |
+| mapStore | MappingStorageSession | - |
+| meshDownload | MeshDownloaderSession | - |
+| meshingSession | MeshingSession | - |
+| recordingExporter | RecordingExporter | - |
+| scanning | ScanningSession | - |
+| sceneSegmentation | SceneSegmentationSession | - |
+| sites | SitesSession | - |
+| vps2 | Vps2Session | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| close | void | Destroys an NSDK instance and any remaining opened feature sessionsand frees associated resources.Must be called when the session is no longer needed. Failing to call [close] will preventa new [NSDKSession] from being created until the garbage collector collects this instance. |
+| disableTelemetry | void | Disables telemetry collection for this process.Clears any buffered telemetry events and stops accepting new ones.This is a process-wide operation. |
+| getAccessAuthInfo | AuthInfo? | Gets access token authentication information.Returns authentication information containing information about the current access token. |
+| getRefreshAuthInfo | AuthInfo? | Gets refresh token authentication information.Returns authentication information containing information about the current refresh token. |
+| getRequestedDataFormats | Int | Gets the data formats that NSDK requires for processing.This function returns a bitmask indicating which types of input data(camera frames, depth, IMU, etc.) NSDK needs for optimal performance.Use this to configure your data capture pipeline accordingly. |
+| getVersion | String | Returns the NSDK version string from the native library. |
+| sendFrame | void | - |
+| setAccessToken | void | Set the access token at runtime. Invalid/empty tokens are ignored by native. |
+| setAgeLevel | void | Sets the age level for the NSDK session.This method sets the age classification for the user |
+| setCallbackLogLevel | void | Sets the log level for callback logs.This function filters out logs of less severity than the specified levelfor the callback logger. |
+| setFileLogLevel | void | Sets the log level for file logs.This function filters out logs of less severity than the specified levelfor the file logger. |
+| setStdoutLogLevel | void | Sets the log level for stdout logs.This function filters out logs of less severity than the specified levelfor the stdout logger. |
+| update | void | Pulls sensor samples from [dataSource] and submits a frame for native processing.No-op if [dataSource] is null or not ready. Call once per camera frame. |
+
+---

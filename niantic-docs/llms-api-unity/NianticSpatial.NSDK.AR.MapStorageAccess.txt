@@ -1,0 +1,24 @@
+# NianticSpatial.NSDK.AR.MapStorageAccess
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess/
+
+MapStorageAccess
+
+---
+
+## Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| MapNode | ValueType | - |
+| MapSubGraph | ValueType | - |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| OutputEdgeType | uint | - |
+
+---

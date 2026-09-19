@@ -1,0 +1,23 @@
+# SaveScan
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager.SaveScan/
+
+SaveScan
+
+---
+
+## Declaration
+
+public async Task SaveScan()
+
+#### Summary
+
+Save the current scan. This stops any further recording immediately, and the coroutine finishes when
+     the saving is fully complete.
+
+     Please call GetFrameCount() to guarantee the scan has frames, as if it doesnt have any, the save will fail
+
+     Do not disable the component or exit the app when this is in progress. The scan will not be saved correctly
+     if this process is interrupted.
+
+---

@@ -1,0 +1,55 @@
+# DoesChannelExistAt
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.DoesChannelExistAt/
+
+DoesChannelExistAt
+
+---
+
+## Declaration
+
+public bool DoesChannelExistAt(int viewportX, int viewportY, SceneSegmentationChannel channel, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Check if a semantic class is detected at the specified location in screen space, based on the confidence
+    threshold set for this channel. (See TrySetChannelConfidenceThresholds)
+
+#### Returns
+
+True if the semantic class exists at the given coordinates.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| viewportX | int | Horizontal coordinate in viewport space. |
+| viewportY | int | Vertical coordinate in viewport space. |
+| channel | SceneSegmentationChannel | The semantic channel to look for. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---
+
+## Overload
+
+public bool DoesChannelExistAt(int viewportX, int viewportY, int channelIndex, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Check if a semantic class is detected at the specified location in screen space, based on the confidence
+    threshold set for this channel. (See TrySetChannelConfidenceThresholds)
+
+#### Returns
+
+True if the semantic class exists at the given coordinates.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| viewportX | int | Horizontal coordinate in viewport space. |
+| viewportY | int | Vertical coordinate in viewport space. |
+| channel | SceneSegmentationChannel | The semantic channel to look for. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

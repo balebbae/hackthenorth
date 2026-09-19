@@ -1,0 +1,32 @@
+# GetSceneSegmentation
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetSceneSegmentation/
+
+GetSceneSegmentation
+Returns the scene segmentation at the specified pixel on screen.
+
+---
+
+## Declaration
+
+public uint GetSceneSegmentation(int viewportX, int viewportY, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Returns the scene segmentation at the specified pixel on screen.
+
+#### Returns
+
+A 32-bit packed unsigned integer where each
+    bit is a binary indicator for a class, and the most-significant bit corresponds to the channel that
+    is the 0th element of the ChannelNames list.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| viewportX | int | Horizontal coordinate in viewport space. |
+| viewportY | int | Vertical coordinate in viewport space. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

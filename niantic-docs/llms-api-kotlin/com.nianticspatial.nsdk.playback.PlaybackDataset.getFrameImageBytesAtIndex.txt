@@ -1,0 +1,23 @@
+# getFrameImageBytesAtIndex
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDataset.getFrameImageBytesAtIndex/
+
+getFrameImageBytesAtIndex
+Returns raw image bytes at [index] (on-demand, cached). Use when you need bytes instead of Bitmap.
+
+---
+
+## Declaration
+
+fun getFrameImageBytesAtIndex(index: Int): ByteArray
+
+#### Summary
+
+Returns raw image bytes at index (on-demand, cached). Use when you need bytes instead of Bitmap.
+
+#### Throws
+
+PlaybackDatasetError.IndexOutOfBounds -- if index is invalid.
+PlaybackDatasetError.ImageLoadFailed -- if the image cannot be loaded.
+
+---

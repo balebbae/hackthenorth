@@ -1,0 +1,24 @@
+# SetARLocations
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationAR.ARLocationManager.SetARLocations/
+
+SetARLocations
+Selects the AR Locations to try to track when StartARLocationTracking() is called.
+
+---
+
+## Declaration
+
+public void SetARLocations(params ARLocation[] arLocations)
+
+#### Summary
+
+Selects the AR Locations to try to track when StartARLocationTracking() is called.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| arLocations | ARLocation[] | The locations to try to track. |
+
+---

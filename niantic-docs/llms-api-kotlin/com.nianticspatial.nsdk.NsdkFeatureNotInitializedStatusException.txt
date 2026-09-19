@@ -1,0 +1,19 @@
+# NsdkFeatureNotInitializedStatusException
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkFeatureNotInitializedStatusException/
+
+NsdkFeatureNotInitializedStatusException
+> extends NsdkStatusException 
+
+---
+
+## Declaration
+
+class NsdkFeatureNotInitializedStatusException
+
+## Summary
+
+Thrown when a required feature has not been initialized.
+Corresponds to [NSDKStatus.FEATURE_NOT_INITIALIZED].
+
+---

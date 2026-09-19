@@ -1,0 +1,34 @@
+# Provider
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRDeviceMappingSubsystem.Provider/
+
+Provider
+> extends UnityEngine.SubsystemsImplementation.SubsystemProvider
+
+---
+
+## Declaration
+
+public abstract class Provider : SubsystemProvider<XRDeviceMappingSubsystem>
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly IsMapping | bool | - |
+| SplitterMaxDistanceMeters | float | - |
+| SplitterMaxDurationSeconds | float | - |
+| TargetFrameRate | uint | - |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| StartMapping | void | - |
+| StopMapping | void | - |
+
+---

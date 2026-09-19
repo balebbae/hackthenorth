@@ -1,0 +1,13 @@
+# LogoutAndPropagateTokens
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthRuntimeRefreshManager.LogoutAndPropagateTokens/
+
+LogoutAndPropagateTokens
+
+---
+
+## Declaration
+
+public static void LogoutAndPropagateTokens()
+
+---

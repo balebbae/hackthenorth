@@ -1,0 +1,24 @@
+# GetButtonDown
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Input.GetButtonDown/
+
+GetButtonDown
+Returns true during the frame the user pressed down the virtual button identified by buttonName.
+
+---
+
+## Declaration
+
+public static bool GetButtonDown(string buttonName)
+
+#### Summary
+
+Returns true during the frame the user pressed down the virtual button identified by buttonName.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| buttonName | string | - |
+
+---

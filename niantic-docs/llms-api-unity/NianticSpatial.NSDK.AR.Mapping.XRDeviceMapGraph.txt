@@ -1,0 +1,27 @@
+# XRDeviceMapGraph
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.XRDeviceMapGraph/
+
+XRDeviceMapGraph
+
+---
+
+## Declaration
+
+public readonly struct XRDeviceMapGraph : ValueType
+
+---
+
+## Constructors
+
+public XRDeviceMapGraph(byte[] data)
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CopyData | byte[] | - |
+
+---

@@ -1,0 +1,101 @@
+---
+source: https://www.nianticspatial.com/docs/nsdk/auth_backend/
+title: Generate access tokens
+---
+
+<div class="docContentTransition">
+
+<div class="theme-doc-markdown markdown">
+
+<div>
+
+# Generate access tokens
+
+</div>
+
+This page describes the production deployment authorization flow introduced in [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/). In this flow, your backend uses a service account API key to request short-lived access tokens for authenticated users, then returns those tokens to the client for use with NSDK.
+
+Unlike [developer tokens](https://www.nianticspatial.com/docs/nsdk/auth_developer_token/), these access tokens are short-lived, user-scoped, and issued by your backend. Backend integration is required only for **production deployment** and is not needed when testing with sample apps. To issue these access tokens, your backend uses a [service account](#create-a-service-account) API key. Service account API keys are secrets that must never be distributed to client applications. Treat your API key like any other sensitive credential and store it securely on your backend.
+
+## Production token flow<a href="#production-token-flow" class="hash-link" aria-label="Direct link to Production token flow" title="Direct link to Production token flow">​</a>
+
+This workflow applies only to production deployment. For an overview of the full authorization model, including developer tokens and production deployment, see [Authorization](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/).
+
+In the production deployment flow, token issuance and use work as follows. This page focuses on the backend token-issuance step.
+
+1.  The client authenticates with your app and requests an access token from **your backend**.
+2.  Your backend uses a **service account API key** to [request a short-lived access token](#request-an-access-token) by calling the Niantic Spatial Identity Service. The service account API key stays on your backend and must never be distributed to clients.
+3.  The backend returns the access token to the client as part of your backend implementation.
+4.  The client provides the access token to the NSDK. See [Passing access tokens to the NSDK](https://www.nianticspatial.com/docs/nsdk/auth_getting_started/#passing-access-tokens-to-the-nsdk).
+5.  When the token approaches expiration, the client requests a new one from your backend.
+
+## Create a service account<a href="#create-a-service-account" class="hash-link" aria-label="Direct link to Create a service account" title="Direct link to Create a service account">​</a>
+
+Requesting short-lived access tokens for production deployment requires a **service account** with an associated **API key**. Keep these credentials secure on your backend server, along with any token request logic. You can create a service account, which creates a new API key, as follows:
+
+1.  Log in to your business account in the <a href="https://scaniverse.nianticspatial.com" target="_blank" rel="noopener noreferrer">Scaniverse web</a>. If you don't have a Niantic business account, follow the steps in [Create a business account](https://www.nianticspatial.com/docs/nsdk/create_account/#create-a-business-account) to create one.
+2.  Select **Service accounts** from the left navigation bar.
+3.  Select **New service account** in the top right section of the main window.
+4.  Enter a name for your service account.
+5.  Select **Create**.
+6.  Select the copy icon to copy the API key in the green box to your clipboard.
+7.  Paste the API key securely into your backend configuration such as an environment variable, config file, or secrets manager. **Do not paste it into client code.**
+
+See [Client code integration](https://www.nianticspatial.com/docs/nsdk/auth_client/) for additional details.
+
+## Request an access token<a href="#request-an-access-token" class="hash-link" aria-label="Direct link to Request an access token" title="Direct link to Request an access token">​</a>
+
+To obtain a short-lived access token for NSDK, your **backend server** must make an HTTP request to the Spatial Identity Service as follows:
+
+- **Method:** `POST`
+- **Token endpoint URL**: `https://spatial-identity.nianticspatial.com/oauth/token`
+- **Body** (JSON):
+
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa">
+
+<div class="codeBlockContent_QJqH">
+
+``` json
+{
+    "grantType": "exchange_api_key_access_token",
+    "apiKey": {API_KEY}
+}
+```
+
+</div>
+
+</div>
+
+- **Expected response** (JSON):
+
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa">
+
+<div class="codeBlockContent_QJqH">
+
+``` json
+{
+    "accessToken": {NEW_API_KEY_ACCESS_TOKEN},
+    "expiresAt": {EXPIRATION_TIMESTAMP_IN_SECONDS}
+}
+```
+
+</div>
+
+</div>
+
+In the previous request and response:
+
+- `API_KEY`: The service account API key created when you set up a service account. Keep this key on your backend.
+- `NEW_API_KEY_ACCESS_TOKEN`: The short-lived JSON Web Token (<a href="https://en.wikipedia.org/wiki/JSON_Web_Token" target="_blank" rel="noopener noreferrer">JWT</a>) your backend sends to the client to authorize NSDK access.
+- `EXPIRATION_TIMESTAMP_IN_SECONDS`: Provided by the Niantic Spatial Identity Service to tell you when the access token expires, in seconds since the <a href="https://en.wikipedia.org/wiki/Unix_time" target="_blank" rel="noopener noreferrer">Unix epoch</a>. Your backend uses this timestamp to know when to request a new token.
+
+## Security guidelines<a href="#security-guidelines" class="hash-link" aria-label="Direct link to Security guidelines" title="Direct link to Security guidelines">​</a>
+
+The API key identifies your project and allows your backend to request short-lived access tokens from Niantic Spatial Identity Service. To keep your project and users secure, follow these guidelines:
+
+- API keys must remain confidential and must never be embedded in client applications.
+- Clients must request new tokens from your backend rather than refreshing them directly.
+
+</div>
+
+</div>

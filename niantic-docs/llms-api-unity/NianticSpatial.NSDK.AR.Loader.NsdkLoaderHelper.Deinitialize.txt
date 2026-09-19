@@ -1,0 +1,13 @@
+# Deinitialize
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkLoaderHelper.Deinitialize/
+
+Deinitialize
+
+---
+
+## Declaration
+
+public bool Deinitialize()
+
+---

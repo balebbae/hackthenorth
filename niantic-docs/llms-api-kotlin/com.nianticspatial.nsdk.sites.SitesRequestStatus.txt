@@ -1,0 +1,24 @@
+# SitesRequestStatus
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesRequestStatus/
+
+SitesRequestStatus
+Status of a Sites Manager network request.
+
+---
+
+## Declaration
+
+enum class SitesRequestStatus
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| FAILED | FAILED | The request failed. Check the error code for details. |
+| IN_PROGRESS | IN_PROGRESS | The request is still in progress. |
+| SUCCESS | SUCCESS | The request completed successfully. |
+
+---

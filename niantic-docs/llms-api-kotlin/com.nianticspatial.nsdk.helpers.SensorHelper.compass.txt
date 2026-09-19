@@ -1,0 +1,18 @@
+# compass
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper.compass/
+
+compass
+Returns a snapshot of the latest compass reading. Check [Compass.headingAccuracy] >= 0 to confirm data has arrived.
+
+---
+
+## Declaration
+
+fun compass(): Compass
+
+#### Summary
+
+Returns a snapshot of the latest compass reading. Check Compass.headingAccuracy >= 0 to confirm data has arrived.
+
+---

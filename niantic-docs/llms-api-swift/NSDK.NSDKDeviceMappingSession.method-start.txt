@@ -1,0 +1,19 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKDeviceMappingSession.method-start/
+
+start
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts the mapping session and initializes required processes.
+Downloads the mapping algorithm model and prepares the session for mapping operations.
+Does not begin map building; call startMapping() to start building a map.
+
+---

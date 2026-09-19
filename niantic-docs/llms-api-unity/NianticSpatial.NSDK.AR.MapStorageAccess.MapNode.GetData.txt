@@ -1,0 +1,13 @@
+# GetData
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.MapNode.GetData/
+
+GetData
+
+---
+
+## Declaration
+
+public byte[] GetData()
+
+---

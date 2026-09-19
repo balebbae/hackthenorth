@@ -1,0 +1,37 @@
+# AgeLevel
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AgeLevel/
+
+AgeLevel
+
+---
+
+## Declaration
+
+enum class AgeLevel
+
+## Summary
+
+Codes describing the age level of the user.
+This enum represents the age classification for users of the NSDK
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Adult | Adult | Age level is an adult. |
+| Minor | Minor | Age level is a minor, usually set as default. |
+| Teen | Teen | Age level is a teen. |
+| Unknown | Unknown | Age level is unknown. |
+
+---

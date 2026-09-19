@@ -1,0 +1,29 @@
+# DepthMode
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.DepthMode/
+
+DepthMode
+The NSDK depth model to use.
+
+---
+
+## Declaration
+
+public enum DepthMode : byte
+
+## Remarks
+
+This is analogous to Unity's EnvironmentDepthMode.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Fast | DepthMode | Depth will be generated at the fastest resolution. |
+| static Medium | DepthMode | Depth will be generated at a medium resolution. |
+| static Smooth | DepthMode | Depth will be generated at the best resolution. |
+| static Unspecified | DepthMode | The default model will be used, if applicable. |
+
+---

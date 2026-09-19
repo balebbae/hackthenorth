@@ -1,0 +1,39 @@
+# NSDKFeatureSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-NSDKFeatureSession/
+
+NSDKFeatureSession
+A protocol that defines the common lifecycle and configuration interface for NSDK feature sessions.
+
+---
+
+## Declaration
+
+protocol NSDKFeatureSession
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| configure | void | - |
+| featureStatus | NSDKFeatureStatus | Gets the current status of the feature.This method reports any errors or warnings that have occurred within the feature system.Check this periodically to monitor the health of operations. Once an error is flagged,it will remain flagged until the problematic process runs again and completes successfully. |
+| start | void | Starts the feature session.After starting, the session will begin processing incoming frame data according toits configured behavior. The session must be configured before starting. |
+| stop | void | Stops the feature session.This halts all processing. The session can be reconfigured and restarted after stopping. |
+
+---
+
+## Relationships
+
+conformance:  NSDKDepthSession 
+
+conformance:  NSDKDeviceMappingSession 
+
+conformance:  NSDKMeshingSession 
+
+conformance:  NSDKScanningSession 
+
+conformance:  NSDKSceneSegmentationSession 
+
+conformance:  NSDKVps2Session

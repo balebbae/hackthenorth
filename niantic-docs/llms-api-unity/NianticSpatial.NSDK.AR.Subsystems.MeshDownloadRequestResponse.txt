@@ -1,0 +1,13 @@
+# MeshDownloadRequestResponse
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.MeshDownloadRequestResponse/
+
+MeshDownloadRequestResponse
+
+---
+
+## Declaration
+
+public static class MeshDownloadRequestResponse
+
+---

@@ -1,0 +1,43 @@
+# ZeroOrReciprocal
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.ReciprocalExtension.ZeroOrReciprocal/
+
+ZeroOrReciprocal
+
+---
+
+## Declaration
+
+public static float ZeroOrReciprocal(this float value)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | float | - |
+
+---
+
+## Overload 1
+
+public static double ZeroOrReciprocal(this double value)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | float | - |
+
+---
+
+## Overload 2
+
+public static int ZeroOrReciprocal(this int value)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | float | - |
+
+---

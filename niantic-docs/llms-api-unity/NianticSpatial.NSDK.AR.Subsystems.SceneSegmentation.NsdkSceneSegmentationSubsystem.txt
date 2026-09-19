@@ -1,0 +1,31 @@
+# NsdkSceneSegmentationSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.SceneSegmentation.NsdkSceneSegmentationSubsystem/
+
+NsdkSceneSegmentationSubsystem
+> extends XRSceneSegmentationSubsystem 
+
+---
+
+## Declaration
+
+public sealed class NsdkSceneSegmentationSubsystem : XRSceneSegmentationSubsystem, ISubsystemWithMutableApi<IApi>
+
+## Summary
+
+The NSDK implementation of the XRSceneSegmentationSubsystem. Do not create this directly.
+Use the SubsystemManager instead.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly LatestIntrinsicsMatrix | Nullable<Matrix4x4> | Returns the intrinsics matrix of the most recent semantic segmentation prediction. Contains values for the camera's focal length and principal point. Converts from world coordinates relative to the camera to image space, with the x- and y-coordinates expressed in pixels, scaled by the z-value. |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.ISubsystemWithMutableApi

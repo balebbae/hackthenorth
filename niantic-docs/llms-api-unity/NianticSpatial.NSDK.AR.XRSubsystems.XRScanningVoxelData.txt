@@ -1,0 +1,43 @@
+# XRScanningVoxelData
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningVoxelData/
+
+XRScanningVoxelData
+Contains a native voxel buffers for positions and colors.
+
+---
+
+## Declaration
+
+public struct XRScanningVoxelData : ValueType, IEquatable<XRScanningVoxelData>
+
+---
+
+## Constructors
+
+public XRScanningVoxelData(nint positionPtr, nint colorsPtr, nint normalPtr, int pointCount, nint nativeHandle)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly Colors | NativeArray<Color32> | Continas the RGBA color of each point in the voxel cloud. |
+| readonly Normals | NativeArray<Vector3> | Contains the normal vector of each point in the voxel cloud. |
+| readonly Positions | NativeArray<Vector3> | Contains the world position of each point in the voxel cloud. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Equals | bool | - |
+| GetHashCode | int | - |
+
+---
+
+## Relationships
+
+implements:  System.IEquatable

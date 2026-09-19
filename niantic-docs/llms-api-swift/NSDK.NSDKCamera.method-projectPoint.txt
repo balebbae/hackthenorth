@@ -1,0 +1,26 @@
+# projectPoint
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKCamera.method-projectPoint/
+
+projectPoint
+
+---
+
+## Declaration
+
+func projectPoint(_ point: simd_float3, orientation: UIInterfaceOrientation, viewportSize: CGSize) -> CGPoint
+
+#### Summary
+
+Projects a 3D point in world space into 2D viewport coordinates (origin top-left, in pixels).
+Returns (-1, -1) if the point is behind the camera. Use with the same orientation and viewport size as rendering.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| point | simd_float3 | - |
+| orientation | UIInterfaceOrientation | - |
+| viewportSize | CGSize | - |
+
+---

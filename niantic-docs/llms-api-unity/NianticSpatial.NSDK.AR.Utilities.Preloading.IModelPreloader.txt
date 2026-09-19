@@ -1,0 +1,41 @@
+# IModelPreloader
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.IModelPreloader/
+
+IModelPreloader
+
+---
+
+## Declaration
+
+public abstract class IModelPreloader : IDisposable
+
+## Summary
+
+Interface for the NSDK class that pre-downloads necessary neural network model files for
+awareness features. If the files are not preloaded, they will take time to download when an
+AR session configured to use those features is run.
+
+## Remarks
+
+Each awareness feature has one or more modes on a performance-to-quality curve, and each mode corresponds to a
+different model file. See Feature in Preloading.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| abstract ClearFromCache | bool | Clears this model file from the application's cache. This function will fail if the download is currently in progress or if the file is not present in the cache. Calling this while the specified model is currently being loaded into a NSDK AR session is invalid and will result in undefined behavior. |
+| abstract CurrentProgress | PreloaderStatusCode | Read the current status of a mode file request, if a request was previously made. The result of DownloadModel is asynchronous, so the caller must poll CurrentProgress for the status of the request to ensure that the HTTP request completed successfully. |
+| abstract Dispose | void | Dispose the handle to the native model preloader. |
+| abstract DownloadModel | PreloaderStatusCode | Begins downloading the requested model file to the cache if not already present. The request status can be polled with CurrentProgress or ExistsInCache. |
+| abstract ExistsInCache | bool | Checks if a model associated with the specified DepthMode is present in the cache. |
+| abstract RegisterModel | PreloaderStatusCode | Register a local neural network model file for a specific feature. This overrides NSDK's URI for the specified feature mode and remains in effect until NSDK is deinitialized. The file must be in a location accessible by the application and remain in place for the duration of the AR session. |
+
+---
+
+## Relationships
+
+implements:  System.IDisposable

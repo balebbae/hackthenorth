@@ -1,0 +1,24 @@
+# OutputEdgeType
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.OutputEdgeType/
+
+OutputEdgeType
+
+---
+
+## Declaration
+
+public enum OutputEdgeType : uint
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static All | OutputEdgeType | - |
+| static DeviceLocalization | OutputEdgeType | - |
+| static None | OutputEdgeType | - |
+| static Tracking | OutputEdgeType | - |
+
+---

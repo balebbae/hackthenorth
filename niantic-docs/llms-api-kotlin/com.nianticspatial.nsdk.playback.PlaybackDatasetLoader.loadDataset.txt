@@ -1,0 +1,32 @@
+# loadDataset
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackDatasetLoader.loadDataset/
+
+loadDataset
+Loads the dataset: reads capture JSON from this source and returns a [PlaybackDataset] that uses this loader for on-demand frame loading.
+
+---
+
+## Declaration
+
+open fun loadDataset(): PlaybackDataset?
+
+#### Summary
+
+Loads the dataset: reads capture JSON from this source and returns a PlaybackDataset that uses this loader for on-demand frame loading.
+
+#### Returns
+
+The dataset, or null if JSON is missing or invalid.
+
+---
+
+## Overload
+
+open fun loadDataset(imageDecoder: (ByteArray) -> Bitmap?): PlaybackDataset?
+
+#### Summary
+
+Loads the dataset with a custom image decoder (e.g. { null } in unit tests to avoid BitmapFactory not mocked).
+
+---

@@ -1,0 +1,42 @@
+# ReadFromExternalTexture
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Textures.ExternalTextureUtils.ReadFromExternalTexture/
+
+ReadFromExternalTexture
+Reads the entirety of the source external texture into the destination texture.
+
+---
+
+## Declaration
+
+public static void ReadFromExternalTexture(this Texture externalTexture, Texture2D destinationTexture)
+
+#### Summary
+
+Reads the entirety of the source external texture into the destination texture.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| externalTexture | Texture | - |
+| destinationTexture | Texture2D | - |
+
+---
+
+## Overload
+
+public static void ReadFromExternalTexture(this Texture externalTexture, Texture2D destinationTexture, Material material)
+
+#### Summary
+
+Reads the entirety of the source external texture into the destination texture using the provided material.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| externalTexture | Texture | - |
+| destinationTexture | Texture2D | - |
+
+---

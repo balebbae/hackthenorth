@@ -1,0 +1,39 @@
+# CalculateDisplayMatrix
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.CameraMath.CalculateDisplayMatrix/
+
+CalculateDisplayMatrix
+
+---
+
+## Declaration
+
+public static Matrix4x4 CalculateDisplayMatrix(int imageWidth, int imageHeight, int viewportWidth, int viewportHeight, ScreenOrientation viewportOrientation, bool invertVertically = true, MatrixLayout layout = MatrixLayout.ColumnMajor, bool reverseRotation = false)
+
+#### Summary
+
+Returns an affine transformation matrix for converting between normalized image
+    coordinates and a coordinate space appropriate for rendering the camera image onscreen.
+
+#### Remarks
+
+The viewport width and height arguments must conform with the current orientation.
+
+#### Returns
+
+An affine 4x4 transformation matrix.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| imageWidth | int | The width of the raw AR background image in pixels. |
+| imageHeight | int | The height of the raw AR background image in pixels. |
+| viewportWidth | int | The width of the viewport in pixels. |
+| viewportHeight | int | The height of the viewport in pixels. |
+| viewportOrientation | ScreenOrientation | The orientation of the viewport. |
+| invertVertically | bool | Whether to mirror the image across the X axis. This reverses the order of the horizontal rows, flipping the image upside down. |
+| layout | MatrixLayout | The layout of the resulting matrix. |
+| reverseRotation | bool | On some platforms, the direction of UI rotation is counter-clockwise. |
+
+---

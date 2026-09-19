@@ -1,0 +1,26 @@
+# TryGetRaycastBuffer
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.TryGetRaycastBuffer/
+
+TryGetRaycastBuffer
+Get the latest raycast textures.
+
+---
+
+## Declaration
+
+public bool TryGetRaycastBuffer(out XRTextureDescriptor colorBufferDescriptor, out XRTextureDescriptor normalBufferDescriptor, out XRTextureDescriptor positionTextureDescriptor)
+
+#### Summary
+
+Get the latest raycast textures.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| colorBufferDescriptor | XRTextureDescriptor | - |
+| normalBufferDescriptor | XRTextureDescriptor | - |
+| positionTextureDescriptor | XRTextureDescriptor | - |
+
+---

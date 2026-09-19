@@ -1,0 +1,18 @@
+# latestGpsSample
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkSessionDataSource.latestGpsSample/
+
+latestGpsSample
+Returns the most recent GPS location, or null if unavailable.
+
+---
+
+## Declaration
+
+fun latestGpsSample(): Location?
+
+#### Summary
+
+Returns the most recent GPS location, or null if unavailable.
+
+---

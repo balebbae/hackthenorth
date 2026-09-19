@@ -1,0 +1,13 @@
+# onSensorChanged
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper.onSensorChanged/
+
+onSensorChanged
+
+---
+
+## Declaration
+
+override fun onSensorChanged(event: SensorEvent?)
+
+---

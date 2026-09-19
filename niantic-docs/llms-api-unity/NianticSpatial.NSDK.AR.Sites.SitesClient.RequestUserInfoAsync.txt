@@ -1,0 +1,26 @@
+# RequestUserInfoAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.RequestUserInfoAsync/
+
+RequestUserInfoAsync
+Requests user information by user ID.
+
+---
+
+## Declaration
+
+public async Task<UserResult> RequestUserInfoAsync(string userId, int timeoutMs = DefaultTimeoutMs, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Requests user information by user ID.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| userId | string | - |
+| timeoutMs | int | - |
+| cancellationToken | CancellationToken | - |
+
+---

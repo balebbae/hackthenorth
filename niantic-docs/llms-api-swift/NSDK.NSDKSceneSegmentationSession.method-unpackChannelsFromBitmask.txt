@@ -1,0 +1,29 @@
+# unpackChannelsFromBitmask
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSceneSegmentationSession.method-unpackChannelsFromBitmask/
+
+unpackChannelsFromBitmask
+
+---
+
+## Declaration
+
+func unpackChannelsFromBitmask(bitmask: UInt32) -> SceneSegmentationChannels
+
+#### Summary
+
+Unpacks semantic channels from a packed channel bitmask.
+This method converts a bitmask value from a packed channel pixel into a SceneSegmentationChannels
+OptionSet, where each bit represents a semantic channel (bit 0 = Sky, bit 1 = Ground, etc.).
+
+#### Returns
+
+A SceneSegmentationChannels OptionSet representing the channels present in the bitmask
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| bitmask | UInt32 | The value of a pixel from an image returned by `latestPackedChannels()` |
+
+---

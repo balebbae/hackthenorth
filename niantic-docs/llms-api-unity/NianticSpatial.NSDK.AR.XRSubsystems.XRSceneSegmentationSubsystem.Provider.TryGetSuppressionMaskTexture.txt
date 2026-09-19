@@ -1,0 +1,35 @@
+# TryGetSuppressionMaskTexture
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.Provider.TryGetSuppressionMaskTexture/
+
+TryGetSuppressionMaskTexture
+Get a semantic suppression texture descriptor.
+
+---
+
+## Declaration
+
+public virtual bool TryGetSuppressionMaskTexture(out XRTextureDescriptor suppressionMaskDescriptor, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Get a semantic suppression texture descriptor.
+
+#### Returns
+
+true if the suppression mask texture descriptor is available and is returned. Otherwise,
+    false.
+
+#### Throws
+
+NotSupportedException -- Thrown if the implementation does not support suppression mask texture.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| suppressionMaskDescriptor | XRTextureDescriptor | The resulting semantic suppression mask texture descriptor, if available. |
+| samplerMatrix | Matrix4x4 | The matrix that transforms from normalized viewport coordinates to normalized texture coordinates. |
+| cameraParams | Nullable<XRCameraParams> | Describes the viewport the texture is to be displayed on. |
+
+---

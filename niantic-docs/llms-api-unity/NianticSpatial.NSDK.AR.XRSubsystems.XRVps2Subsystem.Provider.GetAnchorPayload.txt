@@ -1,0 +1,20 @@
+# GetAnchorPayload
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem.Provider.GetAnchorPayload/
+
+GetAnchorPayload
+
+---
+
+## Declaration
+
+public virtual bool GetAnchorPayload(TrackableId trackableId, out string payload)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| trackableId | TrackableId | - |
+| payload | string | - |
+
+---

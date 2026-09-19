@@ -1,0 +1,13 @@
+# defaultOnError
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.ErrorFactory.defaultOnError/
+
+defaultOnError
+
+---
+
+## Declaration
+
+fun defaultOnError(): E
+
+---

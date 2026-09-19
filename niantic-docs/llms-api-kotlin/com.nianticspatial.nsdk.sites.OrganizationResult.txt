@@ -1,0 +1,24 @@
+# OrganizationResult
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.OrganizationResult/
+
+OrganizationResult
+Result of an organization request from the Sites Manager service.
+
+---
+
+## Declaration
+
+data class OrganizationResult
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| error | SitesError | - |
+| organizations | List<OrganizationInfo> | - |
+| status | SitesRequestStatus | - |
+
+---

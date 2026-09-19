@@ -1,0 +1,32 @@
+# exportScan
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.ScanningSession.exportScan/
+
+exportScan
+
+---
+
+## Declaration
+
+fun exportScan(jsonMetadata: String?, exportAsVideo: Boolean = true, exportResolution: ExportResolution = ExportResolution.HIGH): String?
+
+#### Summary
+
+Exports the scan data as an archive file.
+
+This method processes the saved scan data and exports it to a standard archive format
+that can be used with external 3D processing tools or Niantic's VPS map.
+
+> Note: This function is blocking and may take a while to execute. See
+RecordingExporter for a non-blocking option.
+
+#### Returns
+
+The path of the archive file, if the export was successful, nil if otherwise. Export failure indicates something was wrong with the saved scan.
+
+#### See also
+
+saveCurrentScan
+getCurrentSaveInfo
+
+---

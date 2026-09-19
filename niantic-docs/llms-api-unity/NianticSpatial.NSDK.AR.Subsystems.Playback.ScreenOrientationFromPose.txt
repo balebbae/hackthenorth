@@ -1,0 +1,21 @@
+# ScreenOrientationFromPose
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Playback.ScreenOrientationFromPose/
+
+ScreenOrientationFromPose
+
+---
+
+## Declaration
+
+public static class ScreenOrientationFromPose
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static GetScreenOrientation | ScreenOrientation | Calculates the ScreenOrientation from a camera pose. It is assumed that LandscapeLeft is the natural camera orientation, so for example in identity pose. For the edge case screen facing up it will return Portrait and for screen facing down it will return PortraitUpsideDown. |
+
+---

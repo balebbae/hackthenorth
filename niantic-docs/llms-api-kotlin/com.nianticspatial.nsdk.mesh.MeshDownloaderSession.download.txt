@@ -1,0 +1,24 @@
+# download
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshDownloaderSession.download/
+
+download
+
+---
+
+## Declaration
+
+suspend fun download( payload: String, getTexture: Boolean, maxDownloadSizeKb: Int? = null, timeoutMillis: Long = TIMEOUT_MS ): AsyncResult<Array<MeshDownloaderData>, MeshDownloaderError>
+
+#### Summary
+
+Asynchronously downloads a mesh for a given location payload.
+
+This function suspends execution until the download operation is complete,
+has failed, or has timed out.
+
+#### Returns
+
+An AsyncResult which will be either AsyncResult.Success containing the mesh data, AsyncResult.Error detailing the failure reason, or AsyncResult.Timeout indicating a timeout in the download process.
+
+---

@@ -1,0 +1,41 @@
+# SpoofLocationInfo
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SpoofLocationInfo/
+
+SpoofLocationInfo
+
+---
+
+## Declaration
+
+public class SpoofLocationInfo
+
+---
+
+## Constructors
+
+### Constructor
+
+public SpoofLocationInfo()
+
+---
+
+### Overload
+
+public SpoofLocationInfo(SpoofLocationInfo source)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Altitude | float | - |
+| static readonly Default | SpoofLocationInfo | - |
+| HorizontalAccuracy | float | - |
+| Latitude | float | - |
+| Longitude | float | - |
+| Timestamp | double | - |
+| VerticalAccuracy | float | - |
+
+---

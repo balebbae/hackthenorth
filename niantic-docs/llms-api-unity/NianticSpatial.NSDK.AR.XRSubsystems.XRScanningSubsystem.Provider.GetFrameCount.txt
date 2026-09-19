@@ -1,0 +1,13 @@
+# GetFrameCount
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.Provider.GetFrameCount/
+
+GetFrameCount
+
+---
+
+## Declaration
+
+public virtual int GetFrameCount()
+
+---

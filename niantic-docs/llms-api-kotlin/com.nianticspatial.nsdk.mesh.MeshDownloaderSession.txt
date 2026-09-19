@@ -1,0 +1,31 @@
+# MeshDownloaderSession
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshDownloaderSession/
+
+MeshDownloaderSession
+> extends SessionBase 
+
+---
+
+## Declaration
+
+class MeshDownloaderSession
+
+## Summary
+
+Creates a Mesh Downloader instance.
+The Mesh Downloader allows you to retrieve mesh geometry and textures
+for VPS locations.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| create | void | - |
+| download | AsyncResult<Array<MeshDownloaderData>, MeshDownloaderError> | Asynchronously downloads a mesh for a given location payload.This function suspends execution until the download operation is complete,has failed, or has timed out. |
+| onDestroy | void | - |
+| onInit | void | - |
+
+---

@@ -1,0 +1,18 @@
+# getProjectionMatrix
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackCamera.getProjectionMatrix/
+
+getProjectionMatrix
+
+---
+
+## Declaration
+
+fun getProjectionMatrix( zNear: Float, zFar: Float, viewportWidth: Int, viewportHeight: Int, deviceDisplayOrientation: Orientation? = null ): FloatArray
+
+#### Summary
+
+OpenGL-style projection matrix (column-major) from intrinsics for the given viewport and near/far.
+Use with getViewMatrix to render 3D content aligned with the playback camera.
+
+---

@@ -1,0 +1,24 @@
+# startCreating
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession.startCreating/
+
+startCreating
+
+---
+
+## Declaration
+
+fun startCreating()
+
+#### Summary
+
+Begin a mapping sequence.
+
+This begins building an on-device map that can be used for VPS.
+
+#### See also
+
+stopCreating
+start
+
+---

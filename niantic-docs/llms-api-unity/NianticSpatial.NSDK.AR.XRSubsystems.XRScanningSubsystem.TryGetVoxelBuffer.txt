@@ -1,0 +1,24 @@
+# TryGetVoxelBuffer
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.TryGetVoxelBuffer/
+
+TryGetVoxelBuffer
+Get latest computed voxel buffer. This then must be later disposed with DisposeVoxelBuffer
+
+---
+
+## Declaration
+
+public bool TryGetVoxelBuffer(out XRScanningVoxelData voxelData)
+
+#### Summary
+
+Get latest computed voxel buffer. This then must be later disposed with DisposeVoxelBuffer
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| voxelData | XRScanningVoxelData | - |
+
+---

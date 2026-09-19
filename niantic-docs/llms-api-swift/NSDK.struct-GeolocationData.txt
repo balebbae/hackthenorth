@@ -1,0 +1,61 @@
+# GeolocationData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.struct-GeolocationData/
+
+GeolocationData
+
+---
+
+## Declaration
+
+struct GeolocationData
+
+## Summary
+
+Struct representing geolocation data including latitude, longitude, altitude,
+heading, and orientation.
+
+---
+
+## Constructors
+
+init(latitude: Double, longitude: Double, altitude: Double)
+
+#### Summary
+
+Creates geolocation data from a latitude, longitude, and altitude.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| let altitude | Double | Ellipsoidal device location altitude, measured in meters. |
+| let heading | Double | Heading in degrees relative to true north. |
+| let latitude | Double | Geographical device location latitude. |
+| let longitude | Double | Geographical device location longitude. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| getEastDownNorthQuaternion | simd_quatf | Returns the orientation in East-Down-North (EDN) frame. |
+| getEastUpSouthQuaternion | simd_quatf | Returns the orientation converted to East-Up-South (EUS) frame. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+| static func == | Bool | Returns a Boolean value indicating whether two values are equal.Equality is the inverse of inequality. For any values `a` and `b`,`a == b` implies that `a != b` is `false`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable

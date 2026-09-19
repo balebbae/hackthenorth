@@ -1,0 +1,23 @@
+# MovementType
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Waypoint.MovementType/
+
+MovementType
+The type of movement of a waypoint
+
+---
+
+## Declaration
+
+public enum MovementType
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static SurfaceEntry | MovementType | The first node of a new surface on the path. |
+| static Walk | MovementType | Walk node. |
+
+---

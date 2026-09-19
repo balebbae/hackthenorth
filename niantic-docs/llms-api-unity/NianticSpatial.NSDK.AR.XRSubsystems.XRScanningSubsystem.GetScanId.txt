@@ -1,0 +1,18 @@
+# GetScanId
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystem.GetScanId/
+
+GetScanId
+Get the current scan's ID.
+
+---
+
+## Declaration
+
+public string GetScanId()
+
+#### Summary
+
+Get the current scan's ID.
+
+---

@@ -1,0 +1,61 @@
+# XRVps2Subsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2Subsystem/
+
+XRVps2Subsystem
+> extends UnityEngine.XR.ARSubsystems.TrackingSubsystem
+
+---
+
+## Declaration
+
+public class XRVps2Subsystem : TrackingSubsystem<XRVps2Anchor, XRVps2Subsystem, XRVps2SubsystemDescriptor, Provider>
+
+---
+
+## Constructors
+
+public XRVps2Subsystem()
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| AnchorDistanceGateMeters | float | Distance gate in meters for anchor candidate filtering when geo-corrected. Nodes farther than this distance from the device are skipped during anchor localization. When only GPS is available (no geo-correction), the effective gate is 2x this value. Pass 0 to use the default value (50 meters geo-corrected, 100 meters GPS-only). Pass -1 to disable the distance check entirely. |
+| ContinuousVpsRequestsPerSecond | float | Number of VPS localization requests per second to send the server while successfully localized on a VPS map. |
+| DeviceMapLocalizationEnabled | bool | If true, localization on device maps is enabled. Device maps are created by the on-device mapping feature. They do not provide a georeference. |
+| DeviceMapLocalizationFramerate | int | Number of times per second to attempt localization on available device maps. |
+| GeolocationSmoothingEnabled | bool | If true, enables smooth interpolation between VPS2 localization updates. As VPS2 updates its estimate from one localization to another, having interpolation enabled will provide a more stable experience, especially when GPS or compass readings update abruptly. |
+| InitialVpsRequestsPerSecond | float | Number of VPS localization requests per second to send the server prior to the first successful localization on a VPS map. |
+| MaxRequestsInTransitPerTarget | uint | Maximum number of concurrent localization requests per target. Limits how many in-flight cloud localization requests can be active for a single target simultaneously. Pass 0 to use the default value (2). |
+| UniversalLocalizationEnabled | bool | If true, universal localization is enabled. Universal localization provides geographic positioning that works anywhere without requiring pre-scanned maps. |
+| UniversalLocalizationRequestsPerSecond | float | Number of requests per second to send the cloud for universal localization. |
+| UniversalLocalizationRequestTimeoutMs | int | Timeout in milliseconds for universal localization requests. Responses in uncached areas may take 60+ seconds; subsequent requests are typically under 1 second. Pass 0 to use the default value (90000 ms). |
+| VpsDebuggerEnabled | bool | If true, enable the VPS Debugger, which will log VPS2 related internal events to diagnose VPS2 tracking behavior and issues. |
+| VpsMapLocalizationEnabled | bool | If true, localization on VPS maps is enabled. VPS maps only exist in pre-scanned areas. Your device must be localized on a VPS map in order for VPS anchors to be placed with high accuracy. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| GetAnchorPayload | bool | Get the payload which encodes the anchor. The payload can be used to re-track the anchor in a different VPS2 session. |
+| GetChanges | TrackableChanges<XRVps2Anchor> | - |
+| GetDeviceGeolocation | XRVps2Geolocation | Get the geolocation of the device's last known camera pose. |
+| GetLatestDebuggerData | List<VpsDebuggerDataEvent> | Get all the debugger data since the last time this method was called. |
+| GetLatestLocalization | XRVps2Localization | Get the latest VPS2 localization. The localization contains the metadata required to perform bidirectional conversions between the application's AR tracking space and the global coordinate system (lat/lng/alt/heading). |
+| GetLatestLocalizationRequestRecords | List<XRVps2LocalizationRequestRecord> | Get all the network request records since the last time this method was called. |
+| GetPose | XRVps2Pose | Convert a position and orientation in the global coordinate system to a pose in the device's AR tracking space. |
+| GetSessionId | bool | Get the session id, if one exists. |
+| TryCreateAnchor | bool | Create a new anchor located at pose in the device's AR tracking space. |
+| TryRemoveAnchor | bool | Stop tracking an anchor. |
+| TryTrackAnchor | bool | Start tracking the anchor encoded by payload. |
+
+---
+
+## Relationships
+
+derived:  NsdkVps2Subsystem

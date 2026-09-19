@@ -1,0 +1,41 @@
+# ScanningSession
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.ScanningSession/
+
+ScanningSession
+> extends SessionBase 
+
+---
+
+## Declaration
+
+class ScanningSession
+
+## Summary
+
+A session for 3D scanning and visualization functionality.
+The scanning feature capabilities for capturing, processing, and exporting
+3D scan data from AR sessions. Scans of a location can be processed by the Visual
+Positioning System's (VPS's) cloud services to enable VPS localization.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| computeVoxels | void | Compute the voxelization of the scanned scene.Processing is asynchronous. Call this function and then call [voxelBuffer]to retrieve voxel data.> Note: Voxel visualization must have been enabled in the configuration. |
+| configure | void | Configure the session with the specified settings.> Note: It is only valid to call this when the session is stopped.> Note: Configuration is asynchronous and can fail later, even if this calldoes not throw an error. Use [getFeatureStatus()] to check there are no issues. |
+| create | void | - |
+| exportScan | String? | Exports the scan data as an archive file.This method processes the saved scan data and exports it to a standard archive formatthat can be used with external 3D processing tools or Niantic's VPS map.> Note: This function is blocking and may take a while to execute. See[RecordingExporter] for a non-blocking option. |
+| featureStatus | FeatureStatus | Reports errors that have occurred with processes running inside this feature.Check this periodically to see if any errors have occurred withprocesses running inside this feature. Once an error has beenflagged, it will remain flagged until the culprit process hasbeen run again and completed successfully. |
+| getRecordingInfo | RecordingInfo | - |
+| onDestroy | void | - |
+| onInit | void | - |
+| raycastBuffer | RaycastBuffer? | Get the most recently computed raycast buffers.Once the session has been started and all the requested data has been sent through theARDK session, a buffer should become available after a brief computation period.> Note: Raycast visualization must have been enabled in the configuration. |
+| save | AsyncResult<ScanSaveInfo, ScanSaveError> | Asynchronously saves the current scan and polls until the operation is complete.This function initiates the save operation and then suspends until the saveprocess finishes, either with a success, a failure, or a timeout. |
+| start | void | Start scanning."Scanning" here refers to up to three processes: recording the input ARdata, raycasting, and voxelization, depending on how the feature isconfigured. |
+| stop | void | Stop all scanning processes.This halts active scanning while keeping the scanner instance alive.You can restart scanning later with [start].> Note: If recording is in progress, this will stop recording (and all otherprocesses) and discard any unsaved scan data. |
+| voxelBuffer | VoxelBuffer? | Get the most recently computed voxel data.Once the session has been started and all the requested data has been sent through theARDK session, a new buffer should become available after a brief computation period after[computeVoxels] has been called.> Note: Voxel visualization must have been enabled in the configuration. |
+
+---

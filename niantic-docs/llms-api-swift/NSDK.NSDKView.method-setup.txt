@@ -1,0 +1,25 @@
+# setup
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKView.method-setup/
+
+setup
+
+---
+
+## Declaration
+
+@MainActor func setup(in view: UIView)
+
+#### Summary
+
+Adds the NSDKView to the given container and sets up playback rendering when in playback mode.
+In playback, creates the PlaybackRenderer (background + camera) first so the camera image is drawn behind RealityKit content.
+Call this after creating the NSDKView; the view is constrained to fill the container.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| view | UIView | - |
+
+---

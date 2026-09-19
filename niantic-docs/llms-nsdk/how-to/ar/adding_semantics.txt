@@ -1,0 +1,175 @@
+# Adding Scene Segmentation
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_semantics/
+
+### Platform: unity
+
+NSDK provides this unique feature through the new **`XRSemanticsSubsystem`** class. The `ARSemanticSegmentationManager` makes this subsystem's data available as a MonoBehaviour and manages the subsystem's lifecycle.
+
+## Unity Scene Integration
+
+To run scene segmentation in your scene, add an `ARSemanticSegmentationManager` component.
+By default, the `ARSemanticSegmentationManager` is simple, with only one exposed parameter for framerate settings in its Inspector window.
+
+(image: ARSemanticSegmentationManager Inspector)
+
+## More Information
+
+While `ARSemanticSegmentationManager` itself is uncomplicated, there are features in other NSDK components that require one to be present and active in the scene. These include:
+
+- [Occlusion suppression](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_occlusion/) in NsdkOcclusionExtension
+- [Mesh filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) in NsdkMeshingExtension
+
+### Platform: swift
+
+Niantic Spatial SDK (NSDK) exposes its scene segmentation functionality on native iOS through the **`NSDKSceneSegmentationSession`** API.
+Each time `NSDKSession.update()` is called, an active `NSDKSceneSegmentationSession` produces buffers containing semantic channel and confidence levels.
+
+## Read Semantics Data
+
+Use the `NSDKSceneSegmentationSession` publishers to read semantics data reactively:
+
+- **`$confidenceResult`**
+  - A `@Published` property that emits the confidence map for the active `confidenceChannel` each frame. Set `confidenceChannel` to the desired `SceneSegmentationChannels` value before subscribing. For a list of supported channels in NSDK, see the [scene segmentation feature page](https://www.nianticspatial.com/docs/nsdk/features/semantics/).
+- **`$packedChannels`**
+  - A `@Published` property that emits a multi-channel image where each pixel contains which semantic channels are detected. Packed channels provide an efficient way to access multiple semantic classifications in a single image.
+
+---
+
+## Creating and Configuring a Scene Segmentation Session
+
+```swift
+
+let nsdk = NSDKSession()
+
+// Enable scene segmentation functionality for this session
+let sceneSegmentationSession = nsdk.acquireSceneSegmentationSession()
+
+// Configure and start scene segmentation
+// The default configuration sets the frequency of inference to 10 fps
+let config = NSDKSceneSegmentationSession.Configuration()
+do {
+    try sceneSegmentationSession.configure(with: config)
+    sceneSegmentationSession.start()
+} catch {
+    print("Failed to configure the scene segmentation session (error: \(error)")
+}
+
+```
+
+Scene segmentation takes some time to start up while downloading and decrypting the model file (see [model preloading](https://www.nianticspatial.com/docs/nsdk/features/model_preloading_semantics/) to speed this up).
+Once the feature is started, set the desired channel and subscribe to `$confidenceResult` to receive confidence data reactively:
+
+```swift
+
+// Set the channel to observe
+sceneSegmentationSession.confidenceChannel = .ground
+
+sceneSegmentationSession.$confidenceResult
+    .compactMap { state -> SceneSegmentationResult? in
+        if case .success(let result) = state { return result } else { return nil }
+    }
+    .receive(on: DispatchQueue.main)
+    .sink { result in
+        // Process the latest confidence data for 'ground'
+        // result.image, result.frameId, result.intrinsics, etc.
+    }
+    .store(in: &cancellables)
+```
+
+## More Information
+
+Other NSDK AR features benefit from using scene segmentation data as a filter.  For example,
+
+- [Occlusion suppression](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_occlusion/) to selectively occlude portions of the camera view.
+- [Mesh filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) to include and/or exclude specific semantic channels from the mesh.
+
+### Platform: kotlin
+
+Niantic Spatial SDK (NSDK) exposes scene segmentation on Android through the `SemanticsSession` API. Each `SemanticsSession` runs on top of an `NSDKSession` and produces channel names, packed semantic classifications, and per-channel confidence maps that you can render in your own UI.
+
+## Read Semantics Data
+
+Use the `SemanticsSession` helpers to inspect semantic output:
+
+- **`channelNames()`**\
+  Returns an `NSDKResult<List<String>, AwarenessStatus>` containing the list of semantic labels baked into the on-device model. The order of these names matches the indices required by the other APIs. Poll until you receive an `NSDKResult.Success`. For a list of supported channels in NSDK, see the [scene segmentation feature page](https://www.nianticspatial.com/docs/nsdk/features/semantics/).
+
+- **`latestPackedChannels()`**\
+  Returns an `NSDKResult<SemanticsResult, AwarenessStatus>` containing a packed multi-channel image (bitmask per pixel) that indicates which semantic classes are present. Use this when you need to inspect several channels at once without multiple API calls.
+
+- **`latestConfidence(channelIndex)`**\
+  Returns an `NSDKResult<SemanticsResult, AwarenessStatus>` where the `image` is a confidence buffer (`Image.FloatImage`) for the specified semantic channel. Each pixel ranges from `0.0f` to `1.0f`, representing the probability that the pixel belongs to the requested class.
+
+---
+
+## Creating and Configuring a Scene Segmentation Session
+
+```kotlin
+import com.nianticspatial.nsdk.AwarenessFeatureMode
+import com.nianticspatial.nsdk.awareness.semantics.SemanticsConfig
+import com.nianticspatial.nsdk.awareness.semantics.SemanticsSession
+import com.nianticspatial.nsdk.session.NSDKSession
+
+val nsdkSession = NSDKSession(accessToken = "YOUR_ACCESS_TOKEN", refreshToken = "YOUR_REFRESH_TOKEN", useLidar = false)
+
+// Enable scene segmentation functionality for this session
+val semanticsSession: SemanticsSession = nsdkSession.semantics.acquire()
+
+// Configure and start meshing
+val config = SemanticsConfig().apply {
+    frameRate = 20      // Run inference at 20 FPS (default is 10)
+    mode = AwarenessFeatureMode.UNSPECIFIED
+}
+
+try {
+    semanticsSession.configure(config)
+    semanticsSession.start()
+} catch (error: Exception) {
+    Log.e("Semantics", "Failed to configure semantics", error)
+}
+```
+
+Scene segmentation may take a few seconds to download and decrypt its model. Once the session is running, you can start sampling buffers:
+
+## Querying the Latest Confidence Map
+
+```kotlin
+private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+private var lastFrameTimestamp = 0L
+
+fun startPollingConfidence(channelIndex: Int, onResult: (Image.FloatImage) -> Unit) {
+    scope.launch {
+        while (isActive) {
+            when (val result = semanticsSession.latestConfidence(channelIndex)) {
+                is NSDKResult.Success -> {
+                    val buffer = result.value
+                    if (buffer.timestampMs != lastFrameTimestamp) {
+                        lastFrameTimestamp = buffer.timestampMs
+                        (buffer.image as? Image.FloatImage)?.let(onResult)
+                    }
+                }
+                is NSDKResult.Error -> {
+                    Log.e("Semantics", "latestConfidence failed: ${result.code}")
+                }
+            }
+            delay(16L) // Poll roughly every frame; tune to fit your FPS budget
+        }
+    }
+}
+
+fun stopPolling() {
+    scope.cancel()
+}
+```
+
+Because `SemanticsSession` does not push updates, your app should poll inside a coroutine/worker thread.
+
+## More Information
+
+Other NSDK features consume semantic buffers as optional filters:
+
+- [Occlusion suppression](https://www.nianticspatial.com/docs/nsdk/how-to/ar/adding_occlusion/) narrows occlusion to specific channels.
+- [Mesh filtering](https://www.nianticspatial.com/docs/nsdk/how-to/ar/meshing/semantic_mesh_filtering/) lets you ignore or include semantic classes when generating geometry.
+
+For a full walkthrough of how to add scene segmentation to your project, see [How to Query Scene Segmentation and Highlight Semantic Channels](https://www.nianticspatial.com/docs/nsdk/how-to/ar/query_semantics_real_objects/).

@@ -1,0 +1,34 @@
+# requestSiteInfo
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSitesSession.method-requestSiteInfo/
+
+requestSiteInfo
+Requests site info and waits for the result.
+
+---
+
+## Declaration
+
+func requestSiteInfo(siteId: String, pollingInterval: TimeInterval = 0.5, timeout: TimeInterval = 60.0) async throws -> SiteResult
+
+#### Summary
+
+Requests site info and waits for the result.
+
+#### Returns
+
+A SiteResult containing the site info.
+
+#### Throws
+
+  - CancellationError if the Task running this function was cancelled.   - TimeoutError if the function timed out before it could complete execution.   - SitesResult.Error if there was an error specific to the network query.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| siteId | String | The site ID to fetch info for. |
+| pollingInterval | TimeInterval | The interval between status checks (default: 0.5 seconds). |
+| timeout | TimeInterval | Maximum time to wait for completion (default: 60 seconds). |
+
+---

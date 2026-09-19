@@ -1,0 +1,28 @@
+# RenderComponent
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Common.RenderComponent/
+
+RenderComponent
+Base class for components that modify the state of a material.
+
+---
+
+## Declaration
+
+public abstract class RenderComponent : IDisposable
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Dispose | void | - |
+| SetTargetMaterial | void | Sets the material that this component is modifying. |
+| Update | void | Performs render feature related logic and updates the target material. |
+
+---
+
+## Relationships
+
+implements:  System.IDisposable

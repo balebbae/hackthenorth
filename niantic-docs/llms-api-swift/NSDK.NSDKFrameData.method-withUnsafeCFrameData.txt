@@ -1,0 +1,25 @@
+# withUnsafeCFrameData
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.method-withUnsafeCFrameData/
+
+withUnsafeCFrameData
+
+---
+
+## Declaration
+
+func withUnsafeCFrameData<T>(_ body: (UnsafePointer<ARDK_FrameData>) throws -> T) rethrows -> T
+
+#### Summary
+
+Calls the given closure with a pointer to a valid ARDK_FrameData whose
+camera and depth frame arrays are backed by storage that remains valid for the
+duration of the call
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| body | (UnsafePointer<ARDK_FrameData>) throws -> T | - |
+
+---

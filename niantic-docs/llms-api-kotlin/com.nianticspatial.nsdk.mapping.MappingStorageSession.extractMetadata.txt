@@ -1,0 +1,29 @@
+# extractMetadata
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.MappingStorageSession.extractMetadata/
+
+extractMetadata
+
+---
+
+## Declaration
+
+fun extractMetadata(anchorPayload: String, map: ByteArray): MapMetadata?
+
+#### Summary
+
+Extract the metadata from a map relative to a specified anchor.
+
+Render the feature points in the metadata relative to the specified anchor to visualize the map.
+This is only possible when the anchor is linked directly to the map's node(s), or if the
+anchor's nodes are reachable to the map's nodes from the currently active transform graph.
+
+#### Returns
+
+The extracted metadata if successful, or null if no metadata exists.
+
+#### Throws
+
+ArdkNullArgumentStatusException -- or ArdkInvalidArgumentStatusException indicating a problem with the either argument. Check ARDK's C logs for more information.
+
+---

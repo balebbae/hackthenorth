@@ -1,0 +1,13 @@
+# sendFrame
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NSDKSession.sendFrame/
+
+sendFrame
+
+---
+
+## Declaration
+
+fun sendFrame(frameData: FrameData)
+
+---

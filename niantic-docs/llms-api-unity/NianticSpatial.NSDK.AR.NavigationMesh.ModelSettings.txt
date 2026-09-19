@@ -1,0 +1,48 @@
+# ModelSettings
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.ModelSettings/
+
+ModelSettings
+
+---
+
+## Declaration
+
+public struct ModelSettings : ValueType
+
+## Summary
+
+The ModelSettings struct provides a configuration for how NsdkNavMesh scans the real environment and creates a navigable space.
+An instance of ModelSettings is created by the NsdkNavMeshManager using the parameters specified by the user in the Inspector,
+and that instance is subsequently used to create a NsdkNavMesh that is configured this way.
+
+---
+
+## Constructors
+
+public ModelSettings(float tileSize, float kernelStdDevTol, float maxSlope, float stepHeight, LayerMask layerMask)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static readonly Default | ModelSettings | Constructs a configuration with default settings. |
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| KernelSize | int | The size of the kernel used to compute areal properties for each cell. |
+| KernelStdDevTol | float | The standard deviation tolerance value to use when determining node noise within a cell, outside of which the cell is considered too noisy to be walkable. |
+| LayerMask | LayerMask | Specifies the layer of the environment to raycast. |
+| MaxSlope | float | Maximum slope angle (degrees) of an area to be considered flat. |
+| MinElevation | float | Minimum elevation (meters) a GridNode is expected to have in order to be walkable |
+| SpatialChunkSize | float | Size of a spatial partition in square meters. Grid cells within the same chunk will be stored together. |
+| StepHeight | float | The maximum amount two cells can differ in elevation to be considered on the same plane. |
+| TileSize | float | Size of a grid cell in meters. |
+
+---

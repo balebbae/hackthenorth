@@ -1,0 +1,29 @@
+# BasePlaybackSettingsEditor
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Editor.BasePlaybackSettingsEditor/
+
+BasePlaybackSettingsEditor
+
+---
+
+## Declaration
+
+public abstract class BasePlaybackSettingsEditor : IPlaybackSettingsEditor
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| DrawGUI | void | - |
+
+---
+
+## Relationships
+
+implements:  IPlaybackSettingsEditor 
+
+derived:  EditorPlaybackSettingsEditor 
+
+derived:  DevicePlaybackSettingsEditor

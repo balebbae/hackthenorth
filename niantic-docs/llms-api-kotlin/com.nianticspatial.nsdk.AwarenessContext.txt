@@ -1,0 +1,24 @@
+# AwarenessContext
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.AwarenessContext/
+
+AwarenessContext
+
+---
+
+## Declaration
+
+data class AwarenessContext
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CameraIntrinsics | CameraIntrinsics | - |
+| frameId | Long | - |
+| pose | Pose | - |
+| timestampMs | Long | - |
+
+---

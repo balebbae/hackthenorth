@@ -1,0 +1,27 @@
+# requestAssetInfo
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession.requestAssetInfo/
+
+requestAssetInfo
+Requests asset information by asset ID.
+
+---
+
+## Declaration
+
+suspend fun requestAssetInfo( assetId: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS ): AssetResult
+
+#### Summary
+
+Requests asset information by asset ID.
+
+#### Returns
+
+AssetResult containing the asset information.
+
+#### Throws
+
+SitesException -- if the request fails with an error.
+kotlinx.coroutines.CancellationException -- if the coroutine is cancelled.
+
+---

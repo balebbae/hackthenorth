@@ -1,0 +1,22 @@
+# loadCaptureJSON
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.PlaybackDatasetSource.method-loadCaptureJSON/
+
+loadCaptureJSON
+Loads the capture JSON data from the data source.
+
+---
+
+## Declaration
+
+func loadCaptureJSON() -> Data?
+
+#### Summary
+
+Loads the capture JSON data from the data source.
+
+#### Returns
+
+The JSON data as Data, or nil if loading fails
+
+---

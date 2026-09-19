@@ -1,0 +1,49 @@
+# Equals
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystemCinfo.Equals/
+
+Equals
+Tests for equality.
+
+---
+
+## Declaration
+
+public bool Equals(XRSceneSegmentationSubsystemCinfo other)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if every field in other is equal to this XRSceneSegmentationSubsystemCinfo, otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | XRSceneSegmentationSubsystemCinfo | The other XRSceneSegmentationSubsystemCinfo to compare against. |
+
+---
+
+## Overload
+
+public override bool Equals(object obj)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if obj is of type XRSceneSegmentationSubsystemCinfo and
+    Equals also returns true; otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | XRSceneSegmentationSubsystemCinfo | The other XRSceneSegmentationSubsystemCinfo to compare against. |
+
+---

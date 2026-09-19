@@ -1,0 +1,29 @@
+# channelNames
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.awareness.scenesegmentation.SceneSegmentationSession.channelNames/
+
+channelNames
+
+---
+
+## Declaration
+
+fun channelNames(): Array<SceneSegmentationChannel>
+
+#### Summary
+
+Gets the names of available semantic channels.
+
+This retrieves a list of semantic channel names that can be used
+for semantic analysis and classification.
+
+#### Returns
+
+List of channel names
+
+#### See also
+
+latestConfidence
+latestPackedChannel
+
+---

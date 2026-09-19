@@ -1,0 +1,27 @@
+# requestAssetsForSite
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession.requestAssetsForSite/
+
+requestAssetsForSite
+Requests all assets for a site.
+
+---
+
+## Declaration
+
+suspend fun requestAssetsForSite( siteId: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS ): AssetResult
+
+#### Summary
+
+Requests all assets for a site.
+
+#### Returns
+
+AssetResult containing the list of assets.
+
+#### Throws
+
+SitesException -- if the request fails with an error.
+kotlinx.coroutines.CancellationException -- if the coroutine is cancelled.
+
+---

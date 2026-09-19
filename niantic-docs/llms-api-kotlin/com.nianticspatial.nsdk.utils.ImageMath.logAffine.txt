@@ -1,0 +1,24 @@
+# logAffine
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath.logAffine/
+
+logAffine
+
+---
+
+## Declaration
+
+fun Matrix.logAffine(tag: String = "MatrixTest", label: String = "Matrix")
+
+#### Summary
+
+Logs the affine components of this Matrix in a readable format.
+
+Prints the matrix in iOS-style notation:
+a, b, c, d, tx, ty
+corresponding to the 2x3 affine transform:
+
+[ a  c  tx ]
+[ b  d  ty ]
+
+---

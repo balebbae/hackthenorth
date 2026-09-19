@@ -1,0 +1,13 @@
+# loadDepthConfidence
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.AssetPlaybackDatasetLoader.loadDepthConfidence/
+
+loadDepthConfidence
+
+---
+
+## Declaration
+
+override fun loadDepthConfidence(confidenceFileName: String): ByteArray?
+
+---

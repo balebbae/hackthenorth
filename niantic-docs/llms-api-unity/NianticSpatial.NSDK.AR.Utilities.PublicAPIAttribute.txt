@@ -1,0 +1,20 @@
+# PublicAPIAttribute
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.PublicAPIAttribute/
+
+PublicAPIAttribute
+> extends UnityEngine.HelpURLAttribute
+
+---
+
+## Declaration
+
+public class PublicAPIAttribute : HelpURLAttribute
+
+---
+
+## Constructors
+
+public PublicAPIAttribute(string helpUrl)
+
+---

@@ -1,0 +1,25 @@
+# AuthRuntimeRefreshManager
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Auth.AuthRuntimeRefreshManager/
+
+AuthRuntimeRefreshManager
+Manager to ensure that the access token is refreshed in the background (assuming we have a valid refresh token).
+
+---
+
+## Declaration
+
+public static class AuthRuntimeRefreshManager
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static CancelRefreshLoop | void | - |
+| static LogoutAndPropagateTokens | void | - |
+| static RestartRefreshLoop | void | - |
+| static async StartRefreshLoop | Task | - |
+
+---

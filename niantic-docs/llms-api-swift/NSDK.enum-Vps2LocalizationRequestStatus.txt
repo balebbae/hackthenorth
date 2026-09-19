@@ -1,0 +1,40 @@
+# Vps2LocalizationRequestStatus
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-Vps2LocalizationRequestStatus/
+
+Vps2LocalizationRequestStatus
+Status of a network request.
+
+---
+
+## Declaration
+
+enum Vps2LocalizationRequestStatus
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| case completed | completed | The request completed and a response was received. |
+| case failed | failed | The request failed (e.g. network error, HTTP error, or unparseable response). |
+| case frameRejected | frameRejected | The request was not sent because the frame was rejected (e.g. camera pointed downward). |
+| case pending | pending | The request has been sent and is awaiting a response. |
+| case unknown | unknown | Unknown request status. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable 
+
+conforms to:  Swift.Hashable

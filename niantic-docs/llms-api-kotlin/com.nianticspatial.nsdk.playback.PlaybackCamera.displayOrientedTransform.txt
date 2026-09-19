@@ -1,0 +1,19 @@
+# displayOrientedTransform
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackCamera.displayOrientedTransform/
+
+displayOrientedTransform
+
+---
+
+## Declaration
+
+fun displayOrientedTransform(displayOrientation: Orientation): FloatArray
+
+#### Summary
+
+Display-oriented camera-to-world transform with Z rotation applied for the given orientation.
+Sensor frame is landscape-right; portrait adds π/2, portrait-upside-down adds -π/2, landscape-left adds π.
+Use for rendering so the camera matches on-screen orientation.
+
+---

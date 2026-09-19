@@ -1,0 +1,49 @@
+# Equals
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRVps2SubsystemCinfo.Equals/
+
+Equals
+Tests for equality.
+
+---
+
+## Declaration
+
+public bool Equals(XRVps2SubsystemCinfo other)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if every field in other is equal to this XRVps2SubsystemCinfo, otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | XRVps2SubsystemCinfo | The other XRVps2SubsystemCinfo to compare against. |
+
+---
+
+## Overload
+
+public override bool Equals(object obj)
+
+#### Summary
+
+Tests for equality.
+
+#### Returns
+
+True if obj is of type XRVps2SubsystemCinfo and
+    Equals also returns true; otherwise false.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | XRVps2SubsystemCinfo | The other XRVps2SubsystemCinfo to compare against. |
+
+---

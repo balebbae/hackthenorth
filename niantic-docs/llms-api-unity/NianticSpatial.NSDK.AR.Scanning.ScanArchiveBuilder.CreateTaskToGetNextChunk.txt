@@ -1,0 +1,21 @@
+# CreateTaskToGetNextChunk
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanArchiveBuilder.CreateTaskToGetNextChunk/
+
+CreateTaskToGetNextChunk
+
+---
+
+## Declaration
+
+public Task<string> CreateTaskToGetNextChunk()
+
+#### Summary
+
+Creates a task for packing the next chunk. Must only be called if HasMoreChunks is true, and
+     no other task is currently running.
+
+     The task is not started automatically. The caller of this method should start the task. The
+     task does not block.
+
+---

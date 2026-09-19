@@ -1,0 +1,23 @@
+# start
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKScanningSession.method-start/
+
+start
+
+---
+
+## Declaration
+
+func start()
+
+#### Summary
+
+Starts scanning.
+"Scanning" here may include up to three processes -- recording input AR data, raycasting,
+and voxelization -- depending on how the feature is configured.
+Raycasting and voxelization are useful for visualizing scanned areas and
+providing feedback to the user about their scan.
+- SeeAlso: stop()
+- SeeAlso: configure(_:)
+
+---

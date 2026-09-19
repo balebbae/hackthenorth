@@ -1,0 +1,22 @@
+# affineTranslation
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath.affineTranslation/
+
+affineTranslation
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine translation.
+
+---
+
+## Declaration
+
+fun affineTranslation(tx: Float, ty: Float): Matrix
+
+#### Summary
+
+Returns an (u, v) -> (u', v') transformation that represents a 2D affine translation.
+
+#### Returns
+
+An affine Matrix that shifts coordinates by (tx, ty).
+
+---

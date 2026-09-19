@@ -1,0 +1,24 @@
+# ClearDeviceMaps
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping.DeviceMapAccessController.ClearDeviceMaps/
+
+ClearDeviceMaps
+Clear map storage.
+
+---
+
+## Declaration
+
+public bool ClearDeviceMaps()
+
+#### Summary
+
+Clear map storage.
+
+> **Info:**
+>
+> **Notice**
+>
+> This is an experimental feature, and is subject to breaking changes or deprecation without notice
+
+---

@@ -1,0 +1,19 @@
+# NsdkInvalidArgumentStatusException
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkInvalidArgumentStatusException/
+
+NsdkInvalidArgumentStatusException
+> extends NsdkStatusException 
+
+---
+
+## Declaration
+
+class NsdkInvalidArgumentStatusException
+
+## Summary
+
+Thrown when a native argument has an invalid value.
+Corresponds to [NSDKStatus.INVALID_ARGUMENT].
+
+---

@@ -1,0 +1,23 @@
+# stopCreating
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.DeviceMappingSession.stopCreating/
+
+stopCreating
+
+---
+
+## Declaration
+
+fun stopCreating()
+
+#### Summary
+
+Stop the current mapping sequence.
+
+This stops adding new frames to the current on-device VPS Map.
+
+#### See also
+
+startCreating
+
+---

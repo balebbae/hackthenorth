@@ -1,0 +1,18 @@
+# getTrackingFailureReason
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.NsdkCamera.getTrackingFailureReason/
+
+getTrackingFailureReason
+Reason tracking is paused, or [TrackingFailureReason.NONE] when tracking. Matches ARCore [com.google.ar.core.Camera.getTrackingFailureReason].
+
+---
+
+## Declaration
+
+abstract fun getTrackingFailureReason(): TrackingFailureReason
+
+#### Summary
+
+Reason tracking is paused, or TrackingFailureReason.NONE when tracking. Matches ARCore com.google.ar.core.Camera.getTrackingFailureReason.
+
+---

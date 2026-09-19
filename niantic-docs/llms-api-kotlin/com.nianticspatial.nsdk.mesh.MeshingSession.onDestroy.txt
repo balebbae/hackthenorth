@@ -1,0 +1,13 @@
+# onDestroy
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mesh.MeshingSession.onDestroy/
+
+onDestroy
+
+---
+
+## Declaration
+
+override fun onDestroy()
+
+---

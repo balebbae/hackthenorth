@@ -1,0 +1,26 @@
+# FromNativeUuid
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.TrackableIdExtension.FromNativeUuid/
+
+FromNativeUuid
+
+---
+
+## Declaration
+
+public static TrackableId FromNativeUuid(string uuid)
+
+#### Summary
+
+Converts a native NSDK UUID string to a TrackableId.
+    This can then be passed back into native to get the original UUID.
+    This is the inverse of ToNsdkHexString.
+    Takes either a 32 character string or a 33 character string with a dash.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| uuid | string | - |
+
+---

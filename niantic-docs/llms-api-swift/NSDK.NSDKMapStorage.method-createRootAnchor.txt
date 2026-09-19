@@ -1,0 +1,23 @@
+# createRootAnchor
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKMapStorage.method-createRootAnchor/
+
+createRootAnchor
+
+---
+
+## Declaration
+
+func createRootAnchor() -> String?
+
+#### Summary
+
+Creates an anchor on the existing map located at the origin of the current AR session, if possible.
+The root anchor represents the origin point of the map coordinate system and can be
+used with VPS for localization.
+
+#### Returns
+
+The payload of the root anchor, encoded as a base64 string if available, nil if otherwise.
+
+---

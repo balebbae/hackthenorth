@@ -1,0 +1,37 @@
+# com.nianticspatial.nsdk.vps2
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2/
+
+vps2
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Vps2Session | Vps2Session | A session for VPS2 localization. |
+
+---
+
+## Data Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Vps2GeolocationData | Vps2GeolocationData | Geolocation data from VPS2 localization with accuracy information. |
+| Vps2Localization | Vps2Localization | Spatial mapping between the device's AR coordinate space and real-worldgeolocation, as determined by VPS2.If [trackingState] is [Vps2TrackingState.UNAVAILABLE], conversions areinvalid and native conversion APIs will throw`ArdkInvalidOperationStatusException`. |
+| Vps2LocalizationRequestRecord | Vps2LocalizationRequestRecord | Diagnostics record describing a VPS2 localization request.The identifier is a 32-byte ASCII hex string (uppercase) returned by native. |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| HeadingMode | HeadingMode | Controls how the heading is computed from the device's orientation.Mirrors `ARDK_HeadingMode`. |
+| Vps2LocalizationError | Vps2LocalizationError | Error codes from VPS localization operations.Mirrors `ARDK_VPS2_LocalizationError`. |
+| Vps2LocalizationRequestStatus | Vps2LocalizationRequestStatus | Localization request lifecycle status.Mirrors `ARDK_VPS2_LocalizationRequestStatus`. |
+| Vps2LocalizationRequestType | Vps2LocalizationRequestType | VPS2 localization request type.Mirrors `ARDK_VPS2_LocalizationRequestType`. |
+| Vps2TrackingState | Vps2TrackingState | Tracking quality for VPS2 localization.Mirrors `ARDK_VPS2_TrackingState`. |
+
+---

@@ -1,0 +1,34 @@
+# TryGetPackedSceneSegmentationChannels
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.TryGetPackedSceneSegmentationChannels/
+
+TryGetPackedSceneSegmentationChannels
+Get the packed semantics texture descriptor.
+
+---
+
+## Declaration
+
+public bool TryGetPackedSceneSegmentationChannels(out XRTextureDescriptor packedSceneSegmentationDescriptor, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Get the packed semantics texture descriptor.
+
+#### Returns
+
+true if the packed semantics texture descriptor is available and is returned. Otherwise, false.
+
+#### Throws
+
+NotSupportedException -- Thrown if the implementation does not support packed semantics     texture.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| packedSceneSegmentationDescriptor | XRTextureDescriptor | The resulting semantic channel texture descriptor, if available. |
+| samplerMatrix | Matrix4x4 | The matrix that transforms from normalized viewport coordinates to normalized texture coordinates. |
+| cameraParams | Nullable<XRCameraParams> | Describes the viewport the texture is to be displayed on. |
+
+---

@@ -1,0 +1,28 @@
+# PathConfig
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.PathConfig/
+
+PathConfig
+
+---
+
+## Declaration
+
+data class PathConfig
+
+## Summary
+
+Optional path overrides mirroring native ARDK_PathConfig.
+Null or empty values mean: let native auto-detect paths.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| privateApplicationPath | String? | - |
+| publicApplicationPath | String? | - |
+| tmpPath | String? | - |
+
+---

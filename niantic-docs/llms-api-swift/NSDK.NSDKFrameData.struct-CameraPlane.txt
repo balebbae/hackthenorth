@@ -1,0 +1,52 @@
+# CameraPlane
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKFrameData.struct-CameraPlane/
+
+CameraPlane
+
+---
+
+## Declaration
+
+struct CameraPlane
+
+## Summary
+
+A single plane of camera image data.
+Camera images often contain multiple planes of data (Y, U, V for YUV format, etc.).
+This structure describes the memory layout and dimensions of a single image plane.
+
+---
+
+## Constructors
+
+init(dataPtr: UnsafePointer<UInt8>, dataSize: UInt32, pixelStride: UInt32, rowStride: UInt32)
+
+#### Summary
+
+Creates a camera plane with the specified memory layout parameters.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var dataPtr | UnsafePointer<UInt8> | Pointer to the raw pixel data for this plane.The data format depends on the image format and plane index.For example, in YUV format, plane 0 contains luminance data. |
+| var dataSize | UInt32 | Total size of the data in bytes.This represents the complete size of the memory bufferpointed to by `dataPtr`. |
+| var pixelStride | UInt32 | Number of bytes between adjacent pixels in the same row.For packed formats this is typically 1, but some formatsmay have multiple bytes per pixel or padding between pixels. |
+| var rowStride | UInt32 | Number of bytes between the start of adjacent rows.This may be larger than `width * pixelStride` if thereis padding at the end of each row. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static func != | Bool | Returns a Boolean value indicating whether two values are not equal.Inequality is the inverse of equality. For any values `a` and `b`, `a != b`implies that `a == b` is `false`.This is the default implementation of the not-equal-to operator (`!=`)for any type that conforms to `Equatable`. |
+
+---
+
+## Relationships
+
+conforms to:  Swift.Equatable

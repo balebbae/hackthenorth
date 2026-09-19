@@ -1,0 +1,13 @@
+# Or
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags.Or/
+
+Or
+
+---
+
+## Declaration
+
+infix fun Or(other: InputDataFlags): Int
+
+---

@@ -1,0 +1,15 @@
+# NsdkSimulationCameraSubsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationCameraSubsystem/
+
+NsdkSimulationCameraSubsystem
+> extends UnityEngine.XR.ARSubsystems.XRCameraSubsystem
+Based on Unity Simulation's SimulationCameraSubsystem and NsdkPlaybackCameraSubsystem.
+
+---
+
+## Declaration
+
+public sealed class NsdkSimulationCameraSubsystem : XRCameraSubsystem
+
+---

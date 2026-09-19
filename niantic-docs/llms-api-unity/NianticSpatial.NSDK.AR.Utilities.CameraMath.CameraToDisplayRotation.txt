@@ -1,0 +1,19 @@
+# CameraToDisplayRotation
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.CameraMath.CameraToDisplayRotation/
+
+CameraToDisplayRotation
+
+---
+
+## Declaration
+
+public static Quaternion CameraToDisplayRotation(ScreenOrientation displayOrientation)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| displayOrientation | ScreenOrientation | - |
+
+---

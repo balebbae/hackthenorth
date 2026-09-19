@@ -1,0 +1,25 @@
+# Insert
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.SpatialTree.Insert/
+
+Insert
+
+---
+
+## Declaration
+
+public bool Insert(IEnumerable<GridNode> gridNodes)
+
+#### Summary
+
+Inserts the provided elements to the tree.
+    @param gridNodes Grid nodes to insert.
+    @returns Whether all nodes were inserted successfully.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| gridNodes | IEnumerable<GridNode> | - |
+
+---

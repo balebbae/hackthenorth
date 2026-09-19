@@ -1,0 +1,21 @@
+# NsdkSimulationParams
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader.NsdkSimulationParams/
+
+NsdkSimulationParams
+
+---
+
+## Declaration
+
+public class NsdkSimulationParams
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| UseZBufferDepth | bool | Whether to use Z-buffer depth instead of NSDK depth prediction |
+
+---

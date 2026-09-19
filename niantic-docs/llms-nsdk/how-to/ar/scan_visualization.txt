@@ -1,0 +1,2295 @@
+# How to enable scan visualization
+
+Source: https://www.nianticspatial.com/docs/nsdk/how-to/ar/scan_visualization/
+
+# How to enable scan visualization in AR
+
+Scan visualization gives users real-time feedback while they scan. Areas that have been sufficiently captured appear in full color, while incomplete areas remain striped. This makes it easier to understand scan coverage while recording.
+
+This guide is for developers who are building custom scan capture flows in Unity, Swift, or Kotlin and want to add that feedback to their app. It shows how to enable raycast visualization, connect it to the scanning session, and render the striped overlay during capture so users can spot gaps before saving a scan.
+
+**Raycast visualization** is the scan visualization mode that draws this striped overlay from the scanning session's raycast data. It is useful during development because it helps you confirm that scan coverage is complete, spot gaps before saving a scan, and verify that your capture UI is showing the visualization at the right time.
+
+(image: Example of raycast visualization in an AR scene)
+
+**Figure:** Raycast visualization overlays stripes on incomplete areas of a scan.
+
+### Platform: unity
+
+In Unity, scan visualization is enabled by turning on **raycast visualization** in [AR Scanning Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/) and rendering the result with the `Unlit/NsdkScanningStripes` shader. At a high level, a Unity implementation needs to:
+
+- enable raycast visualization on `AR Scanning Manager`
+- provide depth data for scanning
+- render the raycast visualization textures with a material
+- show that overlay only while scan visualization is active
+
+The rest of this Unity walkthrough shows one runnable implementation of that flow using the Recording scene from [nsdk-samples-csharp](https://github.com/nianticspatial/nsdk-samples-csharp). In that sample-based implementation:
+
+- the Recording scene already provides the capture lifecycle and UI
+- `RecordingDemo.StartScanning()` and `RecordingDemo.StopScanning()` continue to control when scanning starts and stops
+- the only new Unity-specific logic added in this guide is the visualization renderer
+
+To enable scan visualization in Unity:
+
+1. [Prepare your Unity project](#unity-prepare-your-project)
+2. [Enable raycast visualization in AR Scanning Manager](#unity-enable-raycast-visualization-in-ar-scanning-manager)
+3. [Add a visualization renderer to your AR screen](#unity-add-a-visualization-renderer-to-your-ar-screen)
+4. [Start and stop the visualization with capture](#unity-start-and-stop-the-visualization-with-capture)
+5. [Update the visualization while AR frames arrive](#unity-update-the-visualization-while-ar-frames-arrive)
+
+---
+
+### Prepare your Unity project
+
+This section shows how to start from the existing Unity Recording sample so you can build a runnable scan-visualization example on top of a working AR scene rather than setting up the full flow from scratch.
+
+1. Clone [nsdk-samples-csharp](https://github.com/nianticspatial/nsdk-samples-csharp):
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-csharp.git
+   ```
+
+2. Open the Unity project: in Unity Hub, **Add project from disk** and select the **`NsdkSamples`** folder inside your clone (same layout as Kotlin/Swift samples).
+
+3. Open `NsdkSamples/Assets/Samples/Scanning/Scenes/Recording.unity`.
+
+4. Build and run the sample on your device.
+
+This walkthrough assumes:
+
+- the Recording sample builds and runs on your device
+- the scene already includes a basic AR setup
+- you are working in the current URP-configured sample project
+- `RecordingDemo` continues to own scan start and stop in the following runnable example
+
+For general setup steps, see [Set up the Niantic SDK for Unity](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-niantic-sdk-for-unity) and [Set up a basic AR scene](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-a-basic-ar-scene).
+
+> **Note:**
+>
+> This runnable example uses a URP-compatible render pass, so you do not need to change the sample project's render pipeline settings.
+
+---
+
+### Enable raycast visualization in AR Scanning Manager
+
+This section shows how to configure the scanning component so it produces the raycast visualization data needed for the striped overlay. In your own Unity app, enable raycast visualization on [AR Scanning Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/) and make sure scanning has access to depth data.
+
+In a Unity app that uses NSDK scanning:
+
+1. Select a GameObject that has `AR Scanning Manager`, or add [AR Scanning Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/) to the GameObject that owns your scan flow. In the following runnable code, see step ⅰ for one implementation.
+2. Enable **Enable Raycast Visualization** so the scanning system generates the raycast visualization textures. In the following runnable code, see step ⅱ for one implementation.
+3. Enable **Record Estimated Depth** if your app needs NSDK-generated depth. In the following runnable code, see step ⅲ for one implementation.
+4. If your device has LiDAR, you can leave **Record Estimated Depth** disabled and instead provide depth through an **AR Occlusion Manager** on your camera setup. In the following runnable code, see step ⅲ for one implementation.
+5. Keep the component's enabled state aligned with your app's scan lifecycle so visualization is only active while scanning is active. In the following runnable code, see step ⅳ for one implementation.
+
+> **Note:**
+>
+> If your device has LiDAR, you can leave **Record Estimated Depth** disabled. Ensure that **Prefer LiDAR if Available** is enabled in Niantic SDK settings under **XR Plug-in Management**, and add an **AR Occlusion Manager** to the camera object used by your XR Origin so LiDAR depth is available to scanning.
+
+#### Expand to reveal a minimal Unity example for scan-visualization setup
+
+This example keeps the Unity sample changes to the minimum required for this step. It gives you a runnable Recording-scene baseline that is configured to produce raycast visualization data before any rendering code is added.
+
+Use `NsdkSamples/Assets/Samples/Scanning/Scenes/Recording.unity` from [nsdk-samples-csharp](https://github.com/nianticspatial/nsdk-samples-csharp) as the runnable baseline for this example.
+
+- ⅰ. In the Recording scene, select the top-level **AR Session** GameObject, which already has [AR Scanning Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/) attached.
+- ⅱ. Enable **Enable Raycast Visualization**.
+- ⅲ. Enable **Record Estimated Depth**, or leave it disabled if your device has LiDAR and you have added an **AR Occlusion Manager** to the camera object used by your XR Origin.
+- ⅳ. Leave `AR Scanning Manager` disabled in the scene so `RecordingDemo.StartScanning()` still controls when scanning begins.
+
+At this stage, the sample is configured to produce raycast visualization data, but nothing is drawing that data on screen yet. The next section adds the material and camera component used to render it.
+
+---
+
+### Add a visualization renderer to your AR screen
+
+This section shows how to add the material and camera-side component that render scan visualization over the live AR view.
+
+Follow this workflow to add the visualization renderer:
+
+1. Create a new Unity `Material` asset for the scan overlay, then select that new asset in the **Inspector** and set its shader to `Unlit > NsdkScanningStripes`. This shader is provided by the NSDK package and composites the striped overlay from the textures produced by [AR Scanning Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/). In the following runnable code, see step ⅱ for one implementation.
+
+2. Add scan-visualization renderer logic to a camera-side component. You can create a new script for scan visualization, or extend an existing camera or overlay script that already owns your AR rendering flow. The component should store the visualization material and [AR Scanning Manager](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager/) references, get `ARCameraManager` from the same `GameObject`, and prepare the camera-side state that later sections use to render the overlay over the live AR view. In the following runnable example, see steps ⅲ and ⅳ for one implementation.
+
+   The following code example shows the camera-side component shape used for this setup:
+
+   ```cs
+   using NianticSpatial.NSDK.AR.Scanning;
+   using UnityEngine;
+   using UnityEngine.XR.ARFoundation;
+
+   public class ScanVisualization : MonoBehaviour
+   {
+       // The material that composites the scan visualization over the camera image.
+       [SerializeField] private Material _raycastVisualizationMaterial;
+       // The scanning manager that provides the raycast visualization textures.
+       [SerializeField] private ARScanningManager _arScanningManager;
+
+       // The camera manager on this same camera object.
+       private ARCameraManager _arCameraManager;
+
+       private void Start()
+       {
+           _arCameraManager = GetComponent<ARCameraManager>();
+
+           if (_arCameraManager == null || _arScanningManager == null || _raycastVisualizationMaterial == null)
+           {
+               Debug.LogError("Assign all required components and serialized fields.");
+               return;
+           }
+       }
+   }
+   ```
+
+   Expand the previous example to include the script file, camera attachment, material creation, and Inspector assignments if you want a runnable Unity version of this setup. In the following runnable example, see step ⅴ for one implementation.
+
+3. Prepare the camera-side component for rendering. Confirm that its required references are assigned, get `ARCameraManager` from the same `GameObject`, and initialize any state needed for the later rendering steps. In the following runnable example, see step ⅳ for one implementation.
+
+4. Add the camera-side component to the camera object that already owns `ARCameraManager`. In the Recording sample, that camera object is `XR Origin > Camera Offset > Main Camera`. In the following runnable example, see step ⅴ for one implementation.
+
+5. In the **Inspector**, assign the material you created to **Raycast Visualization Material**, then assign the `ARScanningManager` reference from the object that owns scanning. In the Recording sample, drag the top-level **AR Session** GameObject into **Ar Scanning Manager**, or use the object picker and choose `AR Session (ARScanningManager)`. In the following runnable example, see steps ⅵ and ⅶ for one implementation.
+
+   Keep the sample's existing scan lifecycle unchanged. At this stage, the material and camera-side component are wired together, but the overlay does not appear until the later sections connect rendering to scan state and AR frame updates.
+
+#### Expand to reveal a minimal Unity example for renderer setup
+
+This example builds on the previous step and adds only the material plus a minimal `ScanVisualization` component. The script validates its references and attaches to `XR Origin > Camera Offset > Main Camera`, but it does not render the overlay yet.
+
+- ⅰ. In the **Project** window, create a new `Material` asset named `ScanningStripesMaterial`, select it, and set its shader to `Unlit > NsdkScanningStripes`.
+- ⅱ. In the **Project** window, create a new C
+
+# script named `ScanVisualization`.
+- ⅲ. Replace the contents of `ScanVisualization.cs` with the following code:
+
+```cs
+using NianticSpatial.NSDK.AR.Scanning;
+using UnityEngine;
+using UnityEngine.XR.ARFoundation;
+
+public class ScanVisualization : MonoBehaviour
+{
+    // The material that composites the scan visualization over the camera image.
+    [SerializeField] private Material _raycastVisualizationMaterial;
+    // The scanning manager that provides the raycast visualization textures.
+    [SerializeField] private ARScanningManager _arScanningManager;
+
+    // The camera manager on this same camera object.
+    private ARCameraManager _arCameraManager;
+    private void Start()
+    {
+        _arCameraManager = GetComponent<ARCameraManager>();
+
+        if (_arCameraManager == null || _arScanningManager == null || _raycastVisualizationMaterial == null)
+        {
+            Debug.LogError("Assign all required components and serialized fields.");
+            return;
+        }
+    }
+}
+```
+
+- ⅳ. Add `ScanVisualization` to `XR Origin > Camera Offset > Main Camera`.
+- ⅴ. In the **Inspector**, assign `ScanningStripesMaterial` to **Raycast Visualization Material**.
+- ⅵ. In the **Inspector**, drag the top-level **AR Session** GameObject into **Ar Scanning Manager**, or use the object picker and choose `AR Session (ARScanningManager)`.
+
+When you test this step:
+
+- Enter Play mode in Unity or run the sample on your device.
+- Confirm that the scene still opens normally and that the existing scan UI is still visible.
+- Confirm that no striped overlay appears yet, because the later rendering steps have not been added.
+- Optionally, verify that `Assign all required components and serialized fields.` does not appear in the Unity Console or device logs.
+
+---
+
+### Start and stop the visualization with capture
+
+This section shows how scan visualization fits into the existing capture flow so the overlay appears when scanning starts and disappears when scanning stops. In the Recording sample, `RecordingDemo` already owns that lifecycle, so the visualization component added in this guide does not define new start or stop handlers.
+
+Keep your existing capture flow responsible for turning scanning on and off. In `nsdk-samples-csharp`, that code lives in `NsdkSamples/Assets/Samples/Scanning/Scripts/RecordingDemo.cs`. The following code example shows the portion of the sample that starts and stops scanning:
+
+```cs
+private void HandleCameraPermissionGranted()
+{
+    _arScanningManager.ScanRecordingFramerate = (int)_framerateSlider.value;
+    _arScanningManager.enabled = true;
+}
+
+public void StartScanning()
+{
+    _sharePlaybackButton.gameObject.SetActive(false);
+    _maxTimePerChunkSlider.interactable = false;
+    _framerateSlider.interactable = false;
+    _saveScanPanel.SetActive(false);
+    CheckCameraPermission();
+}
+
+public async void StopScanning()
+{
+    await _arScanningManager.SaveScan();
+    _arScanningManager.enabled = false;
+
+    _maxTimePerChunkSlider.interactable = true;
+    _framerateSlider.interactable = true;
+    _saveScanPanel.SetActive(true);
+}
+```
+
+In the previous code example:
+
+- `HandleCameraPermissionGranted()` sets the scan framerate, then enables `ARScanningManager`, which is the state the visualization renderer later checks before drawing.
+- `StartScanning()` leaves the sample's existing UI flow in place and does not need any visualization-specific branching.
+- `StopScanning()` saves the scan, disables `ARScanningManager`, and returns control to the sample's save UI.
+- The Unity renderer added in this guide follows that existing lifecycle by rendering only while `ARScanningManager.enabled` and `EnableRaycastVisualization` are both true.
+
+This means the next section only needs to observe scan state and update the overlay while capture is active.
+
+Validate this step with the following workflow:
+
+1. Run the Recording scene on your device or in the Unity Editor with [Playback](https://www.nianticspatial.com/docs/nsdk/features/playback/) enabled.
+2. Tap **Start Scan** to begin scanning.
+3. Confirm that the sample's existing scan UI responds normally and that scanning begins without any new visualization-specific buttons or errors.
+4. Tap **Stop Scan** to end scanning.
+5. Confirm that the sample returns to its existing save or export UI flow.
+6. Optionally, verify in the Unity Console or in device logs that no scan-save error appears while `RecordingDemo.StopScanning()` runs.
+
+---
+
+### Update the visualization while AR frames arrive
+
+This section shows how the visualization updates continuously as camera frames arrive so the overlay reflects the latest scan coverage in real time. It also explains how the `ScanVisualization` component keeps the raycast data aligned with the camera image before compositing it in a URP render pass.
+
+This section builds on the camera-side renderer setup from the previous steps and assumes:
+
+- the project uses the current URP-configured sample project
+- the visualization material uses the `Unlit/NsdkScanningStripes` shader
+
+1. Update the camera-side renderer so it subscribes to `ARCameraManager.frameReceived`, copies camera images into a short queue, and enqueues a URP render pass that composites the latest raycast texture. The following code example shows one implementation. In the following runnable example, see step ⅰ for one implementation:
+
+```cs
+    private void Start()
+    {
+        // Reuse the camera and ARCameraManager already attached to this object.
+        _camera = GetComponent<Camera>();
+        _arCameraManager = GetComponent<ARCameraManager>();
+
+        if (_camera == null || _arCameraManager == null || _arScanningManager == null || _raycastVisualizationMaterial == null)
+        {
+            Debug.LogError("Assign all required components and serialized fields.");
+            return;
+        }
+
+        // Prepare the render-pass state, then listen for new camera frames.
+        _cameraTexturesQueue = new Queue<Texture2D>();
+        _renderPass = new ScanVisualizationRenderPass();
+        _fullScreenMesh = CreateFullScreenMesh();
+        _arCameraManager.frameReceived += OnARCameraFrameReceived;
+        RenderPipelineManager.beginCameraRendering += EnqueueUniversalRenderPass;
+    }
+
+    private void OnARCameraFrameReceived(ARCameraFrameEventArgs args)
+    {
+        // Only queue frames while scan visualization is active.
+        if (!(_arScanningManager.enabled && _arScanningManager.EnableRaycastVisualization))
+        {
+            return;
+        }
+
+        // Copy the latest camera image into a Texture2D, then enqueue it.
+        var newTexture = CopyLatestCameraFrame(args);
+        if (newTexture == null)
+        {
+            return;
+        }
+
+        EnqueueCameraTexture(newTexture);
+    }
+
+    private void EnqueueUniversalRenderPass(ScriptableRenderContext context, Camera currentCamera)
+    {
+        // Enqueue the URP pass only for this camera while visualization is active.
+        if (currentCamera != _camera ||
+            !(_arScanningManager.enabled && _arScanningManager.EnableRaycastVisualization) ||
+            _cameraTexturesQueue.Count <= Delay)
+        {
+            return;
+        }
+
+        UpdateVisualizationMaterial();
+        _renderPass.Material = _raycastVisualizationMaterial;
+        _renderPass.Mesh = _fullScreenMesh;
+        currentCamera.GetUniversalAdditionalCameraData().scriptableRenderer.EnqueuePass(_renderPass);
+    }
+
+    private void OnDestroy()
+    {
+        if (_arCameraManager != null)
+        {
+            _arCameraManager.frameReceived -= OnARCameraFrameReceived;
+        }
+
+        RenderPipelineManager.beginCameraRendering -= EnqueueUniversalRenderPass;
+
+        while (_cameraTexturesQueue != null && _cameraTexturesQueue.Count > 0)
+        {
+            Destroy(_cameraTexturesQueue.Dequeue());
+        }
+    }
+}
+```
+
+In the previous code example:
+
+- `OnARCameraFrameReceived()` captures camera images into a short queue only while scanning is active and raycast visualization is enabled
+- [GetRaycastColorTexture()](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager.GetRaycastColorTexture/) provides the visualization texture used by the shader
+- `EnqueueUniversalRenderPass()` updates the material and schedules the URP pass that draws the striped overlay for the active camera
+- `CopyLatestCameraFrame()`, `EnqueueCameraTexture()`, `UpdateVisualizationMaterial()`, `CreateFullScreenMesh()`, and `ScanVisualizationRenderPass` are helper members that the runnable example defines so the main workflow can stay focused on the rendering flow
+- the two-frame delay helps keep the raycast data aligned with the camera image
+
+2. Validate this step with the following workflow. In the following runnable example, see step ⅱ for one implementation:
+   1. Run the scene on your device or in the Unity Editor with [Playback](https://www.nianticspatial.com/docs/nsdk/features/playback/) enabled.
+   2. Tap **Start Scan** to begin scanning.
+   3. Confirm that diagonal stripes appear over the camera feed.
+   4. Scan more of the scene, then confirm that covered areas transition from striped to full color.
+   5. Tap **Stop Scan**, then confirm that the visualization disappears when scanning ends.
+
+> **Note:**
+>
+> If you also want to save the recorded scan data, call [SaveScan()](https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ARScanningManager.SaveScan/) on `AR Scanning Manager` before disabling it. For more information, see [How to create playback datasets](https://www.nianticspatial.com/docs/nsdk/how-to/playback/create_playback_dataset/).
+
+#### Runnable example: Update Unity scan visualization each frame
+
+This example builds on the previous sections and replaces the placeholder `ScanVisualization.cs` file with a runnable version that renders the striped overlay while the Recording sample is scanning.
+
+Use `NsdkSamples/Assets/Samples/Scanning/Scenes/Recording.unity` as the runnable baseline for this example.
+
+- ⅰ. Replace the contents of `ScanVisualization.cs` with the following code:
+
+```cs
+using System;
+using System.Collections.Generic;
+using NianticSpatial.NSDK.AR.Scanning;
+using NianticSpatial.NSDK.AR.Utilities;
+using Unity.Collections;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+
+public class ScanVisualization : MonoBehaviour
+{
+    // The material that composites the striped visualization overlay.
+    [SerializeField] private Material _raycastVisualizationMaterial;
+    // The scanning manager that provides the raycast visualization texture.
+    [SerializeField] private ARScanningManager _arScanningManager;
+
+    // The camera this component renders for.
+    private Camera _camera;
+    // The AR camera manager already attached to the same camera object.
+    private ARCameraManager _arCameraManager;
+    // The delayed camera frame currently bound to the visualization material.
+    private Texture2D _currentCameraTexture;
+    // A short queue used to keep the camera image aligned with the raycast texture.
+    private Queue<Texture2D> _cameraTexturesQueue;
+    // A full-screen mesh used by the URP render pass.
+    private Mesh _fullScreenMesh;
+    // The URP render pass that draws the visualization overlay.
+    private ScanVisualizationRenderPass _renderPass;
+    private const int Delay = 2;
+
+    private void Start()
+    {
+        // Reuse the camera and ARCameraManager already attached to this object.
+        _camera = GetComponent<Camera>();
+        _arCameraManager = GetComponent<ARCameraManager>();
+
+        if (_camera == null || _arCameraManager == null || _arScanningManager == null || _raycastVisualizationMaterial == null)
+        {
+            Debug.LogError("Assign all required components and serialized fields.");
+            return;
+        }
+
+        // Prepare the render-pass state, then listen for new camera frames.
+        _cameraTexturesQueue = new Queue<Texture2D>();
+        _fullScreenMesh = CreateFullScreenMesh();
+        _renderPass = new ScanVisualizationRenderPass();
+        _arCameraManager.frameReceived += OnARCameraFrameReceived;
+        RenderPipelineManager.beginCameraRendering += EnqueueUniversalRenderPass;
+        Debug.Log("ScanVisualization: renderer setup validated.");
+    }
+
+    private void OnARCameraFrameReceived(ARCameraFrameEventArgs args)
+    {
+        // Only queue frames while scan visualization is active.
+        if (!(_arScanningManager.enabled && _arScanningManager.EnableRaycastVisualization))
+        {
+            return;
+        }
+
+#if UNITY_EDITOR
+        // In the Editor, copy the simulated camera texture directly.
+        if (args.textures.Count == 0)
+        {
+            return;
+        }
+
+        var sourceTexture = args.textures[0];
+        var newTexture = new Texture2D(
+            sourceTexture.width,
+            sourceTexture.height,
+            sourceTexture.format,
+            sourceTexture.mipmapCount > 1);
+        Graphics.CopyTexture(sourceTexture, 0, 0, newTexture, 0, 0);
+#else
+        // On device, convert the latest CPU camera image into an RGBA texture.
+        if (!_arCameraManager.TryAcquireLatestCpuImage(out XRCpuImage image))
+        {
+            return;
+        }
+
+        var newTexture = new Texture2D(image.width, image.height, TextureFormat.RGBA32, false);
+        var conversionParams = new XRCpuImage.ConversionParams(
+            image,
+            TextureFormat.RGBA32,
+            XRCpuImage.Transformation.None);
+
+        var rawTextureData = newTexture.GetRawTextureData<byte>();
+        try
+        {
+            image.Convert(conversionParams, new NativeSlice<byte>(rawTextureData));
+            newTexture.Apply();
+        }
+        finally
+        {
+            image.Dispose();
+        }
+#endif
+
+        while (_cameraTexturesQueue.Count > Delay + 1)
+        {
+            Destroy(_cameraTexturesQueue.Dequeue());
+        }
+
+        _cameraTexturesQueue.Enqueue(newTexture);
+    }
+
+    private void EnqueueUniversalRenderPass(ScriptableRenderContext context, Camera currentCamera)
+    {
+        // Enqueue the URP pass only for this camera while visualization is active.
+        if (currentCamera != _camera ||
+            !(_arScanningManager.enabled && _arScanningManager.EnableRaycastVisualization) ||
+            _cameraTexturesQueue.Count <= Delay)
+        {
+            return;
+        }
+
+        UpdateVisualizationMaterial();
+        _renderPass.Material = _raycastVisualizationMaterial;
+        _renderPass.Mesh = _fullScreenMesh;
+        currentCamera.GetUniversalAdditionalCameraData().scriptableRenderer.EnqueuePass(_renderPass);
+    }
+
+    private void UpdateVisualizationMaterial()
+    {
+        // Advance to the delayed camera frame that should match the latest raycast texture.
+        if (_currentCameraTexture != null)
+        {
+            Destroy(_currentCameraTexture);
+        }
+
+        _currentCameraTexture = _cameraTexturesQueue.Dequeue();
+        _raycastVisualizationMaterial.SetTexture("_MainTex", _currentCameraTexture);
+        _raycastVisualizationMaterial.SetTexture("_ColorTex", _arScanningManager.GetRaycastColorTexture());
+        _raycastVisualizationMaterial.SetInt("_ScreenOrientation", (int)XRDisplayContext.GetScreenOrientation());
+        _raycastVisualizationMaterial.SetTexture("_ArCameraTex", _currentCameraTexture);
+    }
+
+    private void EnqueueCameraTexture(Texture2D newTexture)
+    {
+        // Keep the queue short so old camera textures do not accumulate.
+        while (_cameraTexturesQueue.Count > Delay + 1)
+        {
+            Destroy(_cameraTexturesQueue.Dequeue());
+        }
+
+        _cameraTexturesQueue.Enqueue(newTexture);
+    }
+
+    private static Mesh CreateFullScreenMesh()
+    {
+        // Create a full-screen quad for the URP render pass to draw.
+        var mesh = new Mesh
+        {
+            vertices = new[]
+            {
+                new Vector3(0f, 0f, -1f),
+                new Vector3(0f, 1f, -1f),
+                new Vector3(1f, 1f, -1f),
+                new Vector3(1f, 0f, -1f),
+            },
+            uv = new[]
+            {
+                new Vector2(0f, 0f),
+                new Vector2(0f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(1f, 0f),
+            },
+            triangles = new[] {0, 1, 2, 0, 2, 3}
+        };
+
+        mesh.UploadMeshData(false);
+        return mesh;
+    }
+
+    private void OnDestroy()
+    {
+        if (_arCameraManager != null)
+        {
+            _arCameraManager.frameReceived -= OnARCameraFrameReceived;
+        }
+
+        RenderPipelineManager.beginCameraRendering -= EnqueueUniversalRenderPass;
+
+        if (_currentCameraTexture != null)
+        {
+            Destroy(_currentCameraTexture);
+        }
+
+        if (_fullScreenMesh != null)
+        {
+            Destroy(_fullScreenMesh);
+        }
+
+        while (_cameraTexturesQueue != null && _cameraTexturesQueue.Count > 0)
+        {
+            Destroy(_cameraTexturesQueue.Dequeue());
+        }
+    }
+
+    private sealed class ScanVisualizationRenderPass : ScriptableRenderPass
+    {
+        public Material Material { get; set; }
+        public Mesh Mesh { get; set; }
+
+        private static readonly Matrix4x4 s_projection = Matrix4x4.Ortho(0f, 1f, 0f, 1f, 0f, 1f);
+
+        private class PassData
+        {
+            public UniversalCameraData CameraData;
+            public UniversalResourceData ResourceData;
+            public Material Material;
+            public Mesh Mesh;
+        }
+
+        public ScanVisualizationRenderPass()
+        {
+            // Draw after the camera background and scene geometry are already visible.
+            profilingSampler = new ProfilingSampler("Scan Visualization");
+            renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+        }
+
+        public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+        {
+            // Unity 6 uses Render Graph by default, so record the full-screen overlay here.
+            using var builder =
+                renderGraph.AddRasterRenderPass<PassData>("Scan Visualization", out var passData, profilingSampler);
+
+            passData.CameraData = frameData.Get<UniversalCameraData>();
+            passData.ResourceData = frameData.Get<UniversalResourceData>();
+            passData.Material = Material;
+            passData.Mesh = Mesh;
+
+            builder.SetRenderAttachment(passData.ResourceData.activeColorTexture, 0);
+            builder.SetRenderFunc((PassData data, RasterGraphContext renderContext) =>
+            {
+                var cmd = renderContext.cmd;
+                cmd.SetViewProjectionMatrices(Matrix4x4.identity, s_projection);
+                cmd.DrawMesh(data.Mesh, Matrix4x4.identity, data.Material);
+                cmd.SetViewProjectionMatrices(
+                    data.CameraData.camera.worldToCameraMatrix,
+                    data.CameraData.camera.projectionMatrix);
+            });
+        }
+
+        [Obsolete("This rendering path is for compatibility mode only (when Render Graph is disabled). Use Render Graph API instead.", false)]
+        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        {
+            // Keep a compatibility path for projects where Render Graph is disabled.
+            var cmd = CommandBufferPool.Get("Scan Visualization");
+            using (new ProfilingScope(cmd, profilingSampler))
+            {
+                cmd.SetViewProjectionMatrices(Matrix4x4.identity, s_projection);
+                cmd.DrawMesh(Mesh, Matrix4x4.identity, Material);
+                cmd.SetViewProjectionMatrices(
+                    renderingData.cameraData.camera.worldToCameraMatrix,
+                    renderingData.cameraData.camera.projectionMatrix);
+            }
+
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
+        }
+    }
+}
+```
+
+- ⅱ. Validate the runnable example:
+
+  1. Run the Recording scene on your device or in the Unity Editor with [Playback](https://www.nianticspatial.com/docs/nsdk/features/playback/) enabled.
+  2. Confirm that `ScanVisualization: renderer setup validated.` appears in the Unity Console or in `adb logcat -s Unity | grep "ScanVisualization"`.
+  3. Tap **Start Scan** to begin scanning.
+  4. Wait a few seconds for the visualization to begin updating.
+  5. Confirm that diagonal stripes appear over the camera feed.
+  6. Move the device to scan more of the scene, then confirm that covered areas transition from striped to full color.
+  7. Tap **Stop Scan**, then confirm that the visualization disappears when scanning ends.
+
+---
+
+## Troubleshooting
+
+### Visualization doesn't appear
+
+- Confirm that scanning is active in the Recording sample.
+- Ensure that **Enable Raycast Visualization** is enabled on the `AR Scanning Manager` component on **AR Session**.
+- Verify that the `ScanVisualization` script is attached to the camera object used by your XR Origin and that all serialized fields are assigned.
+- Check that `ScanningStripesMaterial` uses the `Unlit > NsdkScanningStripes` shader.
+- Confirm that `ScanVisualization: renderer setup validated.` appears before you tap **Start**.
+- If your project uses a different Unity or URP version than the sample, verify that the render-pass APIs used in `ScanVisualization.cs` are available and compatible.
+- Verify that depth is available. If LiDAR is unavailable, enable **Record Estimated Depth**. If LiDAR is available, add **AR Occlusion Manager** to the camera object used by your XR Origin.
+
+### Overlay doesn't update
+
+- If the sample's **Start Scan Button** responds but the overlay stays blank, verify that `RecordingDemo.StartScanning()` is enabling the `AR Scanning Manager` referenced from **AR Session** and that **Enable Raycast Visualization** is still turned on in that component.
+- Check that `OnARCameraFrameReceived()` is receiving frames while scanning is active and that `_cameraTexturesQueue` grows beyond the two-frame delay before `EnqueueUniversalRenderPass()` tries to schedule the URP pass.
+- If the overlay appears misaligned, confirm that `UpdateVisualizationMaterial()` is still assigning the queued camera texture to both `_MainTex` and `_ArCameraTex` before the render pass is enqueued.
+- If the overlay flashes briefly and disappears, make sure `RecordingDemo.StopScanning()` is not being called from another UI path and that the queue is not being emptied while capture is still active.
+
+### Performance issues
+
+- Scan visualization processes each recorded camera frame, so lower-end devices may show reduced performance while scanning.
+- Lower the recording framerate on `AR Scanning Manager` if needed.
+- Avoid running other expensive AR features such as meshing or device mapping at the same time unless necessary.
+- Using a shallower depth range reduces compute cost.
+
+### Platform: swift
+
+In Swift, scan visualization is enabled by configuring `NsdkScanningSession` with **raycast visualization** and then compositing the returned `raycastBuffer` textures into an overlay view. The current sample uses a **Metal-backed** `TextureView` to display the visualization while capture is active.
+
+To enable scan visualization in Swift:
+
+1. [Prepare your Swift project](#swift-prepare-your-project)
+2. [Enable raycast visualization in the scanning configuration](#swift-enable-raycast-visualization-in-the-scanning-configuration)
+3. [Add a visualization view to your AR screen](#swift-add-a-visualization-view-to-your-ar-screen)
+4. [Start and stop the visualization with capture](#swift-start-and-stop-the-visualization-with-capture)
+5. [Update the visualization while AR frames arrive](#swift-update-the-visualization-while-ar-frames-arrive)
+
+---
+
+### Prepare your Swift project
+
+This section shows how to start from the existing Swift Capture sample so you can add scan visualization to a working AR scene instead of building the setup from scratch. It identifies the sample app and screen used throughout the rest of the guide. Use the following steps to prepare your project:
+
+1. Clone [nsdk-samples-swift](https://github.com/nianticspatial/nsdk-samples-swift):
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-swift.git
+   ```
+
+2. Open `NsdkSamples.xcworkspace` in Xcode.
+
+3. Run the `NsdkSamples` app on an iOS device.
+
+4. In the sample app, open the **Capture** sample and verify that it opens successfully.
+
+This walkthrough assumes:
+
+- the sample app builds and runs on your device
+- the Capture screen already has an active `nsdkSession`
+- the AR view controller already receives `ARSession` frame updates
+
+For general setup steps, see [Set up the NSDK in Swift](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-swift).
+
+---
+
+### Enable raycast visualization in the scanning configuration
+
+This section shows how to configure the scanning session so it produces the raycast visualization data needed for the striped overlay. It also explains which configuration flags turn raycast visualization on and how that setup fits into the sample app's `CaptureManager`, which also includes capture, save, and export logic.
+
+Create or update your capture manager to enable raycast visualization in the scanning session. In `nsdk-samples-swift`, that code lives in `NsdkSamples/NsdkSamples/NSDK/CaptureManager.swift`. The following code example shows the portion of the sample app's `CaptureManager` that configures scan visualization:
+
+```swift
+import SwiftyNsdk
+import Metal
+
+class CaptureManager : NsdkFeatureManager<NsdkScanningSession> {
+    private let enableRaycastVisualization: Bool
+    private let enableVoxelVisualization: Bool
+
+    init(
+        nsdk: NsdkSession,
+        enableRaycastVisualization: Bool,
+        enableVoxelVisualization: Bool
+    ) {
+        self.enableRaycastVisualization = enableRaycastVisualization
+        self.enableVoxelVisualization = enableVoxelVisualization
+        super.init(session: nsdk.createScanningSession())
+    }
+
+    override func configuration() -> NsdkScanningSession.Configuration {
+        print("ScanVisualizationCaptureManager configuration called")
+        var config = NsdkScanningSession.Configuration()
+        config.enableRaycastVisualization = enableRaycastVisualization
+        config.enableVoxelVisualization = enableVoxelVisualization
+        config.generateDepthsIfLidarUnavailable = true
+        return config
+    }
+}
+```
+
+In the previous code example:
+
+- `CaptureManager` subclasses `NsdkFeatureManager<NsdkScanningSession>`, so it owns and configures the scanning session used by the sample.
+- `enableRaycastVisualization` and `enableVoxelVisualization` are stored as properties so the manager can decide which visualization outputs to request.
+- The initializer receives those flags and creates the scanning session from `NsdkSession`.
+- `configuration()` creates an `NsdkScanningSession.Configuration` and turns on `enableRaycastVisualization` so the session produces the striped raycast overlay data.
+- `enableVoxelVisualization = false` keeps voxel visualization disabled, since this sample only displays the raycast overlay.
+- `generateDepthsIfLidarUnavailable = true` ensures the session can still generate visualization data on devices without LiDAR.
+
+This configuration enables the scanning session to produce raycast visualization data. Later sections show how the app reads that data and renders it on screen.
+
+#### Expand to reveal a minimal Swift example for raycast visualization setup
+
+This example reduces the Capture sample to the code required for this step. It lets you focus on how `CaptureManager` enables raycast visualization and produces the scan output needed for the overlay.
+
+- ⅰ. Use the following code in a file called `ScanVisualizationCaptureManager.swift` as a replacement for `CaptureManager.swift`:
+
+```swift
+import Foundation
+import SwiftyNsdk
+import Metal
+
+class ScanVisualizationCaptureManager: NsdkFeatureManager<NsdkScanningSession> {
+    private let enableRaycastVisualization: Bool
+    private let enableVoxelVisualization: Bool
+    private let device: MTLDevice?
+
+    private(set) var rgbaTexture: MTLTexture?
+    private(set) var normalsTexture: MTLTexture?
+    private(set) var positionAndConfidenceTexture: MTLTexture?
+
+    private var cachedRgbaWidth = 0
+    private var cachedRgbaHeight = 0
+    private var cachedNormalsWidth = 0
+    private var cachedNormalsHeight = 0
+    private var cachedPositionWidth = 0
+    private var cachedPositionHeight = 0
+
+    init(
+        nsdk: NsdkSession,
+        enableRaycastVisualization: Bool,
+        enableVoxelVisualization: Bool
+    ) {
+        self.enableRaycastVisualization = enableRaycastVisualization
+        self.enableVoxelVisualization = enableVoxelVisualization
+        self.device = MTLCreateSystemDefaultDevice()
+        super.init(session: nsdk.createScanningSession())
+    }
+
+    override func configuration() -> NsdkScanningSession.Configuration {
+        var config = NsdkScanningSession.Configuration()
+        config.enableRaycastVisualization = enableRaycastVisualization
+        config.enableVoxelVisualization = enableVoxelVisualization
+        config.generateDepthsIfLidarUnavailable = true
+        return config
+    }
+
+    func updateRaycastTextures() -> Bool {
+        guard let device = device else { return false }
+        guard let raycastBuffer = session.raycastBuffer() else { return false }
+
+        rgbaTexture = createOrUpdateTexture(
+            from: raycastBuffer.rgba,
+            existing: rgbaTexture,
+            cachedWidth: &cachedRgbaWidth,
+            cachedHeight: &cachedRgbaHeight,
+            pixelFormat: .rgba8Unorm,
+            device: device
+        )
+
+        normalsTexture = createOrUpdateTexture(
+            from: raycastBuffer.normals,
+            existing: normalsTexture,
+            cachedWidth: &cachedNormalsWidth,
+            cachedHeight: &cachedNormalsHeight,
+            pixelFormat: .rgba8Unorm,
+            device: device
+        )
+
+        positionAndConfidenceTexture = createOrUpdateTexture(
+            from: raycastBuffer.positionAndConfidence,
+            existing: positionAndConfidenceTexture,
+            cachedWidth: &cachedPositionWidth,
+            cachedHeight: &cachedPositionHeight,
+            pixelFormat: .rgba16Float,
+            device: device
+        )
+
+        return rgbaTexture != nil &&
+            normalsTexture != nil &&
+            positionAndConfidenceTexture != nil
+    }
+
+    private func createOrUpdateTexture(
+        from image: RawImage,
+        existing: MTLTexture?,
+        cachedWidth: inout Int,
+        cachedHeight: inout Int,
+        pixelFormat: MTLPixelFormat,
+        device: MTLDevice
+    ) -> MTLTexture? {
+        let width = Int(image.width)
+        let height = Int(image.height)
+
+        var texture = existing
+        if texture == nil || cachedWidth != width || cachedHeight != height {
+            let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: pixelFormat,
+                width: width,
+                height: height,
+                mipmapped: false
+            )
+            descriptor.usage = [.shaderRead]
+            descriptor.storageMode = .shared
+
+            guard let newTexture = device.makeTexture(descriptor: descriptor) else {
+                return nil
+            }
+
+            texture = newTexture
+            cachedWidth = width
+            cachedHeight = height
+        }
+
+        guard let validTexture = texture else { return nil }
+
+        let bytesPerRow: Int
+        switch pixelFormat {
+        case .rgba8Unorm:
+            bytesPerRow = width * 4
+        case .rgba16Float:
+            bytesPerRow = width * 8
+        default:
+            return nil
+        }
+
+        validTexture.replace(
+            region: MTLRegionMake2D(0, 0, width, height),
+            mipmapLevel: 0,
+            withBytes: image.data,
+            bytesPerRow: bytesPerRow
+        )
+
+        return validTexture
+    }
+}
+```
+
+- ⅱ. Use the following code in a file called `ScanVisualizationCaptureViewController.swift` as a replacement for `CaptureViewController.swift`:
+
+```swift
+import UIKit
+import ARKit
+import SwiftyNsdk
+
+class ScanVisualizationCaptureViewController: BaseARViewController {
+    private var nsdkCapture: ScanVisualizationCaptureManager?
+    private var isCapturing = false
+    private var captureButton: UIButton?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        print("ScanVisualizationCaptureViewController started")
+    }
+
+    override func setupUI() {
+        super.setupUI()
+
+        captureButton = addButton(
+            buttonTitle: "Start Capture",
+            onClickAction: #selector(handleCaptureButtonTap)
+        )
+    }
+
+    @objc private func handleCaptureButtonTap() {
+        print("ScanVisualizationCaptureViewController button tapped")
+        guard let session = nsdkManager?.session else { return }
+
+        if nsdkCapture == nil {
+            nsdkCapture = ScanVisualizationCaptureManager(
+                nsdk: session,
+                enableRaycastVisualization: true,
+                enableVoxelVisualization: false
+            )
+        }
+
+        if isCapturing {
+            nsdkCapture?.stop()
+            isCapturing = false
+            captureButton?.setTitle("Start Capture", for: .normal)
+        } else {
+            nsdkCapture?.start()
+            isCapturing = true
+            captureButton?.setTitle("Stop Capture", for: .normal)
+        }
+    }
+}
+```
+
+In the previous code example:
+
+- `nsdkCapture` stores the scan-visualization manager so the controller can reuse the same session across button taps.
+
+- `setupUI()` adds a button that toggles capture, using the sample app's existing `BaseARViewController` helpers.
+
+- `handleCaptureButtonTap()` creates `ScanVisualizationCaptureManager` on first use, then starts and stops the scanning session without any save or export behavior.
+
+- ⅲ. To run this minimal example from the sample app menu, update the `Capture` entry in `MainViewController.swift` so it points to `ScanVisualizationCaptureViewController.self`:
+
+```swift
+ViewControllerItem(title: "Capture", viewControllerType: ScanVisualizationCaptureViewController.self),
+```
+
+At this stage, the session is producing raycast visualization data, but the app is not displaying it yet. The next section adds the visualization view needed to render that data on screen.
+
+When you test this step, the `print(...)` statements help confirm that the sample app is launching `ScanVisualizationCaptureViewController` and configuring `ScanVisualizationCaptureManager`. After you verify the flow, you can remove those debug lines.
+
+---
+
+### Add a visualization view to your AR screen
+
+This section shows how to add an overlay view that can display scan visualization over the live AR content. It also explains how the sample app uses a `TextureView` to render the composited visualization and position it so it appears only while capture is active.
+
+Create a `TextureView` and add it as an overlay over the AR view. The following code example shows the portion of the sample app's `CaptureViewController` that creates and configures the visualization view:
+
+```swift
+private var visualizationView: TextureView?
+
+override func setupUI() {
+    super.setupUI()
+
+    visualizationView = TextureView(
+        frame: view.bounds,
+        vertexShader: "scanningVertexShader",
+        fragmentShader: "scanningFragmentShader"
+    )
+    visualizationView!.isOpaque = true
+    visualizationView!.translatesAutoresizingMaskIntoConstraints = false
+    visualizationView!.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+    visualizationView!.isHidden = true
+    arView.addSubview(visualizationView!)
+
+    NSLayoutConstraint.activate([
+        visualizationView!.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+        visualizationView!.topAnchor.constraint(equalTo: view.topAnchor),
+        visualizationView!.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        visualizationView!.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+    ])
+}
+```
+
+In the previous code example:
+
+- `visualizationView` is stored as a property so the controller can show it when capture starts, hide it when capture stops, and push new textures into it while frames update.
+- `TextureView` is added as a subview of `arView`, so the visualization is drawn directly over the live AR content.
+- `vertexShader: "scanningVertexShader"` and `fragmentShader: "scanningFragmentShader"` use the sample app's existing Metal shader setup instead of introducing a second rendering path.
+- `clearColor` uses a transparent alpha value so the visualization can appear as an overlay instead of replacing the camera view.
+- `isHidden = true` keeps the view off-screen until the capture flow explicitly enables it.
+- The constraints pin the visualization view to the edges of the screen so it fills the same area as the AR view.
+
+#### Expand to reveal a minimal Swift example for visualization view setup
+
+This example builds on the previous step and keeps only the code needed to add the overlay view. It lets you focus on how `CaptureViewController` creates, places, and prepares `TextureView` to display scan visualization.
+
+- ⅰ. Keep `ScanVisualizationCaptureManager.swift` from the previous section.
+- ⅱ. Use the following code in `ScanVisualizationCaptureViewController.swift` as a replacement for the earlier minimal controller to create a minimal runnable code example through visualization view setup:
+
+```swift
+import UIKit
+import ARKit
+import SwiftyNsdk
+import Metal
+import MetalKit
+
+class ScanVisualizationCaptureViewController: BaseARViewController {
+    private var nsdkCapture: ScanVisualizationCaptureManager?
+    private var isCapturing = false
+    private var captureButton: UIButton?
+    private var visualizationView: TextureView?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        print("ScanVisualizationCaptureViewController started")
+    }
+
+    override func setupUI() {
+        super.setupUI()
+
+        captureButton = addButton(
+            buttonTitle: "Start Capture",
+            onClickAction: #selector(handleCaptureButtonTap)
+        )
+
+        visualizationView = TextureView(
+            frame: view.bounds,
+            vertexShader: "scanningVertexShader",
+            fragmentShader: "scanningFragmentShader"
+        )
+        visualizationView!.isOpaque = true
+        visualizationView!.translatesAutoresizingMaskIntoConstraints = false
+        visualizationView!.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        visualizationView!.isHidden = true
+        arView.addSubview(visualizationView!)
+        print("Visualization view configured")
+
+        NSLayoutConstraint.activate([
+            visualizationView!.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            visualizationView!.topAnchor.constraint(equalTo: view.topAnchor),
+            visualizationView!.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            visualizationView!.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    @objc private func handleCaptureButtonTap() {
+        guard let session = nsdkManager?.session else { return }
+
+        if nsdkCapture == nil {
+            nsdkCapture = ScanVisualizationCaptureManager(
+                nsdk: session,
+                enableRaycastVisualization: true,
+                enableVoxelVisualization: false
+            )
+        }
+
+        if isCapturing {
+            nsdkCapture?.stop()
+            isCapturing = false
+            captureButton?.setTitle("Start Capture", for: .normal)
+            visualizationView?.isHidden = true
+        } else {
+            nsdkCapture?.start()
+            isCapturing = true
+            captureButton?.setTitle("Stop Capture", for: .normal)
+            visualizationView?.isHidden = false
+        }
+    }
+}
+```
+
+In the previous code example:
+
+- `viewDidLoad()` keeps the earlier debug print so you can confirm the sample app is still launching `ScanVisualizationCaptureViewController`.
+- `visualizationView` is now part of the minimal controller, so the app has a dedicated view ready to display the composited overlay in later steps.
+- `print("Visualization view configured")` gives you a lightweight validation point that the new view was created and added to the AR screen.
+- `print("ScanVisualizationCaptureViewController button tapped")` confirms that the capture button is still wired to this controller while you test the updated setup.
+- `handleCaptureButtonTap()` now keeps the earlier start and stop behavior, while also showing and hiding the visualization view as capture starts and stops.
+
+At this stage, the app has the controller, manager, and visualization view in place, and the capture button now shows and hides that view while the scanning session starts and stops. The next section adds the frame-driven update path that renders scan output into the view.
+
+---
+
+### Start and stop the visualization with capture
+
+This section shows how to connect scan visualization to the existing capture flow so the overlay appears when scanning starts and disappears when scanning stops. It also explains how the sample app keeps visualization state aligned with the same UI controls and lifecycle used for capture.
+
+Update your capture button logic so it starts and stops both scanning and visualization. The following code example shows the portion of the sample app's `CaptureViewController` that controls visualization visibility during capture:
+
+```swift
+@objc private func handleCaptureButtonTap() {
+    guard let session = nsdkManager?.session else { return }
+
+    if nsdkCapture == nil {
+        nsdkCapture = ScanVisualizationCaptureManager(
+            nsdk: session,
+            enableRaycastVisualization: true,
+            enableVoxelVisualization: false
+        )
+    }
+
+    if isCapturing {
+        isCapturing = false
+        visualizationView?.isHidden = true
+        visualizationView?.reset()
+        nsdkCapture?.stop()
+    } else {
+        nsdkCapture?.start()
+        isCapturing = true
+        visualizationView?.isHidden = false
+    }
+}
+```
+
+In the previous code example:
+
+- `handleCaptureButtonTap()` keeps the same manager-creation logic from earlier sections, so the controller still uses `ScanVisualizationCaptureManager`.
+- `visualizationView?.isHidden = false` shows the overlay view when capture starts, and `visualizationView?.isHidden = true` hides it again when capture stops.
+- `visualizationView?.reset()` clears any previously assigned texture so the view starts cleanly the next time capture begins.
+- This step removes the sample app's save and export behavior so the button only controls scanning and visualization visibility.
+
+#### Expand to reveal a minimal Swift example for starting and stopping visualization
+
+This example builds on the previous steps and keeps only the code needed to control visualization during capture. It lets you focus on how `CaptureViewController` shows and hides the overlay as scanning starts and stops.
+
+- ⅰ. Keep `ScanVisualizationCaptureManager.swift` from the previous sections.
+- ⅱ. Use the following code in `ScanVisualizationCaptureViewController.swift` as a replacement for the earlier minimal controller to create a minimal runnable code example through start and stop:
+
+```swift
+import UIKit
+import ARKit
+import SwiftyNsdk
+import Metal
+import MetalKit
+
+class ScanVisualizationCaptureViewController: BaseARViewController {
+    private var nsdkCapture: ScanVisualizationCaptureManager?
+    private var isCapturing = false
+    private var captureButton: UIButton?
+    private var visualizationView: TextureView?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        print("ScanVisualizationCaptureViewController started")
+    }
+
+    override func setupUI() {
+        super.setupUI()
+
+        captureButton = addButton(
+            buttonTitle: "Start Capture",
+            onClickAction: #selector(handleCaptureButtonTap)
+        )
+
+        visualizationView = TextureView(
+            frame: view.bounds,
+            vertexShader: "scanningVertexShader",
+            fragmentShader: "scanningFragmentShader"
+        )
+        visualizationView!.isOpaque = true
+        visualizationView!.translatesAutoresizingMaskIntoConstraints = false
+        visualizationView!.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        visualizationView!.isHidden = true
+        arView.addSubview(visualizationView!)
+        print("Visualization view configured")
+
+        NSLayoutConstraint.activate([
+            visualizationView!.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            visualizationView!.topAnchor.constraint(equalTo: view.topAnchor),
+            visualizationView!.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            visualizationView!.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    @objc private func handleCaptureButtonTap() {
+        print("ScanVisualizationCaptureViewController button tapped")
+        guard let session = nsdkManager?.session else { return }
+
+        if nsdkCapture == nil {
+            nsdkCapture = ScanVisualizationCaptureManager(
+                nsdk: session,
+                enableRaycastVisualization: true,
+                enableVoxelVisualization: false
+            )
+        }
+
+        if isCapturing {
+            print("Stopping scan visualization")
+            nsdkCapture?.stop()
+            isCapturing = false
+            captureButton?.setTitle("Start Capture", for: .normal)
+            visualizationView?.isHidden = true
+            visualizationView?.reset()
+        } else {
+            print("Starting scan visualization")
+            nsdkCapture?.start()
+            isCapturing = true
+            captureButton?.setTitle("Stop Capture", for: .normal)
+            visualizationView?.isHidden = false
+        }
+    }
+}
+```
+
+In the previous code example:
+
+- `print("Starting scan visualization")` and `print("Stopping scan visualization")` confirm that the button now drives the start and stop path for capture.
+- The button title changes between `Start Capture` and `Stop Capture`, which gives you a visible UI signal that the controller state is updating.
+- The visualization view is now shown and hidden in sync with the scanning session, even though no textures are rendered into it yet.
+
+At this stage, the app can start and stop scanning and show and hide the visualization view, but the view is still blank. The next section adds the frame update path that renders the raycast visualization into the view.
+
+---
+
+### Update the visualization while AR frames arrive
+
+This section shows how to update the visualization continuously as new AR frames arrive so the overlay reflects the latest scan coverage in real time. It also explains how the sample app reads raycast output from the scanning session and sends the resulting texture to the visualization view.
+
+Use the AR session frame callback to refresh the visualization while capture is active. The following code example shows the portion of the sample app's `ScanVisualizationCaptureViewController` that updates the overlay using data from the scanning session:
+
+```swift
+override func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    super.session(session, didUpdate: frame)
+
+    if isCapturing {
+        updateVisualization()
+    }
+}
+
+private func updateVisualization() {
+    guard let capture = nsdkCapture,
+          let textureView = visualizationView else {
+        return
+    }
+
+    if capture.updateRaycastTextures() {
+        if let rgbaTexture = capture.rgbaTexture {
+            compositeVisualization(from: rgbaTexture)
+
+            if let composited = compositedTexture {
+                textureView.setTexture(copyFrom: composited)
+            }
+        }
+    }
+}
+```
+
+In the previous code example:
+
+- `session(_:didUpdate:)` is the point where ARKit frame updates drive the visualization refresh while capture is active.
+- `updateVisualization()` reads the latest scan output from `ScanVisualizationCaptureManager`, composites it, and sends the finished texture to `TextureView`.
+
+The following code example shows the portion of the sample app's `ScanVisualizationCaptureManager` that calls `session.raycastBuffer()` and converts the returned buffers into Metal textures:
+
+```swift
+func updateRaycastTextures() -> Bool {
+    print("ScanVisualizationCaptureManager updating raycast textures")
+    guard let device = device else { return false }
+    guard let raycastBuffer = session.raycastBuffer() else { return false }
+
+    TextureUtils.createOrUpdateTexture(from: raycastBuffer.rgba, texture: &rgbaTexture, device: device)
+    TextureUtils.createOrUpdateTexture(from: raycastBuffer.normals, texture: &normalsTexture, device: device)
+    TextureUtils.createOrUpdateTexture(from: raycastBuffer.positionAndConfidence, texture: &positionAndConfidenceTexture, device: device)
+
+    return rgbaTexture != nil && normalsTexture != nil && positionAndConfidenceTexture != nil
+}
+```
+
+In the previous code example:
+
+- `print("ScanVisualizationCaptureManager updating raycast textures")` gives you a direct log signal that the manager is receiving raycast data while the device moves through the scene.
+
+#### Expand to reveal a minimal Swift example for frame-driven visualization updates
+
+This example builds on the previous steps and keeps only the code needed to refresh the overlay during capture. It lets you focus on how AR frame updates drive texture updates and how the composited scan visualization is rendered on screen.
+
+- ⅰ. Keep `ScanVisualizationCaptureManager.swift` from the previous sections.
+- ⅱ. Use the following code in `ScanVisualizationCaptureViewController.swift` as a replacement for the earlier minimal controller to create a minimal runnable code example through frame updates:
+
+```swift
+import UIKit
+import ARKit
+import SwiftyNsdk
+import Metal
+import MetalKit
+
+class ScanVisualizationCaptureViewController: BaseARViewController {
+    private var nsdkCapture: ScanVisualizationCaptureManager?
+    private var isCapturing = false
+    private var captureButton: UIButton?
+    private var visualizationView: TextureView?
+
+    private var device: MTLDevice?
+    private var commandQueue: MTLCommandQueue?
+    private var compositeKernel: MTLComputePipelineState?
+    private var compositedTexture: MTLTexture?
+    private var cachedCompositeWidth = 0
+    private var cachedCompositeHeight = 0
+
+    private var stripeStride: UInt32 = 7
+    private var stripeRedPixels: UInt32 = 5
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        print("ScanVisualizationCaptureViewController started")
+        setupMetalResources()
+    }
+
+    override func setupUI() {
+        super.setupUI()
+
+        captureButton = addButton(
+            buttonTitle: "Start Capture",
+            onClickAction: #selector(handleCaptureButtonTap)
+        )
+
+        visualizationView = TextureView(
+            frame: view.bounds,
+            vertexShader: "scanningVertexShader",
+            fragmentShader: "scanningFragmentShader"
+        )
+        visualizationView!.isOpaque = true
+        visualizationView!.translatesAutoresizingMaskIntoConstraints = false
+        visualizationView!.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        visualizationView!.isHidden = true
+        arView.addSubview(visualizationView!)
+        print("Visualization view configured")
+
+        NSLayoutConstraint.activate([
+            visualizationView!.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            visualizationView!.topAnchor.constraint(equalTo: view.topAnchor),
+            visualizationView!.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            visualizationView!.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    private func setupMetalResources() {
+        device = MTLCreateSystemDefaultDevice()
+        guard let device = device else {
+            print("Failed to create Metal device")
+            return
+        }
+
+        commandQueue = device.makeCommandQueue()
+
+        guard let library = device.makeDefaultLibrary(),
+              let kernelFunction = library.makeFunction(name: "scanning_composite_kernel") else {
+            print("Failed to load scanning composite kernel")
+            return
+        }
+
+        do {
+            compositeKernel = try device.makeComputePipelineState(function: kernelFunction)
+        } catch {
+            print("Failed to create compute pipeline state: \(error)")
+        }
+    }
+
+    @objc private func handleCaptureButtonTap() {
+        print("ScanVisualizationCaptureViewController button tapped")
+        guard let session = nsdkManager?.session else { return }
+
+        if nsdkCapture == nil {
+            nsdkCapture = ScanVisualizationCaptureManager(
+                nsdk: session,
+                enableRaycastVisualization: true,
+                enableVoxelVisualization: false
+            )
+        }
+
+        if isCapturing {
+            print("Stopping scan visualization")
+            nsdkCapture?.stop()
+            isCapturing = false
+            captureButton?.setTitle("Start Capture", for: .normal)
+            visualizationView?.isHidden = true
+            visualizationView?.reset()
+        } else {
+            print("Starting scan visualization")
+            nsdkCapture?.start()
+            isCapturing = true
+            captureButton?.setTitle("Stop Capture", for: .normal)
+            visualizationView?.isHidden = false
+        }
+    }
+
+    override func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        super.session(session, didUpdate: frame)
+
+        if isCapturing {
+            updateVisualization()
+        }
+    }
+
+    private func updateVisualization() {
+        print("ScanVisualizationCaptureViewController updating visualization")
+        guard let capture = nsdkCapture,
+              let textureView = visualizationView else {
+            return
+        }
+
+        if capture.updateRaycastTextures() {
+            if let rgbaTexture = capture.rgbaTexture {
+                compositeVisualization(from: rgbaTexture)
+
+                if let composited = compositedTexture {
+                    print("ScanVisualizationCaptureViewController displayed composited texture")
+                    textureView.setTexture(copyFrom: composited)
+                }
+            }
+        }
+    }
+
+    private func compositeVisualization(from source: MTLTexture) {
+        guard let device = device,
+              let kernel = compositeKernel,
+              let queue = commandQueue,
+              let commandBuffer = queue.makeCommandBuffer(),
+              let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            return
+        }
+
+        let width = source.width
+        let height = source.height
+
+        if compositedTexture == nil || cachedCompositeWidth != width || cachedCompositeHeight != height {
+            let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .rgba8Unorm,
+                width: width,
+                height: height,
+                mipmapped: false
+            )
+            descriptor.usage = [.shaderWrite, .shaderRead]
+            descriptor.storageMode = .shared
+
+            compositedTexture = device.makeTexture(descriptor: descriptor)
+            cachedCompositeWidth = width
+            cachedCompositeHeight = height
+        }
+
+        guard let output = compositedTexture else { return }
+
+        struct CompositeUniforms {
+            var stripeStride: UInt32
+            var stripeRedPixels: UInt32
+        }
+        var uniforms = CompositeUniforms(
+            stripeStride: stripeStride,
+            stripeRedPixels: stripeRedPixels
+        )
+
+        encoder.setComputePipelineState(kernel)
+        encoder.setTexture(output, index: 0)
+        encoder.setTexture(source, index: 1)
+        encoder.setBytes(&uniforms, length: MemoryLayout<CompositeUniforms>.stride, index: 0)
+
+        let threadgroupWidth = min(kernel.threadExecutionWidth, width)
+        let threadgroupHeight = min(kernel.maxTotalThreadsPerThreadgroup / threadgroupWidth, height)
+        let threadgroupSize = MTLSize(width: threadgroupWidth, height: threadgroupHeight, depth: 1)
+        let threadgroupCount = MTLSize(
+            width: (width + threadgroupWidth - 1) / threadgroupWidth,
+            height: (height + threadgroupHeight - 1) / threadgroupHeight,
+            depth: 1
+        )
+
+        encoder.dispatchThreadgroups(threadgroupCount, threadsPerThreadgroup: threadgroupSize)
+        encoder.endEncoding()
+
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+    }
+}
+```
+
+In the previous code example:
+
+- `print("ScanVisualizationCaptureManager updating raycast textures")` confirms that the manager is reading scan output while capture is active.
+- `print("ScanVisualizationCaptureViewController updating visualization")` confirms that frame updates are reaching the controller during capture.
+- `print("ScanVisualizationCaptureViewController displayed composited texture")` confirms that the controller produced a composited texture and sent it to `TextureView`.
+- `setupMetalResources()` and `compositeVisualization(from:)` provide the minimal Metal path needed to turn the raw raycast texture into the striped overlay shown on screen.
+
+At this stage, the minimal Swift example should show the overlay and update it as you move through the scene.
+
+After you finish validating the Swift example, you can remove the temporary `print(...)` debug lines.
+
+---
+
+## Troubleshooting
+
+This section helps you diagnose common issues where scan visualization does not appear, does not update, or does not perform as expected. It focuses on verifying the sample app setup, rendering path, and runtime behavior while testing your implementation.
+
+### Visualization doesn't appear
+
+- Verify that `MainViewController.swift` is launching `ScanVisualizationCaptureViewController.self` while you test the minimal example.
+- Confirm that `ScanVisualizationCaptureViewController started` and `ScanVisualizationCaptureManager configuration called` appear in the Xcode console after you tap **Start Capture**.
+- Check that `visualizationView?.isHidden = false` runs when capture starts and that `TextureView` is still attached to `arView`.
+- Make sure `setupMetalResources()` succeeds and does not print `Failed to create Metal device`, `Failed to load scanning composite kernel`, or `Failed to create compute pipeline state`.
+- Ensure the app has camera permission and that the AR session is producing frames for `session(_:didUpdate:)`.
+
+### Overlay doesn't update
+
+- Confirm that `ScanVisualizationCaptureViewController updating visualization` appears repeatedly while capture is running.
+- Confirm that `ScanVisualizationCaptureViewController displayed composited texture` appears after capture starts. If it does not, the controller is not yet producing or assigning a composited texture.
+- If the visualization view appears but stays blank, verify that `capture.updateRaycastTextures()` is returning `true` and that `rgbaTexture` is non-`nil`.
+- If the view flashes or appears misaligned, check that `TextureView` is pinned to the full `arView` bounds and that `visualizationView?.reset()` is only called when capture stops.
+
+### Performance issues
+
+- Scan visualization composites textures every frame, so lower-end devices may show reduced performance while capture is active.
+- Reduce debug logging after validation, since repeated `print(...)` calls in the frame update path can affect performance.
+- Avoid running other expensive AR features at the same time unless necessary.
+
+### Platform: kotlin
+
+In Kotlin, scan visualization is enabled by configuring `ScanningSession` with **raycast visualization** and displaying the resulting `raycastBuffer` through overlay content. The current sample uses a **Compose-based** capture screen and a **Filament** material, where Filament is the rendering engine used to draw the striped visualization.
+
+To enable scan visualization in Kotlin:
+
+1. [Prepare your Kotlin project](#kotlin-prepare-your-project)
+2. [Enable raycast visualization in the scanning configuration](#kotlin-enable-raycast-visualization-in-the-scanning-configuration)
+3. [Add overlay content to your AR screen](#kotlin-add-overlay-content-for-the-visualization)
+4. [Start and stop the visualization with capture](#kotlin-start-and-stop-the-visualization-with-capture)
+5. [Update the visualization while scan data arrives](#kotlin-render-the-latest-raycast-buffer)
+
+---
+
+### Prepare your Kotlin project
+
+This section shows how to start from the existing Kotlin Capture sample so you can add scan visualization to a working AR scene instead of building the setup from scratch. It also identifies the sample app and screen used throughout the rest of the guide.
+
+Use the following steps to prepare your project using that sample as the starting point:
+
+1. Clone [nsdk-samples-kotlin](https://github.com/nianticspatial/nsdk-samples-kotlin):
+
+   ```bash
+   git clone https://github.com/nianticspatial/nsdk-samples-kotlin.git
+   ```
+
+2. Open the `NsdkSamples` project in Android Studio.
+
+3. Run the `NsdkSamples` app on an Android device.
+
+4. In the sample app, open the **Capture** sample and verify that it opens successfully.
+
+This walkthrough assumes:
+
+- the sample app builds and runs on your device
+- the Capture screen already has an active `NSDKSession`
+- the app already provides overlay content to the AR view
+
+For general setup steps, see [Set up the NSDK in Kotlin](https://www.nianticspatial.com/docs/nsdk/setup/#set-up-the-nsdk-in-kotlin).
+
+---
+
+### Enable raycast visualization in the scanning configuration
+
+This section shows how to configure the scanning session so it produces the raycast visualization data needed for the striped overlay. It also explains which configuration flags turn raycast visualization on and how that setup fits into the sample app's `CaptureManager`, which also handles capture, save, export, and overlay state.
+
+Update your capture manager so the scanning session enables raycast visualization before capture begins. In `nsdk-samples-kotlin`, that code lives in `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/CaptureManager.kt`. The following code example shows the portion of the sample app's `CaptureManager` that configures scan visualization:
+
+```kotlin
+import com.nianticspatial.nsdk.ScannerConfig
+
+fun startCapture() {
+    val config = ScannerConfig().apply {
+        useNsdkDepthsIfPlatformUnavailable = true
+        enableRaycastVisualization = true
+        enableVoxelVisualization = false
+    }
+
+    scanningSession.configure(config)
+    scanningSession.start()
+}
+```
+
+In the previous code example:
+
+- `ScannerConfig` is used to tell the scanning session which visualization outputs to generate.
+- `enableRaycastVisualization = true` turns on the striped raycast overlay data.
+- `enableVoxelVisualization = false` leaves voxel visualization disabled, since this sample only displays the raycast overlay.
+- `useNsdkDepthsIfPlatformUnavailable = true` allows the session to keep generating visualization data on devices without native depth support.
+- `scanningSession.configure(config)` applies those settings before `scanningSession.start()` begins capture.
+
+#### Expand to reveal a minimal Kotlin example for raycast visualization setup
+
+This example reduces the Capture sample to the code required for this step. It lets you focus on enabling raycast visualization and starting a scanning session that can produce overlay data.
+
+- ⅰ. Create `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureManager.kt` so you have a minimal manager that only configures raycast visualization and starts or stops scanning, then paste in the following code:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.LifecycleOwner
+import com.nianticspatial.nsdk.ScannerConfig
+import com.nianticspatial.nsdk.scanning.ScanningSession
+import com.nianticspatial.nsdk.externalsamples.FeatureManager
+
+class ScanVisualizationCaptureManager(
+    private val scanningSession: ScanningSession
+) : FeatureManager() {
+
+    var isRecording by mutableStateOf(false)
+        private set
+
+    fun startCapture() {
+        if (isRecording) return
+
+        val config = ScannerConfig().apply {
+            useNsdkDepthsIfPlatformUnavailable = true
+            enableRaycastVisualization = true
+            enableVoxelVisualization = false
+        }
+        scanningSession.configure(config)
+        scanningSession.start()
+        isRecording = true
+        Log.i("ScanVisualizationCaptureManager", "Capture started")
+    }
+
+    fun stop() {
+        if (!isRecording) return
+
+        isRecording = false
+        scanningSession.stop()
+        Log.i("ScanVisualizationCaptureManager", "Capture stopped")
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        stop()
+        scanningSession.close()
+    }
+}
+```
+
+- ⅱ. Create `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureView.kt` so you have a minimal screen that can call that manager without the rest of the sample app's Capture flow, then paste in the following code:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.app.Activity
+import android.util.Log
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import com.nianticspatial.nsdk.externalsamples.HelpContent
+import com.nianticspatial.nsdk.externalsamples.NSDKSessionManager
+import com.nianticspatial.nsdk.externalsamples.common.OverlayContent
+
+@Composable
+fun ScanVisualizationCaptureView(
+    context: Activity,
+    nsdkManager: NSDKSessionManager,
+    helpContentState: MutableState<HelpContent?>,
+    overlayContentState: MutableState<OverlayContent?>
+) {
+    val captureManager = remember(nsdkManager) {
+        ScanVisualizationCaptureManager(nsdkManager.session.scanning.acquire())
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(captureManager) {
+        lifecycleOwner.lifecycle.addObserver(captureManager)
+        Log.i("ScanVisualizationCaptureView", "Capture view started")
+        onDispose {
+            captureManager.onDestroy(lifecycleOwner)
+            lifecycleOwner.lifecycle.removeObserver(captureManager)
+        }
+    }
+
+    Button(
+        onClick = {
+            Log.i("ScanVisualizationCaptureView", "Capture button tapped")
+            if (captureManager.isRecording) {
+                captureManager.stop()
+            } else {
+                captureManager.startCapture()
+            }
+        },
+        modifier = Modifier
+    ) {
+        Text(if (captureManager.isRecording) "Stop Capture" else "Start Capture")
+    }
+}
+```
+
+- ⅲ. Open `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/NSDKDemoView.kt`, then add this import so the file can reference the new minimal screen:
+
+```kotlin
+import com.nianticspatial.nsdk.externalsamples.capture.ScanVisualizationCaptureView
+```
+
+- ⅳ. In the same `NSDKDemoView.kt` file, replace this line so the app opens directly into the Capture route instead of the sample picker:
+
+```kotlin
+NavHost(navController = navController, startDestination = SelectorRoute, modifier) {
+```
+
+with this line:
+
+```kotlin
+NavHost(navController = navController, startDestination = CaptureRoute(), modifier) {
+```
+
+- ⅴ. In the same `NSDKDemoView.kt` file, replace this line so the Capture route shows the minimal screen from this section instead of the full sample's `CaptureView(...)`:
+
+```kotlin
+CaptureView(activity, nsdkSessionManager, helpContentState, overlayContentState)
+```
+
+with this line:
+
+```kotlin
+ScanVisualizationCaptureView(activity, nsdkSessionManager, helpContentState, overlayContentState)
+```
+
+In the previous code example:
+
+- `ScanVisualizationCaptureManager` keeps only the scanning configuration and simple start and stop behavior needed to validate raycast visualization.
+- `ScanVisualizationCaptureView` gives the sample app a minimal Compose screen that can create that manager and toggle capture.
+- Adding the import for `ScanVisualizationCaptureView` makes the new composable available inside `NSDKDemoView.kt`.
+- Replacing `startDestination = SelectorRoute` with `startDestination = CaptureRoute()` makes the sample app open directly to the Capture route instead of the sample picker.
+- Replacing `CaptureView(...)` with `ScanVisualizationCaptureView(...)` makes that route render the minimal screen from this section.
+- The `Log.i(...)` calls are optional temporary debug lines that you can remove after you finish testing.
+
+At this stage, the Kotlin sample is configuring raycast visualization and starting and stopping scanning, but it is not yet creating an overlay to display the output.
+
+When you test this step, the app should open directly into the minimal Capture screen instead of the sample picker. You should see a single button labeled **Start Capture**. Tap it once to start scanning and confirm that the button label changes to **Stop Capture**. At this stage you should not expect any visualization on screen yet, because the overlay has not been added.
+
+---
+
+### Add overlay content to your AR screen
+
+This section shows how to create the overlay content that renders scan visualization over the AR view. It also explains how the sample app uses a Filament material and overlay class to draw the striped visualization from the scanning output.
+
+Create an overlay content class that provides the material used to render the scan visualization. The following code example shows the portion of the sample app's `ScanVisualizationCaptureOverlayContent` that sets up the striped visualization material:
+
+```kotlin
+class ScanVisualizationCaptureOverlayContent(
+    private val captureManager: ScanVisualizationCaptureManager
+) : OverlayContent() {
+
+    override fun onCreateMaterial(
+        engine: Engine,
+        materialLoader: MaterialLoader
+    ): MaterialInstance {
+        val material = materialLoader.createMaterial("materials/capture_viz.filamat")
+        val materialInstance = material.createInstance()
+        materialInstance.setParameter("stripeStride", 2)
+        materialInstance.setParameter("stripeRedPixels", 1)
+        return materialInstance
+    }
+}
+```
+
+This material renders the striped overlay over the camera feed.
+
+#### Expand to reveal a minimal Kotlin example for overlay content setup
+
+This example builds on the previous step and keeps only the code needed to define the overlay. It lets you focus on how the overlay content creates the Filament material used to render the striped scan visualization.
+
+- ⅰ. Keep `ScanVisualizationCaptureManager.kt` from the previous section so the minimal screen can continue to start and stop scanning.
+- ⅱ. Create `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureOverlayContent.kt` so the app has a minimal overlay class that can render the striped visualization material, then paste in the following code:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.util.Log
+import com.google.android.filament.Engine
+import com.google.android.filament.MaterialInstance
+import com.nianticspatial.nsdk.externalsamples.common.OverlayContent
+import io.github.sceneview.loaders.MaterialLoader
+
+class ScanVisualizationCaptureOverlayContent(
+    private val captureManager: ScanVisualizationCaptureManager
+) : OverlayContent() {
+
+    override fun onCreateMaterial(
+        engine: Engine,
+        materialLoader: MaterialLoader
+    ): MaterialInstance {
+        Log.i("ScanVisualizationCaptureOverlay", "Overlay material created")
+        val material = materialLoader.createMaterial("materials/capture_viz.filamat")
+        val materialInstance = material.createInstance()
+        materialInstance.setParameter("stripeStride", 2)
+        materialInstance.setParameter("stripeRedPixels", 1)
+        return materialInstance
+    }
+
+    override fun onFrame(engine: Engine, materialInstance: MaterialInstance): Boolean {
+        return false
+    }
+
+    override fun onDestroy(engine: Engine) {
+    }
+}
+```
+
+- ⅲ. Open `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureView.kt`, then add the following line immediately after `val lifecycleOwner = LocalLifecycleOwner.current` so the minimal screen instantiates the overlay object during startup:
+
+```kotlin
+    val captureOverlayContent = remember(captureManager) {
+        ScanVisualizationCaptureOverlayContent(captureManager)
+    }
+```
+
+- ⅳ. In the same `ScanVisualizationCaptureView.kt` file, add the following block immediately after that `remember(...)` call so the screen writes a confirmation log as soon as the overlay object is created:
+
+```kotlin
+    DisposableEffect(captureOverlayContent) {
+        Log.i("ScanVisualizationCaptureView", "Overlay content created")
+        onDispose { }
+    }
+```
+
+In the previous code example:
+
+- `ScanVisualizationCaptureOverlayContent` is the minimal overlay class that owns the striped-material setup for this walkthrough.
+- `onFrame(...)` and `onDestroy(...)` are included as no-op implementations so the minimal overlay compiles before the later section adds the real frame update logic.
+- `Log.i("ScanVisualizationCaptureOverlay", "Overlay material created")` is kept for the next section, when the overlay is attached to the AR scene and Filament creates its material.
+- Adding `val captureOverlayContent = remember(captureManager) { ... }` to `ScanVisualizationCaptureView.kt` makes the minimal screen instantiate the overlay object in this section, even though it is not attached yet.
+- `DisposableEffect(captureOverlayContent)` gives you a log message from `ScanVisualizationCaptureView.kt`, which is more reliable for this step than waiting for the overlay material to be created.
+
+At this stage, the app has the manager and a minimal overlay implementation, but the overlay is not yet attached to the AR scene.
+
+When you test this step, you should not expect a visible change yet. This step only adds the overlay class; the next section attaches it to the AR scene.
+
+To confirm that this code is running:
+
+- ⅰ. Open Android Studio's **Logcat** tool window.
+- ⅱ. In the process or app selector at the top of Logcat, select your running sample app so Logcat stops showing unrelated system logs.
+- ⅲ. Click the search field in Logcat and enter `tag:ScanVisualizationCaptureView Overlay content created`.
+- ⅳ. Run the app.
+- ⅴ. Confirm that Logcat shows the message `Overlay content created`.
+
+That message confirms that `ScanVisualizationCaptureView.kt` created a `ScanVisualizationCaptureOverlayContent` instance during startup. `Overlay material created` will not appear until the next section, when the overlay is attached to the AR scene and Filament creates its material.
+
+---
+
+### Start and stop the visualization with capture
+
+This section shows how to connect overlay visibility to the existing capture flow so the visualization appears when scanning starts and disappears when scanning stops. It also explains how the sample app attaches overlay content to the AR scene and keeps it synchronized with capture state.
+
+Update the Capture screen so it attaches the overlay and shows or hides it based on whether capture is active. The following code example shows the portion of the sample app's `ScanVisualizationCaptureView` that controls overlay visibility:
+
+```kotlin
+val captureOverlayContent = remember(captureManager) {
+    ScanVisualizationCaptureOverlayContent(captureManager)
+}
+
+DisposableEffect(captureOverlayContent) {
+    overlayContentState.value = captureOverlayContent
+    onDispose {
+        captureOverlayContent.hide()
+        overlayContentState.value = null
+    }
+}
+
+LaunchedEffect(captureManager.isRecording) {
+    if (captureManager.isRecording) {
+        captureOverlayContent.show()
+    } else {
+        captureOverlayContent.hide()
+    }
+}
+```
+
+This matches the sample flow: the overlay appears while capture is running and hides when capture ends.
+
+In the previous code example:
+
+- `remember(captureManager)` keeps a stable overlay instance tied to the current capture manager.
+- `DisposableEffect(captureOverlayContent)` attaches the overlay to `overlayContentState` when the screen appears and removes it when the screen is disposed.
+- `LaunchedEffect(captureManager.isRecording)` shows the overlay only while the capture manager is actively recording.
+
+#### Expand to reveal a minimal Kotlin example for starting and stopping visualization
+
+This example builds on the previous steps and keeps only the code needed to attach and control the overlay. It lets you focus on how CaptureView shows and hides the visualization in sync with capture state.
+
+- ⅰ. Keep the existing `ScanVisualizationCaptureManager.kt` and `ScanVisualizationCaptureOverlayContent.kt` files from the previous sections unchanged. In this section, the only file you need to update is `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureView.kt`. Open that existing file, delete its current contents, and replace them with the following code so the same minimal screen now attaches the overlay to the shared AR scene and shows or hides it with capture state:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.app.Activity
+import android.util.Log
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import com.nianticspatial.nsdk.externalsamples.HelpContent
+import com.nianticspatial.nsdk.externalsamples.NSDKSessionManager
+import com.nianticspatial.nsdk.externalsamples.common.OverlayContent
+
+@Composable
+fun ScanVisualizationCaptureView(
+    context: Activity,
+    nsdkManager: NSDKSessionManager,
+    helpContentState: MutableState<HelpContent?>,
+    overlayContentState: MutableState<OverlayContent?>
+) {
+    val captureManager = remember(nsdkManager) {
+        ScanVisualizationCaptureManager(nsdkManager.session.scanning.acquire())
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val captureOverlayContent = remember(captureManager) {
+        ScanVisualizationCaptureOverlayContent(captureManager)
+    }
+
+    DisposableEffect(captureManager) {
+        lifecycleOwner.lifecycle.addObserver(captureManager)
+        Log.i("ScanVisualizationCaptureView", "Capture view started")
+        onDispose {
+            captureManager.onDestroy(lifecycleOwner)
+            lifecycleOwner.lifecycle.removeObserver(captureManager)
+        }
+    }
+
+    DisposableEffect(captureOverlayContent) {
+        overlayContentState.value = captureOverlayContent
+        Log.i("ScanVisualizationCaptureView", "Overlay attached")
+        onDispose {
+            overlayContentState.value = null
+        }
+    }
+
+    LaunchedEffect(captureManager.isRecording) {
+        if (captureManager.isRecording) {
+            Log.i("ScanVisualizationCaptureView", "Showing overlay")
+            captureOverlayContent.show()
+        } else {
+            Log.i("ScanVisualizationCaptureView", "Hiding overlay")
+            captureOverlayContent.hide()
+        }
+    }
+
+    Button(
+        onClick = {
+            Log.i("ScanVisualizationCaptureView", "Capture button tapped")
+            if (captureManager.isRecording) {
+                captureManager.stop()
+            } else {
+                captureManager.startCapture()
+            }
+        },
+        modifier = Modifier
+    ) {
+        Text(if (captureManager.isRecording) "Stop Capture" else "Start Capture")
+    }
+}
+```
+
+In the previous code example:
+
+- `DisposableEffect(captureOverlayContent)` attaches the overlay to the shared AR scene used by the sample app.
+- `LaunchedEffect(captureManager.isRecording)` makes the overlay show while capture is active and hide when capture stops.
+- The `Log.i(...)` lines are optional temporary debug lines that you can remove after you finish testing.
+- At this stage, the overlay can appear and disappear, but it still does not receive per-frame raycast texture updates.
+
+When you test this step:
+
+- ⅰ. Clear Android Studio's **Logcat** output.
+- ⅱ. Run the app again.
+- ⅲ. Search for `Overlay attached`.
+- ⅳ. Confirm that the message appears during startup.
+- ⅴ. Tap **Start Capture** once.
+- ⅵ. Search for `Showing overlay`.
+- ⅶ. Confirm that the message appears after capture starts.
+
+What these logs mean:
+
+- `Overlay attached` confirms that `overlayContentState.value = captureOverlayContent` ran and the overlay was passed into the shared AR scene.
+- `Showing overlay` confirms that the overlay is shown when capture starts.
+
+At this stage, the overlay may still look blank because the next section has not yet uploaded any raycast image data into it.
+
+---
+
+### Update the visualization while scan data arrives
+
+This section shows how to update the visualization continuously during capture so the overlay reflects the latest scan coverage in real time. It also explains how the sample app polls `raycastBuffer()`, converts the returned image data into a Filament texture, and uploads it to the overlay.
+
+Update the capture manager and overlay so the latest raycast data is polled and rendered during capture. The following code examples show the portions of the sample app's `ScanVisualizationCaptureManager` and `ScanVisualizationCaptureOverlayContent` that read the raycast buffer and display it in the overlay:
+
+```kotlin
+coroutineScope.launch {
+    while (isRecording) {
+        try {
+            raycastBuffer = scanningSession.raycastBuffer()
+        } catch (e: Exception) {
+            Log.e("CaptureManager", "Error getting raycast buffer", e)
+        }
+        delay(RAYCAST_BUFFER_POLL_DELAY_MS)
+    }
+    raycastBuffer = null
+}
+```
+
+Then convert the returned image data into a Filament texture in your overlay:
+
+```kotlin
+override fun onFrame(engine: Engine, materialInstance: MaterialInstance): Boolean {
+    val raycastBuffer = captureManager.raycastBuffer ?: return false
+    val intImage = raycastBuffer.rgba
+
+    if (intImage.width <= 0 || intImage.height <= 0) return false
+
+    val buffer = ByteBuffer.allocateDirect(intImage.data.size * 4)
+        .order(ByteOrder.nativeOrder())
+
+    for (pixel in intImage.data) {
+        buffer.put((pixel shr 0 and 0xFF).toByte())
+        buffer.put((pixel shr 8 and 0xFF).toByte())
+        buffer.put((pixel shr 16 and 0xFF).toByte())
+        buffer.put((pixel shr 24 and 0xFF).toByte())
+    }
+    buffer.flip()
+
+    val pixelBuffer = Texture.PixelBufferDescriptor(
+        buffer,
+        Texture.Format.RGBA,
+        Texture.Type.UBYTE
+    )
+
+    texture?.setImage(engine, 0, pixelBuffer)
+    return true
+}
+```
+
+In the previous code example:
+
+- `raycastBuffer = scanningSession.raycastBuffer()` is the point where the capture manager pulls the latest visualization data while recording is active.
+- `onFrame(...)` is the point where the overlay turns that buffer into a Filament texture that can actually render on screen.
+
+#### Expand to reveal a minimal Kotlin example for frame-driven visualization updates
+
+This example builds on the previous steps and keeps only the code needed to refresh the overlay during capture.
+
+- ⅰ. Keep `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureView.kt` unchanged from the previous section.
+- ⅱ. Open `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureManager.kt`, delete its current contents, and replace them with the following code so the capture manager stores the latest `raycastBuffer` while capture is active:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.LifecycleOwner
+import com.nianticspatial.nsdk.ScannerConfig
+import com.nianticspatial.nsdk.externalsamples.FeatureManager
+import com.nianticspatial.nsdk.scanning.RaycastBuffer
+import com.nianticspatial.nsdk.scanning.ScanningSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+class ScanVisualizationCaptureManager(
+    private val scanningSession: ScanningSession,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+) : FeatureManager() {
+
+    companion object {
+        const val RAYCAST_BUFFER_POLL_DELAY_MS = 16L
+    }
+
+    var isRecording by mutableStateOf(false)
+        private set
+    var raycastBuffer by mutableStateOf<RaycastBuffer?>(null)
+        private set
+
+    fun startCapture() {
+        if (isRecording) return
+
+        val config = ScannerConfig().apply {
+            useNsdkDepthsIfPlatformUnavailable = true
+            enableRaycastVisualization = true
+            enableVoxelVisualization = false
+        }
+        scanningSession.configure(config)
+        scanningSession.start()
+        isRecording = true
+        Log.i("ScanVisualizationCaptureManager", "Capture started")
+
+        coroutineScope.launch {
+            while (isRecording) {
+                try {
+                    raycastBuffer = scanningSession.raycastBuffer()
+                    Log.i("ScanVisualizationCaptureManager", "Updated raycast buffer")
+                } catch (e: Exception) {
+                    Log.e("ScanVisualizationCaptureManager", "Error getting raycast buffer", e)
+                }
+                delay(RAYCAST_BUFFER_POLL_DELAY_MS)
+            }
+            raycastBuffer = null
+        }
+    }
+
+    fun stop() {
+        if (!isRecording) return
+
+        isRecording = false
+        raycastBuffer = null
+        scanningSession.stop()
+        Log.i("ScanVisualizationCaptureManager", "Capture stopped")
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        stop()
+        scanningSession.close()
+        coroutineScope.cancel()
+    }
+}
+```
+
+- ⅲ. Open `NsdkSamples/NsdkSamples/src/main/java/com/nianticspatial/nsdk/externalsamples/capture/ScanVisualizationCaptureOverlayContent.kt`, delete its current contents, and replace them with the following code so it uploads the latest `raycastBuffer` into the overlay texture:
+
+```kotlin
+package com.nianticspatial.nsdk.externalsamples.capture
+
+import android.util.Log
+import com.google.android.filament.Engine
+import com.google.android.filament.MaterialInstance
+import com.google.android.filament.Texture
+import com.google.android.filament.TextureSampler
+import com.nianticspatial.nsdk.externalsamples.common.OverlayContent
+import io.github.sceneview.loaders.MaterialLoader
+import io.github.sceneview.safeDestroyTexture
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
+class ScanVisualizationCaptureOverlayContent(
+    private val captureManager: ScanVisualizationCaptureManager
+) : OverlayContent() {
+
+    private var texture: Texture? = null
+
+    override fun onCreateMaterial(engine: Engine, materialLoader: MaterialLoader): MaterialInstance {
+        val material = materialLoader.createMaterial("materials/capture_viz.filamat")
+        val materialInstance = material.createInstance()
+        materialInstance.setParameter("stripeStride", 2)
+        materialInstance.setParameter("stripeRedPixels", 1)
+        return materialInstance
+    }
+
+    override fun onFrame(engine: Engine, materialInstance: MaterialInstance): Boolean {
+        val raycastBuffer = captureManager.raycastBuffer ?: return false
+        val intImage = raycastBuffer.rgba
+
+        if (intImage.width <= 0 || intImage.height <= 0) return false
+
+        if (texture == null ||
+            texture!!.getWidth(0) != intImage.width ||
+            texture!!.getHeight(0) != intImage.height) {
+            texture?.let { engine.safeDestroyTexture(it) }
+
+            texture = Texture.Builder()
+                .width(intImage.width)
+                .height(intImage.height)
+                .levels(1)
+                .format(Texture.InternalFormat.RGBA8)
+                .sampler(Texture.Sampler.SAMPLER_2D)
+                .build(engine)
+
+            materialInstance.setParameter(
+                "visualizationTexture",
+                texture!!,
+                TextureSampler(
+                    TextureSampler.MinFilter.LINEAR,
+                    TextureSampler.MagFilter.LINEAR,
+                    TextureSampler.WrapMode.CLAMP_TO_EDGE
+                )
+            )
+        }
+
+        val buffer = ByteBuffer.allocateDirect(intImage.data.size * 4)
+            .order(ByteOrder.nativeOrder())
+
+        for (pixel in intImage.data) {
+            buffer.put((pixel shr 0 and 0xFF).toByte())
+            buffer.put((pixel shr 8 and 0xFF).toByte())
+            buffer.put((pixel shr 16 and 0xFF).toByte())
+            buffer.put((pixel shr 24 and 0xFF).toByte())
+        }
+        buffer.flip()
+
+        val pixelBuffer = Texture.PixelBufferDescriptor(
+            buffer,
+            Texture.Format.RGBA,
+            Texture.Type.UBYTE
+        )
+
+        texture?.setImage(engine, 0, pixelBuffer)
+        Log.i("ScanVisualizationCaptureOverlay", "Displayed composited texture")
+        return true
+    }
+
+    override fun onDestroy(engine: Engine) {
+        texture?.let { engine.safeDestroyTexture(it) }
+        texture = null
+    }
+}
+```
+
+In the previous code examples:
+
+- `raycastBuffer` stores the latest scan output while capture is running.
+- `onFrame(...)` converts that output into a Filament texture and uploads it to the overlay.
+- The `Log.i(...)` lines are optional temporary debug lines that you can remove after you finish testing.
+
+When you test this step:
+
+- ⅰ. Clear Android Studio's **Logcat** output.
+- ⅱ. Run the app again.
+- ⅲ. Tap **Start Capture**.
+- ⅳ. Move the device around the scene for a few seconds.
+- ⅴ. Confirm that the scan visualization overlay now appears on top of the AR view.
+- ⅵ. Confirm that incomplete areas remain striped while scanned areas update as you move.
+- ⅶ. Tap **Stop Capture**.
+- ⅷ. Confirm that the button returns to **Start Capture** and the visualization stops updating.
+
+Optional Logcat checks:
+
+- Search for `Updated raycast buffer` to confirm that the capture manager is polling fresh scan data during capture.
+- Search for `Displayed composited texture` to confirm that the overlay is uploading that data into the Filament texture.
+
+What these results mean:
+
+- A visible updating overlay confirms that the polling loop and the overlay texture upload path are both working together.
+- `Updated raycast buffer` confirms that `scanningSession.raycastBuffer()` is returning new visualization data.
+- `Displayed composited texture` confirms that `onFrame(...)` is converting that data and pushing it into the overlay material.
+
+After you finish validating the Kotlin example, you can remove the temporary `Log.i(...)` debug lines.
+
+---
+
+## Troubleshooting
+
+This section helps you diagnose common issues in the Kotlin sample where scan visualization does not appear, does not update, or reduces performance. It focuses on the Compose-based capture screen, the overlay wiring, and the Filament texture upload path used in this walkthrough.
+
+### Visualization doesn't appear
+
+- Verify that the `composable<CaptureRoute>` entry in `NSDKDemoView.kt` is still launching `ScanVisualizationCaptureView(...)` instead of the original `CaptureView(...)`.
+- Confirm that `Overlay attached` appears during startup and that `Showing overlay` appears after you tap **Start Capture**.
+- Check that `overlayContentState.value = captureOverlayContent` still runs inside `DisposableEffect(captureOverlayContent)` in `ScanVisualizationCaptureView.kt`.
+- Verify that `ScanVisualizationCaptureOverlayContent.kt` still loads `materials/capture_viz.filamat` in `onCreateMaterial(...)`.
+- Ensure the app has camera permission and that the AR scene is active before you start capture.
+
+### Overlay doesn't update
+
+- Confirm that `Updated raycast buffer` appears in logcat while capture is active.
+- Confirm that `Displayed composited texture` appears after the overlay is shown.
+- If the overlay appears but stays blank, check that `captureManager.raycastBuffer` is not `null` inside `onFrame(...)`.
+- If `Updated raycast buffer` appears but `Displayed composited texture` does not, verify that `captureOverlayContent.show()` still runs from `LaunchedEffect(captureManager.isRecording)`.
+- If logcat shows warnings about the source image being upscaled, treat them as quality or performance warnings rather than as a sign that the visualization path is broken.
+
+### Performance issues
+
+- Polling `raycastBuffer()` and uploading a new texture every frame can reduce performance on lower-end devices.
+- Reduce validation logging after testing, since repeated `Log.i(...)` calls in the polling loop and `onFrame(...)` can add overhead.
+- The minimal example allocates a new `ByteBuffer` for each frame, so expect this version to be a validation path rather than a fully optimized production implementation.
+- Avoid running other expensive AR features at the same time unless necessary.

@@ -1,0 +1,66 @@
+# ARSceneSegmentationManager
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager/
+
+ARSceneSegmentationManager
+> extends UnityEngine.XR.ARFoundation.SubsystemLifecycleManager
+
+---
+
+## Declaration
+
+public class ARSceneSegmentationManager : SubsystemLifecycleManager<XRSceneSegmentationSubsystem, XRSceneSegmentationSubsystemDescriptor, Provider>
+
+## Summary
+
+The ARSceneSegmentationManager controls the XRSceneSegmentationSubsystem and updates the scene segmentation
+textures on each Update loop. Textures and XRCpuImages are available for confidence maps of individual semantic
+segmentation channels and a bit array indicating which semantic channels have surpassed the chosen confidence
+threshold per pixel. For cases where a semantic segmentation texture is overlaid on the screen, utilities are
+provided to read semantic properties at a given point on the screen.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| readonly ChannelIndices | IReadOnlyDictionary<SceneSegmentationChannel, int> | The indices of the semantic channels that the current model is able to detect. |
+| readonly Channels | IReadOnlyList<SceneSegmentationChannel> | The semantic channels that the current model is able to detect. |
+| IsMetadataAvailable | bool | True if the underlying subsystem has finished initialization. |
+| TargetFrameRate | uint | Frame rate that semantic segmentation inference will aim to run at. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| DoesChannelExistAt | bool | Check if a semantic class is detected at the specified location in screen space, based on the confidence threshold set for this channel. (See TrySetChannelConfidenceThresholds) |
+| GetChannelFromName | Nullable<SceneSegmentationChannel> | Converts a channel name string to its corresponding SceneSegmentationChannel enum value. |
+| GetChannelIndex | int | Get the channel index of a specified semantic class. This corresponds to a bit position in the packed scene segmentation buffer, with index 0 being the most-significant bit. |
+| GetChannelIndicesAt | List<int> | Returns an array of channel indices that are present at the specified pixel onscreen. |
+| static GetChannelNameFromEnum | string | Converts a SceneSegmentationChannel enum value to its string representation for display purposes. |
+| GetChannelNamesAt | List<string> | Returns an array of channel names that are present for the specified pixel onscreen (for display purposes). |
+| GetChannelsAt | List<SceneSegmentationChannel> | Returns an array of channels that are present for the specified pixel onscreen. |
+| GetPackedSceneSegmentationChannelsTexture | Texture2D | Retrieves the texture of semantic data where each pixel can be interpreted as a uint with bits corresponding to different classifications. |
+| GetSceneSegmentation | uint | Returns the scene segmentation at the specified pixel on screen. |
+| GetSceneSegmentationChannelTexture | Texture2D | Returns semantic segmentation texture for the specified semantic channel. |
+| GetSuppressionMaskTexture | Texture2D | Retrieves the suppression mask texture, where each pixel contains a uint which can be used to interpolate between the predicted depth and the far field depth of the scene. This is useful for enabling smooth occlusion suppression. |
+| TryAcquirePackedSceneSegmentationChannelsCpuImage | bool | Tries to acquire the latest packed semantic channels XRCpuImage. Each element of the XRCpuImage is a bit field indicating which semantic channels have surpassed their respective detection confidence thresholds for that pixel. (See GetChannelIndex) |
+| TryAcquireSceneSegmentationChannelCpuImage | bool | Attempt to acquire the latest semantic segmentation XRCpuImage for the specified semantic class. This provides direct access to the raw pixel data. |
+| TryAcquireSuppressionMaskCpuImage | bool | Tries to acquire the latest suppression mask XRCpuImage. Each element of the XRCpuImage is a uint32 value which can be used to interpolate between instantaneous depth and far field depth. |
+| TryResetChannelConfidenceThresholds | bool | Resets the confidence thresholds for all semantic channels to the default values from the current model. |
+| TrySetChannelConfidenceThresholds | bool | Sets the confidence threshold for including the specified semantic channel in the packed semantic channel buffer. |
+| Update | void | Callback as the manager is being updated. |
+
+---
+
+## Events
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| FrameReceived | Action<ARSceneSegmentationFrameEventArgs> | - |
+| MetadataInitialized | Action<ARSceneSegmentationModelEventArgs> | An event which fires when the underlying subsystem has finished initializing. |
+
+---

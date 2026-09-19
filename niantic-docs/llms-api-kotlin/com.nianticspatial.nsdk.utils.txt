@@ -1,0 +1,15 @@
+# com.nianticspatial.nsdk.utils
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils/
+
+utils
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| FlowPollingManager | FlowPollingManager<T> | Manages Flow-based polling for session updates with automatic subscriber trackingand frame deduplication.This class abstracts the common pattern of:- Creating a MutableSharedFlow- Tracking active subscribers- Starting/stopping polling coroutines based on subscriber count- Deduplicating updates by frame ID or timestamp |
+
+---

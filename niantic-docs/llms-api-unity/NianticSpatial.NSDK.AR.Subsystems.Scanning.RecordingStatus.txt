@@ -1,0 +1,25 @@
+# RecordingStatus
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Scanning.RecordingStatus/
+
+RecordingStatus
+
+---
+
+## Declaration
+
+public enum RecordingStatus
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Discarded | RecordingStatus | The scan has been discarded. |
+| static Error | RecordingStatus | There is an error with the scan. |
+| static Saved | RecordingStatus | The scan has been saved to persistent storage. |
+| static Started | RecordingStatus | The scan is currently recording. |
+| static Unknown | RecordingStatus | - |
+
+---

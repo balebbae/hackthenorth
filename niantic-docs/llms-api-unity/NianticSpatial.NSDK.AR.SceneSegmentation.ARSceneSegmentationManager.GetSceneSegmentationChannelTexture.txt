@@ -1,0 +1,30 @@
+# GetSceneSegmentationChannelTexture
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.SceneSegmentation.ARSceneSegmentationManager.GetSceneSegmentationChannelTexture/
+
+GetSceneSegmentationChannelTexture
+Returns semantic segmentation texture for the specified semantic channel.
+
+---
+
+## Declaration
+
+public Texture2D GetSceneSegmentationChannelTexture(SceneSegmentationChannel channel, out Matrix4x4 samplerMatrix, Nullable<XRCameraParams> cameraParams = null)
+
+#### Summary
+
+Returns semantic segmentation texture for the specified semantic channel.
+
+#### Returns
+
+The texture for the specified semantic channel, if any. Otherwise, null.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channel | SceneSegmentationChannel | The semantic channel to acquire. |
+| samplerMatrix | Matrix4x4 | A matrix that converts from viewport to image coordinates according to the latest pose. |
+| cameraParams | Nullable<XRCameraParams> | Params of the viewport to sample with. Defaults to current screen dimensions if null. |
+
+---

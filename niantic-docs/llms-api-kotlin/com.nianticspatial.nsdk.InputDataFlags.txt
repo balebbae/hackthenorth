@@ -1,0 +1,48 @@
+# InputDataFlags
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags/
+
+InputDataFlags
+
+---
+
+## Declaration
+
+enum class InputDataFlags
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| bit | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CAMERA_IMAGE | CAMERA_IMAGE | - |
+| COMPASS | COMPASS | - |
+| DEVICE_ORIENTATION | DEVICE_ORIENTATION | - |
+| END_OF_FORMATS | END_OF_FORMATS | - |
+| GPS_LOCATION | GPS_LOCATION | - |
+| NONE | NONE | - |
+| PLATFORM_DEPTH | PLATFORM_DEPTH | - |
+| POSE | POSE | - |
+| TRACKING_STATE | TRACKING_STATE | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| And | Int | - |
+| Is | Boolean | - |
+| Or | Int | - |
+| Within | Boolean | - |
+
+---

@@ -1,0 +1,33 @@
+# NianticSpatial.NSDK.AR.Mapping
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Mapping/
+
+Mapping
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| ARDeviceMappingManager | SubsystemLifecycleManager<XRDeviceMappingSubsystem, XRDeviceMappingSubsystemDescriptor, Provider> | ARDeviceMappingManager can be used to create and manage maps on the local device. |
+| DeviceMapAccessController | DeviceMapAccessController | Class to access primitive device map data and configs. |
+
+---
+
+## Structs
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| XRDeviceMap | ValueType | - |
+| XRDeviceMapGraph | ValueType | - |
+
+---
+
+## Enums
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| DeviceMappingType | DeviceMappingType | - |
+
+---

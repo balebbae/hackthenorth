@@ -1,0 +1,31 @@
+# Equals
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.NavigationMesh.Bounds.Equals/
+
+Equals
+
+---
+
+## Declaration
+
+public bool Equals(Bounds other)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Bounds | - |
+
+---
+
+## Overload
+
+public override bool Equals(object obj)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Bounds | - |
+
+---

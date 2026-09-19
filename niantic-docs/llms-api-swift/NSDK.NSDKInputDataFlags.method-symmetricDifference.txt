@@ -1,0 +1,29 @@
+# symmetricDifference
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKInputDataFlags.method-symmetricDifference/
+
+symmetricDifference
+
+---
+
+## Declaration
+
+func symmetricDifference(_ other: Self) -> Self
+
+#### Summary
+
+Returns a new option set with the elements contained in this set or in
+the given set, but not in both.
+
+#### Returns
+
+A new option set with only the elements contained in either
+  this set or other, but not in both.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| other | Self | An option set. |
+
+---

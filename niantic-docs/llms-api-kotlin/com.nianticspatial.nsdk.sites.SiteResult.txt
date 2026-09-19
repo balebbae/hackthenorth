@@ -1,0 +1,24 @@
+# SiteResult
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SiteResult/
+
+SiteResult
+Result of a site request from the Sites Manager service.
+
+---
+
+## Declaration
+
+data class SiteResult
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| error | SitesError | - |
+| sites | List<SiteInfo> | - |
+| status | SitesRequestStatus | - |
+
+---

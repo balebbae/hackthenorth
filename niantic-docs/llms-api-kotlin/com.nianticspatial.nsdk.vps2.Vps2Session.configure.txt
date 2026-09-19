@@ -1,0 +1,22 @@
+# configure
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.configure/
+
+configure
+Configure VPS2. Must be called while stopped.
+
+---
+
+## Declaration
+
+fun configure(config: Vps2Config)
+
+#### Summary
+
+Configure VPS2. Must be called while stopped.
+
+#### Throws
+
+NsdkInvalidArgumentStatusException -- if the configuration is invalid.
+
+---

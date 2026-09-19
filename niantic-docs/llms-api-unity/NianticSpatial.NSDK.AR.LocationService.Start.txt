@@ -1,0 +1,59 @@
+# Start
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.LocationService.Start/
+
+Start
+Starts location service updates.
+
+---
+
+## Declaration
+
+public void Start()
+
+#### Summary
+
+Starts location service updates.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| desiredAccuracyInMeters | float | The service accuracy you want to use, in meters. This determines the accuracy of the device's last location coordinates. Higher values like 500 don't require the device to use its GPS chip and thus save battery power. Lower values like 5-10 provide the best accuracy but require the GPS chip and thus use more battery power. The default value is 10 meters. |
+| updateDistanceInMeters | float | The minimum distance, in meters, that the device must move laterally before Unity updates Input.location. Higher values like 500 produce fewer updates and are less resource intensive to process. The default is 10 meters. |
+
+---
+
+## Overload 1
+
+public void Start(float desiredAccuracyInMeters)
+
+#### Summary
+
+Starts location service updates.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| desiredAccuracyInMeters | float | The service accuracy you want to use, in meters. This determines the accuracy of the device's last location coordinates. Higher values like 500 don't require the device to use its GPS chip and thus save battery power. Lower values like 5-10 provide the best accuracy but require the GPS chip and thus use more battery power. The default value is 10 meters. |
+| updateDistanceInMeters | float | The minimum distance, in meters, that the device must move laterally before Unity updates Input.location. Higher values like 500 produce fewer updates and are less resource intensive to process. The default is 10 meters. |
+
+---
+
+## Overload 2
+
+public void Start(float desiredAccuracyInMeters, float updateDistanceInMeters)
+
+#### Summary
+
+Starts location service updates.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| desiredAccuracyInMeters | float | The service accuracy you want to use, in meters. This determines the accuracy of the device's last location coordinates. Higher values like 500 don't require the device to use its GPS chip and thus save battery power. Lower values like 5-10 provide the best accuracy but require the GPS chip and thus use more battery power. The default value is 10 meters. |
+| updateDistanceInMeters | float | The minimum distance, in meters, that the device must move laterally before Unity updates Input.location. Higher values like 500 produce fewer updates and are less resource intensive to process. The default is 10 meters. |
+
+---

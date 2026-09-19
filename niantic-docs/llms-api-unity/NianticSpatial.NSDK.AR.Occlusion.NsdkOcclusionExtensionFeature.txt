@@ -1,0 +1,14 @@
+# NsdkOcclusionExtensionFeature
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtensionFeature/
+
+NsdkOcclusionExtensionFeature
+> extends UnityEngine.ScriptableObject
+
+---
+
+## Declaration
+
+public class NsdkOcclusionExtensionFeature : ScriptableObject
+
+---

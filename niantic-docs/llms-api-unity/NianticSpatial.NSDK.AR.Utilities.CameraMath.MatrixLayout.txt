@@ -1,0 +1,23 @@
+# MatrixLayout
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.CameraMath.MatrixLayout/
+
+MatrixLayout
+Options to specify the expected layout of a matrix.
+
+---
+
+## Declaration
+
+public enum MatrixLayout
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static ColumnMajor | MatrixLayout | - |
+| static RowMajor | MatrixLayout | - |
+
+---

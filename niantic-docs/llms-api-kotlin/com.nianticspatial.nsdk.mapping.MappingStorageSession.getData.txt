@@ -1,0 +1,24 @@
+# getData
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.mapping.MappingStorageSession.getData/
+
+getData
+
+---
+
+## Declaration
+
+fun getData(): ByteArray?
+
+#### Summary
+
+Get the complete map data.
+
+This function returns all the map data accumulated during the AR session, serialized as a
+DeviceMap protobuf. This data can be saved, shared, and/or used for localization.
+
+#### Returns
+
+The map data if successful, or null if no map data exists.
+
+---

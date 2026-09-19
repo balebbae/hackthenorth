@@ -1,0 +1,29 @@
+# deviceGeolocation
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKVps2Session.method-deviceGeolocation/
+
+deviceGeolocation
+Gets the geolocation of the device's last known camera pose.
+
+---
+
+## Declaration
+
+func deviceGeolocation(headingMode: HeadingMode = .cameraDirection) -> Vps2GeolocationData?
+
+#### Summary
+
+Gets the geolocation of the device's last known camera pose.
+
+#### Returns
+
+Geolocation data corresponding to the device's current pose,
+  or nil if VPS2 tracking is unavailable.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| headingMode | HeadingMode | Controls how the heading is derived. Use `.cameraDirection` when the device is upright, or `.deviceTop` when flat or for a compass-style heading. |
+
+---

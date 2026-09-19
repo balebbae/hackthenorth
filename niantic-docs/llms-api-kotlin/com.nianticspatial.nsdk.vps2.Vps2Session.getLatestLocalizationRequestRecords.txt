@@ -1,0 +1,22 @@
+# getLatestLocalizationRequestRecords
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.getLatestLocalizationRequestRecords/
+
+getLatestLocalizationRequestRecords
+Get diagnostic localization request records since the last call.
+
+---
+
+## Declaration
+
+fun getLatestLocalizationRequestRecords(): List<Vps2LocalizationRequestRecord>
+
+#### Summary
+
+Get diagnostic localization request records since the last call.
+
+#### Returns
+
+The list of network request records since the last call.
+
+---

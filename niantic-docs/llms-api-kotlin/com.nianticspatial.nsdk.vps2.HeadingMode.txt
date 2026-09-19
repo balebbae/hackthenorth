@@ -1,0 +1,35 @@
+# HeadingMode
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.HeadingMode/
+
+HeadingMode
+
+---
+
+## Declaration
+
+enum class HeadingMode
+
+## Summary
+
+Controls how the heading is computed from the device's orientation.
+Mirrors `ARDK_HeadingMode`.
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| value | Int | - |
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| CAMERA_DIRECTION | CAMERA_DIRECTION | Heading from the camera's forward axis (perpendicular to screen).Best when the device is held upright in portrait or landscape. |
+| DEVICE_TOP | DEVICE_TOP | Heading from the top edge of the screen, accounting for display orientation.Best when the device is held face-up or for compass widgets. |
+
+---

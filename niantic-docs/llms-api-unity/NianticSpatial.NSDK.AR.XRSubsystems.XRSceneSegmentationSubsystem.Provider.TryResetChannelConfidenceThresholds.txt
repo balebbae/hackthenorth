@@ -1,0 +1,30 @@
+# TryResetChannelConfidenceThresholds
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRSceneSegmentationSubsystem.Provider.TryResetChannelConfidenceThresholds/
+
+TryResetChannelConfidenceThresholds
+Resets the confidence thresholds for all semantic channels to the default values from the current model.
+
+---
+
+## Declaration
+
+public virtual bool TryResetChannelConfidenceThresholds()
+
+#### Summary
+
+Resets the confidence thresholds for all semantic channels to the default values from the current model.
+
+#### Remarks
+
+This reverts any changes made with TrySetChannelConfidenceThresholds.
+
+#### Returns
+
+True if the thresholds were reset. Otherwise, false.
+
+#### Throws
+
+NotSupportedException -- Thrown when resetting confidence thresholds is not     supported by the implementation.
+
+---

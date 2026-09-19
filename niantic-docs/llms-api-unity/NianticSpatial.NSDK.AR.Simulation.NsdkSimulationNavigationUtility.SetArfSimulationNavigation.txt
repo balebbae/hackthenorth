@@ -1,0 +1,19 @@
+# SetArfSimulationNavigation
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Simulation.NsdkSimulationNavigationUtility.SetArfSimulationNavigation/
+
+SetArfSimulationNavigation
+
+---
+
+## Declaration
+
+public static void SetArfSimulationNavigation(bool enabled)
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| enabled | bool | - |
+
+---

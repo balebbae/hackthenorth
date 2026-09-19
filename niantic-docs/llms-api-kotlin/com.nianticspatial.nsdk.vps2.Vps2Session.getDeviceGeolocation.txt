@@ -1,0 +1,26 @@
+# getDeviceGeolocation
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.getDeviceGeolocation/
+
+getDeviceGeolocation
+Get the geolocation of the device's last known camera pose.
+
+---
+
+## Declaration
+
+fun getDeviceGeolocation(headingMode: HeadingMode = HeadingMode.CAMERA_DIRECTION): Vps2GeolocationData?
+
+#### Summary
+
+Get the geolocation of the device's last known camera pose.
+
+#### Returns
+
+Vps2GeolocationData if available, null otherwise.
+
+#### Throws
+
+NsdkInvalidOperationStatusException -- if the current localization tracking state is Vps2TrackingState.UNAVAILABLE.
+
+---

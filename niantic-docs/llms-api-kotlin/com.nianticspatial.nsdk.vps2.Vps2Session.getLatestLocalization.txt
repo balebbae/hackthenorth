@@ -1,0 +1,20 @@
+# getLatestLocalization
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.vps2.Vps2Session.getLatestLocalization/
+
+getLatestLocalization
+
+---
+
+## Declaration
+
+fun getLatestLocalization(): Vps2Localization
+
+#### Summary
+
+Gets the most recent VPS2 localization result.
+
+The returned localization contains the spatial mapping between
+the device's AR coordinate space and real-world geolocation.
+
+---

@@ -1,0 +1,35 @@
+# NianticSpatial.NSDK.AR.Loader
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Loader/
+
+Loader
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| DevicePlaybackSettings | INsdkPlaybackSettings | - |
+| EditorPlaybackSettings | INsdkPlaybackSettings | - |
+| NativeLoaderHelper | NativeLoaderHelper | - |
+| NsdkLoaderHelper | NsdkLoaderHelper | - |
+| NsdkSettings | ScriptableObject | Build time settings for NSDK AR. These are serialized to an asset file and can only be altered via the Unity Inspector window. |
+| NsdkSettingsHelper | NsdkSettingsHelper | - |
+| NsdkSimulationLoader | XRLoaderHelper, INsdkInternalLoaderSupport | - |
+| NsdkSimulationParams | NsdkSimulationParams | - |
+| NsdkStandaloneLoader | XRLoaderHelper, INsdkInternalLoaderSupport | - |
+| OverloadPlaybackSettings | INsdkPlaybackSettings | - |
+| RuntimeNsdkSettings | IAuthSettings | - |
+
+---
+
+## Interfaces
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| INsdkExternalLoader | INsdkExternalLoader | [Experimental] An interface to be implemented by packages to provide similar functionality to a Loader. Classes implementing this interface can be registered through the INsdkLoader interface so that their Initialize and Deinitialize methods get called at the appropriate times for creating and destroying subsystems. This Interface is experimental so may change or be removed from future versions without warning. |
+| INsdkLoader | INsdkLoader | [Experimental] INsdkLoader defines an interface through which external subsystems can be registered for loading through NSDK, and to all them to access XRLoaderHelper functionality. The external subsystem loader must implement the INsdkExternalLoader interface. This Interface is experimental so may change or be removed from future versions without warning. |
+| INsdkPlaybackSettings | INsdkPlaybackSettings | - |
+
+---

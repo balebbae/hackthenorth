@@ -1,0 +1,46 @@
+# Cinfo
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.XRScanningSubsystemDescriptor.Cinfo/
+
+Cinfo
+Constructor info used to register a descriptor.
+
+---
+
+## Declaration
+
+public struct Cinfo : ValueType, IEquatable<Cinfo>
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| id | string | The string identifier for this subsystem. |
+| providerType | Type | Specifies the provider implementation type to use for instantiation. |
+| subsystemTypeOverride | Type | Specifies the XRScanningSubsystem-derived type that forwards casted calls to its provider. |
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| Equals | bool | Tests for equality. |
+| GetHashCode | int | Generates a hash suitable for use with containers like `HashSet` and `Dictionary`. |
+
+---
+
+## Operators
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static != | bool | Tests for inequality. Same as `!`Equals. |
+| static == | bool | Tests for equality. Same as Equals. |
+
+---
+
+## Relationships
+
+implements:  System.IEquatable

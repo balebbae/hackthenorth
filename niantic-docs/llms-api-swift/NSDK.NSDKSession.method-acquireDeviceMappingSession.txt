@@ -1,0 +1,28 @@
+# acquireDeviceMappingSession
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.method-acquireDeviceMappingSession/
+
+acquireDeviceMappingSession
+
+---
+
+## Declaration
+
+@MainActor func acquireDeviceMappingSession() -> NSDKDeviceMappingSession
+
+#### Summary
+
+Returns the shared device mapping session, creating it on first call.
+Subsequent calls return the same instance. The session is inactive until start() is
+called. NSDKSession.update() will call update() on it automatically each frame once
+it is started.
+The session holds a reference to the shared NSDKMapStorage, which is also
+created on first call and reused on subsequent calls.
+
+> **Info:**
+>
+> **Notice**
+>
+> Important: Must be called from the main thread.
+
+---

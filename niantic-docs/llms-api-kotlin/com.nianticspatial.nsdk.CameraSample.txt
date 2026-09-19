@@ -1,0 +1,29 @@
+# CameraSample
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.CameraSample/
+
+CameraSample
+A snapshot of camera sensor data for a single frame.
+
+---
+
+## Declaration
+
+data class CameraSample
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| imageFormat | Int | - |
+| imageHeight | Int | - |
+| imagePlanes | Array<Image.Plane> | - |
+| imageWidth | Int | - |
+| intrinsics | CameraIntrinsics | - |
+| orientation | Orientation | - |
+| pose | Pose | - |
+| timestampMs | Long | - |
+
+---

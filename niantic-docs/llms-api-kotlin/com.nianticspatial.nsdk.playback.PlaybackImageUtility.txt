@@ -1,0 +1,27 @@
+# PlaybackImageUtility
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.PlaybackImageUtility/
+
+PlaybackImageUtility
+
+---
+
+## Declaration
+
+object PlaybackImageUtility
+
+## Summary
+
+Converts a playback [Bitmap] to an Android [Image] in YUV_420_888 format so it can be passed
+as [com.nianticspatial.nsdk.FrameData.cameraImagePlanes] to [com.nianticspatial.nsdk.NSDKSession.sendFrame].
+Caller must call [YuvImageHandler.close] when done (e.g. after sendFrame returns).
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| bitmapToYuvImage | YuvImageHandler? | Converts [bitmap] to a YUV_420_888 [Image]. Returns null if conversion fails.Caller must call [YuvImageHandler.close] after use (e.g. after sendFrame returns). |
+
+---

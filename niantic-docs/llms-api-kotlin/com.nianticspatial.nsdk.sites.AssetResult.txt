@@ -1,0 +1,24 @@
+# AssetResult
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetResult/
+
+AssetResult
+Result of an asset request from the Sites Manager service.
+
+---
+
+## Declaration
+
+data class AssetResult
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| assets | List<AssetInfo> | - |
+| error | SitesError | - |
+| status | SitesRequestStatus | - |
+
+---

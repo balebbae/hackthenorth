@@ -1,0 +1,37 @@
+# affineFit
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.ImageMath.method-affineFit/
+
+affineFit
+Returns an affine transformation that maps normalized coordinates in the source frame to normalized coordinates in the target frame.
+
+---
+
+## Declaration
+
+static func affineFit(source: CGSize, sourceOrientation: UIInterfaceOrientation, target: CGSize, targetOrientation: UIInterfaceOrientation) -> CGAffineTransform
+
+#### Summary
+
+Returns an affine transformation that maps normalized coordinates in the source frame to normalized coordinates in the target frame.
+
+#### Returns
+
+An affine transformation matrix that fits the source into the target.
+
+> **Info:**
+>
+> **Notice**
+>
+> Note: In portrait, this function aligns the top and bottom edges to the target.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| source | CGSize | The size of the source container. |
+| sourceOrientation | UIInterfaceOrientation | The orientation of the source container. |
+| target | CGSize | The size of the target container. |
+| targetOrientation | UIInterfaceOrientation | The orientation of the target container. |
+
+---

@@ -1,0 +1,29 @@
+# RequestSelfOrganizationInfoAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.RequestSelfOrganizationInfoAsync/
+
+RequestSelfOrganizationInfoAsync
+Requests organizations for the current authenticated session.
+
+---
+
+## Declaration
+
+public async Task<OrganizationResult> RequestSelfOrganizationInfoAsync(int timeoutMs = DefaultTimeoutMs, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Requests organizations for the current authenticated session.
+
+#### Returns
+
+The organization result.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| timeoutMs | int | Maximum time to wait for the request to complete. |
+| cancellationToken | CancellationToken | Token to cancel the operation. |
+
+---

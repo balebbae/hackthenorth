@@ -1,0 +1,26 @@
+# RequestSiteInfoAsync
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.SitesClient.RequestSiteInfoAsync/
+
+RequestSiteInfoAsync
+Requests site information by site ID.
+
+---
+
+## Declaration
+
+public async Task<SiteResult> RequestSiteInfoAsync(string siteId, int timeoutMs = DefaultTimeoutMs, CancellationToken cancellationToken = default)
+
+#### Summary
+
+Requests site information by site ID.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| siteId | string | - |
+| timeoutMs | int | - |
+| cancellationToken | CancellationToken | - |
+
+---

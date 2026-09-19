@@ -1,0 +1,39 @@
+# PlaybackDatasetSource
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.interface-PlaybackDatasetSource/
+
+PlaybackDatasetSource
+
+---
+
+## Declaration
+
+protocol PlaybackDatasetSource
+
+## Summary
+
+Protocol for loading playback dataset data from various sources.
+This protocol abstracts data retrieval, allowing for different implementations
+such as bundle loading, file system loading, remote loading, or mock data for testing.
+Implementations are used for on-demand frame loading - the loader is passed to
+`PlaybackDataset` which calls these methods when frames are requested.
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| info | String | Returns details about the loader configuration. |
+| loadCaptureJSON | Data? | Loads the capture JSON data from the data source. |
+| loadDepthConfidence | Data? | Loads depth confidence data from the data source.This method is called on-demand when confidence data is requested. |
+| loadDepthData | Data? | Loads depth data from the data source.This method is called on-demand when depth data is requested. |
+| loadImage | CGImage? | Loads an image from the data source.This method is called on-demand when a frame image is requested. |
+
+---
+
+## Relationships
+
+conformance:  PlaybackDatasetLoader 
+
+conformance:  BundlePlaybackDatasetLoader

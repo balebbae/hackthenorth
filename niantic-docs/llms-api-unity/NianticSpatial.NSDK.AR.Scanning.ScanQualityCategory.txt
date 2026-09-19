@@ -1,0 +1,34 @@
+# ScanQualityCategory
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Scanning.ScanQualityCategory/
+
+ScanQualityCategory
+
+---
+
+## Declaration
+
+public enum ScanQualityCategory : uint
+
+## Summary
+
+Scan quality categories.
+Note, if changing this category, it needs to change the relevant native enum.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static BadQuality | ScanQualityCategory | - |
+| static Blurry | ScanQualityCategory | - |
+| static Dark | ScanQualityCategory | - |
+| static GroundOrFeet | ScanQualityCategory | - |
+| static Obstruction | ScanQualityCategory | - |
+| static Overall | ScanQualityCategory | - |
+| static ScanFromCar | ScanQualityCategory | - |
+| static ScanIndoor | ScanQualityCategory | - |
+| static ScanTargetNotVisible | ScanQualityCategory | - |
+
+---

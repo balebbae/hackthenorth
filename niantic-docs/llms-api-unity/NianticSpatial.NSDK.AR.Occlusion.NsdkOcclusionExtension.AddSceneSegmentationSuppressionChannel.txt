@@ -1,0 +1,28 @@
+# AddSceneSegmentationSuppressionChannel
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension.AddSceneSegmentationSuppressionChannel/
+
+AddSceneSegmentationSuppressionChannel
+Adds a semantic segmentation channel to the collection of channels that are suppressed in the depth buffer.
+
+---
+
+## Declaration
+
+public bool AddSceneSegmentationSuppressionChannel(SceneSegmentationChannel channel)
+
+#### Summary
+
+Adds a semantic segmentation channel to the collection of channels that are suppressed in the depth buffer.
+
+#### Returns
+
+True if the channel was successfully added.
+
+### Parameters
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| channel | SceneSegmentationChannel | Semantic segmentation channel to add |
+
+---

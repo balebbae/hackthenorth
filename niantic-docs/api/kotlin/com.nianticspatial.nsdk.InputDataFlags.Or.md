@@ -1,0 +1,46 @@
+---
+source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags.Or/
+title: Or
+---
+
+<div class="mobile-docs-controls">
+
+<div class="mobile-docs-controls__main">
+
+UnitySwiftKotlin
+
+</div>
+
+</div>
+
+<div class="docContentTransition">
+
+<div class="theme-doc-markdown markdown">
+
+<div class="api-breadcrumbs">
+
+<span class="api-breadcrumbs-nav">←</span>[API Reference](https://www.nianticspatial.com/docs/api/kotlin/ "Return to API Reference index") <span class="api-breadcrumbs-nav">←</span>[com.nianticspatial.nsdk](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk/ "com.nianticspatial.nsdk") <span class="api-breadcrumbs-nav">←</span>[InputDataFlags](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags/ "com.nianticspatial.nsdk.InputDataFlags") 
+
+</div>
+
+<div class="api-title">
+
+#  Or
+
+</div>
+
+------------------------------------------------------------------------
+
+## Declaration<a href="#declaration" class="hash-link" aria-label="Direct link to Declaration" title="Direct link to Declaration">​</a>
+
+<div class="api-constructor">
+
+<span class="ctoken-line"><span class="ctoken keyword">infix</span><span class="ctoken plain"> </span><span class="ctoken keyword">fun</span><span class="ctoken plain"> </span><span class="ctoken class-name">Or</span><span class="ctoken punctuation">(</span><span class="ctoken plain">other</span><span class="ctoken punctuation">:</span><span class="ctoken plain"> </span><span class="ctoken class-name">[InputDataFlags](https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.InputDataFlags/ "Browse to InputDataFlags")</span><span class="ctoken punctuation">)</span><span class="ctoken punctuation">:</span><span class="ctoken plain"> </span><span class="ctoken class-name keyword"><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int" target="_blank" rel="noopener noreferrer" title="Opens an external reference">Int</a></span></span>
+
+</div>
+
+------------------------------------------------------------------------
+
+</div>
+
+</div>

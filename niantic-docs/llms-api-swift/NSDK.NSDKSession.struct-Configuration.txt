@@ -1,0 +1,38 @@
+# Configuration
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.NSDKSession.struct-Configuration/
+
+Configuration
+
+---
+
+## Declaration
+
+struct Configuration
+
+## Summary
+
+Configuration settings for initializing an NSDK session.
+This struct encapsulates various configuration options
+including device info, cloud environment settings, user credentials,
+and logging preferences.
+
+---
+
+## Constructors
+
+init(forceDisableCTrace: Bool = false, envConfig: CloudEnvConfig = CloudEnvConfig(), userConfig: UserConfig = UserConfig(), useLidar: Bool = true, logCallback: NSDKLogCallback? = nil)
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| var envConfig | CloudEnvConfig | - |
+| var forceDisableCTrace | Bool | - |
+| var logCallback | NSDKLogCallback? | - |
+| var useLidar | Bool | - |
+| var userConfig | UserConfig | - |
+
+---

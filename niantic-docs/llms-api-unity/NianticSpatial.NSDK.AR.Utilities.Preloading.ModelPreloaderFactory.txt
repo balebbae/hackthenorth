@@ -1,0 +1,21 @@
+# ModelPreloaderFactory
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Utilities.Preloading.ModelPreloaderFactory/
+
+ModelPreloaderFactory
+
+---
+
+## Declaration
+
+public class ModelPreloaderFactory
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Create | IModelPreloader | - |
+
+---

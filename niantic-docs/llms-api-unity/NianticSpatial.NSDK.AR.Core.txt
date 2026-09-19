@@ -1,0 +1,16 @@
+# NianticSpatial.NSDK.AR.Core
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Core/
+
+Core
+
+---
+
+## Classes
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| NsdkPlugin | NsdkPlugin | [Experimental] NsdkPlugin holds general properties of the NSDK Unity plugin. This Interface is experimental so may change or be removed from future versions without warning. |
+| NsdkUnityContext | NsdkUnityContext | [Experimental] NsdkUnityContext contains NSDK system components which are required by multiple modules. This class should only be accessed by NSDK packages This Interface is experimental so may change or be removed from future versions without warning. |
+
+---

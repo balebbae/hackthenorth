@@ -1,0 +1,34 @@
+# SensorHelper
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.helpers.SensorHelper/
+
+SensorHelper
+> extends SensorEventListener
+
+---
+
+## Declaration
+
+class SensorHelper
+
+## Summary
+
+Reads compass (heading) and raw magnetometer data from Android sensors and exposes it as a
+[Compass] snapshot. Used internally by [DefaultSessionDataSource].
+Call [resume] when the owning component becomes active and [pause] when it is paused to
+conserve battery.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| compass | Compass | Returns a snapshot of the latest compass reading. Check [Compass.headingAccuracy] >= 0 to confirm data has arrived. |
+| isDeviceFlat | Boolean | Returns true when the device is roughly flat (face-up or face-down). |
+| onAccuracyChanged | void | - |
+| onSensorChanged | void | - |
+| pause | void | Unregisters all sensor listeners. Call from [androidx.lifecycle.DefaultLifecycleObserver.onPause]. |
+| resume | void | Registers sensor listeners. Call from [androidx.lifecycle.DefaultLifecycleObserver.onResume]. |
+
+---

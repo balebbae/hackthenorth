@@ -1,0 +1,34 @@
+# AssetPlaybackDatasetLoader
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.playback.AssetPlaybackDatasetLoader/
+
+AssetPlaybackDatasetLoader
+> extends PlaybackDatasetLoader 
+
+---
+
+## Declaration
+
+class AssetPlaybackDatasetLoader
+
+## Summary
+
+Loads playback dataset data from the app's [Context.getAssets] directory.
+Use a subdirectory that contains a capture JSON file and the frame images (and optional depth files).
+Example: place a dataset in `src/main/assets/playback/my_capture/` with
+`capture.json`, `frame_00000000.jpg`, etc. Then use
+`AssetPlaybackDatasetLoader(context, "playback/my_capture")`.
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| info | String | - |
+| loadCaptureJson | ByteArray? | - |
+| loadDepthConfidence | ByteArray? | - |
+| loadDepthData | ByteArray? | - |
+| loadImage | ByteArray? | - |
+
+---

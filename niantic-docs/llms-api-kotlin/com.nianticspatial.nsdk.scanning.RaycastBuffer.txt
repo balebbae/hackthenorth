@@ -1,0 +1,24 @@
+# RaycastBuffer
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.scanning.RaycastBuffer/
+
+RaycastBuffer
+A read-only container for the raycast buffer information generated during scanning.
+
+---
+
+## Declaration
+
+data class RaycastBuffer
+
+---
+
+## Properties
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| normals | Image.IntImage | - |
+| positionAndConfidence | Image.ShortImage | - |
+| rgba | Image.IntImage | - |
+
+---

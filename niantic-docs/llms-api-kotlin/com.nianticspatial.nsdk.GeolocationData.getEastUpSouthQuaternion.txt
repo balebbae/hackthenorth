@@ -1,0 +1,18 @@
+# getEastUpSouthQuaternion
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.GeolocationData.getEastUpSouthQuaternion/
+
+getEastUpSouthQuaternion
+
+---
+
+## Declaration
+
+fun getEastUpSouthQuaternion(): FloatArray
+
+#### Summary
+
+Returns the orientation converted to East-Up-South (EUS) frame.
+The returned quaternion is agnostic to the orientation of the display.
+
+---

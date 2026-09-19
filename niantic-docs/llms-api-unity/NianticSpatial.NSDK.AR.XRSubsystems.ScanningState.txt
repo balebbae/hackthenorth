@@ -1,0 +1,27 @@
+# ScanningState
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.XRSubsystems.ScanningState/
+
+ScanningState
+
+---
+
+## Declaration
+
+public enum ScanningState
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Error | ScanningState | Scan processing has failed. From this state: - can be called to reset the scanner to the *Stopped* state. |
+| static Ready | ScanningState | The scanner is created and ready to start. From this state: - can be called to begin scanning. |
+| static Saved | ScanningState | The scan has been saved. From this state: - can be called to end the scan, transitioning to the *Stopped* state. |
+| static Saving | ScanningState | The scan is currently being saved. From this state: - can be called to end the scan, transitioning to the *Stopped* state. - Automatically transitions to the "Saved" state when done. |
+| static Started | ScanningState | The scanner is started and scanning. From this state: - can be called to end the scan, transitioning to the *Stopped* state. - can be called to save the scan, transitioning to the *Saving* state. - can be called to discard the scan, transitioning to the *Discarding* state. |
+| static Stopped | ScanningState | Scanning is stopped. From this state: - can be called to re-start scanning, transitioning to the *Started* state. |
+| static Unknown | ScanningState | - |
+
+---

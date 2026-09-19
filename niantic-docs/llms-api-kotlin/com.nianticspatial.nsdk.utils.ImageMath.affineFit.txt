@@ -1,0 +1,22 @@
+# affineFit
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.utils.ImageMath.affineFit/
+
+affineFit
+
+---
+
+## Declaration
+
+fun affineFit( source: Size, srcOrientation: Orientation, target: Size, tgtOrientation: Orientation ): Matrix
+
+#### Summary
+
+Returns an affine transformation that maps normalized coordinates
+in the source frame to normalized coordinates in the target frame.
+
+#### Returns
+
+An affine transformation matrix that fits the source into the target.
+
+---

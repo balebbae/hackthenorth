@@ -1,0 +1,97 @@
+# SitesSession
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession/
+
+SitesSession
+> extends SessionBase 
+
+---
+
+## Declaration
+
+class SitesSession
+
+## Summary
+
+A session for interacting with the Sites Manager service.
+`SitesSession` provides capabilities for querying organizational hierarchy data
+including users, organizations, sites, and assets.
+
+### Usage
+
+**1. Acquire the Sites session:**
+
+```kotlin
+val sitesSession = ardkSession.sites.acquire()
+```
+
+**2. Query user information:**
+
+```kotlin
+val userResult = sitesSession.requestSelfUserInfo()
+if (userResult.status == SitesRequestStatus.SUCCESS) {
+val user = userResult.user
+println("User: ${user?.firstName} ${user?.lastName}")
+}
+```
+
+**3. Query organizations for a user:**
+
+```kotlin
+val orgsResult = sitesSession.requestOrganizationsForUser(userId)
+orgsResult.organizations.forEach { org ->
+println("Organization: ${org.name}")
+}
+```
+
+**4. Query sites for an organization:**
+
+```kotlin
+val sitesResult = sitesSession.requestSitesForOrganization(orgId)
+sitesResult.sites.forEach { site ->
+println("Site: ${site.name}")
+}
+```
+
+**5. Query assets for a site:**
+
+```kotlin
+val assetsResult = sitesSession.requestAssetsForSite(siteId)
+assetsResult.assets.forEach { asset ->
+println("Asset: ${asset.name} (${asset.type})")
+}
+```
+
+**6. Clean up when done:**
+
+```kotlin
+sitesSession.close()
+```
+
+## See also
+
+requestSelfUserInfo
+requestOrganizationsForUser
+requestSitesForOrganization
+requestAssetsForSite
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| onDestroy | void | - |
+| onInit | void | - |
+| requestAssetInfo | AssetResult | Requests asset information by asset ID. |
+| requestAssetsForSite | AssetResult | Requests all assets for a site. |
+| requestOrganizationInfo | OrganizationResult | Requests organization information by organization ID. |
+| requestOrganizationsForUser | OrganizationResult | Requests all organizations for a user.Consider using [requestSelfOrganizationInfo] instead. |
+| requestSelfOrganizationInfo | OrganizationResult | Requests organizations for the current authenticated session. |
+| requestSelfUserInfo | UserResult | Requests information for the currently authenticated user.Uses the user ID from the access token to fetch user information.To fetch organizations, consider using [requestSelfOrganizationInfo] instead. |
+| requestSiteAssetsByLocation | SiteAssetsResult | Requests sites and assets near a GPS coordinate. |
+| requestSiteInfo | SiteResult | Requests site information by site ID. |
+| requestSitesForOrganization | SiteResult | Requests all sites for an organization. |
+| requestUserInfo | UserResult | Requests user information by user ID. |
+
+---

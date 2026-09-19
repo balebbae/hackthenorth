@@ -1,0 +1,26 @@
+# NsdkVps2Subsystem
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Subsystems.Vps2.NsdkVps2Subsystem/
+
+NsdkVps2Subsystem
+> extends XRVps2Subsystem 
+
+---
+
+## Declaration
+
+public sealed class NsdkVps2Subsystem : XRVps2Subsystem, ISubsystemWithMutableApi<IApi>
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| SwitchToInternalMockImplementation | void | - |
+
+---
+
+## Relationships
+
+implements:  NianticSpatial.NSDK.AR.ISubsystemWithMutableApi

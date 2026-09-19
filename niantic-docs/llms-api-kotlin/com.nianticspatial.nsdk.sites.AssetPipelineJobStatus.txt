@@ -1,0 +1,41 @@
+# AssetPipelineJobStatus
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.AssetPipelineJobStatus/
+
+AssetPipelineJobStatus
+
+---
+
+## Declaration
+
+enum class AssetPipelineJobStatus
+
+## Summary
+
+Asset pipeline job status.
+Maps to proto enum AssetPipelineJobStatus.
+
+---
+
+## Cases
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| FAILED | FAILED | - |
+| NOT_FOUND | NOT_FOUND | - |
+| PENDING | PENDING | - |
+| READY | READY | - |
+| RUNNING | RUNNING | - |
+| SUCCEEDED | SUCCEEDED | - |
+| UNKNOWN | UNKNOWN | - |
+| UNSPECIFIED | UNSPECIFIED | - |
+
+---
+
+## Functions
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| toString | String | - |
+
+---

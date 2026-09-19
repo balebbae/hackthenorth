@@ -1,0 +1,13 @@
+# GetEdgeType
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.MapStorageAccess.MapSubGraph.GetEdgeType/
+
+GetEdgeType
+
+---
+
+## Declaration
+
+public OutputEdgeType GetEdgeType()
+
+---

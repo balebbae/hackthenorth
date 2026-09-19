@@ -1,0 +1,29 @@
+# AssetStatusType
+
+Source: https://www.nianticspatial.com/docs/api/unity/NianticSpatial.NSDK.AR.Sites.AssetStatusType/
+
+AssetStatusType
+
+---
+
+## Declaration
+
+public enum AssetStatusType
+
+## Summary
+
+Asset status.
+Maps to proto enum AssetStatusType.
+
+---
+
+## Fields
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static Active | AssetStatusType | Asset is active. |
+| static Inactive | AssetStatusType | Asset is inactive. |
+| static Pending | AssetStatusType | Asset is pending. |
+| static Unspecified | AssetStatusType | Status not specified. |
+
+---

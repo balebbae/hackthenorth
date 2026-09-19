@@ -1,0 +1,22 @@
+# NSDKTelemetry
+
+Source: https://www.nianticspatial.com/docs/api/swift/NSDK.enum-NSDKTelemetry/
+
+NSDKTelemetry
+Namespace for NSDK telemetry controls.
+
+---
+
+## Declaration
+
+enum NSDKTelemetry
+
+---
+
+## Methods
+
+| Name | Type | Summary |
+| --- | --- | --- |
+| static disable | void | Disables telemetry for the current process.Clears any buffered events and stops the telemetry sink from accepting new ones.Call this before initializing ARDK if you want to opt out of telemetry entirely. |
+
+---

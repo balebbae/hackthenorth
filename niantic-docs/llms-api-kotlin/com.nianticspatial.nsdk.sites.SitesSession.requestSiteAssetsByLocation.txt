@@ -1,0 +1,27 @@
+# requestSiteAssetsByLocation
+
+Source: https://www.nianticspatial.com/docs/api/kotlin/com.nianticspatial.nsdk.sites.SitesSession.requestSiteAssetsByLocation/
+
+requestSiteAssetsByLocation
+Requests sites and assets near a GPS coordinate.
+
+---
+
+## Declaration
+
+suspend fun requestSiteAssetsByLocation( lat: Double, lng: Double, radiusMeters: Double, assetType: AssetType, timeoutMs: Long = DEFAULT_TIMEOUT_MS ): SiteAssetsResult
+
+#### Summary
+
+Requests sites and assets near a GPS coordinate.
+
+#### Returns
+
+SiteAssetsResult containing the list of site-assets entries ordered by distance.
+
+#### Throws
+
+SitesException -- if the request fails with an error.
+kotlinx.coroutines.CancellationException -- if the coroutine is cancelled.
+
+---
