@@ -1,0 +1,689 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1473ACE16209A06612A58C5D /* HapticController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643868D493D450DB94B2C834 /* HapticController.swift */; };
+		1E16261BF60F3C660C763485 /* ObstacleCuePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */; };
+		282E424B5E073A890218C693 /* DeviceRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B80D61B973ADDB8AA016DD /* DeviceRole.swift */; };
+		2FC324B2B98E44A37AC5977C /* ObstacleCuePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F986D58B840F2AEC8BA69CC /* ObstacleCuePolicy.swift */; };
+		3E44CA0C91BEDB122D3C7491 /* LocalizationTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15A27278F3DD2A7D562BD0C /* LocalizationTransport.swift */; };
+		4053713D51A6AA505C5F8D89 /* RolePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B102DBDF9D441F5AB16955F /* RolePickerView.swift */; };
+		49E668DB9AB2D3657ED00985 /* NianticRESTTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */; };
+		4AC83AFE2BC36C46A10EE34D /* LocalizationQueryLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */; };
+		4CEF0C858E11D397B516D8E3 /* FrameEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */; };
+		4D51FDD4A783570BDF469EC8 /* FrontRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */; };
+		62A8D7AC7B86C3105211C7AD /* CameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */; };
+		7268326D4637C3047B658226 /* RolePickerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F147AA26272D381D984C0 /* RolePickerUITests.swift */; };
+		7EACE619A6DD903864ECD99F /* HapticRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */; };
+		909A791B211A73D9540814EF /* RoleAndSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */; };
+		92CCD23E678D26DB4005490D /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CCC321CAAAB401E7A91EFF /* AppTheme.swift */; };
+		9FAC1287F54162BC906449C6 /* CameraSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D255F0947FE83215675621C /* CameraSettings.swift */; };
+		AB00AEB7C13277269E469307 /* ObstacleDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */; };
+		BAF315B91597804E7CCD951C /* FrontPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73228F8110F3A379A989BA31 /* FrontPipeline.swift */; };
+		BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */; };
+		CDBDE6DA591478F0C50C23F3 /* ARSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031568815C5D0030A5C5CE41 /* ARSessionController.swift */; };
+		DE398D0DF725BEB920A9B924 /* LocalizationQueryLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */; };
+		EF21256AFF4120B855E27FE2 /* SpeechCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161465C2356D2C43BB567B41 /* SpeechCoordinator.swift */; };
+		F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		20FBE0DBC45844A5F2B2DECC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 58ADAACAE7E06BA870BDB444 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D816B26E7B183A203EE48831;
+			remoteInfo = NavigationAssistant;
+		};
+		64BE9E2F16FB64AAA8492665 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 58ADAACAE7E06BA870BDB444 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D816B26E7B183A203EE48831;
+			remoteInfo = NavigationAssistant;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		031568815C5D0030A5C5CE41 /* ARSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionController.swift; sourceTree = "<group>"; };
+		0D255F0947FE83215675621C /* CameraSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettings.swift; sourceTree = "<group>"; };
+		11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleCuePolicyTests.swift; sourceTree = "<group>"; };
+		161465C2356D2C43BB567B41 /* SpeechCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechCoordinator.swift; sourceTree = "<group>"; };
+		18397743DAD7ABE3449ABFDD /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		33CCC321CAAAB401E7A91EFF /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		3435D7F7527E238C2815A7D3 /* NavigationAssistantTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NavigationAssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		51B80D61B973ADDB8AA016DD /* DeviceRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRole.swift; sourceTree = "<group>"; };
+		5429B17D898EB77DE97049B0 /* NavigationAssistantUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NavigationAssistantUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationQueryLoop.swift; sourceTree = "<group>"; };
+		643868D493D450DB94B2C834 /* HapticController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticController.swift; sourceTree = "<group>"; };
+		6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameEncoder.swift; sourceTree = "<group>"; };
+		73228F8110F3A379A989BA31 /* FrontPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontPipeline.swift; sourceTree = "<group>"; };
+		781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleAndSettingsTests.swift; sourceTree = "<group>"; };
+		8F986D58B840F2AEC8BA69CC /* ObstacleCuePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleCuePolicy.swift; sourceTree = "<group>"; };
+		97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticRoleView.swift; sourceTree = "<group>"; };
+		9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationAssistantApp.swift; sourceTree = "<group>"; };
+		9B102DBDF9D441F5AB16955F /* RolePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerView.swift; sourceTree = "<group>"; };
+		A08F147AA26272D381D984C0 /* RolePickerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerUITests.swift; sourceTree = "<group>"; };
+		A854FFF77E8D2679C64D8F4F /* NavigationAssistant.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NavigationAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABAF78406066150A1A10AB72 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B15A27278F3DD2A7D562BD0C /* LocalizationTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTransport.swift; sourceTree = "<group>"; };
+		C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationQueryLoopTests.swift; sourceTree = "<group>"; };
+		CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetector.swift; sourceTree = "<group>"; };
+		CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettingsView.swift; sourceTree = "<group>"; };
+		DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObstacleDetectorTests.swift; sourceTree = "<group>"; };
+		ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontRoleView.swift; sourceTree = "<group>"; };
+		F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NianticRESTTransportTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		20FF7B5C55F16A1990020D02 /* Front */ = {
+			isa = PBXGroup;
+			children = (
+				73228F8110F3A379A989BA31 /* FrontPipeline.swift */,
+				ECC7B03CECCD054DC8154CB6 /* FrontRoleView.swift */,
+			);
+			path = Front;
+			sourceTree = "<group>";
+		};
+		22D056AB84847D34E32FF191 /* Roles */ = {
+			isa = PBXGroup;
+			children = (
+				51B80D61B973ADDB8AA016DD /* DeviceRole.swift */,
+				9B102DBDF9D441F5AB16955F /* RolePickerView.swift */,
+			);
+			path = Roles;
+			sourceTree = "<group>";
+		};
+		2AF4C06BE7D0437669194FD6 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				18397743DAD7ABE3449ABFDD /* .gitkeep */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		57CC2BE286A1B62E9BC1306E /* AR */ = {
+			isa = PBXGroup;
+			children = (
+				031568815C5D0030A5C5CE41 /* ARSessionController.swift */,
+			);
+			path = AR;
+			sourceTree = "<group>";
+		};
+		65EE34A70C04C93E75829164 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				57CC2BE286A1B62E9BC1306E /* AR */,
+				85E9F22A5622CD793DAADCD0 /* Haptics */,
+				92975AFF5D892656DA40650A /* Localization */,
+				870182FA636203AD5534476E /* Obstacles */,
+				C2ABE50378D51529DC343C44 /* Speech */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		6C942BF45B44B5F3136CDF3F /* Haptic */ = {
+			isa = PBXGroup;
+			children = (
+				97EBB2F7C01F94EC61F610B1 /* HapticRoleView.swift */,
+			);
+			path = Haptic;
+			sourceTree = "<group>";
+		};
+		7BB5FAADCA91C0107435B741 = {
+			isa = PBXGroup;
+			children = (
+				CDE87DF7B5E641293B80D583 /* App */,
+				D539CB769A7833582A292699 /* Features */,
+				2AF4C06BE7D0437669194FD6 /* Resources */,
+				65EE34A70C04C93E75829164 /* Services */,
+				E1E6FDA66B503431A4EF4352 /* Tests */,
+				B75317661DBD7F5B9A283BCE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		85E9F22A5622CD793DAADCD0 /* Haptics */ = {
+			isa = PBXGroup;
+			children = (
+				643868D493D450DB94B2C834 /* HapticController.swift */,
+			);
+			path = Haptics;
+			sourceTree = "<group>";
+		};
+		870182FA636203AD5534476E /* Obstacles */ = {
+			isa = PBXGroup;
+			children = (
+				8F986D58B840F2AEC8BA69CC /* ObstacleCuePolicy.swift */,
+				CAFB0402B2940C9ADFDEAE97 /* ObstacleDetector.swift */,
+			);
+			path = Obstacles;
+			sourceTree = "<group>";
+		};
+		8884E04515CA5BB987FAD0EA /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				0D255F0947FE83215675621C /* CameraSettings.swift */,
+				CB17969DB885CAC5C04B3D23 /* CameraSettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		92975AFF5D892656DA40650A /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				6FC24C00A056EF5C28E5D45A /* FrameEncoder.swift */,
+				5A618788F6298628AF37597F /* LocalizationQueryLoop.swift */,
+				B15A27278F3DD2A7D562BD0C /* LocalizationTransport.swift */,
+			);
+			path = Localization;
+			sourceTree = "<group>";
+		};
+		B75317661DBD7F5B9A283BCE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A854FFF77E8D2679C64D8F4F /* NavigationAssistant.app */,
+				3435D7F7527E238C2815A7D3 /* NavigationAssistantTests.xctest */,
+				5429B17D898EB77DE97049B0 /* NavigationAssistantUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C2ABE50378D51529DC343C44 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				161465C2356D2C43BB567B41 /* SpeechCoordinator.swift */,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+		C42CAA673C474BAA9CA9FFE0 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A08F147AA26272D381D984C0 /* RolePickerUITests.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		CDE87DF7B5E641293B80D583 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				33CCC321CAAAB401E7A91EFF /* AppTheme.swift */,
+				ABAF78406066150A1A10AB72 /* Info.plist */,
+				9A0662609F38B80B9DD4F5A3 /* NavigationAssistantApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		D539CB769A7833582A292699 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				20FF7B5C55F16A1990020D02 /* Front */,
+				6C942BF45B44B5F3136CDF3F /* Haptic */,
+				22D056AB84847D34E32FF191 /* Roles */,
+				8884E04515CA5BB987FAD0EA /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		E1E6FDA66B503431A4EF4352 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				C42CAA673C474BAA9CA9FFE0 /* UI */,
+				F8EEC548F72661ACDBF0692C /* Unit */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		F8EEC548F72661ACDBF0692C /* Unit */ = {
+			isa = PBXGroup;
+			children = (
+				C326AB68F4EB9CCA19C3D43A /* LocalizationQueryLoopTests.swift */,
+				F0017F23A8BF44F6FE488961 /* NianticRESTTransportTests.swift */,
+				11B9D3526D71B31ACF62C664 /* ObstacleCuePolicyTests.swift */,
+				DDEC3E7BDD840D1E1F862D4A /* ObstacleDetectorTests.swift */,
+				781C54BC5E58EA2561AE856A /* RoleAndSettingsTests.swift */,
+			);
+			path = Unit;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		01EEE40476CF597CE6BED678 /* NavigationAssistantTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C4982802C1FB91ED7FB00D12 /* Build configuration list for PBXNativeTarget "NavigationAssistantTests" */;
+			buildPhases = (
+				12E96CAFD97F2F15ECB51C93 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4CB830DA64FEA689E4028FDC /* PBXTargetDependency */,
+			);
+			name = NavigationAssistantTests;
+			packageProductDependencies = (
+			);
+			productName = NavigationAssistantTests;
+			productReference = 3435D7F7527E238C2815A7D3 /* NavigationAssistantTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		395954286B28DA294466F8DE /* NavigationAssistantUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 59FB281AB6E2BFF5CB6E1ED7 /* Build configuration list for PBXNativeTarget "NavigationAssistantUITests" */;
+			buildPhases = (
+				BA72A5202B8E07BEB066A213 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8342449A175EF6DF836142ED /* PBXTargetDependency */,
+			);
+			name = NavigationAssistantUITests;
+			packageProductDependencies = (
+			);
+			productName = NavigationAssistantUITests;
+			productReference = 5429B17D898EB77DE97049B0 /* NavigationAssistantUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		D816B26E7B183A203EE48831 /* NavigationAssistant */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8F2A58FCA9AE0CB0B867D758 /* Build configuration list for PBXNativeTarget "NavigationAssistant" */;
+			buildPhases = (
+				649E92B52CD0C010F7C373B2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NavigationAssistant;
+			packageProductDependencies = (
+			);
+			productName = NavigationAssistant;
+			productReference = A854FFF77E8D2679C64D8F4F /* NavigationAssistant.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		58ADAACAE7E06BA870BDB444 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					01EEE40476CF597CE6BED678 = {
+						DevelopmentTeam = DVX8YZ9GG9;
+						ProvisioningStyle = Automatic;
+					};
+					395954286B28DA294466F8DE = {
+						DevelopmentTeam = DVX8YZ9GG9;
+						ProvisioningStyle = Automatic;
+						TestTargetID = D816B26E7B183A203EE48831;
+					};
+					D816B26E7B183A203EE48831 = {
+						DevelopmentTeam = DVX8YZ9GG9;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 104D6513905AC703F9D47515 /* Build configuration list for PBXProject "NavigationAssistant" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7BB5FAADCA91C0107435B741;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B75317661DBD7F5B9A283BCE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D816B26E7B183A203EE48831 /* NavigationAssistant */,
+				01EEE40476CF597CE6BED678 /* NavigationAssistantTests */,
+				395954286B28DA294466F8DE /* NavigationAssistantUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		12E96CAFD97F2F15ECB51C93 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4AC83AFE2BC36C46A10EE34D /* LocalizationQueryLoopTests.swift in Sources */,
+				49E668DB9AB2D3657ED00985 /* NianticRESTTransportTests.swift in Sources */,
+				1E16261BF60F3C660C763485 /* ObstacleCuePolicyTests.swift in Sources */,
+				AB00AEB7C13277269E469307 /* ObstacleDetectorTests.swift in Sources */,
+				909A791B211A73D9540814EF /* RoleAndSettingsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		649E92B52CD0C010F7C373B2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDBDE6DA591478F0C50C23F3 /* ARSessionController.swift in Sources */,
+				92CCD23E678D26DB4005490D /* AppTheme.swift in Sources */,
+				9FAC1287F54162BC906449C6 /* CameraSettings.swift in Sources */,
+				62A8D7AC7B86C3105211C7AD /* CameraSettingsView.swift in Sources */,
+				282E424B5E073A890218C693 /* DeviceRole.swift in Sources */,
+				4CEF0C858E11D397B516D8E3 /* FrameEncoder.swift in Sources */,
+				BAF315B91597804E7CCD951C /* FrontPipeline.swift in Sources */,
+				4D51FDD4A783570BDF469EC8 /* FrontRoleView.swift in Sources */,
+				1473ACE16209A06612A58C5D /* HapticController.swift in Sources */,
+				7EACE619A6DD903864ECD99F /* HapticRoleView.swift in Sources */,
+				DE398D0DF725BEB920A9B924 /* LocalizationQueryLoop.swift in Sources */,
+				3E44CA0C91BEDB122D3C7491 /* LocalizationTransport.swift in Sources */,
+				F923C29501E1E823FEDE9A60 /* NavigationAssistantApp.swift in Sources */,
+				2FC324B2B98E44A37AC5977C /* ObstacleCuePolicy.swift in Sources */,
+				BF14C64283F9CE9F8DEC52FE /* ObstacleDetector.swift in Sources */,
+				4053713D51A6AA505C5F8D89 /* RolePickerView.swift in Sources */,
+				EF21256AFF4120B855E27FE2 /* SpeechCoordinator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA72A5202B8E07BEB066A213 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7268326D4637C3047B658226 /* RolePickerUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4CB830DA64FEA689E4028FDC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D816B26E7B183A203EE48831 /* NavigationAssistant */;
+			targetProxy = 64BE9E2F16FB64AAA8492665 /* PBXContainerItemProxy */;
+		};
+		8342449A175EF6DF836142ED /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D816B26E7B183A203EE48831 /* NavigationAssistant */;
+			targetProxy = 20FBE0DBC45844A5F2B2DECC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		21A132F7D93C78F801DE54E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hackthenorth.NavigationAssistantUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = NavigationAssistant;
+			};
+			name = Debug;
+		};
+		2CE704303C5657EC0D263F84 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hackthenorth.NavigationAssistantTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NavigationAssistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NavigationAssistant";
+			};
+			name = Release;
+		};
+		2E59FC01A844FC05F9954892 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hackthenorth.navassist;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		30C5A6215F4BAE92F9F3C287 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hackthenorth.NavigationAssistantTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NavigationAssistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NavigationAssistant";
+			};
+			name = Debug;
+		};
+		3CCBEFD667C109FC51973686 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hackthenorth.NavigationAssistantUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = NavigationAssistant;
+			};
+			name = Release;
+		};
+		4457EF3C27844FB44B44600B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = DVX8YZ9GG9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		6ABB931BE5CD13D9CDC489DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = DVX8YZ9GG9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		F2AD8E781B7EA3DD5CA14A7B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hackthenorth.navassist;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		104D6513905AC703F9D47515 /* Build configuration list for PBXProject "NavigationAssistant" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4457EF3C27844FB44B44600B /* Debug */,
+				6ABB931BE5CD13D9CDC489DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		59FB281AB6E2BFF5CB6E1ED7 /* Build configuration list for PBXNativeTarget "NavigationAssistantUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				21A132F7D93C78F801DE54E5 /* Debug */,
+				3CCBEFD667C109FC51973686 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8F2A58FCA9AE0CB0B867D758 /* Build configuration list for PBXNativeTarget "NavigationAssistant" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2AD8E781B7EA3DD5CA14A7B /* Debug */,
+				2E59FC01A844FC05F9954892 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C4982802C1FB91ED7FB00D12 /* Build configuration list for PBXNativeTarget "NavigationAssistantTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				30C5A6215F4BAE92F9F3C287 /* Debug */,
+				2CE704303C5657EC0D263F84 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 58ADAACAE7E06BA870BDB444 /* Project object */;
+}
