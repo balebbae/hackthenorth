@@ -3,14 +3,13 @@ import binascii
 import hashlib
 import json
 import logging
-import math
 import mimetypes
 import shutil
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
-from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, compute_route
+from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, compute_route, horizontal
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -264,7 +263,7 @@ async def localize(world_id: str, request: Request):
                               'worlds', world_id, 'vps-status.json')
         await store.emit(store.session(session['sessionId']), 'localized')
     return {'sessionId': session['sessionId'], 'worldId': world_id, 'pose': data['pose'],
-            'nearestNode': {**node_ref(nearest), 'distanceMetres': math.dist(data['pose']['position'], nearest['position'])},
+            'nearestNode': {**node_ref(nearest), 'distanceMetres': horizontal(data['pose']['position'], nearest['position'])},
             'snappedPosition': position, 'offGraphMetres': distance}
 
 
@@ -305,7 +304,7 @@ async def localize_query(world_id: str, request: Request):
     if pose is not None and world.get('alignment', {}).get('frame') == 'niantic-vps':
         try:
             nearest, (distance, _, _, _) = snap(world_graph(world), pose['position'])
-            record['nearestNode'] = {**node_ref(nearest), 'distanceMetres': math.dist(pose['position'], nearest['position'])}
+            record['nearestNode'] = {**node_ref(nearest), 'distanceMetres': horizontal(pose['position'], nearest['position'])}
             record['offGraphMetres'] = distance
         except HTTPException as error:
             if error.status_code != 409:  # a world without waypoints is fine here

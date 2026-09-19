@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 import json
+import math
 
 import pytest
 from fastapi.testclient import TestClient
@@ -250,3 +251,52 @@ def test_api_key_unconfigured_is_not_an_auth_bypass(settings):
     settings.wander_api_key = ''
     with TestClient(create_app(settings, model=ScriptedModel([]), events=FixtureEvents())) as client:
         assert client.get('/health').status_code == 401
+
+
+def test_first_instruction_is_relative_to_heading(world):
+    world['navigationGraph'] = {'nodes': [{'id': 'a', 'position': [0,0,0]}, {'id': 'b', 'position': [10,0,0]}],
+                                'edges': [{'from': 'a', 'to': 'b'}]}
+    facing_east = compute_route(world, {'from': 'a', 'to': 'b', 'headingDeg': 90})
+    assert facing_east['instructions'][0]['turn'] == 'straight'
+    facing_north = compute_route(world, {'from': 'a', 'to': 'b', 'headingDeg': 0})
+    assert facing_north['instructions'][0]['turn'] == 'right'
+    facing_west = compute_route(world, {'from': 'a', 'to': 'b', 'headingDeg': 270})
+    assert facing_west['instructions'][0]['turn'] == 'u-turn'
+    assert compute_route(world, {'from': 'a', 'to': 'b'})['instructions'][0]['turn'] == 'straight'
+
+
+def test_yaw_matches_leg_heading_convention():
+    from ..app.routing.heading import yaw, bearing, legacy_heading
+    assert yaw([0,0,0,1]) == pytest.approx(0)                       # camera looks down -Z
+    assert yaw([0,-math.sqrt(.5),0,math.sqrt(.5)]) == pytest.approx(90)  # -90° about Y turns -Z into +X
+    assert bearing([0,0,0], [1,0,0]) == pytest.approx(90)
+    assert legacy_heading(0) == 180 and legacy_heading(90) == 270
+
+
+def test_chest_height_pose_uses_horizontal_thresholds_and_speaks_turns(client):
+    graph = {'nodes': [{'id': 'a', 'position': [0,0,0]}, {'id': 'b', 'position': [0,0,-10]},
+                       {'id': 'c', 'position': [10,0,-10], 'kind': 'destination'}],
+             'edges': [{'from': 'a', 'to': 'b'}, {'from': 'b', 'to': 'c'}]}
+    client.put('/worlds/demo-building/graph', json=graph)
+    sid = client.post('/sessions', json={'worldId': 'demo-building', 'deviceId': 'phone', 'destination': 'c'}).json()['sessionId']
+    start = datetime.now(timezone.utc)-timedelta(seconds=10)
+    east = [0, -math.sqrt(.5), 0, math.sqrt(.5)]
+    def update(seconds, point, rotation=(0,0,0,1)):
+        result = client.post(f'/sessions/{sid}/pose', json={'timestamp': (start+timedelta(seconds=seconds)).isoformat(),
+            'trackingState': 'localized', 'pose': {'position': point, 'rotation': list(rotation)}})
+        assert result.status_code == 200, result.text
+        return result.json()
+    first = update(0, [0, 1.3, 0])
+    assert first['state'] == 'navigating' and first['headingDeg'] == pytest.approx(0)
+    assert first['instruction']['turn'] == 'straight' and first['speak'] == first['instruction']['text']
+    assert first['distanceToNextMetres'] == pytest.approx(10)
+    # Same leg, same heading: nothing new to say.
+    assert 'speak' not in update(1, [0, 1.3, -4])
+    # Reaching b 1.3 m above the floor still counts; facing north, c is to the right.
+    at_b = update(2, [0, 1.3, -10])
+    assert at_b['nextNode']['id'] == 'c' and at_b['instruction']['turn'] == 'right' and 'speak' in at_b
+    # Turning to face east settles into 'straight' and is spoken once.
+    turned = update(6, [0, 1.3, -10], east)
+    assert turned['instruction']['turn'] == 'straight' and 'speak' in turned
+    assert 'speak' not in update(7, [3, 1.3, -10], east)
+    assert update(8, [10, 1.3, -10], east)['state'] == 'arrived'
