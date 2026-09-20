@@ -16,7 +16,7 @@ SPZ_MAGIC = 0x5053474E
 SCHEMA = 'wander.occupancy/v1'
 
 
-BUILDER = 3  # bump when the filtering changes so cached grids are rebuilt
+BUILDER = 4  # bump when the filtering changes so cached grids are rebuilt
 
 
 def read_spz_positions(data: bytes):
@@ -72,9 +72,10 @@ def build_occupancy(spz: bytes, world: dict, cell_size: float = 0.15, min_alpha:
       at the defaults only walls and furniture-sized structure survive.
     """
     positions, alphas, scales = read_spz(spz)
-    solid = (alphas >= min_alpha) & (scales.max(axis=1) <= max_scale)
-    positions = positions[solid]
     alignment = world.get('alignment')
+    world_scale = np.float32(alignment['scale']) if alignment else np.float32(1)
+    solid = (alphas >= min_alpha) & (scales.max(axis=1) * world_scale <= max_scale)
+    positions = positions[solid]
     if alignment:
         positions = quaternion_rotate(positions * np.float32(alignment['scale']), alignment['rotation'])
         positions = positions + np.asarray(alignment['position'], dtype=np.float32)
@@ -113,21 +114,27 @@ def prune(occupied: np.ndarray, size, min_neighbors: int = 3, min_component: int
     (26-connectivity) smaller than `min_component` cells."""
     if len(occupied) == 0:
         return occupied
-    ny, nz = int(size[1]), int(size[2])
-    stride_i, stride_j = ny * nz, nz
-    offsets = np.array([di * stride_i + dj * stride_j + dk
-                        for di in (-1, 0, 1) for dj in (-1, 0, 1) for dk in (-1, 0, 1)
-                        if (di, dj, dk) != (0, 0, 0)], dtype=np.int64)
-    # Neighbour counts via sorted membership tests (a cell on the grid edge may
-    # count a wrapped neighbour; harmless for a support threshold).
+    shape = (int(size[0]), int(size[1]), int(size[2]))
+    steps = np.array([(di, dj, dk)
+                      for di in (-1, 0, 1) for dj in (-1, 0, 1) for dk in (-1, 0, 1)
+                      if (di, dj, dk) != (0, 0, 0)], dtype=np.int64)
+
+    def neighbours(cells, step):
+        """Flat indices of `cells` shifted by `step`, or -1 where that leaves the grid."""
+        ijk = np.stack(np.unravel_index(cells, shape), axis=1) + step
+        inside = np.all((ijk >= 0) & (ijk < shape), axis=1)
+        flat = np.full(len(cells), -1, dtype=np.int64)
+        flat[inside] = np.ravel_multi_index(tuple(ijk[inside].T), shape)
+        return flat
+
     occupied = np.sort(occupied)
     neighbors = np.zeros(len(occupied), dtype=np.int32)
-    for offset in offsets:
-        neighbors += np.isin(occupied + offset, occupied, assume_unique=False)
+    for step in steps:
+        neighbors += np.isin(neighbours(occupied, step), occupied)
     occupied = occupied[neighbors >= min_neighbors]
     if len(occupied) == 0:
         return occupied
-    # Connected components by union-find over the neighbour offsets.
+    # Connected components by union-find over the neighbour steps.
     index = {int(c): i for i, c in enumerate(occupied)}
     parent = np.arange(len(occupied))
 
@@ -137,8 +144,8 @@ def prune(occupied: np.ndarray, size, min_neighbors: int = 3, min_component: int
             a = parent[a]
         return a
 
-    for offset in offsets[offsets > 0]:  # each pair once
-        candidates = occupied + offset
+    for step in steps[len(steps) // 2:]:  # lexicographically positive half: each pair once
+        candidates = neighbours(occupied, step)
         present = np.isin(candidates, occupied)
         for a, b in zip(np.nonzero(present)[0], candidates[present]):
             ra, rb = find(a), find(index[int(b)])
