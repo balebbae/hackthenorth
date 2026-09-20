@@ -73,6 +73,20 @@ export async function queryAssistant(sessionId: string, text: string, uiContext?
   return { text: body.text ?? "", sources: body.sources ?? [], actions: body.actions ?? [] };
 }
 
+/** `POST /assistant/query/stream {session_id, text, ui_context?}` — server-sent events version
+ * of queryAssistant. Returns the raw upstream Response so the route handler can pipe its body
+ * straight through to the browser without buffering the whole answer first. */
+export async function queryAssistantStream(sessionId: string, text: string, uiContext?: string): Promise<Response> {
+  const res = await fetch(`${requireApiUrl()}/assistant/query/stream`, {
+    method: "POST",
+    headers: apiHeaders(),
+    body: JSON.stringify({ session_id: sessionId, text, ...(uiContext ? { ui_context: uiContext } : {}) }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw await apiError(res);
+  return res;
+}
+
 /** Turn a failed backend response into an error the UI can show, keeping FastAPI's `detail` text. */
 async function apiError(res: Response): Promise<AssistantApiError> {
   const { status } = res;
