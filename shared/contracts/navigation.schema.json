@@ -76,7 +76,7 @@
           ],
           "description": "Defaults to the session's last known position when omitted."
         },
-        "to": { "type": "string", "description": "Destination node id (usually kind = destination)." },
+        "to": { "type": "string", "description": "Destination node id (usually kind = destination), or `note:<noteId>` for a note pinned in the web viewer: the route then ends at the point on the nearest walkable edge beside the note, as a virtual node named after it." },
         "avoid": { "type": "array", "items": { "type": "string" }, "description": "Node ids to route around (e.g. closed doors)." },
         "headingDeg": { "type": "number", "minimum": 0, "exclusiveMaximum": 360, "description": "Traveller's heading at `from` (world convention: clockwise from above, 0 = -Z, 90 = +X). The first instruction turns relative to it; without it the first turn is 'straight'." },
         "accessibleOnly": { "type": "boolean", "default": false, "description": "Skip edges whose `accessible` is false (stairs, escalators, stepped paths); floor changes then go by elevator or ramp." }
@@ -145,7 +145,7 @@
         "sessionId": { "type": "string" },
         "worldId": { "type": "string" },
         "deviceId": { "type": "string" },
-        "destination": { "type": "string", "description": "Destination node id." },
+        "destination": { "type": "string", "description": "Destination node id, or `note:<noteId>` for a pinned note (see routeRequest.to). Absent when no guidance is active; DELETE /sessions/{id}/destination clears it." },
         "accessibleOnly": { "type": "boolean", "description": "Every route and reroute in this session is computed with `accessibleOnly`." },
         "route": { "$ref": "#/$defs/routeResponse" },
         "state": { "type": "string", "enum": ["localizing", "navigating", "off-route", "arrived", "lost", "ended"] },

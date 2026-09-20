@@ -28,6 +28,9 @@ class OpenAIAgentModel(AgentModel):
         self.model = settings.openai_model
         self.client = client or (AsyncOpenAI(api_key=settings.openai_api_key, timeout=30, max_retries=1)
                                  if settings.openai_api_key else None)
+        # Spoken turns wait on this call; low effort keeps the voice path responsive.
+        effort = getattr(settings, 'openai_reasoning_effort', '')
+        self.options = {'reasoning': {'effort': effort}} if effort else {}
 
     async def respond(self, inputs):
         if not self.client or not self.model:
@@ -35,7 +38,7 @@ class OpenAIAgentModel(AgentModel):
         try:
             return await self.client.responses.create(model=self.model, instructions=SYSTEM_PROMPT,
                 input=inputs, tools=TOOLS, parallel_tool_calls=False, store=False,
-                include=['reasoning.encrypted_content'])
+                include=['reasoning.encrypted_content'], **self.options)
         except APIStatusError as error:
             # Log diagnostic identifiers, never the API key, headers or raw error body.
             logger.error('OpenAI request failed: status=%s code=%s type=%s request_id=%s',
@@ -48,7 +51,7 @@ class OpenAIAgentModel(AgentModel):
         try:
             async with self.client.responses.stream(model=self.model, instructions=SYSTEM_PROMPT,
                     input=inputs, tools=TOOLS, parallel_tool_calls=False, store=False,
-                    include=['reasoning.encrypted_content']) as stream:
+                    include=['reasoning.encrypted_content'], **self.options) as stream:
                 async for event in stream:
                     if event.type == 'response.output_text.delta':
                         yield {'type': 'delta', 'text': event.delta}

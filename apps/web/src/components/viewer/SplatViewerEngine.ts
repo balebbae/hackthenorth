@@ -587,7 +587,7 @@ export class SplatViewerEngine {
    */
   setLocalization(marker: LocalizationMarker | null) {
     this.marker = marker;
-    this.phoneGroup.visible = !!marker && this.follow !== "firstPerson";
+    this.applyPhoneVisibility();
     if (!marker) return;
 
     this.phoneGroup.position.set(...marker.position);
@@ -654,9 +654,18 @@ export class SplatViewerEngine {
     // OrbitControls and drag-look stay armed throughout: `tick` simply skips
     // `orbit.update()` while following, so the drag that releases the camera is
     // the same drag that moves it, with no dead gesture in between.
-    // The phone is drawn around the camera in first person; hide it rather than clip through it.
-    this.phoneGroup.visible = !!this.marker && mode !== "firstPerson";
+    this.applyPhoneVisibility();
     this.applyMarkerOpacity();
+  }
+
+  /**
+   * The phone and its trail are drawn around the camera in first person, and
+   * both ignore depth, so they smear across the whole view instead of reading
+   * as overlays. Hide them rather than clip through them.
+   */
+  private applyPhoneVisibility() {
+    this.phoneGroup.visible = !!this.marker && this.follow !== "firstPerson";
+    this.trailGroup.visible = this.follow !== "firstPerson";
   }
 
   /** Hand the camera back to the viewer and tell React, so the Live tab's toggle agrees. */

@@ -72,8 +72,11 @@ final class LocalizationReporter: ObservableObject {
         guard let client, let worldId else { return }
         do {
             let nodes = try await client.graphNodes(worldId: worldId)
-            // Destinations first, then anything else that has a name.
+            // Notes pinned in the web viewer are routable too (`note:<id>`, see navigation.schema.json).
+            let notes = (try? await client.notes(worldId: worldId)) ?? []
+            // Destinations first, then anything else that has a name, then the notes.
             destinations = nodes.filter { $0.kind == "destination" } + nodes.filter { $0.kind != "destination" && $0.name != nil }
+                + notes.map { GraphNode(id: "note:\($0.id)", name: $0.title, kind: "destination") }
         } catch {
             lastError = error.localizedDescription
         }
@@ -86,6 +89,51 @@ final class LocalizationReporter: ObservableObject {
         lastProgress = nil
         destinationApplied = false
         applyDestination()
+    }
+
+    /// The backend already changed the destination (the voice guide's `set_destination` or
+    /// `stop_navigation`): mirror it without sending it back.
+    func adopt(destinationId: String?, name: String?) {
+        if let destinationId {
+            destination = destinations.first { $0.id == destinationId }
+                ?? GraphNode(id: destinationId, name: name, kind: destinationId.hasPrefix("note:") ? "destination" : nil)
+        } else {
+            destination = nil
+        }
+        lastProgress = nil
+        destinationApplied = true
+    }
+
+    /// Stop guidance on the backend and locally.
+    func clearDestination() {
+        destination = nil
+        lastProgress = nil
+        destinationApplied = true
+        guard let client, let sessionId else { return }
+        Task {
+            do {
+                try await client.clearDestination(sessionId: sessionId)
+                lastError = nil
+            } catch {
+                lastError = error.localizedDescription
+            }
+        }
+    }
+
+    /// The session id, creating a session up front when no VPS fix has produced one yet. A voice
+    /// call needs it before the wearer is localized; `/localize` later joins the same session.
+    func ensureSession() async throws -> String {
+        if let sessionId { return sessionId }
+        guard let client else { throw WanderBackendClient.HTTPError(status: 0, body: "Backend is not configured") }
+        if worldId == nil { await resolveWorld() }
+        guard let worldId else { throw WanderBackendClient.HTTPError(status: 0, body: lastError ?? "No world configured") }
+        let created = try await client.createSession(worldId: worldId, deviceId: deviceId)
+        if sessionId == nil {
+            sessionId = created
+            destinationApplied = false
+            applyDestination()
+        }
+        return sessionId ?? created
     }
 
     private func applyDestination() {
@@ -152,10 +200,11 @@ final class LocalizationReporter: ObservableObject {
     }
 
     /// An ARKit pose between fixes, converted with the last known anchor transform.
-    /// The backend answers with route progress and the phrase to speak, if any; it
-    /// rejects poses for a session without a destination, so those are not sent.
+    /// The backend answers with route progress and the phrase to speak, if any. Poses flow
+    /// whether or not a destination is set: the voice guide may start guidance server-side at
+    /// any moment and `set_destination` needs a fresh pose (under 15 s old) to route from.
     func report(cameraTransform: simd_float4x4, using fix: LocalizationFix) {
-        guard let client, let sessionId, destination != nil, destinationApplied else { return }
+        guard let client, let sessionId, !destinationInFlight else { return }
         let now = Date().timeIntervalSince1970
         guard now - lastPoseSend >= minInterval, !inFlight else { return }
         lastPoseSend = now

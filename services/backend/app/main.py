@@ -7,6 +7,7 @@ from elasticsearch import ApiError, TransportError
 from .config import Settings
 from .routing.graph import Graph
 from .services.sessions import MemorySessionStore, NavigationService
+from .services.agent_context import AgentContextBuilder
 from .services.agent_tools import AgentTools
 from .services.building_agent import BuildingAgentService
 from .integrations.elastic.client import ElasticClient, IntegrationUnavailable
@@ -50,7 +51,10 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
         AgentTools(app.state.navigation, search or ElasticSearch(elastic), events),
         app.state.worlds, app.state.world_navigation, app.state.store)
     app.state.store.refresh = agent_tools.refresh
-    app.state.agent = BuildingAgentService(app.state.store, model, agent_tools)
+    app.state.agent = BuildingAgentService(app.state.store, model, agent_tools,
+                                           AgentContextBuilder(app.state.store, catalogue=agent_tools.catalogue))
+    # Session IDs with an active Live voice call; one call per session.
+    app.state.voice_calls = set()
 
     @app.exception_handler(StarletteHTTPException)
     async def rejected(request: Request, error: StarletteHTTPException):

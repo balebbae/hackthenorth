@@ -133,6 +133,34 @@ def node_ref(node):
     return {k: v for k, v in node.items() if k in ('id', 'name', 'kind', 'position')}
 
 
+# Web-viewer notes are routable destinations; the prefix keeps their IDs apart from graph nodes.
+NOTE_PREFIX = 'note:'
+
+
+def world_notes(store, world_id):
+    if not store.path('worlds', world_id, 'notes.json').exists():
+        return []
+    return store.read('worlds', world_id, 'notes.json').get('notes', [])
+
+
+def note_targets(store, world):
+    """Notes as destination-like refs (world frame, per notes.schema.json), with their text for matching."""
+    return [{'id': NOTE_PREFIX + note['id'], 'name': note['title'], 'kind': 'destination', 'position': note['position'],
+             'source': 'note', 'text': ' '.join(part for part in (note.get('location'), note.get('description')) if part)}
+            for note in world_notes(store, world['id']) if note.get('title')]
+
+
+def targets(store, world):
+    """Everything a destination may refer to: graph nodes first, then notes, keyed by ID."""
+    items = [{**node_ref(node), 'source': 'node'} for node in world_graph(world)['nodes']] + note_targets(store, world)
+    return {item['id']: item for item in items}
+
+
+def target_name(store, world, target_id):
+    place = targets(store, world).get(target_id)
+    return (place or {}).get('name') or target_id
+
+
 def vertical_phrase(kind, from_floor, to_floor):
     name = 'the ' + kind
     if to_floor is not None and to_floor != from_floor:
@@ -219,12 +247,19 @@ def reviewed_landmarks(store, world):
     return marks
 
 
-def compute_route(world, request, landmarks=()):
+def edge_weight(nodes, edge):
+    return edge.get('distance', math.dist(nodes[edge['from']]['position'], nodes[edge['to']]['position']))
+
+
+def compute_route(world, request, landmarks=(), notes=()):
+    """Deterministic route to a graph node or, via `notes`, to a web-viewer note: the note is reached
+    at the point on the nearest walkable edge beside it, as a virtual destination node named after it."""
     check(request, 'navigation.schema.json', '#/$defs/routeRequest')
     graph = world_graph(world)
     nodes = {n['id']: node_ref(n) for n in graph['nodes']}
     destination, start = request['to'], request.get('from')
-    if destination not in nodes:
+    note = next((n for n in notes if n['id'] == destination), None) if destination not in nodes else None
+    if destination not in nodes and note is None:
         raise HTTPException(404, 'Destination node not found')
     if start is None:
         raise HTTPException(400, 'Specify from; a world route has no implicit session')
@@ -237,10 +272,23 @@ def compute_route(world, request, landmarks=()):
         a, b = edge['from'], edge['to']
         if a in avoid or b in avoid or (accessible_only and not edge_accessible(edge)):
             continue
-        weight = edge.get('distance', math.dist(nodes[a]['position'], nodes[b]['position']))
+        weight = edge_weight(nodes, edge)
         adjacency[a].append((b, weight, edge_kind(edge)))
         if edge.get('bidirectional', True):
             adjacency[b].append((a, weight, edge_kind(edge)))
+    end_edge = None
+    if note is not None:
+        nearest, (_, point, t, edge) = snap(graph, note['position'], avoid, accessible_only)
+        nodes[destination] = {'id': destination, 'name': note['name'], 'kind': 'destination', 'position': point}
+        adjacency[destination] = []
+        if edge is None:
+            adjacency[nearest['id']].append((destination, 0, 'walk'))
+        else:
+            # Walk along the edge to the note's foot point; a one-way edge is only entered from its start.
+            end_edge, weight = (edge, t), edge_weight(nodes, edge)
+            adjacency[edge['from']].append((destination, weight*t, edge_kind(edge)))
+            if edge.get('bidirectional', True):
+                adjacency[edge['to']].append((destination, weight*(1-t), edge_kind(edge)))
     if isinstance(start, list):
         nearest, (_, point, t, edge) = snap(graph, start, avoid, accessible_only)
         if edge is None:
@@ -252,10 +300,15 @@ def compute_route(world, request, landmarks=()):
         else:
             start = 'start-' + uuid4().hex
             nodes[start] = {'id': start, 'position': point, 'kind': 'waypoint'}
-            weight = edge.get('distance', math.dist(nodes[edge['from']]['position'], nodes[edge['to']]['position']))
+            weight = edge_weight(nodes, edge)
             adjacency[start] = [(edge['to'], weight*(1-t), edge_kind(edge))]
             if edge.get('bidirectional', True):
                 adjacency[start].append((edge['from'], weight*t, edge_kind(edge)))
+            if end_edge is not None and end_edge[0] is edge:
+                # Start and note share an edge: go straight to the foot point instead of via an endpoint.
+                t_end = end_edge[1]
+                if t_end >= t or edge.get('bidirectional', True):
+                    adjacency[start].append((destination, weight*abs(t_end-t), edge_kind(edge)))
     if start not in nodes:
         raise HTTPException(404, 'Start node not found')
     if start in avoid:
@@ -419,7 +472,10 @@ class WorldNavigation:
         self.store = store
 
     def route(self, world, request):
-        return compute_route(world, request, reviewed_landmarks(self.store, world))
+        return compute_route(world, request, reviewed_landmarks(self.store, world), note_targets(self.store, world))
+
+    def targets(self, world):
+        return targets(self.store, world)
 
     def metadata(self, session_id):
         try:
@@ -431,7 +487,7 @@ class WorldNavigation:
 
     async def create(self, world_id, device_id, destination=None, accessible_only=False):
         world = self.store.world(world_id)
-        if destination is not None and destination not in {n['id'] for n in world_graph(world)['nodes']}:
+        if destination is not None and destination not in self.targets(world):
             raise HTTPException(404, 'Destination node not found')
         session = {'sessionId': str(uuid4()), 'worldId': world_id, 'deviceId': device_id,
                    'state': 'localizing', 'createdAt': now(), 'updatedAt': now()}
@@ -446,12 +502,33 @@ class WorldNavigation:
         if session['state'] == 'ended':
             raise HTTPException(409, 'Session ended')
 
+    async def clear_destination(self, session_id):
+        """Stop guidance but keep the session and its pose stream; the next pose reports `localizing`."""
+        async with self.store.lock('session:' + session_id):
+            session = self.store.session(session_id)
+            self.ensure_active(session)
+            stopped = 'destination' in session
+            for key in ('destination', 'route'):
+                session.pop(key, None)
+            if session['state'] != 'lost':
+                session['state'] = 'localizing'
+            session['lastProgress'] = {'state': session['state'], 'remainingMetres': 0}
+            if stopped:
+                session['lastProgress']['speak'] = 'Guidance stopped.'
+            session['updatedAt'] = now()
+            meta = self.metadata(session_id)
+            meta.update(leg=0, off_since=None, last_cue=None)
+            await self.store.write(meta, 'sessions', session_id + '-state.json')
+            await self.store.save_session(session)
+            await self.store.emit(session, 'progress')
+            return session
+
     async def destination(self, session_id, destination, accessible_only=None):
         async with self.store.lock('session:' + session_id):
             session = self.store.session(session_id)
             self.ensure_active(session)
             world = self.store.world(session['worldId'])
-            if destination not in {n['id'] for n in world_graph(world)['nodes']}:
+            if destination not in self.targets(world):
                 raise HTTPException(404, 'Destination node not found')
             if accessible_only is not None:
                 if accessible_only:
@@ -493,6 +570,22 @@ class WorldNavigation:
         if horizontal(position, target) >= 1.5:
             return False
         return not leg.get('kind') or abs(position[1]-target[1]) < 2.5
+
+    def approach(self, world, destination, position, facing):
+        """Where a note is relative to the traveller once its foot point is reached, e.g. 'Bed 1 is 2 metres on your left.'"""
+        place = self.targets(world).get(destination)
+        if place is None:
+            return None
+        metres = horizontal(position, place['position'])
+        if metres < 0.5:
+            return f"{place['name']} is right here."
+        distance = f'{metres:.0f} metre{"s" if round(metres) != 1 else ""}' if metres >= 1 else 'less than a metre'
+        if facing is None:
+            return f"{place['name']} is {distance} away."
+        angle = relative(heading(position, place['position']), facing)
+        side = 'ahead' if abs(angle) <= 25 else 'behind you' if abs(angle) >= 155 else \
+            'on your right' if angle > 0 else 'on your left'
+        return f"{place['name']} is {distance} {side}."
 
     @staticmethod
     def live_instruction(route, index, position, facing, arrived):
@@ -593,6 +686,11 @@ class WorldNavigation:
                     abs(angle-meta.get('last_angle', 0)) >= 15 and timestamp-meta.get('last_spoken', 0) >= 3
                 if changed or turning:
                     progress['speak'] = ('You are off route. Recalculating.' if state == 'off-route' else cue['text'])
+                    if arrived and session['destination'].startswith(NOTE_PREFIX):
+                        # The route ends on the corridor beside the note; say where the note itself is.
+                        approach = self.approach(world, session['destination'], position, facing)
+                        if approach:
+                            progress['speak'] += ' ' + approach
                     meta.update(last_cue=cue_id, last_angle=angle, last_spoken=timestamp)
                 session['state'] = state
             session['lastProgress'] = progress

@@ -404,9 +404,17 @@ async def destination(session_id: str, request: Request):
     return await request.app.state.world_navigation.destination(session_id, data['destination'], data.get('accessibleOnly'))
 
 
+@router.delete('/sessions/{session_id}/destination')
+async def clear_destination(session_id: str, request: Request):
+    """Stop guidance ("stop", "cancel") while keeping the session and its pose stream alive."""
+    return await request.app.state.world_navigation.clear_destination(session_id)
+
+
 @router.post('/sessions/{session_id}/pose')
 async def pose(session_id: str, request: Request):
-    return await request.app.state.world_navigation.pose(session_id, await body(request))
+    # Poses are accepted before a destination exists so the voice agent can start guidance
+    # server-side and the phone's stream immediately drives progress.
+    return await request.app.state.world_navigation.pose(session_id, await body(request), allow_no_destination=True)
 
 
 @router.post('/worlds/{world_id}/localize')

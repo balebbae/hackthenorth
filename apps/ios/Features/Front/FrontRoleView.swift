@@ -20,6 +20,7 @@ struct FrontRoleView: View {
             VStack(spacing: AppTheme.s16) {
                 header
                 cameraCard
+                voiceCard
                 navigationCard
                 nianticCard
                 notesCard
@@ -121,6 +122,16 @@ struct FrontRoleView: View {
         }
     }
 
+    /// The live voice guide: a call button, captions and the last answer.
+    private var voiceCard: some View {
+        VoiceCallCard(
+            voice: pipeline.voice,
+            configured: settingsStore.settings.canStartVoiceCall,
+            error: pipeline.voiceError,
+            onStart: { pipeline.startVoice(settings: settingsStore.settings, deviceId: settingsStore.deviceId) },
+            onEnd: { pipeline.endVoice() })
+    }
+
     /// Destination choice plus the backend's live guidance, spoken as it arrives.
     private var navigationCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.s12) {
@@ -133,7 +144,7 @@ struct FrontRoleView: View {
                 PillTag(text: navigationLabel, fill: navigationColor, foreground: .white, identifier: "front.navState")
             }
             Menu {
-                Button("No destination") { rep.select(destination: nil) }
+                Button("No destination") { rep.clearDestination() }
                 ForEach(rep.destinations) { node in
                     Button(node.label) { rep.select(destination: node) }
                 }
@@ -155,7 +166,8 @@ struct FrontRoleView: View {
             .disabled(rep.destinations.isEmpty)
             .accessibilityLabel("Destination")
             .accessibilityIdentifier("front.destination")
-            if let progress = rep.lastProgress {
+            // Poses now flow before a destination exists; a bare `localizing` answer is not progress.
+            if let progress = rep.lastProgress, rep.destination != nil || progress.instruction != nil {
                 if let instruction = progress.instruction {
                     Text(instruction.text)
                         .font(.system(size: 17, weight: .medium))

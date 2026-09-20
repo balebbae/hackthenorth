@@ -123,6 +123,22 @@ struct CameraSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Voice guide", isOn: $settingsStore.settings.voiceAgentEnabled)
+                        .accessibilityIdentifier("settings.voiceAgent")
+                    SecureField("Voice access token", text: $settingsStore.settings.voiceAccessToken)
+                        .accessibilityIdentifier("settings.voiceToken")
+                    Toggle("Start call with the camera", isOn: $settingsStore.settings.voiceAgentAutoStart)
+                        .disabled(!settingsStore.settings.voiceAgentEnabled)
+                        .accessibilityIdentifier("settings.voiceAutoStart")
+                } header: {
+                    Text("Voice guide")
+                } footer: {
+                    Text(settingsStore.settings.canStartVoiceCall
+                         ? "Talk to the guide: ask where you are, what is nearby, or say “guide me to Bed 1”. The voice is AI generated; turn-by-turn cues are spoken by the guide during a call. Needs the backend URL and key above."
+                         : "Needs the backend URL and key above plus the backend's VOICE_ACCESS_TOKEN (not the OpenAI key). The voice is AI generated.")
+                }
+
+                Section {
                     Toggle("Voice cues", isOn: $settingsStore.settings.voiceCuesEnabled)
                         .accessibilityIdentifier("settings.voiceCues")
                     Toggle("Upload query images", isOn: $settingsStore.settings.uploadQueryImages)

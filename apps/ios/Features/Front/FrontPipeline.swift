@@ -23,6 +23,10 @@ final class FrontPipeline: ObservableObject {
     let localizer = NianticLocalizer()
     let reporter = LocalizationReporter()
     let notes = WorldNotesStore()
+    /// Live voice guide over the backend's GPT-Live bridge. While a call is active the backend
+    /// speaks every navigation cue, so `speech` is muted for the duration.
+    let voice = VoiceCallController()
+    @Published private(set) var voiceError: String?
     @Published private(set) var usingNSDK = false
     /// Notes projected into the camera preview; empty unless the anchor is tracked.
     @Published private(set) var notePins: [NotePin] = []
@@ -114,6 +118,28 @@ final class FrontPipeline: ObservableObject {
             self?.speech.speak(SpokenCue(text: phrase, priority: .route))
         }
 
+        // The voice guide changes guidance on the backend; mirror it so the pose loop and the
+        // navigation card agree with what the wearer just heard.
+        voice.onAction = { [weak self] action in
+            switch action.type {
+            case "set_destination":
+                self?.reporter.adopt(destinationId: action.destinationId, name: action.destinationName)
+            case "stop_navigation":
+                self?.reporter.adopt(destinationId: nil, name: nil)
+            default:
+                break
+            }
+        }
+        // Local speech is off for the duration of a call: the backend speaks the cues through Live.
+        voice.$state
+            .map { $0 != .idle }
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.updateSpeechGate() }
+            .store(in: &forwarding)
+        voice.$lastError
+            .sink { [weak self] error in self?.voiceError = error }
+            .store(in: &forwarding)
+
         // SwiftUI only observes this object, so republish the children's changes.
         for child in [arSession.objectWillChange.eraseToAnyPublisher(),
                       queryLoop.objectWillChange.eraseToAnyPublisher(),
@@ -121,9 +147,45 @@ final class FrontPipeline: ObservableObject {
                       link.objectWillChange.eraseToAnyPublisher(),
                       localizer.objectWillChange.eraseToAnyPublisher(),
                       notes.objectWillChange.eraseToAnyPublisher(),
-                      reporter.objectWillChange.eraseToAnyPublisher()] {
+                      reporter.objectWillChange.eraseToAnyPublisher(),
+                      voice.objectWillChange.eraseToAnyPublisher()] {
             child.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &forwarding)
         }
+    }
+
+    /// Spoken cues need the Settings toggle and no active call.
+    private func updateSpeechGate() {
+        let wanted = settings?.voiceCuesEnabled ?? false
+        speech.isEnabled = wanted && !voice.isActive
+        if voice.isActive { speech.stop() }
+    }
+
+    /// Start the voice guide on the current backend session, creating one if the phone has no fix yet.
+    /// Works before the camera is started too, so the wearer can ask questions while setting up.
+    func startVoice(settings: CameraSettings, deviceId: String) {
+        guard let config = VoiceCallController.Config(settings: settings) else {
+            voiceError = "Voice guide needs the backend URL, key and voice token in Settings."
+            return
+        }
+        guard !voice.isActive else { return }
+        voiceError = nil
+        if self.settings == nil { self.settings = settings }
+        if !reporter.isConfigured {
+            reporter.configure(settings: settings, deviceId: deviceId, role: .front)
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let sessionId = try await self.reporter.ensureSession()
+                self.voice.start(config: config, sessionId: sessionId)
+            } catch {
+                self.voiceError = "Could not start a session: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    func endVoice() {
+        voice.end()
     }
 
     func start(settings: CameraSettings, deviceId: String = "") {
@@ -132,8 +194,8 @@ final class FrontPipeline: ObservableObject {
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
         policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
         policy.backWarnDistance = 0.3
-        speech.isEnabled = settings.voiceCuesEnabled
         self.settings = settings
+        updateSpeechGate()
         arSession.start(settings: settings)
         activeSettings = settings
         activeDeviceId = deviceId
@@ -142,6 +204,9 @@ final class FrontPipeline: ObservableObject {
         link.start()  // no-op when already browsing
         isActive = true
         UIApplication.shared.isIdleTimerDisabled = true
+        if settings.canStartVoiceCall && settings.voiceAgentAutoStart {
+            startVoice(settings: settings, deviceId: deviceId)
+        }
         statusTask?.cancel()
         statusTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -165,6 +230,7 @@ final class FrontPipeline: ObservableObject {
         arSession.stop()
         // The peer link stays up across Stop/Start so the side phones do not have to re-pair.
         speech.stop()
+        voice.end()
         notePins = []   // the list stays readable with the camera stopped; the overlay cannot
         isActive = false
         UIApplication.shared.isIdleTimerDisabled = false
@@ -178,7 +244,7 @@ final class FrontPipeline: ObservableObject {
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
         policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
         policy.backWarnDistance = 0.3
-        speech.isEnabled = settings.voiceCuesEnabled
+        updateSpeechGate()
         queryLoop.reconfigure(settings: settings)
         let previous = activeSettings
         activeSettings = settings
@@ -256,6 +322,8 @@ final class FrontPipeline: ObservableObject {
         mapTask?.cancel()
         queryLoop.stop()
         localizer.stop()
+        // The call is bound to the reporter's session; a reset (new backend/world) ends it too.
+        voice.end()
         reporter.reset()
         usingNSDK = false
     }

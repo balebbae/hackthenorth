@@ -43,6 +43,12 @@ struct CameraSettings: Codable, Equatable, Sendable {
     var uploadQueryImages: Bool = true
     /// Also upload queries that failed or were rejected, not just successful fixes.
     var uploadFailedQueries: Bool = true
+    /// Live voice guide over the backend's GPT-Live bridge (shared/contracts/voice.md).
+    var voiceAgentEnabled: Bool = false
+    /// Demo access token the voice socket expects in its first message; never the OpenAI key.
+    var voiceAccessToken: String = ""
+    /// Start the call together with the camera pipeline so the wearer never has to find a button.
+    var voiceAgentAutoStart: Bool = true
 
     static let `default` = CameraSettings()
 
@@ -70,6 +76,9 @@ struct CameraSettings: Codable, Equatable, Sendable {
         worldId = try c.decodeIfPresent(String.self, forKey: .worldId) ?? d.worldId
         uploadQueryImages = try c.decodeIfPresent(Bool.self, forKey: .uploadQueryImages) ?? d.uploadQueryImages
         uploadFailedQueries = try c.decodeIfPresent(Bool.self, forKey: .uploadFailedQueries) ?? d.uploadFailedQueries
+        voiceAgentEnabled = try c.decodeIfPresent(Bool.self, forKey: .voiceAgentEnabled) ?? d.voiceAgentEnabled
+        voiceAccessToken = try c.decodeIfPresent(String.self, forKey: .voiceAccessToken) ?? d.voiceAccessToken
+        voiceAgentAutoStart = try c.decodeIfPresent(Bool.self, forKey: .voiceAgentAutoStart) ?? d.voiceAgentAutoStart
     }
 
     var captureInterval: TimeInterval { Double(captureIntervalMs) / 1000 }
@@ -101,6 +110,11 @@ struct CameraSettings: Codable, Equatable, Sendable {
 
     var hasBackend: Bool { backendBaseURL != nil && !backendAPIKey.isEmpty }
 
+    /// A call can be placed: the toggle is on and the backend plus its voice token are configured.
+    var canStartVoiceCall: Bool {
+        voiceAgentEnabled && hasBackend && !voiceAccessToken.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     /// Fills empty fields from Resources/LocalConfig.plist so secrets stay out of git.
     mutating func seed(from config: [String: Any]) {
         func take(_ key: String, _ path: WritableKeyPath<CameraSettings, String>) {
@@ -113,6 +127,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
         take("BackendURL", \.backendURL)
         take("BackendAPIKey", \.backendAPIKey)
         take("WorldId", \.worldId)
+        take("VoiceAccessToken", \.voiceAccessToken)
     }
 
     static func localConfig(bundle: Bundle = .main) -> [String: Any] {

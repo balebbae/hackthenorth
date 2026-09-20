@@ -227,10 +227,27 @@ struct WanderBackendClient: Sendable {
     }
 
     /// `PUT /sessions/{id}/destination`; the backend routes from the session's last pose.
+    /// `nodeId` is a graph node id or `note:<id>` for a note pinned in the web viewer.
     func setDestination(sessionId: String, nodeId: String) async throws {
         let (data, response) = try await session.data(
             for: request("PUT", "sessions/\(sessionId)/destination", body: ["destination": nodeId]))
         try Self.check(response, data)
+    }
+
+    /// `DELETE /sessions/{id}/destination`: stop guidance, keep the session and its pose stream.
+    func clearDestination(sessionId: String) async throws {
+        let (data, response) = try await session.data(for: request("DELETE", "sessions/\(sessionId)/destination"))
+        try Self.check(response, data)
+    }
+
+    /// `POST /sessions {worldId, deviceId}`: a session before any VPS fix, so the voice guide can
+    /// answer questions while the phone is still localizing.
+    func createSession(worldId: String, deviceId: String) async throws -> String {
+        let (data, response) = try await session.data(
+            for: request("POST", "sessions", body: ["worldId": worldId, "deviceId": deviceId]))
+        try Self.check(response, data)
+        struct Created: Decodable { let sessionId: String }
+        return try JSONDecoder().decode(Created.self, from: data).sessionId
     }
 
     /// Nodes of the world's navigation graph, from `GET /worlds/{id}`.
