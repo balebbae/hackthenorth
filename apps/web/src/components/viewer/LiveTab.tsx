@@ -123,7 +123,7 @@ export function LiveTab(p: LiveTabProps) {
                 src={imageUrl}
                 alt={`Camera frame the phone sent to VPS at ${new Date(q.capturedAt).toLocaleTimeString()}`}
                 fill
-                sizes="340px"
+                sizes="380px"
                 unoptimized
                 className="object-contain"
               />

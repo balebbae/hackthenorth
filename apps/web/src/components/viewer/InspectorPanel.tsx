@@ -80,7 +80,11 @@ export function InspectorPanel(p: Props) {
       className="card pointer-events-auto flex max-h-full flex-col overflow-hidden p-0"
     >
       <div className="flex items-center gap-1 border-b border-hairline p-2">
-        <div role="tablist" aria-label="Inspector" className="flex flex-1 items-center gap-0.5">
+        <div
+          role="tablist"
+          aria-label="Inspector"
+          className="scrollbar-none flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto"
+        >
           {TABS.map((t) => {
             const count = t.id === "notes" ? p.notes.length : t.id === "measure" ? p.measurements.length : 0;
             const latest = t.id === "live" ? p.live.feed.queries[0] : undefined;
@@ -92,7 +96,7 @@ export function InspectorPanel(p: Props) {
                 type="button"
                 aria-selected={p.tab === t.id}
                 onClick={() => p.onTab(t.id)}
-                className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-body-sm font-medium transition-colors duration-200 ${
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-body-sm font-medium whitespace-nowrap transition-colors duration-200 ${
                   p.tab === t.id ? "bg-sky-tint text-wander-blue" : "text-void-black/60 hover:text-void-black"
                 }`}
               >
@@ -108,7 +112,7 @@ export function InspectorPanel(p: Props) {
             );
           })}
         </div>
-        <button type="button" className="btn-icon size-7" aria-label="Close panel" onClick={p.onClose}>
+        <button type="button" className="btn-icon size-7 shrink-0" aria-label="Close panel" onClick={p.onClose}>
           <Icon name="x" size={15} />
         </button>
       </div>

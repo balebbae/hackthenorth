@@ -431,7 +431,7 @@ export function WorldViewer({
       {/* Inspector */}
       {panelOpen && (
         <div className="pointer-events-none absolute inset-x-3 top-16 bottom-20 flex justify-end lg:inset-x-auto lg:right-3">
-          <div className="flex max-h-full w-full lg:w-[340px]">
+          <div className="flex max-h-full w-full lg:w-[380px]">
             <InspectorPanel
               tab={panelTab}
               onTab={setPanelTab}
@@ -539,14 +539,6 @@ export function WorldViewer({
 
         <span className="pill hidden bg-pure-white/90 text-void-black/80 md:inline-flex">
           {state.status === "ready" ? `${formatSplatCount(state.numSplats ?? manifest?.stats?.splatCount)} splats` : "—"}
-          {manifest?.alignment && (
-            <>
-              <span aria-hidden="true" className="text-void-black/30">
-                ·
-              </span>
-              {manifest.alignment.frame}
-            </>
-          )}
         </span>
       </div>
 
@@ -684,7 +676,7 @@ const MOVE_HINT = "W A S D move · Q / E height · Arrows turn · Shift hurry";
 function hintFor(tool: ViewerTool, mode: ViewerMode, pending: boolean): string {
   if (tool === "measure") return pending ? "Click the second point · Esc cancels" : "Click a point on the scan to start measuring";
   if (tool === "note") return "Click the scan to pin a note · Esc to finish";
-  return mode === "walk" ? `Drag to look · ${MOVE_HINT}` : `Drag to orbit · Scroll to zoom · ${MOVE_HINT}`;
+  return mode === "walk" ? MOVE_HINT : `Drag to orbit · Scroll to zoom · ${MOVE_HINT}`;
 }
 
 /* -------------------------------------------------------------- autosave */
