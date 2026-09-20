@@ -298,7 +298,7 @@ final class FrontPipeline: ObservableObject {
             reading = mapSensor.read(map: map, deviceTransform: fix.anchorTransform.inverse * frame.cameraTransform)
         }
         if reading != mapReading { mapReading = reading }
-        if let reading { sensed = .merged(sensed, reading.zones) }
+        // The front's own buzz trusts only what its LiDAR sees; the map is for the sides and back.
         // Side and back mounts are driven purely by the map around the localised pose.
         let sides = SideClearanceMerge.merge(live: [:], map: reading, now: now)
         zones = sensed
