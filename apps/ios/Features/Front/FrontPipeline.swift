@@ -109,6 +109,11 @@ final class FrontPipeline: ObservableObject {
             self.reporter.report(queries: queries, currentPose: current)
         }
 
+        // Route guidance is whatever the backend told us to say; obstacle cues still win.
+        reporter.onSpeak = { [weak self] phrase in
+            self?.speech.speak(SpokenCue(text: phrase, priority: .route))
+        }
+
         // SwiftUI only observes this object, so republish the children's changes.
         for child in [arSession.objectWillChange.eraseToAnyPublisher(),
                       queryLoop.objectWillChange.eraseToAnyPublisher(),

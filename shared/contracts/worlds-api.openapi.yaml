@@ -177,6 +177,87 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /worlds/{id}/graph/validate:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    post:
+      tags: [worlds]
+      summary: Check a graph against the world's mesh
+      description: |
+        Read-only. Grids `assets.mesh` (see `meshFrame`) and reports edges that
+        cross blocked cells (`edge-through-wall`), edges or nodes off the
+        scanned floor, and nodes whose height is off the floor. Returns a copy
+        of the graph with node heights snapped onto the floor (unless
+        `snap: false`); the editor saves it with `PUT /graph` if accepted.
+        Checks the stored graph when `graph` is omitted.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                graph: { $ref: "world.schema.json#/properties/navigationGraph" }
+                snap: { type: boolean, default: true }
+                params: { $ref: "#/components/schemas/NavmeshParams" }
+                frame: { type: string, enum: [world, splat] }
+      responses:
+        "200":
+          description: Issues plus the snapped graph copy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [issues, graph, floorY, checkedAt]
+                properties:
+                  issues: { type: array, items: { $ref: "#/components/schemas/GraphIssue" } }
+                  graph: { $ref: "world.schema.json#/properties/navigationGraph" }
+                  floorY: { type: number }
+                  checkedAt: { type: string, format: date-time }
+        "409": { description: World has no mesh asset }
+        "422": { description: Bad parameters or no floor found }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /worlds/{id}/navmesh:
+    parameters: [{ $ref: "#/components/parameters/worldId" }]
+    get:
+      tags: [worlds]
+      summary: Last graph proposal generated from the mesh
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NavmeshProposal" }
+        "404": { description: World not found or nothing generated yet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [worlds]
+      summary: Propose a navigation graph from the mesh
+      description: |
+        Occupancy grid over `assets.mesh` (floor detection, agent-radius
+        erosion, largest connected component) → waypoint lattice → simplified
+        corridor graph. Deterministic for a given mesh and `params`. Writes
+        `worlds/<id>/navmesh.json` and returns it; `navigationGraph` is NOT
+        touched — a reviewer accepts the proposal with `PUT /graph`.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                params: { $ref: "#/components/schemas/NavmeshParams" }
+                frame: { type: string, enum: [world, splat], description: Overrides the manifest's `meshFrame` }
+      responses:
+        "201":
+          description: Stored proposal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NavmeshProposal" }
+        "409": { description: World has no mesh asset }
+        "422": { description: Bad parameters or no walkable floor found }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /worlds/{id}/notes:
     parameters: [{ $ref: "#/components/parameters/worldId" }]
     get:
@@ -463,6 +544,7 @@ paths:
                 worldId: { type: string }
                 deviceId: { type: string }
                 destination: { type: string, description: "Destination node id." }
+                accessibleOnly: { type: boolean, default: false, description: "Route and reroute without stairs / escalators (edges with `accessible: false`)." }
       responses:
         "201":
           description: Created
@@ -609,3 +691,62 @@ components:
                 oneOf:
                   - { type: string }
                   - { type: array, items: { type: object } }
+
+  schemas:
+    NavmeshParams:
+      type: object
+      description: Occupancy-grid settings; all metres except `floorSlopeDeg` and `seed`.
+      properties:
+        cell: { type: number, default: 0.15, minimum: 0.05, maximum: 1 }
+        agentRadius: { type: number, default: 0.3, description: Walkable space is eroded by this }
+        agentHeight: { type: number, default: 1.8, description: Solids between `stepHeight` and this height block a cell }
+        stepHeight: { type: number, default: 0.25 }
+        spacing: { type: number, default: 1.5, description: Waypoint lattice pitch; at least two cells }
+        floorSlopeDeg: { type: number, default: 30 }
+        seed: { type: integer, default: 0 }
+    GraphIssue:
+      type: object
+      required: [kind, message]
+      properties:
+        kind:
+          type: string
+          enum: [node-off-floor, node-edge-of-floor, node-in-obstacle, node-height, edge-through-wall, edge-off-floor]
+        node: { type: string, description: Node issues }
+        from: { type: string, description: Edge issues }
+        to: { type: string }
+        at: { type: array, items: { type: number }, minItems: 3, maxItems: 3, description: World-frame point mid-way through the offending cells }
+        offsetMetres: { type: number, description: "`node-height` only: signed height above the floor" }
+        message: { type: string }
+    NavmeshProposal:
+      type: object
+      description: "`worlds/<id>/navmesh.json` — a mesh-derived graph awaiting review; never routed against."
+      required: [schema, worldId, mesh, status, params, grid, graph, currentGraphIssues, createdAt]
+      properties:
+        schema: { const: wander.navmesh/v1 }
+        worldId: { type: string }
+        mesh: { type: string, description: Volume path of the mesh that was gridded }
+        status: { const: proposed }
+        params:
+          allOf:
+            - { $ref: "#/components/schemas/NavmeshParams" }
+            - type: object
+              properties: { frame: { type: string, enum: [world, splat] } }
+        grid:
+          type: object
+          description: Top-down occupancy over XZ; `rows[z][x]` is '.' walkable, 'x' blocked or no floor, ' ' no data.
+          required: [origin, cell, width, height, floorY, rows, walkableCells, floorCells]
+          properties:
+            origin: { type: array, items: { type: number }, minItems: 3, maxItems: 3, description: "[x, floorY, z] of the grid corner" }
+            cell: { type: number }
+            width: { type: integer }
+            height: { type: integer }
+            floorY: { type: number }
+            rows: { type: array, items: { type: string } }
+            walkableCells: { type: integer }
+            floorCells: { type: integer }
+        graph: { $ref: "world.schema.json#/properties/navigationGraph" }
+        currentGraphIssues:
+          type: array
+          description: The stored `navigationGraph` checked against the same grid
+          items: { $ref: "#/components/schemas/GraphIssue" }
+        createdAt: { type: string, format: date-time }
