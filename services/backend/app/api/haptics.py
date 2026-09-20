@@ -27,7 +27,9 @@ class PulseQueue:
     def __init__(self, ttl: float = 10.0, limit: int = 100):
         self.ttl, self.limit = ttl, limit
         self.pulses = []
-        self.ids = count(1)
+        # Ids keep increasing across container restarts, so a phone's "since"
+        # cursor from a previous instance never hides new pulses.
+        self.ids = count(int(time.time() * 1000))
 
     def add(self, role: str, ms: int, now=None):
         now = time.time() if now is None else now

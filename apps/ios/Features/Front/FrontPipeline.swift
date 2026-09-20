@@ -275,6 +275,8 @@ final class FrontPipeline: ObservableObject {
         pulseTask = Task { [weak self] in
             while !Task.isCancelled {
                 if let self, let feed = try? await client.pendingPulses(since: self.lastPulseId) {
+                    // A backend restart would hand out smaller ids; follow it instead of ignoring them.
+                    if feed.last < self.lastPulseId { self.lastPulseId = feed.last }
                     for pulse in feed.pulses {
                         self.lastPulseId = max(self.lastPulseId, pulse.id)
                         guard let role = pulse.role == "chest" ? .front : DeviceRole(rawValue: pulse.role) else { continue }
