@@ -1,22 +1,32 @@
 # hackthenorth
 
-HTN Navigation Assistant — **Wander**, a wearable indoor navigation assistant for blind and low-vision users. Four LiDAR iPhones (chest, back, left, right) sense the surroundings; a FastAPI backend on Modal owns routing, sessions and the OpenAI agent; a Next.js companion app lets a helper pick destinations on a Gaussian-splat view of the building.
+**Wander** — a wearable indoor navigation assistant for blind and low-vision users. Four LiDAR iPhones on the body, one FastAPI backend on Modal, one companion web app.
 
 ## Architecture
 
-![Wander system architecture: front iPhone coordinates obstacle cues, Niantic localization, speech and peer haptics; FastAPI worlds API on Modal owns routing, sessions, agent tools and the voice bridge; Next.js companion app reaches the backend through a server-side proxy.](docs/architecture/wander-architecture.png)
+![System: front phone, side phones, FastAPI backend on Modal, Volume, GPU workers, companion web, Niantic VPS, OpenAI](docs/architecture/01-system.png)
 
-Three cooperating layers, each with a single owner:
+### Guidance layers
 
-| Layer | Runs on | Owns |
-| --- | --- | --- |
-| Local obstacle guidance | Front phone (`apps/ios`) | ARKit LiDAR depth → `ObstacleDetector` → speech/haptic cues. Never waits on the network; urgent stop cues interrupt route narration. Fans haptic pulses to the side/back phones over MultipeerConnectivity. |
-| Localization + routing | Niantic VPS on the phone, `services/backend` on Modal | Phone posts poses/fixes to `/worlds/{id}/localize`; backend routes over the `world.json` navigation graph (Dijkstra), tracks session progress, off-route and arrival, and serves progress cues back. Geometry, not the LLM, is authoritative for movement commands. |
-| AI interaction | `services/backend` → OpenAI | Responses-API agent answers grounded questions and acts only through validated tools (`resolve_destination`, `set_destination`, `get_navigation_state`, …). GPT Live voice is bridged server-side so API keys never reach the phone. |
+![Three layers ordered by urgency: local obstacle guidance, localization + routing, AI explanation](docs/architecture/02-layers.png)
 
-Cross-cutting: `shared/contracts/` defines the world manifest, navigation graph and API schemas; worlds (`world.json`, `scene.spz`, notes, sessions) live on the `wander-worlds` Modal Volume; the browser only talks to FastAPI through the Next.js `/api/*` proxy. The backend intentionally runs as one container because session state and WebSocket subscribers are process-local. Optional Modal GPU workers provide self-hosted hloc/COLMAP localization and scene annotation.
+### Asking for a destination
 
-Diagram source: [`docs/architecture/wander-architecture.html`](docs/architecture/wander-architecture.html) (also exported as [SVG](docs/architecture/wander-architecture.svg)).
+![Sequence: wearer asks, phone sends audio, backend calls OpenAI with tools, routes, returns cue](docs/architecture/03-sequence.png)
+
+### Phone roles
+
+![Top-down view: chest phone coordinates, left/right/back phones buzz](docs/architecture/04-roles.png)
+
+### Map products
+
+![One scan produces a splat, a VPS map and a nav graph aligned into world.json](docs/architecture/05-maps.png)
+
+### Obstacle cue flow
+
+![Flowchart: obstacle ahead → stop cue on device, interrupts route narration](docs/architecture/06-cue-flow.png)
+
+Sources: [`docs/architecture/`](docs/architecture/) (`.html` source, `.svg`, `.png`).
 
 ## Layout
 

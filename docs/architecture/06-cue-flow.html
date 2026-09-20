@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wander obstacle cue flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz@0,8..60;1,8..60&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f8fafc; /* Stellar White */
+      --color-ink:    #0f172a; /* Void Black */
+      --color-muted:  #475569; /* Graphite */
+      --color-accent: #d85598; /* Wander Pink */
+      --font-sans:  'Inter', system-ui, sans-serif;
+      --font-serif: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+      --font-mono:  'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+           min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1040px; width: 100%; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+               text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+         letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 720px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flow · Wander</p>
+    <h1>Obstacles win</h1>
+    <svg viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="wander-cue-title wander-cue-desc" font-family="'Inter', system-ui, sans-serif">
+      <title id="wander-cue-title">Wander obstacle cue flow</title>
+      <desc id="wander-cue-desc">Every depth frame is checked for an obstacle ahead. If yes, a stop or turn cue is issued immediately on device with no network and interrupts any route narration. If no, the current route cue is spoken. Both paths end in speech plus haptics.</desc>
+      <defs>
+        <marker id="wander-cue-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+        </marker>
+        <marker id="wander-cue-arrow-link" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2e4885"/>
+        </marker>
+        <marker id="wander-cue-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d85598"/>
+        </marker>
+        <marker id="wander-cue-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#475569" stroke-width="1.2"/>
+        </marker>
+      </defs>
+      <rect width="800" height="560" fill="#f8fafc"/>
+      <rect x="200" y="40" width="160" height="40" rx="20" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="280" y="64" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Depth frame</text>
+      <polygon points="280,128 376,168 280,208 184,168" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="280" y="172" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Obstacle ahead?</text>
+      <rect x="520" y="140" width="200" height="56" rx="4" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <text x="620" y="172" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Stop / turn cue</text>
+      <rect x="180" y="296" width="200" height="56" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="280" y="328" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Route cue</text>
+      <rect x="180" y="416" width="200" height="56" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="280" y="448" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Speak + buzz</text>
+      <circle cx="280" cy="384" r="4" fill="#0f172a"/>
+      <line x1="280" y1="80" x2="280" y2="126" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-cue-arrow)"/>
+      <line x1="376" y1="168" x2="518" y2="168" stroke="#d85598" stroke-width="1.5" marker-end="url(#wander-cue-arrow-accent)"/>
+      <rect x="434" y="148" width="28" height="12" fill="#f8fafc"/>
+      <text x="448" y="157" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">YES</text>
+      <line x1="280" y1="208" x2="280" y2="294" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-cue-arrow)"/>
+      <rect x="288" y="256" width="20" height="12" fill="#f8fafc"/>
+      <text x="292" y="265" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">NO</text>
+      <line x1="280" y1="352" x2="280" y2="378" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-cue-arrow)"/>
+      <line x1="280" y1="390" x2="280" y2="414" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-cue-arrow)"/>
+      <path d="M 620 196 L 620 384 L 286 384" fill="none" stroke="#d85598" stroke-width="1.5" marker-end="url(#wander-cue-arrow-accent)"/>
+      <rect x="628" y="300" width="64" height="12" fill="#f8fafc"/>
+      <text x="632" y="309" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">INTERRUPTS</text>
+      <rect x="520" y="40" width="200" height="40" rx="4" fill="rgba(15,23,42,0.02)" stroke="rgba(15,23,42,0.20)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="620" y="64" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">NO NETWORK · &lt; 100 MS</text>
+      <line x1="20" y1="512" x2="776" y2="512" stroke="rgba(15,23,42,0.08)" stroke-width="1"/>
+      <rect x="20" y="528" width="12" height="12" rx="2" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <text x="40" y="537" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">SAFETY PATH · ON DEVICE</text>
+      <rect x="196" y="528" width="12" height="12" rx="2" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="216" y="537" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">NAVIGATION PATH</text>
+      <line x1="328" y1="534" x2="356" y2="534" stroke="#d85598" stroke-width="1.5" marker-end="url(#wander-cue-arrow-accent)"/>
+      <text x="364" y="537" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">PRE-EMPTS NARRATION</text>
+    </svg>
+  </div>
+</body>
+</html>
