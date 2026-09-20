@@ -72,7 +72,7 @@ struct StaticMap: Sendable {
 /// long as the front phone is localised.
 struct MapObstacleSensor {
     var maxRange: Float = 3.0
-    var minRange: Float = 0.3
+    var minRange: Float = 0.1
     var halfFieldDegrees: Float = 35
     var zoneBoundaryDegrees: Float = 12
     var gapColumns = 16
@@ -111,8 +111,14 @@ struct MapObstacleSensor {
             var hit: Float?
             let step = map.cellSize / 2
             var t = minRange
+            // A hit must be confirmed by a second sample (another height here, or any
+            // height one whole cell deeper) so a lone leftover wisp in the splat is ignored.
+            func occupiedHeights(at distance: Float) -> Int {
+                heightOffsets.reduce(0) { $0 + (map.isOccupied(camera + direction * distance + simd_float3(0, $1, 0)) ? 1 : 0) }
+            }
             march: while t <= maxRange {
-                for h in heightOffsets where map.isOccupied(camera + direction * t + simd_float3(0, h, 0)) {
+                let here = occupiedHeights(at: t)
+                if here >= 2 || (here == 1 && occupiedHeights(at: t + map.cellSize) >= 1) {
                     hit = t
                     break march
                 }

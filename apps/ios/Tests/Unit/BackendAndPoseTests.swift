@@ -46,6 +46,23 @@ final class BackendAndPoseTests: XCTestCase {
         XCTAssertNotNil(request.httpBody)
     }
 
+    func testProgressUpdateDecodesSpeakAndInstruction() throws {
+        let json = """
+        {"state":"navigating","remainingMetres":12.5,"distanceToNextMetres":4.2,"headingDeg":87.5,
+         "nextNode":{"id":"n2","name":"Lobby","kind":"waypoint","position":[1,0,2]},
+         "instruction":{"atNode":"n1","turn":"right","text":"Right, then continue 4 metres.","distanceMetres":4.2},
+         "offRouteMetres":0.3,"speak":"Right, then continue 4 metres."}
+        """
+        let progress = try JSONDecoder().decode(ProgressUpdate.self, from: Data(json.utf8))
+        XCTAssertEqual(progress.state, "navigating")
+        XCTAssertEqual(progress.speak, "Right, then continue 4 metres.")
+        XCTAssertEqual(progress.instruction?.turn, "right")
+        XCTAssertEqual(progress.nextNode?.label, "Lobby")
+        XCTAssertEqual(progress.headingDeg ?? 0, 87.5, accuracy: 1e-9)
+        let minimal = try JSONDecoder().decode(ProgressUpdate.self, from: Data("{\"state\":\"lost\",\"remainingMetres\":0}".utf8))
+        XCTAssertNil(minimal.speak)
+    }
+
     func testSettingsSeedOnlyFillsEmptyFields() {
         var s = CameraSettings.default
         s.backendURL = "https://keep.me"

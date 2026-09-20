@@ -44,10 +44,13 @@ final class FrontPipeline: ObservableObject {
     private var detector = ObstacleDetector()
     private var estimator = StructureObstacleEstimator()
     private var mapSensor = MapObstacleSensor()
+    /// Map buzzes need a VPS fix at least this confident and no older than this.
+    var mapMinConfidence: Float = 0.5
+    var mapMaxFixAge: TimeInterval = 3
     private var staticMap: StaticMap?
     private var mapWorldId: String?
     private var mapTask: Task<Void, Never>?
-    private let policy = ObstacleCuePolicy()
+    private var policy = ObstacleCuePolicy()
     private var lastDetection: TimeInterval = 0
     private let detectionInterval: TimeInterval = 1.0 / 15
     private var placeholderFrame: FrameSnapshot?
@@ -106,6 +109,11 @@ final class FrontPipeline: ObservableObject {
             self.reporter.report(queries: queries, currentPose: current)
         }
 
+        // Route guidance is whatever the backend told us to say; obstacle cues still win.
+        reporter.onSpeak = { [weak self] phrase in
+            self?.speech.speak(SpokenCue(text: phrase, priority: .route))
+        }
+
         // SwiftUI only observes this object, so republish the children's changes.
         for child in [arSession.objectWillChange.eraseToAnyPublisher(),
                       queryLoop.objectWillChange.eraseToAnyPublisher(),
@@ -122,6 +130,9 @@ final class FrontPipeline: ObservableObject {
         detector.maxRange = Float(settings.obstacleRangeMeters)
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
+        policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
+        policy.backWarnDistance = 0.3
+        speech.isEnabled = settings.voiceCuesEnabled
         self.settings = settings
         arSession.start(settings: settings)
         activeSettings = settings
@@ -165,6 +176,9 @@ final class FrontPipeline: ObservableObject {
         detector.maxRange = Float(settings.obstacleRangeMeters)
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
+        policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
+        policy.backWarnDistance = 0.3
+        speech.isEnabled = settings.voiceCuesEnabled
         queryLoop.reconfigure(settings: settings)
         let previous = activeSettings
         activeSettings = settings
@@ -284,24 +298,29 @@ final class FrontPipeline: ObservableObject {
         // what surrounds the wearer, including the sides and back no sensor covers.
         let now = Date().timeIntervalSince1970
         var reading: MapObstacleSensor.Reading?
-        if let map = staticMap, let fix = localizer.latestFix, fix.state != .lost {
+        // Only a fresh, confident VPS fix may drive map buzzes: a stale anchor plus
+        // ARKit drift, or a low-confidence fix, puts the wearer in the wrong place.
+        if let map = staticMap, let fix = localizer.latestFix, fix.state == .localized,
+           fix.confidence >= mapMinConfidence, Date().timeIntervalSince(fix.timestamp) <= mapMaxFixAge {
             reading = mapSensor.read(map: map, deviceTransform: fix.anchorTransform.inverse * frame.cameraTransform)
         }
         if reading != mapReading { mapReading = reading }
-        if let reading { sensed = .merged(sensed, reading.zones) }
+        // The front's own buzz trusts only what its LiDAR sees; the map is for the sides and back.
         // Side and back mounts are driven purely by the map around the localised pose.
         let sides = SideClearanceMerge.merge(live: [:], map: reading, now: now)
         zones = sensed
         let decision = policy.decide(zones, sides: sides, now: now)
         lastDecision = decision
-        if let cue = decision.cue { speech.speak(cue) }
         haptics.setProximity(decision.haptics.front ? decision.haptics.distance : nil)
 
         // Push buzz commands when they change, with a half-second keepalive so a
         // dropped packet cannot leave a side phone pulsing forever.
-        if decision.haptics != lastSentHaptics || now - lastHapticSend > 0.5 {
-            link.send(.haptic(decision.haptics))
-            lastSentHaptics = decision.haptics
+        var command = decision.haptics
+        command.sideRange = policy.sideWarnDistance
+        command.backRange = policy.backWarnDistance
+        if command != lastSentHaptics || now - lastHapticSend > 0.5 {
+            link.send(.haptic(command))
+            lastSentHaptics = command
             lastHapticSend = now
         }
     }

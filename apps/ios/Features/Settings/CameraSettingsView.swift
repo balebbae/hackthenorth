@@ -46,6 +46,13 @@ struct CameraSettingsView: View {
                         Text(String(format: "%.1f m", settingsStore.settings.obstacleRangeMeters))
                             .font(.system(.body, design: .monospaced))
                     }
+                    HStack {
+                        Text("Side buzz range")
+                        Slider(value: $settingsStore.settings.sideBuzzRangeMeters, in: 0.2...2.0, step: 0.1)
+                            .accessibilityIdentifier("settings.sideBuzzRange")
+                        Text(String(format: "%.1f m", settingsStore.settings.sideBuzzRangeMeters))
+                            .font(.system(.body, design: .monospaced))
+                    }
                         .accessibilityIdentifier("settings.sideSensing")
                 } header: {
                     Text("Obstacles")
@@ -116,6 +123,8 @@ struct CameraSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Voice cues", isOn: $settingsStore.settings.voiceCuesEnabled)
+                        .accessibilityIdentifier("settings.voiceCues")
                     Toggle("Upload query images", isOn: $settingsStore.settings.uploadQueryImages)
                         .accessibilityIdentifier("settings.uploadQueries")
                     Toggle("Include failed queries", isOn: $settingsStore.settings.uploadFailedQueries)

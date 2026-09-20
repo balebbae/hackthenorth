@@ -20,6 +20,7 @@ struct FrontRoleView: View {
             VStack(spacing: AppTheme.s16) {
                 header
                 cameraCard
+                navigationCard
                 nianticCard
                 notesCard
                 imageQueryCard
@@ -116,6 +117,80 @@ struct FrontRoleView: View {
         switch pipeline.arSession.state {
         case .running: AppTheme.primary
         case .failed: AppTheme.coral
+        default: AppTheme.graphite
+        }
+    }
+
+    /// Destination choice plus the backend's live guidance, spoken as it arrives.
+    private var navigationCard: some View {
+        VStack(alignment: .leading, spacing: AppTheme.s12) {
+            let rep = pipeline.reporter
+            HStack {
+                Text("Navigation")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.24)
+                Spacer()
+                PillTag(text: navigationLabel, fill: navigationColor, foreground: .white, identifier: "front.navState")
+            }
+            Menu {
+                Button("No destination") { rep.select(destination: nil) }
+                ForEach(rep.destinations) { node in
+                    Button(node.label) { rep.select(destination: node) }
+                }
+            } label: {
+                HStack {
+                    Text(rep.destination?.label ?? (rep.destinations.isEmpty ? "No destinations loaded" : "Choose a destination"))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppTheme.primary)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(AppTheme.primary)
+                }
+                .padding(.vertical, AppTheme.s8)
+                .padding(.horizontal, AppTheme.s12)
+                .background(AppTheme.skyTint)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.radiusButton, style: .continuous))
+            }
+            .disabled(rep.destinations.isEmpty)
+            .accessibilityLabel("Destination")
+            .accessibilityIdentifier("front.destination")
+            if let progress = rep.lastProgress {
+                if let instruction = progress.instruction {
+                    Text(instruction.text)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(AppTheme.ink)
+                        .accessibilityIdentifier("front.instruction")
+                }
+                StatRow(label: "Remaining", value: String(format: "%.1f m", progress.remainingMetres))
+                if let next = progress.nextNode, let ahead = progress.distanceToNextMetres {
+                    StatRow(label: "Next", value: String(format: "%@ · %.1f m", next.label, ahead))
+                }
+                if let heading = progress.headingDeg {
+                    StatRow(label: "Heading", value: String(format: "%.0f°", heading))
+                }
+            } else if rep.destination != nil {
+                Text("Waiting for a VPS fix before routing.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.inkSecondary)
+            }
+            if let spoken = pipeline.speech.lastSpoken {
+                StatRow(label: "Last spoken", value: spoken)
+            }
+        }
+        .card()
+    }
+
+    private var navigationLabel: String {
+        pipeline.reporter.lastProgress?.state.replacingOccurrences(of: "-", with: " ").capitalized
+            ?? (pipeline.reporter.destination == nil ? "Idle" : "Localizing")
+    }
+
+    private var navigationColor: Color {
+        switch pipeline.reporter.lastProgress?.state {
+        case "navigating": AppTheme.primary
+        case "arrived": AppTheme.midnight
+        case "off-route", "lost": AppTheme.coral
         default: AppTheme.graphite
         }
     }
@@ -270,7 +345,6 @@ struct FrontRoleView: View {
             }
             StatRow(label: "Clear path", value: String(format: "%+.2f", pipeline.zones.gapDirection))
             StatRow(label: "Open side", value: pipeline.lastDecision.openSide?.rawValue ?? "–")
-            StatRow(label: "Last cue", value: pipeline.speech.lastSpoken ?? "–")
             Divider()
             StatRow(label: "Map", value: pipeline.mapStatus)
             if let m = pipeline.mapReading {

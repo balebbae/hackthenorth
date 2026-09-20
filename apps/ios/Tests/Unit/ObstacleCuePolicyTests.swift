@@ -7,7 +7,7 @@ final class ObstacleCuePolicyTests: XCTestCase {
     /// These tests check which mounts buzz and the headline distance; per-side distances are covered in SideHapticTests.
     private func flags(_ h: HapticCommand) -> HapticCommand {
         var c = h
-        c.leftDistance = nil; c.rightDistance = nil; c.backDistance = nil
+        c.leftDistance = nil; c.rightDistance = nil; c.backDistance = nil; c.sideRange = nil; c.backRange = nil
         return c
     }
 
@@ -120,9 +120,9 @@ final class ObstacleCuePolicyTests: XCTestCase {
 
     func testLeftPhoneVeryCloseBuzzesLeftPhoneOnly() {
         let now: TimeInterval = 1000
-        let sides: [DeviceRole: SideClearance] = [.left: SideClearance(role: .left, nearest: 0.4, timestamp: now)]
+        let sides: [DeviceRole: SideClearance] = [.left: SideClearance(role: .left, nearest: 0.15, timestamp: now)]
         let d = policy.decide(.empty, sides: sides, now: now)
-        XCTAssertEqual(flags(d.haptics), HapticCommand(left: true, distance: 0.4))
+        XCTAssertEqual(flags(d.haptics), HapticCommand(left: true, distance: 0.15))
         XCTAssertTrue(d.haptics.shouldBuzz(.left))
         XCTAssertFalse(d.haptics.shouldBuzz(.right))
         XCTAssertFalse(d.haptics.shouldBuzz(.front))
@@ -132,23 +132,23 @@ final class ObstacleCuePolicyTests: XCTestCase {
 
     func testRightPhoneVeryCloseBuzzesRightPhoneOnly() {
         let now: TimeInterval = 1000
-        let sides: [DeviceRole: SideClearance] = [.right: SideClearance(role: .right, nearest: 0.4, timestamp: now)]
+        let sides: [DeviceRole: SideClearance] = [.right: SideClearance(role: .right, nearest: 0.15, timestamp: now)]
         let d = policy.decide(.empty, sides: sides, now: now)
-        XCTAssertEqual(flags(d.haptics), HapticCommand(right: true, distance: 0.4))
+        XCTAssertEqual(flags(d.haptics), HapticCommand(right: true, distance: 0.15))
     }
 
     func testFrontEdgeZoneVeryCloseBuzzesFrontNotSides() {
-        let d = policy.decide(ObstacleZones(left: 0.4, center: nil, right: nil))
-        XCTAssertEqual(flags(d.haptics), HapticCommand(front: true, distance: 0.4))
+        let d = policy.decide(ObstacleZones(left: 0.15, center: nil, right: nil))
+        XCTAssertEqual(flags(d.haptics), HapticCommand(front: true, distance: 0.15))
         XCTAssertEqual(d.cue?.text, "Obstacle close on your left. Move right.")
     }
 
     func testFarObstaclesAreIgnored() {
         let d = policy.decide(ObstacleZones(left: 2.0, center: 3.0, right: 2.5))
         XCTAssertEqual(d, .clear)
-        // A side phone at 0.8 m alone is not "way too close": no speech, but that phone pulses.
+        // A side phone at 0.35 m alone is not "very close": no cue, but that phone pulses.
         let now: TimeInterval = 1000
-        let sides: [DeviceRole: SideClearance] = [.left: SideClearance(role: .left, nearest: 0.8, timestamp: now)]
+        let sides: [DeviceRole: SideClearance] = [.left: SideClearance(role: .left, nearest: 0.35, timestamp: now)]
         let near = policy.decide(.empty, sides: sides, now: now)
         XCTAssertNil(near.cue)
         XCTAssertTrue(near.haptics.left && !near.haptics.front && !near.haptics.right)

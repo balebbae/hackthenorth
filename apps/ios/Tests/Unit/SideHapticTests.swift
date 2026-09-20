@@ -12,39 +12,39 @@ final class SideHapticTests: XCTestCase {
     }
 
     func testWallBesideTheLeftShoulderPulsesOnlyTheLeftPhoneWithoutSpeech() {
-        let d = policy.decide(.empty, sides: [.left: side(.left, 0.9), .right: side(.right, nil)], now: now)
+        let d = policy.decide(.empty, sides: [.left: side(.left, 0.3), .right: side(.right, nil)], now: now)
         XCTAssertNil(d.cue)
         XCTAssertTrue(d.haptics.left); XCTAssertFalse(d.haptics.right); XCTAssertFalse(d.haptics.front)
-        XCTAssertEqual(d.haptics.distance(for: .left), 0.9)
+        XCTAssertEqual(d.haptics.distance(for: .left), 0.3)
         XCTAssertNil(d.haptics.distance(for: .right))
     }
 
     func testEachSideGetsItsOwnDistance() {
-        let d = policy.decide(.empty, sides: [.left: side(.left, 1.1), .right: side(.right, 0.7)], now: now)
+        let d = policy.decide(.empty, sides: [.left: side(.left, 0.35), .right: side(.right, 0.3)], now: now)
         XCTAssertTrue(d.haptics.left && d.haptics.right)
-        XCTAssertEqual(d.haptics.distance(for: .left), 1.1)
-        XCTAssertEqual(d.haptics.distance(for: .right), 0.7)
+        XCTAssertEqual(d.haptics.distance(for: .left), 0.35)
+        XCTAssertEqual(d.haptics.distance(for: .right), 0.3)
         XCTAssertNil(d.cue, "warning range is haptic only")
     }
 
     func testVeryCloseSideStillSpeaksAndKeepsTheOtherSidesPulse() {
-        let d = policy.decide(.empty, sides: [.left: side(.left, 0.4), .right: side(.right, 1.0)], now: now)
+        let d = policy.decide(.empty, sides: [.left: side(.left, 0.15), .right: side(.right, 0.35)], now: now)
         XCTAssertNotNil(d.cue)
         XCTAssertTrue(d.haptics.left && d.haptics.right)
-        XCTAssertEqual(d.haptics.distance(for: .left), 0.4)
-        XCTAssertEqual(d.haptics.distance(for: .right), 1.0)
+        XCTAssertEqual(d.haptics.distance(for: .left), 0.15)
+        XCTAssertEqual(d.haptics.distance(for: .right), 0.35)
     }
 
     func testWallBehindPulsesTheBackPhone() {
-        let d = policy.decide(.empty, sides: [.back: side(.back, 0.5)], now: now)
+        let d = policy.decide(.empty, sides: [.back: side(.back, 0.25)], now: now)
         XCTAssertTrue(d.haptics.back); XCTAssertFalse(d.haptics.left)
-        XCTAssertEqual(d.haptics.distance(for: .back), 0.5)
-        let far = policy.decide(.empty, sides: [.back: side(.back, 1.5)], now: now)
+        XCTAssertEqual(d.haptics.distance(for: .back), 0.25)
+        let far = policy.decide(.empty, sides: [.back: side(.back, 0.5)], now: now)
         XCTAssertEqual(far, .clear)
     }
 
     func testFarWallsDoNotPulse() {
-        XCTAssertEqual(policy.decide(.empty, sides: [.left: side(.left, 1.4)], now: now), .clear)
+        XCTAssertEqual(policy.decide(.empty, sides: [.left: side(.left, 1.0)], now: now), .clear)
     }
 
     func testMapFillsInSidesNoPhoneIsWatching() {
@@ -71,8 +71,8 @@ final class SideHapticTests: XCTestCase {
     }
 
     func testCommandRoundTripsWithPerSideDistances() throws {
-        let command = HapticCommand(front: false, left: true, right: true, back: false, distance: 0.7,
-                                    leftDistance: 0.7, rightDistance: 1.1, backDistance: nil)
+        let command = HapticCommand(front: false, left: true, right: true, back: false, distance: 0.3,
+                                    leftDistance: 0.3, rightDistance: 0.35, backDistance: nil, sideRange: 0.4, backRange: 0.3)
         let data = try JSONEncoder().encode(PeerMessage.haptic(command))
         XCTAssertEqual(try JSONDecoder().decode(PeerMessage.self, from: data), .haptic(command))
     }

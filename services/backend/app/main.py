@@ -20,7 +20,8 @@ from .services.worlds import WorldStore, WorldNavigation
 from .services.world_agent import WorldAgentTools
 
 
-def create_app(settings=None, model=None, elastic=None, search=None, events=None, volume_commit=None):
+def create_app(settings=None, model=None, elastic=None, search=None, events=None, volume_commit=None,
+               annotation_client=None):
     settings = settings or Settings()
     elastic = elastic or ElasticClient(settings)
     events = events or EventService(elastic)
@@ -36,6 +37,8 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
 
     app = FastAPI(title='Indoor Navigation Backend', version='0.1.0', lifespan=lifespan)
     app.state.settings = settings
+    # Vision client for POST /worlds/{id}/annotations/propose; None means build one from settings per call.
+    app.state.annotation_client = annotation_client
     app.add_middleware(APIKeyMiddleware, key=settings.wander_api_key)
     app.state.worlds = WorldStore(settings.wander_data_root, volume_commit)
     app.state.world_navigation = WorldNavigation(app.state.worlds)

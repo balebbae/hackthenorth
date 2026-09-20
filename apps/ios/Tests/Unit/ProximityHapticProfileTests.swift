@@ -32,10 +32,18 @@ final class ProximityHapticProfileTests: XCTestCase {
         XCTAssertEqual(edge.intensity, profile.farIntensity, accuracy: 0.0001)
     }
 
-    func testSpeedUpIsConcentratedNearTheObstacle() {
-        // Halfway in distance should still be slower than halfway in interval.
+    func testSpeedUpIsGradual() {
+        // Halfway in distance is halfway in interval: a steady ramp, not a late jump.
         let half = profile.pulse(for: 0.9)!
         let midpoint = (profile.farInterval + profile.nearInterval) / 2
-        XCTAssertLessThan(half.interval, midpoint)
+        XCTAssertEqual(half.interval, midpoint, accuracy: 0.01)
+    }
+
+    func testProfileSpanningARangeStartsAtItsEdge() {
+        let short = ProximityHapticProfile.spanning(0.4)
+        XCTAssertNil(short.pulse(for: 0.45))
+        XCTAssertEqual(short.pulse(for: 0.4)!.interval, short.farInterval, accuracy: 0.0001)
+        XCTAssertEqual(short.pulse(for: 0.1)!.interval, short.nearInterval, accuracy: 0.0001)
+        XCTAssertGreaterThan(short.pulse(for: 0.3)!.interval, short.pulse(for: 0.2)!.interval)
     }
 }
