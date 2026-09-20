@@ -24,7 +24,10 @@ class EventArgs(Model):
 
 class ContextArgs(Model):
     query: str = Field(min_length=1, max_length=2000)
-    floor: int | None = None
+    # No default: OpenAI strict function-calling requires every property in
+    # `required`, which Pydantic only does for fields without a default value
+    # (matches the existing EventArgs.event_type pattern below).
+    floor: int | None
 
 
 class HazardDensityArgs(Model):

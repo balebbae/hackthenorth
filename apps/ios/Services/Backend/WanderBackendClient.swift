@@ -46,6 +46,24 @@ struct LocalizationQueryResponse: Decodable, Equatable, Sendable {
     let offGraphMetres: Double?
 }
 
+/// A note pinned to a point on the scan in the web viewer, mirroring
+/// `notes.schema.json`. Positions are in the world frame, in metres — the same
+/// frame `SitePose` reports, so the two can be compared directly.
+struct WorldNote: Decodable, Identifiable, Equatable, Sendable {
+    let id: String
+    let title: String
+    /// Human-readable place, e.g. "2nd floor, outside room 204".
+    let location: String?
+    let description: String?
+    let position: [Float]
+    let author: String?
+    let createdAt: String
+
+    var point: SIMD3<Float> {
+        position.count == 3 ? SIMD3(position[0], position[1], position[2]) : .zero
+    }
+}
+
 struct WorldSummary: Decodable, Sendable {
     let id: String
     let name: String
@@ -222,6 +240,28 @@ struct WanderBackendClient: Sendable {
         struct Graph: Decodable { let nodes: [GraphNode] }
         struct World: Decodable { let navigationGraph: Graph? }
         return try JSONDecoder().decode(World.self, from: data).navigationGraph?.nodes ?? []
+    }
+
+    /// Static map layers for the phone's map obstacle sensor.
+    func occupancy(worldId: String) async throws -> MapOccupancyPayload {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/occupancy"))
+        try Self.check(response, data)
+        return try JSONDecoder().decode(MapOccupancyPayload.self, from: data)
+    }
+
+    func hazards(worldId: String) async throws -> [MapHazard] {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/hazards"))
+        try Self.check(response, data)
+        return try JSONDecoder().decode(MapHazardsPayload.self, from: data).hazards
+    }
+
+    /// `GET /worlds/{id}/notes`. An empty list when the world has none; the
+    /// backend answers 404 only when the world itself is missing.
+    func notes(worldId: String) async throws -> [WorldNote] {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/notes"))
+        try Self.check(response, data)
+        struct File: Decodable { let notes: [WorldNote] }
+        return try JSONDecoder().decode(File.self, from: data).notes
     }
 
     func worlds() async throws -> [WorldSummary] {

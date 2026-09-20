@@ -46,7 +46,13 @@ struct CameraSettingsView: View {
                         Text(String(format: "%.1f m", settingsStore.settings.obstacleRangeMeters))
                             .font(.system(.body, design: .monospaced))
                     }
-                    Toggle("Side phones sense obstacles", isOn: $settingsStore.settings.sidePhonesSenseObstacles)
+                    HStack {
+                        Text("Side buzz range")
+                        Slider(value: $settingsStore.settings.sideBuzzRangeMeters, in: 0.3...2.0, step: 0.1)
+                            .accessibilityIdentifier("settings.sideBuzzRange")
+                        Text(String(format: "%.1f m", settingsStore.settings.sideBuzzRangeMeters))
+                            .font(.system(.body, design: .monospaced))
+                    }
                         .accessibilityIdentifier("settings.sideSensing")
                 } header: {
                     Text("Obstacles")
