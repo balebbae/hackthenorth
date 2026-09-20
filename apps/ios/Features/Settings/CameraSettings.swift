@@ -13,7 +13,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
     /// Farthest obstacle distance the detector reports, in metres. LiDAR is reliable to about 5 m.
     var obstacleRangeMeters: Double = 5.0
     /// A scanned wall or hazard closer than this beside the wearer pulses that shoulder phone.
-    var sideBuzzRangeMeters: Double = 0.8
+    var sideBuzzRangeMeters: Double = 0.4
     /// Left and right phones run LiDAR and report clearance to the front phone.
     /// Kept for stored-settings compatibility; side phones no longer sense. Their
     /// buzzes come from the front phone's localisation against the world map.

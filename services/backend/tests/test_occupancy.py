@@ -3,7 +3,16 @@ import struct
 
 import numpy as np
 
-from services.backend.app.services.occupancy import build_occupancy, decode_cells, ray_distance, read_spz_positions
+from services.backend.app.services.occupancy import build_occupancy as build_full, decode_cells, ray_distance, read_spz_positions
+
+
+def build_occupancy(spz, world, **overrides):
+    """The production defaults only keep furniture-sized structure; the synthetic
+    scenes here are tiny, so relax the density and size gates but keep the
+    scale filter that removes smears."""
+    params = dict(min_points=6, min_neighbors=3, min_component=30)
+    params.update(overrides)
+    return build_full(spz, world, **params)
 
 
 def make_spz(points, alphas=None, fractional_bits=12, scales_m=None):
