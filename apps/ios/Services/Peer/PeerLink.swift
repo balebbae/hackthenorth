@@ -33,7 +33,9 @@ final class PeerLink: NSObject, ObservableObject {
         // Reuse one peer identity per role across launches. A fresh MCPeerID with the
         // same display name confuses peers that still remember the old one.
         peerID = Self.persistentPeerID(displayName: "\(role.rawValue)-\(UIDevice.current.name.prefix(20))")
-        session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .none)
+        // .optional pairs with peers that use any preference; .none is deprecated and
+        // fails the handshake between some iOS versions.
+        session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .optional)
         super.init()
         session.delegate = self
     }
