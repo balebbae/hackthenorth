@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wander · System architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz@0,8..60;1,8..60&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f8fafc; /* Stellar White */
+      --color-ink:    #0f172a; /* Void Black */
+      --color-muted:  #475569; /* Graphite */
+      --color-accent: #d85598; /* Wander Pink */
+      --font-sans:  'Inter', system-ui, sans-serif;
+      --font-serif: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+      --font-mono:  'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1040px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 720px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Wander</p>
+    <h1>Four phones, one coordinator, one backend</h1>
+
+    <svg viewBox="0 0 960 544" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="wander-arch-title wander-arch-desc"
+         font-family="'Inter', system-ui, sans-serif">
+      <title id="wander-arch-title">Wander system architecture</title>
+      <desc id="wander-arch-desc">Left to right: on the wearer, a front iPhone runs ARKit LiDAR obstacle detection, Niantic localization, speech and haptics, and fans haptic pulses to three side and back phones over a peer link. The front phone talks to a single FastAPI worlds API on Modal over REST and WebSockets; the backend owns graph routing, sessions, localization records, the OpenAI agent and Live voice bridge, and persists worlds to a Modal Volume. A Next.js companion web app reaches the same backend through a server-side API proxy. Optional Modal GPU workers provide self-hosted visual localization and annotation.</desc>
+
+      <defs>
+        <marker id="wander-arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+        </marker>
+        <marker id="wander-arch-arrow-link" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2e4885"/>
+        </marker>
+      </defs>
+
+      <!-- paper -->
+      <rect width="960" height="544" fill="#f8fafc"/>
+
+      <!-- ═══ ZONES (drawn first) ═══ -->
+      <rect x="20" y="176" width="272" height="288" rx="4" fill="rgba(15,23,42,0.03)" stroke="rgba(15,23,42,0.08)" stroke-width="1"/>
+      <rect x="28" y="180" width="128" height="12" fill="#f8fafc"/>
+      <text x="32" y="189" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" font-weight="500" letter-spacing="0.18em" fill="#64748b">ON THE WEARER · iOS</text>
+
+      <rect x="340" y="176" width="368" height="288" rx="4" fill="rgba(15,23,42,0.03)" stroke="rgba(15,23,42,0.08)" stroke-width="1"/>
+      <rect x="348" y="180" width="104" height="12" fill="#f8fafc"/>
+      <text x="352" y="189" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" font-weight="500" letter-spacing="0.18em" fill="#64748b">BACKEND · MODAL</text>
+
+      <!-- ═══ ARROWS (drawn before nodes) ═══ -->
+
+      <!-- 1. Front phone → Niantic VPS (external, link) -->
+      <line x1="156" y1="208" x2="156" y2="130" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-arch-arrow-link)"/>
+      <rect x="164" y="162" width="56" height="12" fill="#f8fafc"/>
+      <text x="168" y="171" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">LOCALIZE</text>
+
+      <!-- 2. Front phone → side phones (peer link) -->
+      <line x1="156" y1="320" x2="156" y2="366" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-arch-arrow)"/>
+      <rect x="164" y="336" width="60" height="12" fill="rgba(15,23,42,0.03)"/>
+      <rect x="164" y="336" width="60" height="12" fill="#f8fafc" fill-opacity="0.97"/>
+      <text x="168" y="345" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">PEER LINK</text>
+
+      <!-- 3. Front phone → FastAPI (REST + WSS, link) -->
+      <line x1="268" y1="248" x2="362" y2="248" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-arch-arrow-link)"/>
+      <rect x="284" y="228" width="64" height="12" fill="#f8fafc"/>
+      <text x="316" y="237" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">REST · WSS</text>
+
+      <!-- 3b. FastAPI → Front phone (cues, pulses; return path, dashed) -->
+      <line x1="364" y1="280" x2="270" y2="280" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#wander-arch-arrow)"/>
+      <rect x="276" y="288" width="80" height="12" fill="#f8fafc"/>
+      <text x="316" y="297" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">CUES · PULSES</text>
+
+      <!-- 4. Web → FastAPI (server-side proxy, link) -->
+      <line x1="756" y1="248" x2="686" y2="248" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-arch-arrow-link)"/>
+      <rect x="692" y="228" width="60" height="12" fill="#f8fafc"/>
+      <text x="722" y="237" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">API PROXY</text>
+
+      <!-- 5. FastAPI → OpenAI (external, link) -->
+      <line x1="524" y1="208" x2="524" y2="130" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-arch-arrow-link)"/>
+      <rect x="532" y="162" width="76" height="12" fill="#f8fafc"/>
+      <text x="536" y="171" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">AGENT · LIVE</text>
+
+      <!-- 6. FastAPI → Modal Volume -->
+      <line x1="436" y1="320" x2="436" y2="366" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-arch-arrow)"/>
+      <rect x="444" y="336" width="60" height="12" fill="#f8fafc"/>
+      <text x="448" y="345" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">WORLDS</text>
+
+      <!-- 7. FastAPI → GPU workers (optional, dashed) -->
+      <line x1="612" y1="320" x2="612" y2="366" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#wander-arch-arrow)"/>
+      <rect x="620" y="336" width="64" height="12" fill="#f8fafc"/>
+      <text x="624" y="345" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">SELF-HOST</text>
+
+      <!-- ═══ NODES ═══ -->
+
+      <!-- Niantic VPS (external) -->
+      <rect x="44" y="56" width="224" height="72" rx="4" fill="rgba(15,23,42,0.03)" stroke="rgba(15,23,42,0.30)" stroke-width="1"/>
+      <rect x="52" y="62" width="28" height="12" rx="2" fill="#0f172a"/>
+      <text x="66" y="71" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">EXT</text>
+      <text x="156" y="94" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Niantic Spatial VPS</text>
+      <text x="156" y="110" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">Sites API · VPS · SDK on phone</text>
+
+      <!-- OpenAI (external) -->
+      <rect x="364" y="56" width="320" height="72" rx="4" fill="rgba(15,23,42,0.03)" stroke="rgba(15,23,42,0.30)" stroke-width="1"/>
+      <rect x="372" y="62" width="28" height="12" rx="2" fill="#0f172a"/>
+      <text x="386" y="71" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">EXT</text>
+      <text x="524" y="94" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">OpenAI</text>
+      <text x="524" y="110" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">Responses API agent + tools · Live voice</text>
+
+      <!-- Front phone (focal) -->
+      <rect x="44" y="208" width="224" height="112" rx="4" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <rect x="52" y="214" width="28" height="12" rx="2" fill="#d85598"/>
+      <text x="66" y="223" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#ffffff">iOS</text>
+      <text x="156" y="256" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Front phone (chest)</text>
+      <text x="156" y="274" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">ARKit LiDAR · obstacles · NSDK</text>
+      <text x="156" y="288" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">speech · haptics · voice · QR</text>
+
+      <!-- Side / back phones (input/device) -->
+      <rect x="44" y="368" width="224" height="72" rx="4" fill="rgba(71,85,105,0.10)" stroke="#64748b" stroke-width="1"/>
+      <rect x="52" y="374" width="36" height="12" rx="2" fill="#0f172a"/>
+      <text x="70" y="383" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">iOS×3</text>
+      <text x="156" y="406" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Left · right · back phones</text>
+      <text x="156" y="422" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">haptic cues · Multipeer link</text>
+
+      <!-- FastAPI worlds API (focal) -->
+      <rect x="364" y="208" width="320" height="112" rx="4" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <rect x="372" y="214" width="28" height="12" rx="2" fill="#d85598"/>
+      <text x="386" y="223" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#ffffff">API</text>
+      <text x="524" y="256" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">FastAPI worlds API · one container</text>
+      <text x="524" y="274" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">graph routing · sessions · localize · haptics</text>
+      <text x="524" y="288" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">agent tools · voice bridge · X-API-Key</text>
+
+      <!-- Modal Volume (store) -->
+      <rect x="364" y="368" width="144" height="72" rx="4" fill="rgba(15,23,42,0.05)" stroke="#475569" stroke-width="1"/>
+      <rect x="372" y="374" width="28" height="12" rx="2" fill="#0f172a"/>
+      <text x="386" y="383" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">VOL</text>
+      <text x="436" y="406" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Modal Volume</text>
+      <text x="436" y="422" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">worlds · sessions</text>
+
+      <!-- GPU workers (optional) -->
+      <rect x="540" y="368" width="144" height="72" rx="4" fill="rgba(15,23,42,0.02)" stroke="rgba(15,23,42,0.20)" stroke-width="1" stroke-dasharray="4 3"/>
+      <rect x="548" y="374" width="28" height="12" rx="2" fill="#475569"/>
+      <text x="562" y="383" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">GPU</text>
+      <text x="612" y="406" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Modal workers</text>
+      <text x="612" y="422" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">hloc localize · annotate</text>
+
+      <!-- Companion web app -->
+      <rect x="756" y="208" width="180" height="112" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <rect x="764" y="214" width="28" height="12" rx="2" fill="#0f172a"/>
+      <text x="778" y="223" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">WEB</text>
+      <text x="846" y="256" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Companion web app</text>
+      <text x="846" y="274" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">Next.js · Spark viewer</text>
+      <text x="846" y="288" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">graph · notes · live · QR</text>
+
+      <!-- ═══ LEGEND ═══ -->
+      <line x1="20" y1="496" x2="936" y2="496" stroke="rgba(15,23,42,0.08)" stroke-width="1"/>
+
+      <rect x="20" y="512" width="12" height="12" rx="2" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <text x="40" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">GUIDANCE COORDINATOR</text>
+
+      <rect x="180" y="512" width="12" height="12" rx="2" fill="rgba(15,23,42,0.05)" stroke="#475569" stroke-width="1"/>
+      <text x="200" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">PERSISTENT STORE</text>
+
+      <rect x="316" y="512" width="12" height="12" rx="2" fill="rgba(15,23,42,0.03)" stroke="rgba(15,23,42,0.30)" stroke-width="1"/>
+      <text x="336" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">EXTERNAL SERVICE</text>
+
+      <rect x="452" y="512" width="12" height="12" rx="2" fill="rgba(15,23,42,0.02)" stroke="rgba(15,23,42,0.20)" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="472" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">OPTIONAL</text>
+
+      <line x1="560" y1="518" x2="588" y2="518" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-arch-arrow-link)"/>
+      <text x="596" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">HTTPS / WSS</text>
+
+      <line x1="688" y1="518" x2="716" y2="518" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-arch-arrow)"/>
+      <text x="724" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">LOCAL / IN-PROCESS</text>
+
+      <line x1="832" y1="518" x2="860" y2="518" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#wander-arch-arrow)"/>
+      <text x="868" y="521" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">RETURN / OPT</text>
+    </svg>
+  </div>
+</body>
+</html>
