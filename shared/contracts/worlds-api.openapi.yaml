@@ -544,6 +544,7 @@ paths:
                 worldId: { type: string }
                 deviceId: { type: string }
                 destination: { type: string, description: "Destination node id." }
+                accessibleOnly: { type: boolean, default: false, description: "Route and reroute without stairs / escalators (edges with `accessible: false`)." }
       responses:
         "201":
           description: Created

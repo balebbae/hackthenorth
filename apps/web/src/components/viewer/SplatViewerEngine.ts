@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
-import type { Alignment, Measurement, NavigationGraph, NavNodeKind, Vec3, WorldNote } from "@/lib/world-manifest";
+import { type Alignment, type Measurement, type NavigationGraph, type NavNodeKind, type Vec3, type WorldNote, edgeAccessible } from "@/lib/world-manifest";
 import { CameraKeyControls } from "./CameraKeyControls";
 
 export type ViewerMode = "orbit" | "walk";
@@ -153,6 +153,9 @@ export class SplatViewerEngine {
     destination: overlayMaterial(PINK),
   };
   private readonly edgeMaterial = overlayMaterial(BLUE);
+  /** Vertical transitions: step-free (elevator / ramp) in Sky, stairs / escalators in White. */
+  private readonly accessibleTransitionMaterial = overlayMaterial(SKY);
+  private readonly steppedTransitionMaterial = overlayMaterial(WHITE);
   private readonly flagMaterial = overlayMaterial(PINK);
   private readonly measureMaterial = overlayMaterial(SKY);
   private readonly pendingMaterial = overlayMaterial(WHITE);
@@ -390,7 +393,13 @@ export class SplatViewerEngine {
       const b = this.nodePositions.get(edge.to);
       if (!a || !b) continue;
       const flagged = flags?.edges.has(`${edge.from}|${edge.to}`) ?? false;
-      this.graphGroup.add(this.tube(a, b, flagged ? EDGE_RADIUS * 1.6 : EDGE_RADIUS, flagged ? this.flagMaterial : this.edgeMaterial, 1000));
+      const vertical = (edge.kind ?? "walk") !== "walk";
+      const material = flagged
+        ? this.flagMaterial
+        : vertical
+          ? edgeAccessible(edge) ? this.accessibleTransitionMaterial : this.steppedTransitionMaterial
+          : this.edgeMaterial;
+      this.graphGroup.add(this.tube(a, b, flagged ? EDGE_RADIUS * 1.6 : EDGE_RADIUS, material, 1000));
     }
     if (this.mesh === null && graph.nodes.length) {
       this.grid.position.y = new THREE.Box3().setFromPoints([...this.nodePositions.values()]).min.y - 0.01;
@@ -677,7 +686,8 @@ export class SplatViewerEngine {
     this.clearGroup(this.graphGroup);
     this.clearGroup(this.measureGroup);
     this.clearGroup(this.trailGroup);
-    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.flagMaterial, this.measureMaterial, this.pendingMaterial, this.trailMaterial])
+    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.accessibleTransitionMaterial, this.steppedTransitionMaterial,
+      this.flagMaterial, this.measureMaterial, this.pendingMaterial, this.trailMaterial])
       m.dispose();
     this.imageTexture?.dispose();
     this.imagePlane.geometry.dispose();
