@@ -48,7 +48,7 @@ struct CameraSettingsView: View {
                     }
                     HStack {
                         Text("Side buzz range")
-                        Slider(value: $settingsStore.settings.sideBuzzRangeMeters, in: 0.3...2.0, step: 0.1)
+                        Slider(value: $settingsStore.settings.sideBuzzRangeMeters, in: 0.2...2.0, step: 0.1)
                             .accessibilityIdentifier("settings.sideBuzzRange")
                         Text(String(format: "%.1f m", settingsStore.settings.sideBuzzRangeMeters))
                             .font(.system(.body, design: .monospaced))

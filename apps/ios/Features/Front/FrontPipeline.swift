@@ -131,7 +131,7 @@ final class FrontPipeline: ObservableObject {
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
         policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
-        policy.backWarnDistance = min(0.6, Float(settings.sideBuzzRangeMeters))
+        policy.backWarnDistance = min(0.3, Float(settings.sideBuzzRangeMeters))
         self.settings = settings
         arSession.start(settings: settings)
         activeSettings = settings
@@ -176,7 +176,7 @@ final class FrontPipeline: ObservableObject {
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
         policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
-        policy.backWarnDistance = min(0.6, Float(settings.sideBuzzRangeMeters))
+        policy.backWarnDistance = min(0.3, Float(settings.sideBuzzRangeMeters))
         queryLoop.reconfigure(settings: settings)
         let previous = activeSettings
         activeSettings = settings
@@ -303,20 +303,22 @@ final class FrontPipeline: ObservableObject {
             reading = mapSensor.read(map: map, deviceTransform: fix.anchorTransform.inverse * frame.cameraTransform)
         }
         if reading != mapReading { mapReading = reading }
-        if let reading { sensed = .merged(sensed, reading.zones) }
+        // The front's own buzz trusts only what its LiDAR sees; the map is for the sides and back.
         // Side and back mounts are driven purely by the map around the localised pose.
         let sides = SideClearanceMerge.merge(live: [:], map: reading, now: now)
         zones = sensed
         let decision = policy.decide(zones, sides: sides, now: now)
         lastDecision = decision
-        if let cue = decision.cue { speech.speak(cue) }
         haptics.setProximity(decision.haptics.front ? decision.haptics.distance : nil)
 
         // Push buzz commands when they change, with a half-second keepalive so a
         // dropped packet cannot leave a side phone pulsing forever.
-        if decision.haptics != lastSentHaptics || now - lastHapticSend > 0.5 {
-            link.send(.haptic(decision.haptics))
-            lastSentHaptics = decision.haptics
+        var command = decision.haptics
+        command.sideRange = policy.sideWarnDistance
+        command.backRange = policy.backWarnDistance
+        if command != lastSentHaptics || now - lastHapticSend > 0.5 {
+            link.send(.haptic(command))
+            lastSentHaptics = command
             lastHapticSend = now
         }
     }

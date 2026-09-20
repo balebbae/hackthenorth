@@ -17,6 +17,14 @@ struct ProximityHapticProfile: Equatable, Sendable {
     var farSharpness: Float = 0.2
     var nearSharpness: Float = 1.0
 
+    /// A profile whose ramp spans `range`: slow at the threshold, fastest inside a quarter of it.
+    static func spanning(_ range: Float) -> ProximityHapticProfile {
+        var profile = ProximityHapticProfile()
+        profile.farDistance = max(0.05, range)
+        profile.nearDistance = max(0.02, range * 0.25)
+        return profile
+    }
+
     struct Pulse: Equatable, Sendable {
         var interval: TimeInterval
         var intensity: Float
@@ -33,8 +41,8 @@ struct ProximityHapticProfile: Equatable, Sendable {
     func pulse(for distance: Float?) -> Pulse? {
         guard let distance, distance <= farDistance else { return nil }
         let t = normalized(distance)
-        // Interval ramps quadratically so the speed-up is felt mostly in the last half metre.
-        let interval = nearInterval + (farInterval - nearInterval) * Double(t * t)
+        // Interval ramps linearly, so the pulse quickens steadily all the way in.
+        let interval = nearInterval + (farInterval - nearInterval) * Double(t)
         let intensity = nearIntensity + (farIntensity - nearIntensity) * t
         let sharpness = nearSharpness + (farSharpness - nearSharpness) * t
         return Pulse(interval: interval, intensity: intensity, sharpness: sharpness)

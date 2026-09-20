@@ -16,7 +16,7 @@ SPZ_MAGIC = 0x5053474E
 SCHEMA = 'wander.occupancy/v1'
 
 
-BUILDER = 2  # bump when the filtering changes so cached grids are rebuilt
+BUILDER = 3  # bump when the filtering changes so cached grids are rebuilt
 
 
 def read_spz_positions(data: bytes):
@@ -58,9 +58,9 @@ def quaternion_rotate(points, q):
     return points @ r.T
 
 
-def build_occupancy(spz: bytes, world: dict, cell_size: float = 0.15, min_alpha: int = 64, min_points: int = 8,
-                    trim_percentile: float = 0.5, max_scale: float = 0.15, min_neighbors: int = 3,
-                    min_component: int = 30) -> dict:
+def build_occupancy(spz: bytes, world: dict, cell_size: float = 0.15, min_alpha: int = 64, min_points: int = 20,
+                    trim_percentile: float = 0.5, max_scale: float = 0.08, min_neighbors: int = 8,
+                    min_component: int = 300) -> dict:
     """Voxelise the splat into the world frame (alignment applied), keeping only
     solid, well-supported structure:
 
@@ -68,7 +68,8 @@ def build_occupancy(spz: bytes, world: dict, cell_size: float = 0.15, min_alpha:
       mid-air streaks a scan leaves behind; real surfaces are made of tiny ones;
     * a cell needs `min_points` opaque points, and `min_neighbors` occupied
       neighbours out of 26, so thin wisps do not count as surfaces;
-    * connected clusters smaller than `min_component` cells are dropped as noise.
+    * connected clusters smaller than `min_component` cells are dropped as noise;
+      at the defaults only walls and furniture-sized structure survive.
     """
     positions, alphas, scales = read_spz(spz)
     solid = (alphas >= min_alpha) & (scales.max(axis=1) <= max_scale)
