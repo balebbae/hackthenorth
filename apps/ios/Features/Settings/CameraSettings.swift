@@ -16,6 +16,8 @@ struct CameraSettings: Codable, Equatable, Sendable {
     var sideBuzzRangeMeters: Double = 0.6
     /// Spoken cues (route notes, readiness). Off: the app is haptics only.
     var voiceCuesEnabled: Bool = false
+    /// Shared demo token for the backend's live voice bridge (VOICE_ACCESS_TOKEN).
+    var voiceAccessToken: String = ""
     /// Left and right phones run LiDAR and report clearance to the front phone.
     /// Kept for stored-settings compatibility; side phones no longer sense. Their
     /// buzzes come from the front phone's localisation against the world map.
@@ -58,6 +60,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
         obstacleRangeMeters = try c.decodeIfPresent(Double.self, forKey: .obstacleRangeMeters) ?? d.obstacleRangeMeters
         sideBuzzRangeMeters = try c.decodeIfPresent(Double.self, forKey: .sideBuzzRangeMeters) ?? d.sideBuzzRangeMeters
         voiceCuesEnabled = try c.decodeIfPresent(Bool.self, forKey: .voiceCuesEnabled) ?? d.voiceCuesEnabled
+        voiceAccessToken = try c.decodeIfPresent(String.self, forKey: .voiceAccessToken) ?? d.voiceAccessToken
         sidePhonesSenseObstacles = try c.decodeIfPresent(Bool.self, forKey: .sidePhonesSenseObstacles) ?? d.sidePhonesSenseObstacles
         captureIntervalMs = try c.decodeIfPresent(Int.self, forKey: .captureIntervalMs) ?? d.captureIntervalMs
         jpegQuality = try c.decodeIfPresent(Double.self, forKey: .jpegQuality) ?? d.jpegQuality
@@ -113,6 +116,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
         take("BackendURL", \.backendURL)
         take("BackendAPIKey", \.backendAPIKey)
         take("WorldId", \.worldId)
+        take("VoiceAccessToken", \.voiceAccessToken)
     }
 
     static func localConfig(bundle: Bundle = .main) -> [String: Any] {

@@ -26,6 +26,7 @@ struct FrontRoleView: View {
                 imageQueryCard
                 localizationCard
                 obstacleCard
+                voiceCard
                 controls
             }
             .padding(.horizontal, AppTheme.s16)
@@ -325,6 +326,46 @@ struct FrontRoleView: View {
             StatRow(label: "Dropped", value: "\(s.droppedNoFrame + s.droppedBusy)")
             StatRow(label: "Last payload", value: s.lastPayloadBytes > 0 ? "\(s.lastPayloadBytes / 1024) KB" : "–")
             StatRow(label: "Last result", value: s.lastOutcome?.label ?? "–")
+        }
+        .card()
+    }
+
+    private var voiceCard: some View {
+        VStack(alignment: .leading, spacing: AppTheme.s12) {
+            HStack {
+                Text("Voice")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.24)
+                Spacer()
+                PillTag(text: pipeline.voice.state.label,
+                        fill: pipeline.voice.state == .ready ? AppTheme.marigold : AppTheme.skyTint,
+                        identifier: "front.voiceState")
+            }
+            Text("Talk to the assistant through the chest phone's microphone and speaker. Replies are an AI-generated voice.")
+                .font(.system(size: 14))
+                .foregroundStyle(AppTheme.graphite)
+            ForEach(pipeline.voice.transcript.suffix(4)) { line in
+                StatRow(label: line.speaker == "user" ? "You" : "Assistant", value: line.text)
+            }
+            if let answer = pipeline.voice.lastAssistantResponse {
+                StatRow(label: "Backend", value: answer)
+            }
+            if let error = pipeline.voiceError {
+                StatRow(label: "Voice error", value: error)
+            }
+            StatRow(label: "Audio", value: "\(pipeline.voice.chunksSent) sent · \(pipeline.voice.chunksPlayed) played")
+            HStack {
+                if pipeline.voice.isActive {
+                    Button("End call") { pipeline.endVoiceCall() }
+                        .buttonStyle(GhostButtonStyle())
+                        .accessibilityIdentifier("front.voice.end")
+                } else {
+                    Button("Start call") { pipeline.startVoiceCall(settings: settingsStore.settings, deviceId: settingsStore.deviceId) }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .disabled(!pipeline.isActive)
+                        .accessibilityIdentifier("front.voice.start")
+                }
+            }
         }
         .card()
     }

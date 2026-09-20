@@ -242,6 +242,15 @@ struct WanderBackendClient: Sendable {
         return try JSONDecoder().decode(World.self, from: data).navigationGraph?.nodes ?? []
     }
 
+    /// `POST /sessions`: a navigation session for this world and device, for the voice call
+    /// when no localize call has produced one yet.
+    func createSession(worldId: String, deviceId: String) async throws -> String {
+        let (data, response) = try await session.data(for: request("POST", "sessions", body: ["worldId": worldId, "deviceId": deviceId]))
+        try Self.check(response, data)
+        struct Created: Decodable { let sessionId: String }
+        return try JSONDecoder().decode(Created.self, from: data).sessionId
+    }
+
     /// Externally triggered buzzes queued since `since` (`GET /haptics/pending`).
     struct PendingPulses: Decodable, Sendable {
         struct Pulse: Decodable, Sendable { let id: Int; let role: String; let ms: Int }

@@ -22,6 +22,8 @@ final class FrontPipeline: ObservableObject {
     let haptics = HapticController()
     let localizer = NianticLocalizer()
     let reporter = LocalizationReporter()
+    let voice = VoiceCallController()
+    @Published private(set) var voiceError: String?
     let notes = WorldNotesStore()
     @Published private(set) var usingNSDK = false
     /// Notes projected into the camera preview; empty unless the anchor is tracked.
@@ -128,6 +130,7 @@ final class FrontPipeline: ObservableObject {
                       speech.objectWillChange.eraseToAnyPublisher(),
                       link.objectWillChange.eraseToAnyPublisher(),
                       localizer.objectWillChange.eraseToAnyPublisher(),
+                      voice.objectWillChange.eraseToAnyPublisher(),
                       notes.objectWillChange.eraseToAnyPublisher(),
                       reporter.objectWillChange.eraseToAnyPublisher()] {
             child.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &forwarding)
@@ -170,6 +173,7 @@ final class FrontPipeline: ObservableObject {
         haptics.stopPulsing()
         link.send(.haptic(.none))
         stopLocalization()
+        voice.end()
         arSession.stop()
         // The peer link stays up across Stop/Start so the side phones do not have to re-pair.
         speech.stop()
@@ -282,6 +286,30 @@ final class FrontPipeline: ObservableObject {
             }
         }
     }
+
+    /// Start a live voice call on the current navigation session (creating one if needed).
+    func startVoiceCall(settings: CameraSettings, deviceId: String) {
+        guard let base = settings.backendBaseURL, !settings.backendAPIKey.isEmpty else {
+            voiceError = "backend not configured"; return
+        }
+        guard !settings.voiceAccessToken.isEmpty else { voiceError = "voice token missing in Settings"; return }
+        voiceError = nil
+        let client = WanderBackendClient(baseURL: base, apiKey: settings.backendAPIKey)
+        Task { [weak self] in
+            guard let self else { return }
+            var sessionId = self.reporter.sessionId
+            if sessionId == nil {
+                guard let worldId = self.reporter.worldId ?? (settings.worldId.isEmpty ? nil : settings.worldId) else {
+                    self.voiceError = "no world yet"; return
+                }
+                do { sessionId = try await client.createSession(worldId: worldId, deviceId: deviceId) }
+                catch { self.voiceError = "session: \(error.localizedDescription)"; return }
+            }
+            self.voice.start(baseURL: base, apiKey: settings.backendAPIKey, sessionId: sessionId!, token: settings.voiceAccessToken)
+        }
+    }
+
+    func endVoiceCall() { voice.end() }
 
     func relay(_ pulse: PulseCommand) {
         pulsesRelayed += 1
