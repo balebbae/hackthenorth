@@ -129,3 +129,11 @@ def test_params_reject_nonsense():
     with pytest.raises(ValueError):
         Params.parse({'cell': 0.5, 'spacing': 0.5})
     assert Params.parse({'spacing': 2}).spacing == 2
+
+
+def test_seed_zero_is_the_default_the_viewer_sends():
+    assert Params.parse({'seed': 0}).seed == 0
+    assert Params.parse({'seed': 7.0}).seed == 7
+    for bad in (-1, 1.5, True):
+        with pytest.raises(ValueError):
+            Params.parse({'seed': bad})
