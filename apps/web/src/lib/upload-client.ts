@@ -25,24 +25,54 @@ async function readError(res: Response, fallback: string): Promise<string> {
   return body?.error ?? `${fallback} (${res.status})`;
 }
 
+type UploadTarget =
+  | { mode: "direct"; url: string; header: string; token: string; expiresAt: number }
+  | { mode: "proxy" };
+
+/**
+ * Ask the server where this file's bytes should go.
+ *
+ * A splat is far bigger than the 4.5 MB request body a Vercel function accepts, so in
+ * production the answer is a ticket scoped to this one path and the upload goes straight
+ * to the worlds backend. Running against local files there is no backend, and the answer
+ * is the same-origin route.
+ */
+async function resolveTarget(
+  worldId: string,
+  version: string,
+  filename: string,
+  signal?: AbortSignal,
+): Promise<UploadTarget> {
+  const proxyUrl = assetPath(worldId, version, filename);
+  const res = await fetch(`${proxyUrl}/ticket`, { method: "POST", signal });
+  if (!res.ok) throw new UploadError(res.status, await readError(res, "Could not start the upload"));
+  return (await res.json()) as UploadTarget;
+}
+
+function assetPath(worldId: string, version: string, filename: string): string {
+  return `/api/worlds/${encodeURIComponent(worldId)}/${encodeURIComponent(version)}/${encodeURIComponent(filename)}`;
+}
+
 /** PUT one file to `worlds/<id>/<version>/<filename>` with progress. Resolves to the stored path. */
-export function uploadSplatFile(
+export async function uploadSplatFile(
   worldId: string,
   version: string,
   file: File,
   onProgress: (p: UploadProgress) => void,
   signal?: AbortSignal,
 ): Promise<{ path: string; bytes: number }> {
-  const url = `/api/worlds/${encodeURIComponent(worldId)}/${encodeURIComponent(version)}/${encodeURIComponent(file.name)}`;
+  const target = await resolveTarget(worldId, version, file.name, signal);
+  const url = target.mode === "direct" ? target.url : assetPath(worldId, version, file.name);
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
     xhr.setRequestHeader("content-type", "application/octet-stream");
+    if (target.mode === "direct") xhr.setRequestHeader(target.header, target.token);
     xhr.upload.onprogress = (e) => onProgress({ loaded: e.loaded, total: e.lengthComputable ? e.total : file.size });
     xhr.onerror = () => reject(new UploadError(0, "Network error while uploading"));
     xhr.onabort = () => reject(new UploadError(0, "Upload cancelled"));
     xhr.onload = () => {
-      let body: { path?: string; bytes?: number; error?: string } = {};
+      let body: { path?: string; bytes?: number; error?: string; detail?: string } = {};
       try {
         body = JSON.parse(xhr.responseText);
       } catch {
@@ -50,7 +80,8 @@ export function uploadSplatFile(
       }
       if (xhr.status >= 200 && xhr.status < 300 && body.path)
         resolve({ path: body.path, bytes: body.bytes ?? file.size });
-      else reject(new UploadError(xhr.status, body.error ?? `Upload failed (${xhr.status})`));
+      // `error` is this app's shape, `detail` is FastAPI's when the PUT went straight to the backend.
+      else reject(new UploadError(xhr.status, body.error ?? body.detail ?? `Upload failed (${xhr.status})`));
     };
     signal?.addEventListener("abort", () => xhr.abort(), { once: true });
     xhr.send(file);

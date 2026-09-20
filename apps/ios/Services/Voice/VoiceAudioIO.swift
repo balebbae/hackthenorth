@@ -146,6 +146,12 @@ final class VoiceAudioIO: ObservableObject, VoiceAudio {
 
     private func startEngine() throws {
         let input = engine.inputNode
+        // Apple's voice-processing I/O unit cancels our own loudspeaker out of the microphone;
+        // without it the chest speaker's reply feeds straight back into the request. It has to be
+        // set on a stopped engine and it changes the input format, so it comes before the read below.
+        if !input.isVoiceProcessingEnabled {
+            try? input.setVoiceProcessingEnabled(true)
+        }
         let inputFormat = input.outputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else { throw VoiceAudioError.noInput }
         guard let converter = AVAudioConverter(from: inputFormat, to: target) else { throw VoiceAudioError.converter }

@@ -62,6 +62,8 @@ type Props = {
   onFocusNote: (id: string) => void;
   onUpdateNote: (id: string, patch: Partial<Pick<WorldNote, "title" | "location" | "description">>) => void;
   onDeleteNote: (id: string) => void;
+  /** Replaces the notes list after POST /api/worlds/:id/notes/auto-detect adds new pins. */
+  onNotesDetected: (notes: WorldNote[]) => void;
   onStartNote: () => void;
   onStartMeasure: () => void;
   onLabelMeasurement: (id: string, label: string) => void;
@@ -69,6 +71,8 @@ type Props = {
   onClearMeasurements: () => void;
   /** Opens the upload dialog for a new splat version (only when the world has a manifest). */
   onUploadSplat?: () => void;
+  /** Saves the Niantic Site ID from the Details tab; resolves once the manifest is written. */
+  onSaveSiteId?: (siteId: string | null) => Promise<void>;
 };
 
 /** Right-hand panel: write notes, review measurements, read the manifest and waypoints. */
@@ -143,12 +147,50 @@ export function InspectorPanel(p: Props) {
 
 function NotesTab(p: Props) {
   const selectedId = p.selection?.kind === "note" ? p.selection.id : null;
+  const [detecting, setDetecting] = useState(false);
+  const [detectMessage, setDetectMessage] = useState<string | null>(null);
+
+  async function detectObjects() {
+    setDetecting(true);
+    setDetectMessage(null);
+    try {
+      const res = await fetch(`/api/worlds/${encodeURIComponent(p.worldId)}/notes/auto-detect`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const body = (await res.json()) as {
+        notes?: WorldNote[];
+        added?: number;
+        skippedDuplicates?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(body.error ?? "Could not detect objects");
+      p.onNotesDetected(body.notes ?? []);
+      const added = body.added ?? 0;
+      setDetectMessage(
+        added === 0
+          ? "No new objects found — try scanning more of the room with the phone first."
+          : `Added ${added} note${added === 1 ? "" : "s"}${body.skippedDuplicates ? ` (skipped ${body.skippedDuplicates} already-known)` : ""}.`,
+      );
+    } catch (err) {
+      setDetectMessage(err instanceof Error ? err.message : "Could not detect objects");
+    } finally {
+      setDetecting(false);
+    }
+  }
+
   return (
     <div className="p-3">
       <button type="button" className="btn-ghost w-full" onClick={p.onStartNote}>
         <Icon name="pin" size={15} />
         Add a note on the scan
       </button>
+      <button type="button" className="btn-ghost mt-1.5 w-full" onClick={detectObjects} disabled={detecting}>
+        <Icon name="sparkle" size={15} />
+        {detecting ? "Detecting objects…" : "Detect objects automatically"}
+      </button>
+      {detectMessage && <p className="mt-1.5 px-1 text-caption text-void-black/60">{detectMessage}</p>}
 
       {p.notes.length === 0 ? (
         <p className="mt-4 px-1 text-body-sm text-void-black/50">
@@ -369,6 +411,7 @@ function DetailsTab({
   onSelect,
   onFocusNode,
   onUploadSplat,
+  onSaveSiteId,
 }: Props) {
   const meta = STATUS_META[status];
   const splatFile = manifest?.assets.splat.split("/").pop();
@@ -404,6 +447,13 @@ function DetailsTab({
         </Row>
         <Row label="Frame">
           {manifest?.alignment?.frame ?? <span className="text-void-black/40">Unaligned</span>}
+        </Row>
+        <Row label="Site ID">
+          {manifest && onSaveSiteId ? (
+            <SiteIdField key={manifest.nianticSiteId ?? ""} value={manifest.nianticSiteId} onSave={onSaveSiteId} />
+          ) : (
+            manifest?.nianticSiteId ?? <span className="text-void-black/40">Not set</span>
+          )}
         </Row>
         {manifest?.stats?.captureApp && <Row label="Captured with">{manifest.stats.captureApp}</Row>}
         {manifest?.updatedAt && <Row label="Updated">{new Date(manifest.updatedAt).toLocaleString()}</Row>}
@@ -467,6 +517,73 @@ function DetailsTab({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The Niantic Scaniverse Site the phone localizes against. It is what ties this world to a
+ * real building, so a world without one stays "processing" and the connect QR carries no site.
+ */
+function SiteIdField({
+  value,
+  onSave,
+}: {
+  value: string | null;
+  onSave: (siteId: string | null) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState(value ?? "");
+  const [state, setState] = useState<"idle" | "saving" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const trimmed = draft.trim();
+  const changed = trimmed !== (value ?? "");
+
+  const commit = async () => {
+    if (!changed || state === "saving") return;
+    setState("saving");
+    setError(null);
+    try {
+      await onSave(trimmed || null);
+      setState("idle");
+    } catch (err) {
+      setState("error");
+      setError(err instanceof Error ? err.message : "Could not save the Site ID");
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <input
+          id="world-site-id"
+          className="input min-w-0 flex-1 py-1 font-mono text-body-sm"
+          value={draft}
+          placeholder="Not set"
+          spellCheck={false}
+          autoComplete="off"
+          aria-label="Niantic Site ID"
+          aria-describedby="world-site-id-hint"
+          disabled={state === "saving"}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void commit();
+            if (e.key === "Escape") setDraft(value ?? "");
+          }}
+        />
+        {changed && (
+          <button
+            type="button"
+            className="btn-text shrink-0 px-2 py-1 text-caption"
+            onClick={() => void commit()}
+            disabled={state === "saving"}
+          >
+            {state === "saving" ? "Saving…" : "Save"}
+          </button>
+        )}
+      </div>
+      <p id="world-site-id-hint" className="mt-1 text-caption text-void-black/50" role={error ? "alert" : undefined}>
+        {error ?? "Scaniverse Site the phone aligns to. Enter to save."}
+      </p>
     </div>
   );
 }

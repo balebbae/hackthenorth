@@ -259,6 +259,19 @@ struct WanderBackendClient: Sendable {
         return try JSONDecoder().decode(World.self, from: data).navigationGraph?.nodes ?? []
     }
 
+    /// Externally triggered buzzes queued since `since` (`GET /haptics/pending`).
+    struct PendingPulses: Decodable, Sendable {
+        struct Pulse: Decodable, Sendable { let id: Int; let role: String; let ms: Int }
+        let pulses: [Pulse]
+        let last: Int
+    }
+
+    func pendingPulses(since: Int) async throws -> PendingPulses {
+        let (data, response) = try await session.data(for: request("GET", "haptics/pending?since=\(since)"))
+        try Self.check(response, data)
+        return try JSONDecoder().decode(PendingPulses.self, from: data)
+    }
+
     /// Static map layers for the phone's map obstacle sensor.
     func occupancy(worldId: String) async throws -> MapOccupancyPayload {
         let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)/occupancy"))

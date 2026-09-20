@@ -119,6 +119,27 @@ export function WorldViewer({
   const router = useRouter();
 
   const canSave = !!manifest;
+  /**
+   * Write the Niantic Site ID onto the manifest. A world with a site is "aligned"; without one
+   * it is still "processing", matching what the upload dialog does on create. `router.refresh()`
+   * re-reads the manifest so the status pill and the connect QR pick it up.
+   */
+  const saveSiteId = useCallback(
+    async (siteId: string | null) => {
+      const res = await fetch(`/api/worlds/${encodeURIComponent(worldId)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ nianticSiteId: siteId, status: siteId ? "aligned" : "processing" }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? `Could not save the Site ID (${res.status})`);
+      }
+      setNotice({ tone: "ok", text: siteId ? "Site ID saved" : "Site ID cleared" });
+      router.refresh();
+    },
+    [worldId, router],
+  );
   /** What the connect QR encodes; only worlds with a manifest can be handed to a phone. */
   const connectInfo = useMemo<ConnectPhoneInfo | null>(
     () => (manifest ? { worldId, name, nianticSiteId: manifest.nianticSiteId, backendUrl: phoneBackendUrl } : null),
@@ -495,6 +516,7 @@ export function WorldViewer({
               }}
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
+              onNotesDetected={setNotes}
               onStartNote={() => pickTool("note")}
               onStartMeasure={() => pickTool("measure")}
               onLabelMeasurement={(id, label) =>
@@ -503,6 +525,7 @@ export function WorldViewer({
               onDeleteMeasurement={(id) => setMeasurements((list) => list.filter((m) => m.id !== id))}
               onClearMeasurements={() => setMeasurements([])}
               onUploadSplat={manifest ? () => setUploadOpen(true) : undefined}
+              onSaveSiteId={manifest ? saveSiteId : undefined}
             />
           </div>
         </div>

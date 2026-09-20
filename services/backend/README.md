@@ -166,6 +166,11 @@ python -m modal serve services/backend/deployment/modal_app.py
 python -m modal deploy services/backend/deployment/modal_app.py
 ```
 
+`WANDER_WEB_ORIGINS` has to be in that secret (e.g. `https://<app>.vercel.app,http://localhost:3000`).
+The web app cannot proxy a splat — its Vercel functions reject request bodies over 4.5 MB — so the
+browser uploads straight here with a ticket the web server minted, and that needs this service to
+allow its origin. Without it, production uploads fall back to proxying and fail with a 413.
+
 Equivalent activated-venv commands are `modal serve services/backend/deployment/modal_app.py` and `modal deploy services/backend/deployment/modal_app.py`. No deployment was performed by implementation. Deployment wraps the exact same FastAPI app with `@modal.asgi_app`; image includes only backend services and navigation data, excludes `.env`, and obtains credentials from the `htn-backend` secret. One warm container, maximum one container, async concurrency 100. This limits process-local state splitting but does not provide durability or continuity during replacement/redeploy. WebSockets and HTTP share that process. Replace SessionStore and add distributed pub/sub before scaling.
 
 ## Boundaries and remaining work

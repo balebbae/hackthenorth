@@ -56,7 +56,9 @@ final class HapticController: ObservableObject {
                 guard let self, let pulse = self.currentPulse else { break }
                 self.buzzCount += 1
                 self.lastBuzz = Date()
-                self.play(eventType: .hapticTransient, intensity: pulse.intensity, sharpness: pulse.sharpness, duration: 0)
+                // A full-strength continuous buzz, not a tap: taps are lost in a pocket.
+                self.play(eventType: .hapticContinuous, intensity: pulse.intensity, sharpness: pulse.sharpness,
+                          duration: pulse.duration)
                 try? await Task.sleep(for: .seconds(pulse.interval))
             }
             self?.isPulsing = false
@@ -72,7 +74,7 @@ final class HapticController: ObservableObject {
 
     private func play(eventType: CHHapticEvent.EventType, intensity: Float, sharpness: Float, duration: TimeInterval) {
         guard let engine, isAvailable else {
-            UIImpactFeedbackGenerator(style: intensity > 0.6 ? .heavy : .medium).impactOccurred()
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
             return
         }
         do {

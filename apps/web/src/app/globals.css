@@ -128,6 +128,10 @@ body {
 @utility btn-inverted {
   @apply btn bg-pure-white text-wander-blue hover:bg-sky-tint active:bg-[#d9ecfc];
 }
+/* Destructive — Wander Pink is the urgent accent; only for irreversible actions */
+@utility btn-danger {
+  @apply btn bg-wander-pink text-pure-white hover:bg-[#c44686] active:bg-[#b03c78];
+}
 @utility btn-text {
   @apply btn bg-transparent text-void-black/95 hover:bg-void-black/5 active:bg-void-black/10;
 }

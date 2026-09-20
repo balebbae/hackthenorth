@@ -48,12 +48,20 @@ final class FrontPipeline: ObservableObject {
     private var detector = ObstacleDetector()
     private var estimator = StructureObstacleEstimator()
     private var mapSensor = MapObstacleSensor()
-    /// Map buzzes need a VPS fix at least this confident and no older than this.
-    var mapMinConfidence: Float = 0.5
-    var mapMaxFixAge: TimeInterval = 3
+    /// Map buzzes need a VPS fix at least this confident. VPS answers come in bursts
+    /// with "lost" gaps between them, and ARKit keeps tracking relative to the last
+    /// anchor, so the last good fix is held for `mapMaxFixAge` across those gaps.
+    var mapMinConfidence: Float = 0.3
+    var mapMaxFixAge: TimeInterval = 10
+    private var lastGoodFix: (fix: LocalizationFix, at: Date)?
     private var staticMap: StaticMap?
     private var mapWorldId: String?
     private var mapTask: Task<Void, Never>?
+    /// Polls the backend for externally triggered buzzes and relays them.
+    private var pulseTask: Task<Void, Never>?
+    private var lastPulseId = 0
+    @Published private(set) var pulsesRelayed = 0
+    var pulsePollInterval: TimeInterval = 0.4
     private var policy = ObstacleCuePolicy()
     private var lastDetection: TimeInterval = 0
     private let detectionInterval: TimeInterval = 1.0 / 15
@@ -158,6 +166,36 @@ final class FrontPipeline: ObservableObject {
         let wanted = settings?.voiceCuesEnabled ?? false
         speech.isEnabled = wanted && !voice.isActive
         if voice.isActive { speech.stop() }
+    }
+
+    /// Every `pulsePollInterval`, fetch buzzes queued through the backend's public
+    /// /haptics endpoints: buzz this phone for `front`, relay the rest over the link.
+    private func pollPulses(settings: CameraSettings) {
+        pulseTask?.cancel()
+        guard let base = settings.backendBaseURL, !settings.backendAPIKey.isEmpty else { return }
+        let client = WanderBackendClient(baseURL: base, apiKey: settings.backendAPIKey)
+        pulseTask = Task { [weak self] in
+            while !Task.isCancelled {
+                if let self, let feed = try? await client.pendingPulses(since: self.lastPulseId) {
+                    for pulse in feed.pulses {
+                        self.lastPulseId = max(self.lastPulseId, pulse.id)
+                        guard let role = pulse.role == "chest" ? .front : DeviceRole(rawValue: pulse.role) else { continue }
+                        self.relay(PulseCommand(id: pulse.id, role: role, ms: pulse.ms))
+                    }
+                    if feed.last > self.lastPulseId { self.lastPulseId = feed.last }
+                }
+                try? await Task.sleep(for: .seconds(self?.pulsePollInterval ?? 0.4))
+            }
+        }
+    }
+
+    func relay(_ pulse: PulseCommand) {
+        pulsesRelayed += 1
+        if pulse.role == .front {
+            haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
+        } else {
+            link.send(.pulse(pulse), to: [pulse.role])
+        }
     }
 
     /// Start the voice guide on the current backend session, creating one if the phone has no fix yet.
@@ -271,6 +309,7 @@ final class FrontPipeline: ObservableObject {
     private func startLocalization(settings: CameraSettings, deviceId: String) {
         reporter.configure(settings: settings, deviceId: deviceId, role: .front)
         loadStaticMap(settings: settings)
+        pollPulses(settings: settings)
         usingNSDK = settings.canLocalizeWithNSDK && NianticLocalizer.isAvailable && arSession.state == .running
         if usingNSDK {
             // The SDK submits frames itself at the configured rate; the REST loop stays off.
@@ -319,6 +358,7 @@ final class FrontPipeline: ObservableObject {
     }
 
     private func stopLocalization() {
+        pulseTask?.cancel()
         mapTask?.cancel()
         queryLoop.stop()
         localizer.stop()
@@ -366,11 +406,12 @@ final class FrontPipeline: ObservableObject {
         // what surrounds the wearer, including the sides and back no sensor covers.
         let now = Date().timeIntervalSince1970
         var reading: MapObstacleSensor.Reading?
-        // Only a fresh, confident VPS fix may drive map buzzes: a stale anchor plus
-        // ARKit drift, or a low-confidence fix, puts the wearer in the wrong place.
-        if let map = staticMap, let fix = localizer.latestFix, fix.state == .localized,
-           fix.confidence >= mapMinConfidence, Date().timeIntervalSince(fix.timestamp) <= mapMaxFixAge {
-            reading = mapSensor.read(map: map, deviceTransform: fix.anchorTransform.inverse * frame.cameraTransform)
+        if let fix = localizer.latestFix, fix.state == .localized, fix.confidence >= mapMinConfidence,
+           lastGoodFix?.fix != fix {
+            lastGoodFix = (fix, Date())
+        }
+        if let map = staticMap, let good = lastGoodFix, Date().timeIntervalSince(good.at) <= mapMaxFixAge {
+            reading = mapSensor.read(map: map, deviceTransform: good.fix.anchorTransform.inverse * frame.cameraTransform)
         }
         if reading != mapReading { mapReading = reading }
         // The front's own buzz trusts only what its LiDAR sees; the map is for the sides and back.

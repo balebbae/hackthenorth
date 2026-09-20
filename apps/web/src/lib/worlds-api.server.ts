@@ -331,6 +331,33 @@ export async function getNotes(id: string): Promise<WorldNote[]> {
   }
 }
 
+const SCENE_DETECTION_NEEDS_API =
+  "Object detection runs in the worlds backend (Astra + stored phone localization frames) — set WANDER_API_URL";
+
+export type AutoDetectNotesResult = NotesFile & { added: number; skippedDuplicates: number; unplaced: number };
+
+/**
+ * Runs the vision annotator over the world's stored, localized VPS query frames (phone
+ * walkthrough images with a recorded pose) and turns every placed finding directly into a
+ * plain note pin — same shape as clicking "Add note" in the viewer, no review gate. Skips
+ * anything within ~0.6 m of an existing note. Backend-only: needs stored phone localization
+ * frames and OpenAI, so this throws 501 in local mode.
+ */
+export async function autoDetectNotes(id: string, opts: { limit?: number; floor?: number } = {}): Promise<AutoDetectNotesResult | null> {
+  if (!isSafeSegment(id)) return null;
+  if (!API_URL) throw new WorldsApiError(501, SCENE_DETECTION_NEEDS_API);
+  const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/notes/auto-detect`, {
+    method: "POST",
+    headers: { ...apiHeaders(), "content-type": "application/json" },
+    body: JSON.stringify(opts),
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await apiError(res);
+  const parsed = (await res.json()) as NotesFile & { added: number; skippedDuplicates: number; unplaced: number };
+  return { ...parsed, notes: parseNotes(parsed.notes) };
+}
+
 export async function saveNotes(id: string, notes: WorldNote[]): Promise<NotesFile | null> {
   if (!isSafeSegment(id)) return null;
   const file: NotesFile = { schema: NOTES_SCHEMA, worldId: id, notes, updatedAt: new Date().toISOString() };
@@ -551,6 +578,72 @@ export async function patchWorld(id: string, patch: WorldPatch): Promise<WorldMa
   });
   await writeFile(join(ASSETS_DIR, "worlds", id, "world.json"), `${JSON.stringify(next, null, 2)}\n`);
   return next;
+}
+
+/**
+ * Delete a world and every version, asset and localization under it. Irreversible:
+ * the volume has no trash. Returns false when the world is already gone, which the
+ * route reports as a 404 rather than pretending to have deleted something.
+ */
+export async function deleteWorld(id: string): Promise<boolean> {
+  if (!isSafeSegment(id)) return false;
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: apiHeaders(),
+      cache: "no-store",
+    });
+    if (res.status === 404) return false;
+    if (!res.ok && res.status !== 204) throw await apiError(res);
+    return true;
+  }
+  // Local mode: only remove a directory that actually holds a world we can read, so a
+  // typo'd id can never take out an unrelated folder under the assets root.
+  if (!(await readLocalManifest(id))) return false;
+  await rm(join(ASSETS_DIR, "worlds", id), { recursive: true, force: true });
+  return true;
+}
+
+/**
+ * Where the browser should send one asset's bytes.
+ *
+ * A splat is far larger than the 4.5 MB request body a Vercel function accepts,
+ * so in production the bytes must not pass through this app at all: the backend
+ * mints a ticket scoped to exactly this path and the browser PUTs straight to
+ * it. Without `WANDER_API_URL` there is no backend and the local dev server
+ * writes the file itself, so the browser keeps using the same-origin route.
+ */
+export type UploadTarget =
+  | { mode: "direct"; url: string; header: string; token: string; expiresAt: number }
+  | { mode: "proxy" };
+
+export async function uploadTarget(segments: string[]): Promise<UploadTarget> {
+  if (segments.length !== 3 || !segments.every(isSafeSegment)) throw new WorldsApiError(400, "Invalid asset path");
+  const file = segments[2];
+  if (!UPLOAD_EXTENSIONS.has(extname(file).toLowerCase()))
+    throw new WorldsApiError(400, `Unsupported file type "${extname(file)}"`);
+  if (!API_URL) return { mode: "proxy" };
+  if (SPLAT_EXTENSIONS.has(extname(file).toLowerCase()) && file !== API_SPLAT_FILENAME)
+    throw new WorldsApiError(400, API_SPZ_ONLY);
+
+  const path = segments.map(encodeURIComponent).join("/");
+  const res = await fetch(`${API_URL}/worlds/${path}/ticket`, {
+    method: "POST",
+    headers: apiHeaders(),
+    cache: "no-store",
+  });
+  if (res.status === 409) throw new WorldsApiError(409, "That version already has this file — upload a new version");
+  // An older backend has no ticket route; fall back to proxying, which still works below 4.5 MB.
+  if (res.status === 404 || res.status === 405) return { mode: "proxy" };
+  if (!res.ok) throw await apiError(res);
+  const ticket = (await res.json()) as { token: string; expiresAt: number; header: string };
+  return {
+    mode: "direct",
+    url: `${API_URL}/worlds/${path}`,
+    header: ticket.header,
+    token: ticket.token,
+    expiresAt: ticket.expiresAt,
+  };
 }
 
 /**

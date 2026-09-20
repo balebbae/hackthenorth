@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     wander_backend_url: str = ''
     wander_data_root: Path = ROOT / 'maps/assets'
     asset_max_bytes: int = 2 * 1024 * 1024 * 1024
+    # Web origins allowed to upload assets directly with a ticket, comma separated
+    # (e.g. https://wander.vercel.app,http://localhost:3000). Empty disables direct upload.
+    wander_web_origins: str = ''
     elasticsearch_url: str = ''
     elasticsearch_api_key: str = ''
     elastic_embedding_endpoint: str = ''

@@ -1,7 +1,9 @@
 import { parseGraph, parseMeasurements, parseNotes } from "@/lib/world-manifest";
 import {
+  autoDetectNotes,
   buildNavmesh,
   createWorld,
+  deleteWorld,
   getLocalizations,
   getNavmesh,
   getMeasurements,
@@ -16,6 +18,7 @@ import {
   saveMeasurements,
   saveNotes,
   uploadAsset,
+  uploadTarget,
   validateGraphAgainstMesh,
   WorldsApiError,
   type CreateWorldInput,
@@ -29,6 +32,7 @@ import {
  *   POST  /api/worlds                         → WorldManifest (create draft; body: { id, name, space?, nianticSiteId?, splatFilename? })
  *   GET   /api/worlds/:id                     → WorldManifest
  *   PATCH /api/worlds/:id                     → WorldManifest (partial update, e.g. switch version)
+ *   DELETE /api/worlds/:id                    → 204 (removes the world and every version; irreversible)
  *   GET   /api/worlds/:id/notes               → { notes }
  *   GET   /api/worlds/:id/measurements        → { measurements }
  *   GET   /api/worlds/:id/localizations?limit → { schema, worldId, queries: LocalizationQuery[] } (newest first; polled by the viewer)
@@ -36,11 +40,13 @@ import {
  *   GET   /api/worlds/:id/navmesh             → NavmeshProposal (last mesh-derived graph proposal) or 404
  *   POST  /api/worlds/:id/navmesh             → NavmeshProposal (grid `assets.mesh`, propose a graph; body: { params?, frame? }; backend only)
  *   POST  /api/worlds/:id/graph/validate      → GraphValidation (edges through walls, floor snapping; body: { graph?, snap? }; backend only)
+ *   POST  /api/worlds/:id/notes/auto-detect   → NotesFile & { added, skippedDuplicates, unplaced } (vision-detect scene objects into note pins; body: { limit?, floor? }; backend only)
  *   PUT   /api/worlds/:id/graph               → WorldManifest (body: NavigationGraph)
  *   PUT   /api/worlds/:id/notes               → NotesFile (body: { notes })
  *   PUT   /api/worlds/:id/measurements        → MeasurementsFile (body: { measurements })
  *   GET   /api/worlds/:id/:version/:file      → streamed asset bytes (e.g. scene.spz, localizations/<queryId>.jpg)
  *   PUT   /api/worlds/:id/:version/:file      → { path, bytes } (streamed upload; 409 if the file exists)
+ *   POST  /api/worlds/:id/:version/:file/ticket → { mode } & where to PUT the bytes (see uploadTarget)
  *
  * The browser only ever talks to this route; `WANDER_API_URL` and the API key
  * stay on the server. Without an API URL the files live in maps/assets.
@@ -94,6 +100,16 @@ export async function POST(req: Request, ctx: RouteContext<"/api/worlds/[[...pat
   const { path = [] } = await ctx.params;
   if (path.some((s) => !isSafeSegment(s))) return Response.json({ error: "Invalid path" }, { status: 400 });
 
+  // Where should the browser send this file's bytes? Big uploads cannot go through a
+  // Vercel function (4.5 MB body cap), so this hands back a direct, path-scoped ticket.
+  if (path.length === 4 && path[3] === "ticket") {
+    try {
+      return Response.json(await uploadTarget(path.slice(0, 3)), { headers: NO_STORE });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
   if (path.length === 3 && path[1] === "localize" && path[2] === "query") {
     const body = await readJson(req);
     if (!isObject(body)) return Response.json({ error: "Body must be a JSON object" }, { status: 400 });
@@ -101,6 +117,19 @@ export async function POST(req: Request, ctx: RouteContext<"/api/worlds/[[...pat
       const record = await postLocalizationQuery(path[0], body);
       return record
         ? Response.json(record, { status: 201, headers: NO_STORE })
+        : Response.json({ error: "World not found" }, { status: 404 });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  if (path.length === 3 && path[1] === "notes" && path[2] === "auto-detect") {
+    const body = (await readJson(req)) ?? {};
+    if (!isObject(body)) return Response.json({ error: "Body must be a JSON object" }, { status: 400 });
+    try {
+      const result = await autoDetectNotes(path[0], body as { limit?: number; floor?: number });
+      return result
+        ? Response.json(result, { status: 201, headers: NO_STORE })
         : Response.json({ error: "World not found" }, { status: 404 });
     } catch (err) {
       return failure(err);
@@ -141,6 +170,18 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/worlds/[[...pa
     const manifest = await patchWorld(path[0], body as WorldPatch);
     return manifest
       ? Response.json(manifest, { headers: NO_STORE })
+      : Response.json({ error: "World not found" }, { status: 404 });
+  } catch (err) {
+    return failure(err);
+  }
+}
+
+export async function DELETE(_req: Request, ctx: RouteContext<"/api/worlds/[[...path]]">) {
+  const { path = [] } = await ctx.params;
+  if (path.length !== 1 || !isSafeSegment(path[0])) return Response.json({ error: "Not found" }, { status: 404 });
+  try {
+    return (await deleteWorld(path[0]))
+      ? new Response(null, { status: 204, headers: NO_STORE })
       : Response.json({ error: "World not found" }, { status: 404 });
   } catch (err) {
     return failure(err);
