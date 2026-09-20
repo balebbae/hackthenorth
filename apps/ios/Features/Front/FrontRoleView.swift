@@ -270,7 +270,6 @@ struct FrontRoleView: View {
             }
             StatRow(label: "Clear path", value: String(format: "%+.2f", pipeline.zones.gapDirection))
             StatRow(label: "Open side", value: pipeline.lastDecision.openSide?.rawValue ?? "–")
-            StatRow(label: "Last cue", value: pipeline.speech.lastSpoken ?? "–")
             Divider()
             StatRow(label: "Map", value: pipeline.mapStatus)
             if let m = pipeline.mapReading {

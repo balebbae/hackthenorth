@@ -14,6 +14,9 @@ struct HapticCommand: Codable, Equatable, Sendable {
     var leftDistance: Float? = nil
     var rightDistance: Float? = nil
     var backDistance: Float? = nil
+    /// Distance at which the side and back pulses start; the receiving phone ramps over it.
+    var sideRange: Float? = nil
+    var backRange: Float? = nil
 
     static let none = HapticCommand()
 
@@ -58,15 +61,15 @@ struct ObstacleCuePolicy {
     var stopDistance: Float = 0.9
     /// With the front blocked, a side closer than this buzzes as well.
     var sideBlockedDistance: Float = 1.0
-    /// On its own, a side closer than this buzzes and speaks a veer cue.
-    var veerDistance: Float = 0.6
+    /// On its own, a side closer than this is "very close": that mount buzzes hard.
+    var veerDistance: Float = 0.2
     /// A side counts as open when nothing is closer than this on that side.
     var openDistance: Float = 1.2
     /// A wall or obstacle within this distance beside the wearer pulses that side's
     /// phone, graded by distance, without speech. Fed by the side phones' own sensing
     /// and by the static map once the front phone is localised.
-    var sideWarnDistance: Float = 0.8
-    var backWarnDistance: Float = 0.6
+    var sideWarnDistance: Float = 0.4
+    var backWarnDistance: Float = 0.3
     /// Side readings older than this are ignored.
     var maxClearanceAge: TimeInterval = 1.0
     /// Assumed distance when a phone reports nothing in range.

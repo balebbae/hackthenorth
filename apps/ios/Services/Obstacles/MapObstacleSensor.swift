@@ -72,7 +72,7 @@ struct StaticMap: Sendable {
 /// long as the front phone is localised.
 struct MapObstacleSensor {
     var maxRange: Float = 3.0
-    var minRange: Float = 0.3
+    var minRange: Float = 0.1
     var halfFieldDegrees: Float = 35
     var zoneBoundaryDegrees: Float = 12
     var gapColumns = 16

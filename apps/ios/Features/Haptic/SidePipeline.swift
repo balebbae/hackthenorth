@@ -92,6 +92,9 @@ final class SidePipeline: ObservableObject {
     private func handle(_ message: PeerMessage) {
         guard case .haptic(let command) = message else { return }
         lastCommand = command
+        if let range = role == .back ? command.backRange : command.sideRange {
+            haptics.profile = .spanning(range)
+        }
         haptics.setProximity(command.shouldBuzz(role) ? (command.distance(for: role) ?? 0.5) : nil)
     }
 
