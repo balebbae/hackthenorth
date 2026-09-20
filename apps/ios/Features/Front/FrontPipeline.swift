@@ -44,6 +44,9 @@ final class FrontPipeline: ObservableObject {
     private var detector = ObstacleDetector()
     private var estimator = StructureObstacleEstimator()
     private var mapSensor = MapObstacleSensor()
+    /// Map buzzes need a VPS fix at least this confident and no older than this.
+    var mapMinConfidence: Float = 0.5
+    var mapMaxFixAge: TimeInterval = 3
     private var staticMap: StaticMap?
     private var mapWorldId: String?
     private var mapTask: Task<Void, Never>?
@@ -288,7 +291,10 @@ final class FrontPipeline: ObservableObject {
         // what surrounds the wearer, including the sides and back no sensor covers.
         let now = Date().timeIntervalSince1970
         var reading: MapObstacleSensor.Reading?
-        if let map = staticMap, let fix = localizer.latestFix, fix.state != .lost {
+        // Only a fresh, confident VPS fix may drive map buzzes: a stale anchor plus
+        // ARKit drift, or a low-confidence fix, puts the wearer in the wrong place.
+        if let map = staticMap, let fix = localizer.latestFix, fix.state == .localized,
+           fix.confidence >= mapMinConfidence, Date().timeIntervalSince(fix.timestamp) <= mapMaxFixAge {
             reading = mapSensor.read(map: map, deviceTransform: fix.anchorTransform.inverse * frame.cameraTransform)
         }
         if reading != mapReading { mapReading = reading }
