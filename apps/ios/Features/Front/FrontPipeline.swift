@@ -44,9 +44,12 @@ final class FrontPipeline: ObservableObject {
     private var detector = ObstacleDetector()
     private var estimator = StructureObstacleEstimator()
     private var mapSensor = MapObstacleSensor()
-    /// Map buzzes need a VPS fix at least this confident and no older than this.
-    var mapMinConfidence: Float = 0.5
-    var mapMaxFixAge: TimeInterval = 3
+    /// Map buzzes need a VPS fix at least this confident. VPS answers come in bursts
+    /// with "lost" gaps between them, and ARKit keeps tracking relative to the last
+    /// anchor, so the last good fix is held for `mapMaxFixAge` across those gaps.
+    var mapMinConfidence: Float = 0.3
+    var mapMaxFixAge: TimeInterval = 10
+    private var lastGoodFix: (fix: LocalizationFix, at: Date)?
     private var staticMap: StaticMap?
     private var mapWorldId: String?
     private var mapTask: Task<Void, Never>?
@@ -298,11 +301,12 @@ final class FrontPipeline: ObservableObject {
         // what surrounds the wearer, including the sides and back no sensor covers.
         let now = Date().timeIntervalSince1970
         var reading: MapObstacleSensor.Reading?
-        // Only a fresh, confident VPS fix may drive map buzzes: a stale anchor plus
-        // ARKit drift, or a low-confidence fix, puts the wearer in the wrong place.
-        if let map = staticMap, let fix = localizer.latestFix, fix.state == .localized,
-           fix.confidence >= mapMinConfidence, Date().timeIntervalSince(fix.timestamp) <= mapMaxFixAge {
-            reading = mapSensor.read(map: map, deviceTransform: fix.anchorTransform.inverse * frame.cameraTransform)
+        if let fix = localizer.latestFix, fix.state == .localized, fix.confidence >= mapMinConfidence,
+           lastGoodFix?.fix != fix {
+            lastGoodFix = (fix, Date())
+        }
+        if let map = staticMap, let good = lastGoodFix, Date().timeIntervalSince(good.at) <= mapMaxFixAge {
+            reading = mapSensor.read(map: map, deviceTransform: good.fix.anchorTransform.inverse * frame.cameraTransform)
         }
         if reading != mapReading { mapReading = reading }
         // The front's own buzz trusts only what its LiDAR sees; the map is for the sides and back.
