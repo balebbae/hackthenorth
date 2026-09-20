@@ -70,6 +70,33 @@ struct WorldSummary: Decodable, Sendable {
     let nianticSiteId: String?
 }
 
+/// A navigation graph node the user can pick as a destination.
+struct GraphNode: Decodable, Equatable, Identifiable, Sendable {
+    let id: String
+    let name: String?
+    let kind: String?
+    var label: String { name ?? id }
+}
+
+/// What the backend answered to a pose update: `progressUpdate` in the contract.
+/// `speak` is the exact phrase the phone should say now, if anything.
+struct ProgressUpdate: Decodable, Equatable, Sendable {
+    struct Instruction: Decodable, Equatable, Sendable {
+        let atNode: String
+        let turn: String
+        let text: String
+        let distanceMetres: Double?
+    }
+    let state: String
+    let remainingMetres: Double
+    let distanceToNextMetres: Double?
+    let nextNode: GraphNode?
+    let instruction: Instruction?
+    let offRouteMetres: Double?
+    let headingDeg: Double?
+    let speak: String?
+}
+
 /// Talks to the Wander worlds API on Modal. Every request carries the team key.
 struct WanderBackendClient: Sendable {
     let baseURL: URL
@@ -187,7 +214,8 @@ struct WanderBackendClient: Sendable {
     }
 
     /// `POST /sessions/{id}/pose` for high-rate ARKit poses between VPS fixes.
-    func pose(sessionId: String, pose: SitePose, state: BackendTrackingState, timestamp: Date) async throws {
+    /// The answer carries the live instruction and the exact phrase to speak.
+    func pose(sessionId: String, pose: SitePose, state: BackendTrackingState, timestamp: Date) async throws -> ProgressUpdate {
         let body: [String: Any] = [
             "pose": ["position": pose.positionArray, "rotation": pose.rotationArray],
             "trackingState": state.rawValue,
@@ -195,6 +223,23 @@ struct WanderBackendClient: Sendable {
         ]
         let (data, response) = try await session.data(for: request("POST", "sessions/\(sessionId)/pose", body: body))
         try Self.check(response, data)
+        return try JSONDecoder().decode(ProgressUpdate.self, from: data)
+    }
+
+    /// `PUT /sessions/{id}/destination`; the backend routes from the session's last pose.
+    func setDestination(sessionId: String, nodeId: String) async throws {
+        let (data, response) = try await session.data(
+            for: request("PUT", "sessions/\(sessionId)/destination", body: ["destination": nodeId]))
+        try Self.check(response, data)
+    }
+
+    /// Nodes of the world's navigation graph, from `GET /worlds/{id}`.
+    func graphNodes(worldId: String) async throws -> [GraphNode] {
+        let (data, response) = try await session.data(for: request("GET", "worlds/\(worldId)"))
+        try Self.check(response, data)
+        struct Graph: Decodable { let nodes: [GraphNode] }
+        struct World: Decodable { let navigationGraph: Graph? }
+        return try JSONDecoder().decode(World.self, from: data).navigationGraph?.nodes ?? []
     }
 
     /// Static map layers for the phone's map obstacle sensor.

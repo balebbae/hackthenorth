@@ -1,7 +1,9 @@
 import { parseGraph, parseMeasurements, parseNotes } from "@/lib/world-manifest";
 import {
+  buildNavmesh,
   createWorld,
   getLocalizations,
+  getNavmesh,
   getMeasurements,
   getNotes,
   getWorld,
@@ -14,6 +16,7 @@ import {
   saveMeasurements,
   saveNotes,
   uploadAsset,
+  validateGraphAgainstMesh,
   WorldsApiError,
   type CreateWorldInput,
   type WorldPatch,
@@ -30,6 +33,9 @@ import {
  *   GET   /api/worlds/:id/measurements        → { measurements }
  *   GET   /api/worlds/:id/localizations?limit → { schema, worldId, queries: LocalizationQuery[] } (newest first; polled by the viewer)
  *   POST  /api/worlds/:id/localize/query      → LocalizationQuery (phone upload of one VPS image query; stored locally without a backend)
+ *   GET   /api/worlds/:id/navmesh             → NavmeshProposal (last mesh-derived graph proposal) or 404
+ *   POST  /api/worlds/:id/navmesh             → NavmeshProposal (grid `assets.mesh`, propose a graph; body: { params?, frame? }; backend only)
+ *   POST  /api/worlds/:id/graph/validate      → GraphValidation (edges through walls, floor snapping; body: { graph?, snap? }; backend only)
  *   PUT   /api/worlds/:id/graph               → WorldManifest (body: NavigationGraph)
  *   PUT   /api/worlds/:id/notes               → NotesFile (body: { notes })
  *   PUT   /api/worlds/:id/measurements        → MeasurementsFile (body: { measurements })
@@ -62,6 +68,12 @@ export async function GET(req: Request, ctx: RouteContext<"/api/worlds/[[...path
     if (path.length === 2 && path[1] === "measurements") {
       return Response.json({ measurements: await getMeasurements(path[0]) }, { headers: NO_STORE });
     }
+    if (path.length === 2 && path[1] === "navmesh") {
+      const proposal = await getNavmesh(path[0]);
+      return proposal
+        ? Response.json(proposal, { headers: NO_STORE })
+        : Response.json({ error: "No graph has been generated from the mesh yet" }, { status: 404 });
+    }
     if (path.length === 2 && path[1] === "localizations") {
       const limit = Number(new URL(req.url).searchParams.get("limit") ?? 20) || 20;
       const queries = await getLocalizations(path[0], limit);
@@ -89,6 +101,19 @@ export async function POST(req: Request, ctx: RouteContext<"/api/worlds/[[...pat
       const record = await postLocalizationQuery(path[0], body);
       return record
         ? Response.json(record, { status: 201, headers: NO_STORE })
+        : Response.json({ error: "World not found" }, { status: 404 });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  if ((path.length === 2 && path[1] === "navmesh") || (path.length === 3 && path[1] === "graph" && path[2] === "validate")) {
+    const body = (await readJson(req)) ?? {};
+    if (!isObject(body)) return Response.json({ error: "Body must be a JSON object" }, { status: 400 });
+    try {
+      const result = path[1] === "navmesh" ? await buildNavmesh(path[0], body) : await validateGraphAgainstMesh(path[0], body);
+      return result
+        ? Response.json(result, { status: path[1] === "navmesh" ? 201 : 200, headers: NO_STORE })
         : Response.json({ error: "World not found" }, { status: 404 });
     } catch (err) {
       return failure(err);

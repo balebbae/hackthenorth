@@ -4,14 +4,14 @@ import binascii
 import hashlib
 import json
 import logging
-import math
 import mimetypes
 import shutil
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
-from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, compute_route
+from ..routing import navmesh
+from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, horizontal
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ async def get_world(world_id: str, request: Request):
 @router.patch('/worlds/{world_id}')
 async def patch_world(world_id: str, request: Request):
     data = await body(request)
-    if data.keys()-{'name', 'space', 'description', 'nianticSiteId', 'version', 'alignment', 'status', 'stats'}:
+    if data.keys()-{'name', 'space', 'description', 'nianticSiteId', 'version', 'alignment', 'status', 'stats', 'meshFrame'}:
         raise HTTPException(400, 'Unsupported manifest field')
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
@@ -122,6 +122,75 @@ async def graph(world_id: str, request: Request):
         world.update(navigationGraph=data, updatedAt=now())
         await store.write(world, 'worlds', world_id, 'world.json')
     return world
+
+
+def mesh_path(store, world):
+    asset = world['assets'].get('mesh')
+    if not asset:
+        raise HTTPException(409, 'World has no mesh; upload mesh.glb under assets.mesh first')
+    path = store.path(*asset.split('/'))
+    if not path.is_file():
+        raise HTTPException(409, 'Mesh asset is missing from the volume')
+    return path
+
+
+def occupancy_for(store, world, data):
+    """Grid the world's mesh with the request's parameters (blocking; run in a thread)."""
+    try:
+        params = navmesh.Params.parse(data.get('params', {}))
+        frame = data.get('frame', world.get('meshFrame', 'world'))
+        if frame not in ('world', 'splat'):
+            raise ValueError('frame must be world or splat')
+        mesh = navmesh.load_mesh(mesh_path(store, world), world.get('alignment'), frame)
+        return params, navmesh.Occupancy(mesh, params)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+
+
+@router.post('/worlds/{world_id}/navmesh', status_code=201)
+async def build_navmesh(world_id: str, request: Request):
+    """Occupancy grid → walkable skeleton → *proposed* graph, written to navmesh.json for review.
+    Nothing touches `navigationGraph`: a human accepts the proposal with PUT /graph."""
+    data = await body(request)
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    params, occupancy = await asyncio.to_thread(occupancy_for, store, world, data)
+    graph = await asyncio.to_thread(navmesh.build_graph, occupancy)
+    if not graph['nodes']:
+        raise HTTPException(422, 'No walkable floor found; check the mesh frame and cell size')
+    issues, _ = navmesh.validate(occupancy, world_graph(world), snap=False)
+    proposal = {'schema': 'wander.navmesh/v1', 'worldId': world_id, 'mesh': world['assets']['mesh'],
+                'status': 'proposed', 'params': {**params.__dict__, 'frame': data.get('frame', world.get('meshFrame', 'world'))},
+                'grid': occupancy.summary(), 'graph': graph,
+                'currentGraphIssues': issues, 'createdAt': now()}
+    async with store.lock('world:' + world_id):
+        store.world(world_id)
+        await store.write(proposal, 'worlds', world_id, 'navmesh.json')
+    return proposal
+
+
+@router.get('/worlds/{world_id}/navmesh')
+async def get_navmesh(world_id: str, request: Request):
+    store = request.app.state.worlds
+    store.world(world_id)
+    return store.read('worlds', world_id, 'navmesh.json')
+
+
+@router.post('/worlds/{world_id}/graph/validate')
+async def validate_against_mesh(world_id: str, request: Request):
+    """Edge-through-wall / off-floor checks and floor snapping for a world-frame graph (default: the
+    current one). Read-only: returns the snapped copy for the editor to save with PUT /graph."""
+    data = await body(request)
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    if 'graph' in data:
+        validate_graph(data['graph'])
+        graph = world_graph({**world, 'navigationGraph': data['graph']})
+    else:
+        graph = world_graph(world)
+    _, occupancy = await asyncio.to_thread(occupancy_for, store, world, data)
+    issues, snapped = navmesh.validate(occupancy, graph, snap=data.get('snap', True) is not False)
+    return {'issues': issues, 'graph': snapped, 'floorY': occupancy.floor_y, 'checkedAt': now()}
 
 
 @router.get('/worlds/{world_id}/measurements')
@@ -170,7 +239,62 @@ async def put_notes(world_id: str, request: Request):
 
 @router.post('/worlds/{world_id}/route')
 async def route(world_id: str, request: Request):
-    return compute_route(request.app.state.worlds.world(world_id), await body(request))
+    return request.app.state.world_navigation.route(request.app.state.worlds.world(world_id), await body(request))
+
+
+@router.post('/worlds/{world_id}/annotations/propose', status_code=201)
+async def propose_annotations(world_id: str, request: Request):
+    """Astra as annotator: describe the stored, localized VPS query frames and place each finding
+    from its camera pose onto the mesh (or floor). Writes annotation-proposals.json for review;
+    the live graph only changes through PUT /annotations with a signed-off review file."""
+    from ..services.annotations import posed, propose_from_queries
+    data = await body(request)
+    if not set(data) <= {'queryIds', 'limit', 'floor'}:
+        raise HTTPException(400, 'Expected optional queryIds, limit and floor')
+    limit, floor = data.get('limit', 20), data.get('floor', 0)
+    if not isinstance(limit, int) or not 1 <= limit <= LOCALIZATIONS_KEPT or not isinstance(floor, int):
+        raise HTTPException(400, f'limit must be 1..{LOCALIZATIONS_KEPT} and floor an integer')
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    queries = localizations_index(store, world_id)['queries']
+    if 'queryIds' in data:
+        wanted = data['queryIds']
+        if not isinstance(wanted, list) or not all(isinstance(q, str) for q in wanted):
+            raise HTTPException(400, 'queryIds must be a list of query IDs')
+        missing = set(wanted) - {q['id'] for q in queries}
+        if missing:
+            raise HTTPException(404, 'Unknown query IDs: ' + ', '.join(sorted(missing)))
+        queries = [q for q in queries if q['id'] in set(wanted)]
+    images = store.path('worlds', world_id, 'localizations')
+    queries = [q for q in queries if posed(q, images)][:limit]
+    if not queries:
+        raise HTTPException(409, 'No stored localized query frames with a pose and field of view to annotate')
+    mesh = None
+    if world['assets'].get('mesh'):
+        try:
+            mesh = await asyncio.to_thread(navmesh.load_mesh, mesh_path(store, world), world.get('alignment'),
+                                           world.get('meshFrame', 'world'))
+        except (HTTPException, ValueError) as error:
+            logger.warning('Placing annotations on the floor plane; mesh unavailable (%s)', error)
+    try:
+        batch, unplaced = await propose_from_queries(world, queries, images, store.path('worlds', world_id, 'annotation-cache'), request.app.state.settings,
+            client=request.app.state.annotation_client, mesh=mesh, floor=floor)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+    proposal = {'schema': 'wander.annotation-proposals/v1', 'worldId': world_id, 'status': 'proposed',
+                'model': batch.model, 'queryIds': [q['id'] for q in queries], 'placedWith': 'mesh' if mesh is not None else 'floor',
+                'unplaced': unplaced, 'batch': batch.model_dump(), 'createdAt': now()}
+    async with store.lock('world:' + world_id):
+        store.world(world_id)
+        await store.write(proposal, 'worlds', world_id, 'annotation-proposals.json')
+    return proposal
+
+
+@router.get('/worlds/{world_id}/annotations/proposals')
+async def annotation_proposals(world_id: str, request: Request):
+    store = request.app.state.worlds
+    store.world(world_id)
+    return store.read('worlds', world_id, 'annotation-proposals.json')
 
 
 @router.put('/worlds/{world_id}/annotations')
@@ -226,11 +350,15 @@ async def index_world(world_id: str, request: Request):
 @router.post('/sessions', status_code=201)
 async def create_session(request: Request):
     data = await body(request)
-    if not {'worldId', 'deviceId'} <= data.keys() or data.keys()-{'worldId', 'deviceId', 'destination'}:
-        raise HTTPException(400, 'Expected worldId, deviceId and optional destination')
+    if not {'worldId', 'deviceId'} <= data.keys() or data.keys()-{'worldId', 'deviceId', 'destination', 'accessibleOnly'}:
+        raise HTTPException(400, 'Expected worldId, deviceId, optional destination and accessibleOnly')
+    accessible_only = data.pop('accessibleOnly', False)
+    if not isinstance(accessible_only, bool):
+        raise HTTPException(400, 'accessibleOnly must be a boolean')
     if not all(isinstance(v, str) and v for v in data.values()):
         raise HTTPException(400, 'Session fields must be nonempty strings')
-    return await request.app.state.world_navigation.create(data['worldId'], data['deviceId'], data.get('destination'))
+    return await request.app.state.world_navigation.create(data['worldId'], data['deviceId'], data.get('destination'),
+                                                           accessible_only)
 
 
 @router.get('/sessions/{session_id}')
@@ -252,9 +380,10 @@ async def end_session(session_id: str, request: Request):
 @router.put('/sessions/{session_id}/destination')
 async def destination(session_id: str, request: Request):
     data = await body(request)
-    if set(data) != {'destination'} or not isinstance(data['destination'], str):
-        raise HTTPException(400, 'Expected destination node ID')
-    return await request.app.state.world_navigation.destination(session_id, data['destination'])
+    if not {'destination'} <= set(data) <= {'destination', 'accessibleOnly'} or not isinstance(data['destination'], str) \
+            or not isinstance(data.get('accessibleOnly', False), bool):
+        raise HTTPException(400, 'Expected destination node ID and optional accessibleOnly boolean')
+    return await request.app.state.world_navigation.destination(session_id, data['destination'], data.get('accessibleOnly'))
 
 
 @router.post('/sessions/{session_id}/pose')
@@ -287,7 +416,7 @@ async def localize(world_id: str, request: Request):
                               'worlds', world_id, 'vps-status.json')
         await store.emit(store.session(session['sessionId']), 'localized')
     return {'sessionId': session['sessionId'], 'worldId': world_id, 'pose': data['pose'],
-            'nearestNode': {**node_ref(nearest), 'distanceMetres': math.dist(data['pose']['position'], nearest['position'])},
+            'nearestNode': {**node_ref(nearest), 'distanceMetres': horizontal(data['pose']['position'], nearest['position'])},
             'snappedPosition': position, 'offGraphMetres': distance}
 
 
@@ -425,7 +554,7 @@ async def localize_query(world_id: str, request: Request):
     if pose is not None and world.get('alignment', {}).get('frame') == 'niantic-vps':
         try:
             nearest, (distance, _, _, _) = snap(world_graph(world), pose['position'])
-            record['nearestNode'] = {**node_ref(nearest), 'distanceMetres': math.dist(pose['position'], nearest['position'])}
+            record['nearestNode'] = {**node_ref(nearest), 'distanceMetres': horizontal(pose['position'], nearest['position'])}
             record['offGraphMetres'] = distance
         except HTTPException as error:
             if error.status_code != 409:  # a world without waypoints is fine here
@@ -551,6 +680,12 @@ async def upload(world_id: str, version: str, filename: str, request: Request):
                     digest.update(chunk)
                     file.write(chunk)
             temporary.replace(path)
+            world = store.world(world_id)
+            key = {'mesh.glb': 'mesh', 'vps-map.bin': 'vpsMap', 'thumbnail.png': 'thumbnail'}.get(filename)
+            if key and version == world['version'] and world['assets'].get(key) != f'worlds/{world_id}/{version}/{filename}':
+                world['assets'][key] = f'worlds/{world_id}/{version}/{filename}'
+                world['updatedAt'] = now()
+                await store.write(world, 'worlds', world_id, 'world.json')
             await store.flush()
         finally:
             temporary.unlink(missing_ok=True)
