@@ -30,9 +30,13 @@ final class SpeechCoordinator: NSObject, ObservableObject {
         }
     }
 
+    /// Nothing is spoken unless the wearer turned voice cues on in Settings.
+    var isEnabled = false
+
     /// Returns true when the cue was actually spoken.
     @discardableResult
     func speak(_ cue: SpokenCue) -> Bool {
+        guard isEnabled else { return false }
         let now = Date()
         if cue.text == lastCueText, now.timeIntervalSince(lastCueTime) < cooldown { return false }
         if isSpeaking, cue.priority < currentPriority { return false }

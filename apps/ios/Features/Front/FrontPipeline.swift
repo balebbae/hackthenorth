@@ -131,7 +131,8 @@ final class FrontPipeline: ObservableObject {
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
         policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
-        policy.backWarnDistance = min(0.3, Float(settings.sideBuzzRangeMeters))
+        policy.backWarnDistance = 0.3
+        speech.isEnabled = settings.voiceCuesEnabled
         self.settings = settings
         arSession.start(settings: settings)
         activeSettings = settings
@@ -176,7 +177,8 @@ final class FrontPipeline: ObservableObject {
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
         policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
-        policy.backWarnDistance = min(0.3, Float(settings.sideBuzzRangeMeters))
+        policy.backWarnDistance = 0.3
+        speech.isEnabled = settings.voiceCuesEnabled
         queryLoop.reconfigure(settings: settings)
         let previous = activeSettings
         activeSettings = settings

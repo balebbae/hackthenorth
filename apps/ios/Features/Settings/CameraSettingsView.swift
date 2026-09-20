@@ -123,6 +123,8 @@ struct CameraSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Voice cues", isOn: $settingsStore.settings.voiceCuesEnabled)
+                        .accessibilityIdentifier("settings.voiceCues")
                     Toggle("Upload query images", isOn: $settingsStore.settings.uploadQueryImages)
                         .accessibilityIdentifier("settings.uploadQueries")
                     Toggle("Include failed queries", isOn: $settingsStore.settings.uploadFailedQueries)

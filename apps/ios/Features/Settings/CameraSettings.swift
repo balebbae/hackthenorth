@@ -13,7 +13,9 @@ struct CameraSettings: Codable, Equatable, Sendable {
     /// Farthest obstacle distance the detector reports, in metres. LiDAR is reliable to about 5 m.
     var obstacleRangeMeters: Double = 5.0
     /// A scanned wall or hazard closer than this beside the wearer pulses that shoulder phone.
-    var sideBuzzRangeMeters: Double = 0.4
+    var sideBuzzRangeMeters: Double = 0.6
+    /// Spoken cues (route notes, readiness). Off: the app is haptics only.
+    var voiceCuesEnabled: Bool = false
     /// Left and right phones run LiDAR and report clearance to the front phone.
     /// Kept for stored-settings compatibility; side phones no longer sense. Their
     /// buzzes come from the front phone's localisation against the world map.
@@ -55,6 +57,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
         smoothedDepth = try c.decodeIfPresent(Bool.self, forKey: .smoothedDepth) ?? d.smoothedDepth
         obstacleRangeMeters = try c.decodeIfPresent(Double.self, forKey: .obstacleRangeMeters) ?? d.obstacleRangeMeters
         sideBuzzRangeMeters = try c.decodeIfPresent(Double.self, forKey: .sideBuzzRangeMeters) ?? d.sideBuzzRangeMeters
+        voiceCuesEnabled = try c.decodeIfPresent(Bool.self, forKey: .voiceCuesEnabled) ?? d.voiceCuesEnabled
         sidePhonesSenseObstacles = try c.decodeIfPresent(Bool.self, forKey: .sidePhonesSenseObstacles) ?? d.sidePhonesSenseObstacles
         captureIntervalMs = try c.decodeIfPresent(Int.self, forKey: .captureIntervalMs) ?? d.captureIntervalMs
         jpegQuality = try c.decodeIfPresent(Double.self, forKey: .jpegQuality) ?? d.jpegQuality
