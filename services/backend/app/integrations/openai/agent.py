@@ -13,6 +13,12 @@ class AgentModel(ABC):
     @abstractmethod
     async def respond(self, inputs: list): ...
 
+    async def stream(self, inputs: list):
+        """Default: no incremental deltas, just the final response as one event.
+        Subclasses that can stream tokens (OpenAIAgentModel) override this; callers
+        (BuildingAgentService.query_stream) work the same either way."""
+        yield {'type': 'response', 'response': await self.respond(inputs)}
+
     async def close(self):
         pass
 
@@ -35,6 +41,23 @@ class OpenAIAgentModel(AgentModel):
             logger.error('OpenAI request failed: status=%s code=%s type=%s request_id=%s',
                          error.status_code, error.code, error.type, error.request_id)
             raise
+
+    async def stream(self, inputs):
+        if not self.client or not self.model:
+            raise IntegrationUnavailable('OPENAI_API_KEY and OPENAI_MODEL must be configured')
+        try:
+            async with self.client.responses.stream(model=self.model, instructions=SYSTEM_PROMPT,
+                    input=inputs, tools=TOOLS, parallel_tool_calls=False, store=False,
+                    include=['reasoning.encrypted_content']) as stream:
+                async for event in stream:
+                    if event.type == 'response.output_text.delta':
+                        yield {'type': 'delta', 'text': event.delta}
+                response = await stream.get_final_response()
+        except APIStatusError as error:
+            logger.error('OpenAI request failed: status=%s code=%s type=%s request_id=%s',
+                         error.status_code, error.code, error.type, error.request_id)
+            raise
+        yield {'type': 'response', 'response': response}
 
     async def close(self):
         if self.client:

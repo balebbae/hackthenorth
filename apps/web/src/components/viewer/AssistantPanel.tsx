@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { useTextStream } from "@/components/ui/response-stream";
 import type { NavigationGraph, Vec3, WorldNote } from "@/lib/world-manifest";
 import type { WorldStatus } from "@/lib/worlds";
 import { AssistantCallView } from "./AssistantCallView";
@@ -107,6 +108,23 @@ export type SpeechRecognitionLike = {
   onend: (() => void) | null;
 };
 
+/** Bouncing-dots "waiting on the model" indicator, shown while a query is in flight
+ * and no answer text has streamed in yet. */
+export function ThinkingIndicator({ label = "Thinking" }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1" role="status" aria-label={label}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className="thinking-dot inline-block size-1.5 rounded-full bg-void-black/50"
+          style={{ animationDelay: `${i * 150}ms` }}
+        />
+      ))}
+    </span>
+  );
+}
+
 export function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
   const w = window as unknown as {
     SpeechRecognition?: new () => SpeechRecognitionLike;
@@ -150,7 +168,68 @@ export function useAssistantSession(worldId: string) {
     return body.text ?? "";
   }
 
-  return { ask };
+  /** Same query, but as an async iterable of text chunks (POST /api/assistant/query/stream,
+   * server-sent events proxied straight through from FastAPI). `onFinal` fires once with the
+   * backend's authoritative final answer text — not necessarily identical byte-for-byte to the
+   * concatenated deltas, so callers should persist that instead of the streamed text. */
+  function askStream(text: string, uiContext: string, onFinal: (text: string) => void): AsyncIterable<string> {
+    return (async function* stream() {
+      const sessionId = await ensureSession();
+      const res = await fetch("/api/assistant/query/stream", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, text, uiContext }),
+      });
+      if (!res.ok || !res.body) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "The assistant did not respond");
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() ?? "";
+        for (const chunk of chunks) {
+          if (!chunk.startsWith("data: ")) continue;
+          const event = JSON.parse(chunk.slice("data: ".length)) as { type: string; text?: string };
+          if (event.type === "delta" && event.text) yield event.text;
+          else if (event.type === "final") onFinal(event.text ?? "");
+        }
+      }
+    })();
+  }
+
+  return { ask, askStream };
+}
+
+/** Drives useTextStream over a live SSE-backed async iterable; shows the bouncing-dots
+ * indicator until the first chunk of real text arrives. */
+function StreamingReply({
+  stream,
+  onDone,
+  onError,
+}: {
+  stream: AsyncIterable<string>;
+  onDone: () => void;
+  onError: (error: unknown) => void;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const { displayedText } = useTextStream({ textStream: stream, mode: "typewriter", speed: 70, onComplete: onDone, onError });
+
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: "nearest" });
+  }, [displayedText]);
+
+  if (!displayedText) return <ThinkingIndicator />;
+  return (
+    <span ref={ref} className="whitespace-pre-wrap">
+      {displayedText}
+    </span>
+  );
 }
 
 /** Inspector tab: type or speak a question, get an answer from the building assistant
@@ -160,14 +239,16 @@ export function useAssistantSession(worldId: string) {
  * neither activates the mic without an explicit tap. */
 export function AssistantPanel({ worldId, name, status, graph, notes, selection, getCameraPosition }: Props) {
   const getUiContext = () => buildUiContext(name, status, graph, notes, selection, getCameraPosition());
-  const { ask } = useAssistantSession(worldId);
+  const { ask, askStream } = useAssistantSession(worldId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [stream, setStream] = useState<AsyncIterable<string> | null>(null);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const finalTextRef = useRef("");
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
 
@@ -175,21 +256,27 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection,
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
 
-  async function send(text: string) {
+  function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
     setInput("");
     setError(null);
     setMessages((m) => [...m, { role: "user", text: trimmed }]);
     setSending(true);
-    try {
-      const answer = await ask(trimmed, getUiContext());
-      setMessages((m) => [...m, { role: "assistant", text: answer }]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setSending(false);
-    }
+    finalTextRef.current = "";
+    setStream(askStream(trimmed, getUiContext(), (text) => (finalTextRef.current = text)));
+  }
+
+  function finishStreaming() {
+    if (finalTextRef.current) setMessages((m) => [...m, { role: "assistant", text: finalTextRef.current }]);
+    setStream(null);
+    setSending(false);
+  }
+
+  function failStreaming(err: unknown) {
+    setError(err instanceof Error ? err.message : "Something went wrong");
+    setStream(null);
+    setSending(false);
   }
 
   function toggleMic() {
@@ -210,7 +297,7 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection,
     recognition.onresult = (e) => {
       const last = e.results[e.results.length - 1];
       const transcript = last?.[0]?.transcript;
-      if (transcript) void send(transcript);
+      if (transcript) send(transcript);
     };
     recognition.onerror = () => setListening(false);
     recognition.onend = () => setListening(false);
@@ -243,8 +330,8 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection,
           ))}
           {sending && (
             <div className="flex justify-start">
-              <div className="rounded-xl border border-hairline bg-pure-white px-3 py-2 text-body-sm text-void-black/60">
-                Thinking…
+              <div className="max-w-[85%] rounded-xl border border-hairline bg-pure-white px-3 py-2 text-body-sm text-void-black">
+                {stream ? <StreamingReply stream={stream} onDone={finishStreaming} onError={failStreaming} /> : <ThinkingIndicator />}
               </div>
             </div>
           )}
@@ -254,7 +341,7 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection,
           className="flex items-end gap-2 border-t border-hairline p-3"
           onSubmit={(e) => {
             e.preventDefault();
-            void send(input);
+            send(input);
           }}
         >
           <textarea
@@ -266,7 +353,7 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection,
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                void send(input);
+                send(input);
               }
             }}
           />

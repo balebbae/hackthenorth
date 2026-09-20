@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { getSpeechRecognition, type SpeechRecognitionLike } from "./AssistantPanel";
+import { getSpeechRecognition, ThinkingIndicator, type SpeechRecognitionLike } from "./AssistantPanel";
 
 type CallMessage = { role: "user" | "assistant"; text: string };
 type CallState = "idle" | "listening" | "thinking" | "speaking";
@@ -145,9 +145,9 @@ export function AssistantCallView({ ask, getUiContext }: Props) {
         {error && <p className="text-body-sm text-wander-pink">{error}</p>}
       </div>
       <div className="flex flex-col items-center gap-3 border-t border-hairline p-6">
-        <p aria-live="polite" className="text-body-sm text-void-black/60">
-          {STATE_LABEL[state]}
-        </p>
+        <div aria-live="polite" className="flex h-5 items-center text-body-sm text-void-black/60">
+          {state === "thinking" ? <ThinkingIndicator /> : STATE_LABEL[state]}
+        </div>
         <button
           type="button"
           onClick={inCall ? hangUp : startCall}
