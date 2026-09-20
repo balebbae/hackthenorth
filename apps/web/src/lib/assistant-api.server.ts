@@ -58,12 +58,14 @@ export async function createSession(worldId: string, deviceId: string): Promise<
   return (await res.json()) as AssistantSession;
 }
 
-/** `POST /assistant/query {session_id, text}` — one turn of the building assistant. */
-export async function queryAssistant(sessionId: string, text: string): Promise<AssistantResponse> {
+/** `POST /assistant/query {session_id, text, ui_context?}` — one turn of the building assistant.
+ * `uiContext` is a plain-text hint of what the caller currently has on screen (e.g. a
+ * selected note or waypoint); the backend never treats it as live sensor/navigation truth. */
+export async function queryAssistant(sessionId: string, text: string, uiContext?: string): Promise<AssistantResponse> {
   const res = await fetch(`${requireApiUrl()}/assistant/query`, {
     method: "POST",
     headers: apiHeaders(),
-    body: JSON.stringify({ session_id: sessionId, text }),
+    body: JSON.stringify({ session_id: sessionId, text, ...(uiContext ? { ui_context: uiContext } : {}) }),
     cache: "no-store",
   });
   if (!res.ok) throw await apiError(res);

@@ -29,6 +29,20 @@ async def test_location_not_rag(navigation, pose):
 
 
 @pytest.mark.asyncio
+async def test_ui_context_included_only_when_given(navigation):
+    session = navigation.create('demo_building')
+    agent, model = agent_for(navigation, ['Sure.'])
+    await agent.query(session.session_id, 'What is this?', ui_context='Selected note: "Broken handrail" (Stairwell B).')
+    inputs = model.requests[0]
+    assert any('ui_context' in item.get('content', '') and 'Broken handrail' in item.get('content', '')
+               for item in inputs if isinstance(item, dict))
+
+    agent2, model2 = agent_for(navigation, ['Sure.'])
+    await agent2.query(session.session_id, 'What is this?')
+    assert not any('ui_context' in item.get('content', '') for item in model2.requests[0] if isinstance(item, dict))
+
+
+@pytest.mark.asyncio
 async def test_building_sources_and_conversation_action(navigation, pose):
     session = navigation.create('demo_building')
     navigation.update_pose(session, pose)

@@ -10,11 +10,13 @@ class BuildingAgentService:
         self.store, self.model, self.tools = store, model, tools
         self.context = context or AgentContextBuilder(store)
 
-    async def query(self, session_id: str, text: str):
+    async def query(self, session_id: str, text: str, ui_context: str | None = None):
         session = self.store.get(session_id)
         async with session.agent_lock:
             self.tools.events.record(session, 'assistant_query', {'text': text})
             turn = [{'role': 'user', 'content': text}]
+            ui_context_message = ({'role': 'developer', 'content': '<ui_context>\n' + ui_context + '\n</ui_context>'}
+                                  if ui_context else None)
             sources, actions, trace = {}, [], []
             # Preserve provenance of evidence still available in compact conversation history.
             for entry in session.history:
@@ -27,8 +29,9 @@ class BuildingAgentService:
                 context = await self.context.build(session_id)
                 dynamic = {'role': 'developer', 'content': '<application_context>\n' +
                            context.model_dump_json() + '\n</application_context>'}
+                extra = [ui_context_message] if ui_context_message else []
                 try:
-                    response = await self.model.respond([*session.history, dynamic, *turn])
+                    response = await self.model.respond([*session.history, dynamic, *extra, *turn])
                 except Exception as error:
                     logger.warning('Agent provider unavailable (%s)', type(error).__name__)
                     answer = 'The assistant service is unavailable. Please check its configuration or try again.'

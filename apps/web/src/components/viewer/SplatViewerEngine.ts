@@ -467,6 +467,13 @@ export class SplatViewerEngine {
     }
   }
 
+  /** Where the camera is currently looking from, in the world frame (same frame as notes
+   * and `graph.frame === "world"` nodes) — the web dashboard's current 3D viewport, not a
+   * live phone pose or localization. */
+  getCameraPosition(): Vec3 {
+    return [this.camera.position.x, this.camera.position.y, this.camera.position.z];
+  }
+
   private addPin(id: string, title: string, position: THREE.Vector3) {
     const el = document.createElement("div");
     el.className = PIN_CLASS;

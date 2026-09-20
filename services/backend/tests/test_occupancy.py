@@ -94,6 +94,34 @@ def test_smeared_floaters_and_small_clusters_are_dropped():
     assert ray_distance(grid, [0.5, 0, 0], [0, 0, -1], 1.5) is None, 'the speck is gone'
 
 
+def test_scale_gate_is_applied_in_world_metres():
+    # Raw gaussians of 0.05 m pass the 0.08 m gate unscaled, but a 2x alignment makes them 0.10 m smears.
+    solid_wall = wall(-2, 2, -1.2, 1.2, z=-2.0)
+    spz = make_spz(solid_wall, scales_m=np.full(len(solid_wall), 0.05))
+    unscaled = build_occupancy(spz, {'id': 'w', 'version': 'v1', 'alignment': None})
+    assert unscaled['count'] > 0
+    scaled = {'id': 'w', 'version': 'v1',
+              'alignment': {'frame': 'niantic-vps', 'position': [0, 0, 0], 'rotation': [0, 0, 0, 1], 'scale': 2}}
+    import pytest
+    with pytest.raises(ValueError, match='no opaque points'):
+        build_occupancy(spz, scaled)
+
+
+def test_prune_does_not_wrap_across_grid_edges():
+    from services.backend.app.services.occupancy import prune
+    size = np.array([1, 4, 5])
+    # Two 2x2 blocks at opposite k edges of adjacent rows: they touch only via
+    # flat-index wraparound (1, 4) + 1 == (2, 0), never geometrically.
+    a = [j * 5 + k for j in (0, 1) for k in (3, 4)]
+    b = [j * 5 + k for j in (2, 3) for k in (0, 1)]
+    occupied = np.array(a + b, dtype=np.int64)
+    # Support: each cell in a 2x2 block has exactly 3 in-block neighbours.
+    kept = prune(occupied, size, min_neighbors=3, min_component=4)
+    assert sorted(kept.tolist()) == sorted(a + b)
+    # A single 2x2 block is 4 cells; if wraparound merged the blocks into 8 they would survive a threshold of 5.
+    assert len(prune(occupied, size, min_neighbors=3, min_component=5)) == 0
+
+
 def test_cached_grid_reports_builder_version():
     from services.backend.app.services.occupancy import BUILDER
     grid = build_occupancy(make_spz(wall(-1, 1, -1, 1, z=-1.0)), {'id': 'w', 'version': 'v1'})
