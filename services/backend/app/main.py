@@ -14,7 +14,7 @@ from .integrations.elastic.search import ElasticSearch
 from .integrations.elastic.events import EventService
 from .integrations.elastic.ingestion import Ingestion
 from .integrations.openai.agent import OpenAIAgentModel
-from .api import http, navigation_ws, assistant_ws, voice_ws, worlds
+from .api import http, navigation_ws, assistant_ws, voice_ws, worlds, haptics
 from .api.auth import APIKeyMiddleware
 from .services.worlds import WorldStore, WorldNavigation
 from .services.world_agent import WorldAgentTools
@@ -75,6 +75,7 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
         app.add_exception_handler(error_type, unavailable)
     app.include_router(http.router)
     app.include_router(worlds.router)
+    app.include_router(haptics.router)
     app.include_router(navigation_ws.router)
     app.include_router(assistant_ws.router)
     app.include_router(voice_ws.router)

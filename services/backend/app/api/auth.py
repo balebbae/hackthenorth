@@ -1,5 +1,7 @@
 import secrets
 from urllib.parse import parse_qs
+
+from .haptics import is_public_path
 from starlette.responses import JSONResponse
 from starlette.websockets import WebSocket
 
@@ -12,6 +14,8 @@ class APIKeyMiddleware:
     async def __call__(self, scope, receive, send):
         if scope['type'] not in ('http', 'websocket'):
             return await self.app(scope, receive, send)
+        if scope['type'] == 'http' and is_public_path(scope.get('path', '')):
+            return await self.app(scope, receive, send)  # demo buzz triggers, deliberately keyless
         headers = dict(scope['headers'])
         provided = headers.get(b'x-api-key', b'').decode('utf-8', errors='replace')
         # A plain browser navigation can't set a custom header. Websockets already
