@@ -63,6 +63,21 @@ def segment(value):
     return value
 
 
+def note_search_document(note: dict, metadata: dict | None = None) -> dict:
+    """Shape a WorldNote (hand-placed or auto-detected) for Ingestion.context_notes, so
+    every pin in the viewer -- not just Astra-reviewed annotations -- is searchable by
+    search_building_knowledge/search_context. A hand-placed pin has no Finding evidence,
+    so category/permanence/etc. default to a generic, non-navigable note."""
+    metadata = metadata or {}
+    x, y, z = note['position']
+    return {'id': note['id'], 'name': note['title'], 'description': note.get('description', ''),
+            'category': metadata.get('category', 'other'),
+            'permanence': metadata.get('permanence', 'unknown'),
+            'navigation_role': metadata.get('navigation_role', 'landmark'),
+            'visual_location': metadata.get('visual_location', note.get('location', '')),
+            'uncertainty': metadata.get('uncertainty', ''), 'x': x, 'y': y, 'z': z}
+
+
 def world_graph(world):
     graph = deepcopy(world.get('navigationGraph', {'nodes': [], 'edges': []}))
     if graph.get('frame', 'world') == 'splat':

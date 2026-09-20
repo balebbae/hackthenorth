@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from ..routing import navmesh
-from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, horizontal
+from ..services.worlds import check, now, note_search_document, segment, validate_graph, world_graph, snap, node_ref, horizontal
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -252,7 +252,71 @@ async def put_notes(world_id: str, request: Request):
         store.world(world_id)
         data['updatedAt'] = now()
         await store.write(data, 'worlds', world_id, 'notes.json')
+        # Best-effort, matching PUT /annotations: a note pin (hand-placed or auto-detected)
+        # is only useful to the assistant's search_context/search_building_knowledge tools
+        # once it is searchable, so every save keeps the index current.
+        try:
+            await request.app.state.elastic.setup()
+            await request.app.state.ingestion.context_notes(world_id, [note_search_document(n) for n in data['notes']])
+        except Exception as error:
+            logger.warning('Reindexing notes failed (%s); retry with POST /worlds/%s/index', type(error).__name__, world_id)
     return data
+
+
+@router.post('/worlds/{world_id}/notes/auto-detect', status_code=201)
+async def auto_detect_notes(world_id: str, request: Request):
+    """Best-effort scene understanding: run Astra's vision annotator over stored, localized
+    VPS query frames and turn every placed finding directly into a plain note pin -- same
+    schema and rendering as clicking "Add note", but with no human review gate (unlike
+    /annotations), since these never touch the navigation graph or become routing
+    destinations; a bad pin is exactly as easy to delete as a hand-placed one. Skips
+    anything within ~0.6 m of an existing note so re-running this doesn't pile up
+    duplicates. Reindexes the new pins into Elasticsearch so the assistant can answer
+    "what's in this room" style questions with more than the one or two hand-placed notes."""
+    from ..services.annotations import candidates_to_notes, posed, propose_from_queries
+    data = await body(request)
+    if not set(data) <= {'limit', 'floor'}:
+        raise HTTPException(400, 'Expected optional limit and floor')
+    limit, floor = data.get('limit', 20), data.get('floor', 0)
+    if not isinstance(limit, int) or not 1 <= limit <= LOCALIZATIONS_KEPT or not isinstance(floor, int):
+        raise HTTPException(400, f'limit must be 1..{LOCALIZATIONS_KEPT} and floor an integer')
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    queries = localizations_index(store, world_id)['queries']
+    images = store.path('worlds', world_id, 'localizations')
+    queries = [q for q in queries if posed(q, images)][:limit]
+    if not queries:
+        raise HTTPException(409, 'No stored localized query frames with a pose and field of view to detect from')
+    mesh = None
+    if world['assets'].get('mesh'):
+        try:
+            mesh = await asyncio.to_thread(navmesh.load_mesh, mesh_path(store, world), world.get('alignment'),
+                                           world.get('meshFrame', 'world'))
+        except (HTTPException, ValueError) as error:
+            logger.warning('Placing detected objects on the floor plane; mesh unavailable (%s)', error)
+    try:
+        batch, unplaced = await propose_from_queries(world, queries, images, store.path('worlds', world_id, 'annotation-cache'),
+            request.app.state.settings, client=request.app.state.annotation_client, mesh=mesh, floor=floor)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+    async with store.lock('world:' + world_id):
+        store.world(world_id)
+        current = check(store.read('worlds', world_id, 'notes.json'), 'notes.schema.json') \
+            if store.path('worlds', world_id, 'notes.json').exists() \
+            else {'schema': 'wander.notes/v1', 'worldId': world_id, 'notes': []}
+        pairs, skipped = candidates_to_notes(batch.candidates, current['notes'])
+        added = [note for note, _ in pairs]
+        current = check({**current, 'notes': current['notes'] + added, 'updatedAt': now()}, 'notes.schema.json')
+        await store.write(current, 'worlds', world_id, 'notes.json')
+        try:
+            await request.app.state.elastic.setup()
+            await request.app.state.ingestion.context_notes(world_id, [
+                note_search_document(note, {'category': candidate.category, 'permanence': candidate.permanence,
+                    'navigation_role': candidate.navigation_role, 'visual_location': candidate.visual_location,
+                    'uncertainty': candidate.uncertainty}) for note, candidate in pairs])
+        except Exception as error:
+            logger.warning('Indexing detected notes failed (%s); retry with POST /worlds/%s/index', type(error).__name__, world_id)
+    return {**current, 'added': len(added), 'skippedDuplicates': skipped, 'unplaced': unplaced}
 
 
 @router.post('/worlds/{world_id}/route')
@@ -353,16 +417,18 @@ async def annotations(world_id: str, request: Request):
 
 @router.post('/worlds/{world_id}/index')
 async def index_world(world_id: str, request: Request):
-    """Manual repair/backfill only; PUT /annotations already reindexes on publish."""
+    """Manual repair/backfill only; PUT /annotations and PUT /notes already reindex on save."""
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
         manifest = store.world(world_id)
         records = store.read('worlds', world_id, 'annotations.json') if store.path('worlds', world_id, 'annotations.json').exists() else []
-        notes = store.read('worlds', world_id, 'context-notes.json') if store.path('worlds', world_id, 'context-notes.json').exists() else []
+        context_notes = store.read('worlds', world_id, 'context-notes.json') if store.path('worlds', world_id, 'context-notes.json').exists() else []
+        notes = check(store.read('worlds', world_id, 'notes.json'), 'notes.schema.json')['notes'] \
+            if store.path('worlds', world_id, 'notes.json').exists() else []
         await request.app.state.elastic.setup()
         await request.app.state.ingestion.world(manifest, records)
-        await request.app.state.ingestion.context_notes(world_id, notes)
-    return {'indexed': len(world_graph(manifest)['nodes']), 'context_notes': len(notes)}
+        await request.app.state.ingestion.context_notes(world_id, context_notes + [note_search_document(n) for n in notes])
+    return {'indexed': len(world_graph(manifest)['nodes']), 'context_notes': len(context_notes) + len(notes)}
 
 
 @router.post('/sessions', status_code=201)

@@ -1,5 +1,6 @@
 import { parseGraph, parseMeasurements, parseNotes } from "@/lib/world-manifest";
 import {
+  autoDetectNotes,
   buildNavmesh,
   createWorld,
   getLocalizations,
@@ -36,6 +37,7 @@ import {
  *   GET   /api/worlds/:id/navmesh             → NavmeshProposal (last mesh-derived graph proposal) or 404
  *   POST  /api/worlds/:id/navmesh             → NavmeshProposal (grid `assets.mesh`, propose a graph; body: { params?, frame? }; backend only)
  *   POST  /api/worlds/:id/graph/validate      → GraphValidation (edges through walls, floor snapping; body: { graph?, snap? }; backend only)
+ *   POST  /api/worlds/:id/notes/auto-detect   → NotesFile & { added, skippedDuplicates, unplaced } (vision-detect scene objects into note pins; body: { limit?, floor? }; backend only)
  *   PUT   /api/worlds/:id/graph               → WorldManifest (body: NavigationGraph)
  *   PUT   /api/worlds/:id/notes               → NotesFile (body: { notes })
  *   PUT   /api/worlds/:id/measurements        → MeasurementsFile (body: { measurements })
@@ -101,6 +103,19 @@ export async function POST(req: Request, ctx: RouteContext<"/api/worlds/[[...pat
       const record = await postLocalizationQuery(path[0], body);
       return record
         ? Response.json(record, { status: 201, headers: NO_STORE })
+        : Response.json({ error: "World not found" }, { status: 404 });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  if (path.length === 3 && path[1] === "notes" && path[2] === "auto-detect") {
+    const body = (await readJson(req)) ?? {};
+    if (!isObject(body)) return Response.json({ error: "Body must be a JSON object" }, { status: 400 });
+    try {
+      const result = await autoDetectNotes(path[0], body as { limit?: number; floor?: number });
+      return result
+        ? Response.json(result, { status: 201, headers: NO_STORE })
         : Response.json({ error: "World not found" }, { status: 404 });
     } catch (err) {
       return failure(err);

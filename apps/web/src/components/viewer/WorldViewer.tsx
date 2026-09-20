@@ -495,6 +495,7 @@ export function WorldViewer({
               }}
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
+              onNotesDetected={setNotes}
               onStartNote={() => pickTool("note")}
               onStartMeasure={() => pickTool("measure")}
               onLabelMeasurement={(id, label) =>

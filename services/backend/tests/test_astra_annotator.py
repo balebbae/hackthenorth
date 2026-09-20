@@ -94,6 +94,60 @@ def test_propose_rejects_bad_selections(client, world):
     assert client.get(f'/worlds/{wid}/annotations/proposals').status_code == 404
 
 
+def test_auto_detect_notes_creates_plain_pins_without_review(client, world, astra):
+    wid = world['id']
+    localize(client, world, image=LANDSCAPE, result={**upload(world)['result'], 'pose': CAMERA_OVER_LOBBY})
+
+    result = client.post(f'/worlds/{wid}/notes/auto-detect', json={})
+    assert result.status_code == 201, result.text
+    body = result.json()
+    # FILLER and CABLE share the same image_point, so they place at the same spot and one
+    # is skipped as a within-batch duplicate; the Ceiling sign's upward sight line isn't placed.
+    assert body['added'] == 1 and body['unplaced'] == 1 and body['skippedDuplicates'] == 1
+    assert body['notes'][0]['title'] == 'Bottle filler'
+
+    # A plain, immediately-visible/deletable pin: same file the "Add note" tool writes, and
+    # the live navigation graph never changes (unlike the reviewed /annotations path).
+    assert client.get(f'/worlds/{wid}/notes').json()['notes'] == body['notes']
+    assert client.get(f'/worlds/{wid}').json()['navigationGraph'] == world['navigationGraph']
+
+    # Re-running detection against the same evidence must not duplicate the pin.
+    again = client.post(f'/worlds/{wid}/notes/auto-detect', json={}).json()
+    assert again['added'] == 0 and again['skippedDuplicates'] == 2
+    assert len(client.get(f'/worlds/{wid}/notes').json()['notes']) == 1
+
+
+def test_candidates_to_notes_places_distinct_pins_and_skips_near_duplicates():
+    from ..app.services.annotations import Candidate, candidates_to_notes
+
+    near_desk = Candidate(id='a', frame='f.jpg', frame_sha256='x', category='desk', name='Desk',
+                          description='A desk', sign_text='', designation='unknown', uncertainty='',
+                          position=[1.0, 0.0, 2.0])
+    far_bed = Candidate(id='b', frame='f.jpg', frame_sha256='x', category='bed', name='Bed 3',
+                        description='A bed', sign_text='', designation='unknown', uncertainty='',
+                        position=[10.0, 0.0, 10.0])
+    duplicate_of_desk = Candidate(id='c', frame='f.jpg', frame_sha256='x', category='desk', name='Desk (again)',
+                                  description='', sign_text='', designation='unknown', uncertainty='',
+                                  position=[1.1, 0.0, 2.05])
+    unplaced = Candidate(id='d', frame='f.jpg', frame_sha256='x', category='other', name='Unplaced',
+                         description='', sign_text='', designation='unknown', uncertainty='', position=None)
+
+    pairs, skipped = candidates_to_notes([near_desk, far_bed, duplicate_of_desk, unplaced], existing_notes=[])
+    assert [note['title'] for note, _ in pairs] == ['Desk', 'Bed 3']
+    assert skipped == 1
+    assert all(note['author'] == 'auto-detected' for note, _ in pairs)
+
+    # Also skips duplicates of pins that already existed before this batch.
+    pairs2, skipped2 = candidates_to_notes([far_bed], existing_notes=[{'position': [10.0, 0.1, 9.9]}])
+    assert pairs2 == [] and skipped2 == 1
+
+
+def test_auto_detect_notes_rejects_bad_selections_and_needs_posed_frames(client, world):
+    wid = world['id']
+    assert client.post(f'/worlds/{wid}/notes/auto-detect', json={'limit': 0}).status_code == 400
+    assert client.post(f'/worlds/{wid}/notes/auto-detect', json={}).status_code == 409  # no posed frames yet
+
+
 def test_approved_candidates_publish_at_their_placed_position_and_guide_by_landmark(client, world):
     wid = world['id']
     localize(client, world, image=LANDSCAPE, result={**upload(world)['result'], 'pose': CAMERA_OVER_LOBBY})
