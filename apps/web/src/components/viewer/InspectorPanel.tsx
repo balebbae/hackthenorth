@@ -62,6 +62,8 @@ type Props = {
   onFocusNote: (id: string) => void;
   onUpdateNote: (id: string, patch: Partial<Pick<WorldNote, "title" | "location" | "description">>) => void;
   onDeleteNote: (id: string) => void;
+  /** Replaces the notes list after POST /api/worlds/:id/notes/auto-detect adds new pins. */
+  onNotesDetected: (notes: WorldNote[]) => void;
   onStartNote: () => void;
   onStartMeasure: () => void;
   onLabelMeasurement: (id: string, label: string) => void;
@@ -139,12 +141,50 @@ export function InspectorPanel(p: Props) {
 
 function NotesTab(p: Props) {
   const selectedId = p.selection?.kind === "note" ? p.selection.id : null;
+  const [detecting, setDetecting] = useState(false);
+  const [detectMessage, setDetectMessage] = useState<string | null>(null);
+
+  async function detectObjects() {
+    setDetecting(true);
+    setDetectMessage(null);
+    try {
+      const res = await fetch(`/api/worlds/${encodeURIComponent(p.worldId)}/notes/auto-detect`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const body = (await res.json()) as {
+        notes?: WorldNote[];
+        added?: number;
+        skippedDuplicates?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(body.error ?? "Could not detect objects");
+      p.onNotesDetected(body.notes ?? []);
+      const added = body.added ?? 0;
+      setDetectMessage(
+        added === 0
+          ? "No new objects found — try scanning more of the room with the phone first."
+          : `Added ${added} note${added === 1 ? "" : "s"}${body.skippedDuplicates ? ` (skipped ${body.skippedDuplicates} already-known)` : ""}.`,
+      );
+    } catch (err) {
+      setDetectMessage(err instanceof Error ? err.message : "Could not detect objects");
+    } finally {
+      setDetecting(false);
+    }
+  }
+
   return (
     <div className="p-3">
       <button type="button" className="btn-ghost w-full" onClick={p.onStartNote}>
         <Icon name="pin" size={15} />
         Add a note on the scan
       </button>
+      <button type="button" className="btn-ghost mt-1.5 w-full" onClick={detectObjects} disabled={detecting}>
+        <Icon name="sparkle" size={15} />
+        {detecting ? "Detecting objects…" : "Detect objects automatically"}
+      </button>
+      {detectMessage && <p className="mt-1.5 px-1 text-caption text-void-black/60">{detectMessage}</p>}
 
       {p.notes.length === 0 ? (
         <p className="mt-4 px-1 text-body-sm text-void-black/50">

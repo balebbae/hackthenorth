@@ -235,6 +235,26 @@ def test_publish_reindexes_and_notes_hazards_without_a_separate_index_call(setti
     assert 'hazard-1' in indexed_ids
 
 
+def test_saving_notes_reindexes_them_so_hand_placed_pins_are_searchable(settings, world):
+    path = settings.wander_data_root / 'worlds' / world['id'] / 'world.json'
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(world), encoding='utf-8')
+    stub = SimpleNamespace(
+        inference=SimpleNamespace(inference=AsyncMock(return_value={'text_embedding': [{'embedding': [1, 0, 0]}]})),
+        index=AsyncMock(), close=AsyncMock(),
+        indices=SimpleNamespace(exists=AsyncMock(return_value=True), create=AsyncMock(), put_mapping=AsyncMock()))
+    elastic = ElasticClient(settings, stub)
+    with TestClient(create_app(settings, model=ScriptedModel([]), events=FixtureEvents(), search=FixtureSearch(),
+                              elastic=elastic), headers={'X-API-Key': settings.wander_api_key}) as client:
+        notes = {'schema': 'wander.notes/v1', 'worldId': world['id'], 'notes': [
+            {'id': 'bed-1', 'title': 'Bed 1', 'location': 'North wall', 'position': [1, 0, 2],
+             'createdAt': '2026-09-19T12:00:00Z'}]}
+        assert client.put(f"/worlds/{world['id']}/notes", json=notes).status_code == 200
+    assert stub.index.await_count >= 1
+    document = stub.index.await_args_list[-1].kwargs['document']
+    assert document['id'] == 'bed-1' and document['name'] == 'Bed 1' and document['is_destination'] is False
+
+
 def test_agent_can_read_persisted_world_session(client):
     sid = client.post('/sessions', json={'worldId': 'demo-building', 'deviceId': 'phone'}).json()['sessionId']
     result = client.post('/assistant/query', json={'session_id': sid, 'text': 'Where am I?'})

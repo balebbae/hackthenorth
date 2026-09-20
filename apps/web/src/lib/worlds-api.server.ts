@@ -331,6 +331,33 @@ export async function getNotes(id: string): Promise<WorldNote[]> {
   }
 }
 
+const SCENE_DETECTION_NEEDS_API =
+  "Object detection runs in the worlds backend (Astra + stored phone localization frames) — set WANDER_API_URL";
+
+export type AutoDetectNotesResult = NotesFile & { added: number; skippedDuplicates: number; unplaced: number };
+
+/**
+ * Runs the vision annotator over the world's stored, localized VPS query frames (phone
+ * walkthrough images with a recorded pose) and turns every placed finding directly into a
+ * plain note pin — same shape as clicking "Add note" in the viewer, no review gate. Skips
+ * anything within ~0.6 m of an existing note. Backend-only: needs stored phone localization
+ * frames and OpenAI, so this throws 501 in local mode.
+ */
+export async function autoDetectNotes(id: string, opts: { limit?: number; floor?: number } = {}): Promise<AutoDetectNotesResult | null> {
+  if (!isSafeSegment(id)) return null;
+  if (!API_URL) throw new WorldsApiError(501, SCENE_DETECTION_NEEDS_API);
+  const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/notes/auto-detect`, {
+    method: "POST",
+    headers: { ...apiHeaders(), "content-type": "application/json" },
+    body: JSON.stringify(opts),
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await apiError(res);
+  const parsed = (await res.json()) as NotesFile & { added: number; skippedDuplicates: number; unplaced: number };
+  return { ...parsed, notes: parseNotes(parsed.notes) };
+}
+
 export async function saveNotes(id: string, notes: WorldNote[]): Promise<NotesFile | null> {
   if (!isSafeSegment(id)) return null;
   const file: NotesFile = { schema: NOTES_SCHEMA, worldId: id, notes, updatedAt: new Date().toISOString() };

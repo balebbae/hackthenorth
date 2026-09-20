@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import json
+import math
 import subprocess
 import tempfile
 from pathlib import Path
@@ -26,6 +27,7 @@ class Finding(Model):
                       'seating', 'table', 'desk', 'counter', 'window', 'pillar',
                       'landmark', 'service_point', 'food_drink', 'waste_bin',
                       'storage', 'charging_point', 'obstacle', 'surface_change',
+                      'bed', 'luggage', 'electronics', 'appliance', 'plant',
                       'scene_context', 'other']
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(max_length=1200)
@@ -157,8 +159,10 @@ ramps, escalators, floor numbers, directories, arrows, room numbers, tactile pav
 handrails, visible door-opening buttons and emergency equipment.
 Include recognizable landmarks and useful room context: seating groups, chairs,
 tables, desks, counters, windows, pillars, artwork, distinctive wall features,
-storage and the arrangement of these objects. Even a room without signs can have
-useful findings. Group repetitive furniture rather than listing every identical chair.
+storage, beds, luggage or bags left in the room, plants, and visible electronics
+or appliances (TVs, monitors, laptops, air conditioning/heating units, kitchen
+appliances), and the arrangement of these objects. Even a room without signs can
+have useful findings. Group repetitive furniture rather than listing every identical chair.
 Include potential hazards ONLY when visible: bags or furniture protruding into a
 passage, cables, steps, thresholds, surface changes, glass barriers, low overhangs,
 temporary barriers. Describe the visual evidence and uncertainty, not a verdict
@@ -315,6 +319,37 @@ async def propose_from_queries(world, queries, images: Path, cache: Path, settin
     finally:
         if owned:
             await client.close()
+
+
+def candidates_to_notes(candidates: list[Candidate], existing_notes: list[dict], radius_metres: float = 0.6):
+    """Turn placed annotation candidates directly into plain WorldNote-shaped pins (same
+    shape a person creates by clicking "Add note" in the viewer) -- skipping candidates
+    review entirely. Unlike publish()/publish_world(), this never touches the navigation
+    graph or promotes anything to a routing destination, so the review file's waypoint and
+    hash-integrity requirements (built for that riskier path) would be pure friction here;
+    a bad or duplicate pin is exactly as easy to delete as a hand-placed one.
+
+    Returns (pairs, skipped) where pairs is a list of (note_dict, source_candidate) so
+    callers can still build rich search documents from the candidate's Finding fields,
+    and skipped counts candidates within radius_metres of an existing note (by title, so
+    re-running detection doesn't keep re-adding the same object)."""
+    positions = [n['position'] for n in existing_notes]
+    pairs, skipped = [], 0
+    for candidate in candidates:
+        if candidate.position is None:
+            continue
+        if any(math.dist(candidate.position, p) <= radius_metres for p in positions):
+            skipped += 1
+            continue
+        note = {'id': 'auto-' + candidate.id, 'title': candidate.name,
+                'position': list(candidate.position), 'author': 'auto-detected', 'createdAt': now()}
+        if candidate.visual_location:
+            note['location'] = candidate.visual_location
+        if candidate.description:
+            note['description'] = candidate.description
+        pairs.append((note, candidate))
+        positions.append(candidate.position)
+    return pairs, skipped
 
 
 def publish(batch: AnnotationBatch, reviews: ReviewFile, graph: Graph, expected_revision: str):

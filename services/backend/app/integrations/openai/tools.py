@@ -41,8 +41,10 @@ REGISTRY = {
     'get_navigation_state': (EmptyArgs, 'Read the current deterministic route, next waypoint and instruction.'),
     'set_destination': (DestinationArgs, 'Start deterministic navigation to an existing destination only when requested.'),
     'get_recent_events': (EventArgs, 'Read session event history; null type includes all event types.'),
-    'search_context': (ContextArgs, 'Search non-navigable context and hazard evidence (e.g. wet floors, '
-        'obstructions, informational notes) recorded near an area; not a live sensor feed and never a '
+    'search_context': (ContextArgs, 'Search non-navigable context and hazard evidence recorded near an area: '
+        'wet floors, obstructions, informational notes, and pinned scene objects/landmarks (furniture, beds, '
+        'luggage, electronics, signage, and similar) noted in a room. Use for "what is in this room" / "what '
+        'can you see" / general surroundings questions, not just hazards. Not a live sensor feed and never a '
         'destination. Returns matching evidence plus counts by category and role.'),
     'get_obstacle_hotspots': (HazardDensityArgs, 'Aggregate recent obstacle reports by location to find '
         'recurring trouble spots; historical pattern, never proof current conditions are unsafe.'),
