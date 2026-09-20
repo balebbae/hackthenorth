@@ -116,7 +116,14 @@ struct WanderBackendClient: Sendable {
     }
 
     func request(_ method: String, _ path: String, data: Data?) -> URLRequest {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        // Keep any "?query" intact: appendingPathComponent would percent-encode the "?".
+        let parts = path.split(separator: "?", maxSplits: 1).map(String.init)
+        var url = baseURL.appendingPathComponent(parts[0])
+        if parts.count == 2, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.percentEncodedQuery = parts[1]
+            url = components.url ?? url
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.timeoutInterval = 8
         request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
