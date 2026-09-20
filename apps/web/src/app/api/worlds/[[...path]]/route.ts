@@ -167,7 +167,7 @@ export async function PUT(req: Request, ctx: RouteContext<"/api/worlds/[[...path
     const field = (key: string) => (isObject(body) ? (body[key] ?? body) : body);
 
     let saved: unknown;
-    if (resource === "graph") saved = await saveGraph(id, parseGraph(body));
+    if (resource === "graph") saved = await saveGraph(id, parseGraph(body), req.headers.get("if-match"));
     else if (resource === "notes") saved = await saveNotes(id, parseNotes(field("notes")));
     else saved = await saveMeasurements(id, parseMeasurements(field("measurements")));
     return saved

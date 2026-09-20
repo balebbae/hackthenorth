@@ -71,8 +71,8 @@ export function LiveTab(p: LiveTabProps) {
           <>
             <p className="mt-3 text-body-sm text-void-black/60">
               Scan this on the front phone (Settings › <strong>Scan world QR</strong>, or the iOS Camera). It picks up
-              the world, its Niantic site and the backend; every frame the SDK sends to VPS then shows up here within a
-              second, drawn on the splat where it was localized.
+              the world and the backend; every frame the SDK sends to VPS then shows up here within a second, drawn on
+              the splat where it was localized.
             </p>
             <div className="mt-4">
               <ConnectPhoneQR info={p.connectInfo} size={200} compact />

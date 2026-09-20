@@ -1,164 +1,74 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
-import { issueLabel, issueTarget, type GraphIssue, type NavmeshParams } from "@/lib/navmesh";
-import { formatBytes, uploadMeshForWorld, UploadError, type UploadProgress } from "@/lib/upload-client";
+import { issueLabel, issueTarget, type GraphIssue, type NavmeshParams, type NavmeshProposal } from "@/lib/navmesh";
 import { graphLengthMetres, type NavigationGraph, type WorldManifest } from "@/lib/world-manifest";
 import type { ViewerSelection } from "./SplatViewerEngine";
 import type { MeshTools } from "./useMeshTools";
-import type { ViewerState } from "./useSplatViewer";
 
-export type MeshTabProps = {
+export type WaypointsTabProps = {
   manifest: WorldManifest | null;
   graph: NavigationGraph;
-  mesh: ViewerState["mesh"];
-  showMesh: boolean;
-  onShowMesh: (visible: boolean) => void;
   tools: MeshTools;
   selection: ViewerSelection | null;
   onSelect: (sel: ViewerSelection | null) => void;
   onFocusNode: (id: string) => void;
   /** Called after a graph write (snap / accept) with the manifest the server returned. */
   onGraphSaved: (manifest: WorldManifest, text: string) => void;
-  /** Called after a mesh upload so the page can re-read the manifest. */
-  onMeshUploaded: () => void;
+  /** Opens the upload dialog — the one place a mesh is added to a world. */
+  onUploadMesh?: () => void;
   /** Whether the server can run the mesh tools (needs the worlds backend). */
   source: "api" | "local";
 };
 
 /**
- * Mesh tab: the aligned Scaniverse mesh as a layer, the graph validator
- * (edges through walls, off-floor nodes, floor snapping) and the review gate
- * for graphs generated from the mesh. Generated geometry only becomes the
- * world's graph when the reviewer accepts it here.
+ * Waypoints tab: the graph validator (edges through walls, off-floor nodes,
+ * floor snapping) and the review gate for graphs generated from the aligned
+ * mesh. Generated geometry only becomes the world's graph when the reviewer
+ * accepts it here. The mesh itself is uploaded with the world, not from here.
  */
-export function MeshTab(p: MeshTabProps) {
+export function WaypointsTab(p: WaypointsTabProps) {
   const { manifest, tools } = p;
-  if (!manifest) return <p className="p-4 text-body-sm text-void-black/50">Add world.json to this world to attach a mesh.</p>;
+  if (!manifest)
+    return <p className="p-4 text-body-sm text-void-black/50">Add world.json to this world to generate waypoints.</p>;
+  if (!tools.hasMesh) return <NoMesh onUploadMesh={p.onUploadMesh} />;
+  if (p.source === "local")
+    return (
+      <p className="p-4 text-body-sm text-void-black/50">
+        Graph checks and generation run in the worlds backend. Set <code>WANDER_API_URL</code> to use them here.
+      </p>
+    );
   return (
     <div>
-      <MeshLayer {...p} manifest={manifest} />
-      {tools.hasMesh && p.source === "local" && (
-        <p className="border-b border-hairline p-4 text-body-sm text-void-black/50">
-          Graph checks and generation run in the worlds backend. Set <code>WANDER_API_URL</code> to use them here.
-        </p>
-      )}
-      {tools.hasMesh && p.source === "api" && (
-        <>
-          <Validator {...p} />
-          <Proposal {...p} />
-        </>
-      )}
+      <Validator {...p} />
+      <Proposal {...p} />
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ layer */
-
-function MeshLayer({ manifest, mesh, showMesh, onShowMesh, onMeshUploaded }: MeshTabProps & { manifest: WorldManifest }) {
-  const file = manifest.assets.mesh?.split("/").pop();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [upload, setUpload] = useState<{ progress: UploadProgress | null; error: string | null; running: boolean }>({
-    progress: null,
-    error: null,
-    running: false,
-  });
-
-  const onFile = async (picked: File | undefined) => {
-    if (!picked) return;
-    setUpload({ progress: { loaded: 0, total: picked.size }, error: null, running: true });
-    try {
-      await uploadMeshForWorld(manifest, picked, (progress) => setUpload((s) => ({ ...s, progress })));
-      setUpload({ progress: null, error: null, running: false });
-      onMeshUploaded();
-    } catch (err) {
-      setUpload({
-        progress: null,
-        running: false,
-        error: err instanceof UploadError || err instanceof Error ? err.message : "Upload failed",
-      });
-    } finally {
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  };
-
+/** Nothing to work from: waypoints are derived from the aligned mesh. */
+function NoMesh({ onUploadMesh }: { onUploadMesh?: () => void }) {
   return (
-    <div className="border-b border-hairline p-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-caption font-semibold tracking-[0.01em] text-void-black/50 uppercase">Mesh layer</h3>
-        {mesh.status === "ready" && mesh.triangles !== null && (
-          <span className="text-caption text-void-black/40">{mesh.triangles.toLocaleString()} triangles</span>
-        )}
-      </div>
-
-      {file ? (
-        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-body-sm">
-          <Row label="File">
-            <span title={manifest.assets.mesh} className="break-all">
-              {file}
-            </span>
-          </Row>
-          <Row label="Frame">{manifest.meshFrame === "splat" ? "splat (through alignment)" : "world (aligned)"}</Row>
-          <Row label="Status">
-            {mesh.status === "loading" && "Loading…"}
-            {mesh.status === "ready" && "Loaded"}
-            {mesh.status === "none" && "—"}
-            {mesh.status === "error" && <span className="text-wander-pink">{mesh.error ?? "Failed to load"}</span>}
-          </Row>
-        </dl>
-      ) : (
-        <p className="mt-2 text-body-sm text-void-black/50">
-          No mesh on this version. Upload the Scaniverse <code>.glb</code> aligned to the VPS frame: it draws as a layer, gives
-          clicks a real surface to land on, and lets Wander check and generate waypoints.
-        </p>
+    <div className="p-4">
+      <h3 className="text-caption font-semibold tracking-[0.01em] text-void-black/50 uppercase">Waypoints from the mesh</h3>
+      <p className="mt-2 text-body-sm text-void-black/50">
+        Checking and generating waypoints needs the aligned Scaniverse <code>mesh.glb</code>. It is uploaded with the
+        world — add one now and it lands in this version.
+      </p>
+      {onUploadMesh && (
+        <button type="button" className="btn-ghost mt-3 w-full" onClick={onUploadMesh}>
+          <Icon name="upload" size={15} />
+          Upload a mesh
+        </button>
       )}
-
-      <div className="mt-3 flex flex-col gap-2">
-        {file && (
-          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-body-sm text-void-black hover:bg-void-black/5">
-            <span className="inline-flex items-center gap-2">
-              <Icon name="layers" size={15} />
-              Show mesh in the scene
-            </span>
-            <input
-              type="checkbox"
-              className="size-4 accent-wander-blue"
-              checked={showMesh}
-              disabled={mesh.status !== "ready"}
-              onChange={(e) => onShowMesh(e.target.checked)}
-            />
-          </label>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".glb,model/gltf-binary"
-          className="sr-only"
-          aria-label="Choose a mesh file"
-          onChange={(e) => onFile(e.target.files?.[0])}
-        />
-        {!file && (
-          <button type="button" className="btn-ghost w-full" disabled={upload.running} onClick={() => inputRef.current?.click()}>
-            <Icon name="upload" size={15} />
-            {upload.running && upload.progress
-              ? `Uploading… ${formatBytes(upload.progress.loaded)} / ${formatBytes(upload.progress.total)}`
-              : `Upload mesh.glb to ${manifest.version}`}
-          </button>
-        )}
-        {upload.error && (
-          <p role="alert" className="text-caption text-wander-pink">
-            {upload.error}
-          </p>
-        )}
-      </div>
     </div>
   );
 }
 
 /* -------------------------------------------------------------- validator */
 
-function Validator({ graph, tools, selection, onSelect, onFocusNode, onGraphSaved }: MeshTabProps) {
+function Validator({ graph, tools, selection, onSelect, onFocusNode, onGraphSaved }: WaypointsTabProps) {
   const { validation, validating, validate, snappedCount, saving, saveGraph, preview } = tools;
   const disabled = graph.nodes.length === 0 || validating.running || preview;
 
@@ -217,9 +127,12 @@ const PARAM_FIELDS: { key: keyof Omit<NavmeshParams, "frame" | "seed" | "floorSl
   { key: "spacing", label: "Waypoint spacing (m)", step: 0.25, min: 0.5, max: 6 },
 ];
 
-function Proposal({ graph, tools, onGraphSaved }: MeshTabProps) {
+function Proposal({ tools, onGraphSaved }: WaypointsTabProps) {
   const { proposal, building, build, params, setParams, preview, setPreview, discardProposal, saving, saveGraph } = tools;
   const [showParams, setShowParams] = useState(false);
+  const disconnected = proposal?.places?.filter((place) => !place.connected) ?? [];
+  const needsRegeneration = !!proposal && !proposal.sourceRevision;
+  const hasIssues = !!proposal?.proposalIssues?.length || disconnected.length > 0;
 
   return (
     <div className="p-4">
@@ -232,8 +145,8 @@ function Proposal({ graph, tools, onGraphSaved }: MeshTabProps) {
         )}
       </div>
       <p className="mt-2 text-body-sm text-void-black/50">
-        Grids the walkable floor from the mesh and proposes a waypoint graph. It is only a proposal until you accept it;
-        accepting replaces the current {graph.nodes.length} waypoints.
+        Finds walking paths with room around walls and furniture. Keeps your named places and simplifies
+        the connections between them. Review the paths before accepting.
       </p>
 
       <button
@@ -269,12 +182,12 @@ function Proposal({ graph, tools, onGraphSaved }: MeshTabProps) {
 
       <button type="button" className="btn-ghost mt-2 w-full" disabled={building.running} onClick={build}>
         <Icon name="route" size={15} />
-        {building.running ? "Gridding the mesh…" : proposal ? "Generate again" : "Generate from the mesh"}
+        {building.running ? "Finding walking paths…" : proposal ? "Generate again" : "Generate from the mesh"}
       </button>
       {building.error && <Alert>{building.error}</Alert>}
 
       {proposal && (
-        <div className="mt-3 rounded-lg border border-hairline bg-stellar-white p-3">
+        <div className="mt-3 rounded-xl border border-hairline bg-stellar-white p-3">
           <div className="flex items-center justify-between gap-2">
             <span className="pill-sm bg-pink-tint text-wander-pink">Proposed · not live</span>
             <span className="text-caption text-void-black/40">{new Date(proposal.createdAt).toLocaleString()}</span>
@@ -292,7 +205,30 @@ function Proposal({ graph, tools, onGraphSaved }: MeshTabProps) {
               <Row label="Current graph">{proposal.currentGraphIssues.length} issues against this mesh</Row>
             )}
           </dl>
-          <OccupancyPreview rows={proposal.grid.rows} />
+          <OccupancyPreview proposal={proposal} />
+          <p className="mt-2 text-caption text-void-black/60">Blue paths · pink destinations · sky walking area</p>
+          {!!proposal.places?.length && (
+            <div className="mt-3 text-body-sm">
+              <p className="font-medium text-void-black">Named places kept</p>
+              <ul className="mt-1 space-y-1">
+                {proposal.places.map((place) => (
+                  <li key={place.id} className="flex justify-between gap-2">
+                    <span className="truncate text-void-black/80">{place.name}</span>
+                    <span className={place.connected ? "text-void-black/60" : "text-wander-pink"}>
+                      {!place.connected ? "No walking connection" : place.movedMetres > 0.1 ? `Adjusted ${place.movedMetres.toFixed(1)} m` : "Connected"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {!!proposal.grid.excludedWalkableCells && (
+            <p className="mt-2 text-caption text-void-black/60">
+              {(proposal.grid.excludedWalkableCells * proposal.grid.cell ** 2).toFixed(1)} m² of separate floor has no connection to these paths.
+            </p>
+          )}
+          {needsRegeneration && <Alert>This preview uses the earlier generator. Generate again to keep your named places.</Alert>}
+          {hasIssues && <Alert>Some places or paths cannot be connected with enough clearance. Check their positions and the mesh, then generate again.</Alert>}
 
           <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-lg px-1 py-1 text-body-sm text-void-black">
             <span className="inline-flex items-center gap-2">
@@ -306,12 +242,12 @@ function Proposal({ graph, tools, onGraphSaved }: MeshTabProps) {
             <button
               type="button"
               className="btn-primary flex-1"
-              disabled={saving.running}
+              disabled={saving.running || building.running || needsRegeneration || hasIssues}
               onClick={async () => {
-                const manifest = await saveGraph(proposal.graph);
+                const manifest = await saveGraph(proposal.graph, proposal.sourceRevision);
                 if (manifest) {
                   discardProposal();
-                  onGraphSaved(manifest, `Accepted ${proposal.graph.nodes.length} generated waypoints`);
+                  onGraphSaved(manifest, `Accepted ${proposal.graph.nodes.length} waypoints and places`);
                 }
               }}
             >
@@ -330,7 +266,12 @@ function Proposal({ graph, tools, onGraphSaved }: MeshTabProps) {
 }
 
 /** Tiny top-down map of the occupancy grid ('.' walkable, 'x' blocked, ' ' unscanned). */
-function OccupancyPreview({ rows }: { rows: string[] }) {
+function OccupancyPreview({ proposal }: { proposal: NavmeshProposal }) {
+  const { rows, origin, cell } = proposal.grid;
+  const points = new Map(proposal.graph.nodes.map((node) => [node.id, {
+    x: (node.position[0] - origin[0]) / cell,
+    y: (node.position[2] - origin[2]) / cell,
+  }]));
   const height = rows.length;
   const width = rows[0]?.length ?? 0;
   if (!height || !width) return null;
@@ -352,12 +293,26 @@ function OccupancyPreview({ rows }: { rows: string[] }) {
     <svg
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label="Top-down occupancy grid: sky is walkable, navy is blocked"
+      aria-label="Proposed walking paths and destinations over the scanned floor"
       className="mt-3 max-h-48 w-full rounded-lg border border-hairline bg-pure-white"
       shapeRendering="crispEdges"
       preserveAspectRatio="xMidYMid meet"
     >
       {rects}
+      <g shapeRendering="geometricPrecision">
+        {proposal.graph.edges.map((edge) => {
+          const a = points.get(edge.from), b = points.get(edge.to);
+          return a && b ? <line key={`${edge.from}-${edge.to}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+            stroke="#2e4885" strokeWidth={1.5} vectorEffect="non-scaling-stroke" /> : null;
+        })}
+        {proposal.graph.nodes.map((node) => {
+          const point = points.get(node.id)!;
+          return <circle key={node.id} cx={point.x} cy={point.y} r={node.name ? 0.8 : 0.45}
+            fill={node.kind === "destination" ? "#d85598" : "#2e4885"}>
+            <title>{node.name ?? node.id}</title>
+          </circle>;
+        })}
+      </g>
     </svg>
   );
 }

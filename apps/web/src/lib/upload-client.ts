@@ -63,9 +63,11 @@ export type NewWorldInput = {
   space?: string;
   nianticSiteId?: string;
   file: File | null;
+  /** Aligned collision mesh (.glb); goes into the same version as the splat. */
+  mesh?: File | null;
 };
 
-/** Create the manifest, then (optionally) upload the splat and mark the world ready. */
+/** Create the manifest, then (optionally) upload the splat and mesh and mark the world ready. */
 export async function createWorldWithSplat(
   input: NewWorldInput,
   onProgress: (p: UploadProgress) => void,
@@ -87,11 +89,17 @@ export async function createWorldWithSplat(
   });
   if (!res.ok) throw new UploadError(res.status, await readError(res, "Could not create the world"));
   let manifest = (await res.json()) as WorldManifest;
-  if (!input.file) return manifest;
+  if (!input.file && !input.mesh) return manifest;
 
-  onStage("Uploading splat");
-  const file = renameFile(input.file, safeFilename(input.file.name));
-  await uploadSplatFile(manifest.id, manifest.version, file, onProgress, signal);
+  if (input.file) {
+    onStage("Uploading splat");
+    const file = renameFile(input.file, safeFilename(input.file.name));
+    await uploadSplatFile(manifest.id, manifest.version, file, onProgress, signal);
+  }
+  if (input.mesh) {
+    onStage("Uploading mesh");
+    await uploadMeshForWorld(manifest, input.mesh, onProgress, signal);
+  }
 
   onStage("Finishing");
   manifest = await patchWorld(manifest.id, { status: input.nianticSiteId ? "aligned" : "processing" }, signal);

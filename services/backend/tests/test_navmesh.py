@@ -129,3 +129,133 @@ def test_params_reject_nonsense():
     with pytest.raises(ValueError):
         Params.parse({'cell': 0.5, 'spacing': 0.5})
     assert Params.parse({'spacing': 2}).spacing == 2
+
+
+def test_seed_zero_is_the_default_the_viewer_sends():
+    assert Params.parse({'seed': 0}).seed == 0
+    assert Params.parse({'seed': 7.0}).seed == 7
+    for bad in (-1, 1.5, True):
+        with pytest.raises(ValueError):
+            Params.parse({'seed': bad})
+
+
+def test_empty_floor_never_becomes_walkable():
+    from ..app.routing.navmesh import largest_component
+    assert not largest_component(np.zeros((12, 12), dtype=bool)).any()
+    grid = Occupancy(box((2, .1, 2), (0, -.05, 0)), Params(agentRadius=3))
+    assert not grid.walkable.any()
+    assert build_graph(grid) == {'frame': 'world', 'nodes': [], 'edges': []}
+
+
+def test_clearance_expansion_stops_when_grid_is_covered(monkeypatch):
+    from ..app.routing import navmesh
+    calls = []
+    original = navmesh.dilate
+    def count(mask):
+        calls.append(1)
+        return original(mask)
+    monkeypatch.setattr(navmesh, 'dilate', count)
+    mask = np.zeros((15, 15), dtype=bool)
+    mask[7, 7] = True
+    distance = navmesh.distance_to(mask)
+    assert distance[0, 0] == 7 and distance[7, 7] == 0
+    assert len(calls) <= 8
+
+
+def test_floor_triangles_fill_sampling_holes_without_bridging_real_gaps(monkeypatch):
+    # Use no surface samples: the floor triangles themselves must support the walking area.
+    monkeypatch.setattr(Occupancy, 'sample', staticmethod(lambda mesh, params: (mesh.vertices, mesh.vertex_normals)))
+    floor = trimesh.util.concatenate([box((3, .1, 4), (-2, -.05, 0)), box((3, .1, 4), (2, -.05, 0))])
+    grid = Occupancy(floor, Params(cell=.1))
+    x, z = grid.cell_of([0, 0, 0])
+    assert not grid.floor[z, x]  # the metre-wide unscanned gap is never filled
+    assert grid.walkable.sum() * .01 > 7
+    assert grid.excluded_cells > 0  # disconnected floor is reported, not silently advertised as reachable
+
+
+def test_open_room_graph_is_sparse_and_has_no_duplicate_junctions():
+    grid = Occupancy(box((6, .1, 6), (0, -.05, 0)), Params())
+    graph = build_graph(grid)
+    # Retain coverage across the room without the original 19-dot / 45-link lattice.
+    assert 4 <= len(graph['nodes']) <= 12
+    assert len(graph['edges']) <= len(graph['nodes']) * 2
+    positions = [tuple(n['position']) for n in graph['nodes']]
+    assert len(set(positions)) == len(positions)
+    assert max(p[0] for p in positions) - min(p[0] for p in positions) > 3
+    assert max(p[2] for p in positions) - min(p[2] for p in positions) > 3
+    assert validate(grid, graph)[0] == []
+    assert graph == build_graph(grid)
+
+
+def test_named_places_keep_ids_and_connect_through_clear_floor(occupancy):
+    from ..app.routing.navmesh import preserve_places
+    graph = build_graph(occupancy)
+    original = {'nodes': [
+        {'id': 'start', 'name': 'Entrance', 'kind': 'entrance', 'floor': 'G', 'position': [-2, .2, 0]},
+        {'id': 'desk', 'name': 'Desk', 'kind': 'destination', 'floor': 'G', 'position': [2, .2, 0]},
+    ], 'edges': []}
+    reports = preserve_places(occupancy, graph, original)
+    assert all(p['connected'] for p in reports)
+    assert all(p['movedMetres'] <= .15 for p in reports)
+    assert all(n['floor'] == 'G' for n in graph['nodes'])
+    assert validate(occupancy, graph)[0] == []
+    adjacency = {n['id']: set() for n in graph['nodes']}
+    for e in graph['edges']:
+        adjacency[e['from']].add(e['to'])
+        adjacency[e['to']].add(e['from'])
+    seen, queue = set(), ['start']
+    while queue:
+        key = queue.pop()
+        if key not in seen:
+            seen.add(key)
+            queue.extend(adjacency[key])
+    assert 'desk' in seen
+
+
+def test_unreachable_places_are_kept_without_inventing_a_wall_crossing(occupancy):
+    from ..app.routing.navmesh import preserve_places
+    graph = build_graph(occupancy)
+    places = [{'id': 'wall', 'name': 'In wall', 'position': [0, .2, 2]},
+              {'id': 'outside', 'kind': 'destination', 'position': [50, .2, 50]}]
+    reports = preserve_places(occupancy, graph, {'nodes': places, 'edges': []})
+    assert not any(p['connected'] for p in reports)
+    assert all(p in graph['nodes'] for p in places)
+    assert not any(e['from'] in ('wall', 'outside') or e['to'] in ('wall', 'outside') for e in graph['edges'])
+
+
+def test_place_at_generated_junction_reuses_it_and_avoids_id_collisions(occupancy):
+    from ..app.routing.navmesh import preserve_places
+    graph = build_graph(occupancy)
+    position = graph['nodes'][0]['position']
+    count = len(graph['nodes'])
+    original = {'nodes': [{'id': 'gen-001', 'name': 'Reception', 'kind': 'destination', 'position': position}], 'edges': []}
+    reports = preserve_places(occupancy, graph, original)
+    assert reports[0]['connected']
+    assert len(graph['nodes']) == count
+    ids = [n['id'] for n in graph['nodes']]
+    assert len(ids) == len(set(ids))
+    assert all(e['from'] != e['to'] and e['from'] in ids and e['to'] in ids for e in graph['edges'])
+
+
+def test_generator_does_not_replace_vertical_or_restricted_routes(occupancy):
+    from ..app.routing.navmesh import preserve_places
+    for edge in ({'kind': 'stairs'}, {'accessible': False}, {'bidirectional': False}):
+        with pytest.raises(ValueError, match='restricted paths'):
+            preserve_places(occupancy, build_graph(occupancy), {'nodes': [], 'edges': [edge]})
+    with pytest.raises(ValueError, match='single-floor'):
+        preserve_places(occupancy, build_graph(occupancy), {'nodes': [{'floor': '1'}, {'floor': '2'}], 'edges': []})
+
+
+def test_validator_checks_body_clearance_not_just_wall_intersection(occupancy):
+    zs, xs = np.nonzero(occupancy.floor & ~occupancy.blocked & ~occupancy.walkable)
+    x, z = occupancy.centre(int(xs[0]), int(zs[0]))
+    graph = {'nodes': [{'id': 'tight', 'position': [x, occupancy.floor_y, z]}], 'edges': []}
+    assert any(i['kind'] == 'node-clearance' for i in validate(occupancy, graph)[0])
+
+
+def test_line_clearance_is_direction_independent_and_does_not_cut_corners():
+    from ..app.routing.navmesh import supercover
+    for x in range(-8, 9):
+        for z in range(-8, 9):
+            assert set(supercover((0, 0), (x, z))) == set(supercover((x, z), (0, 0)))
+    assert set(supercover((0, 0), (1, 1))) == {(0, 0), (1, 0), (0, 1), (1, 1)}

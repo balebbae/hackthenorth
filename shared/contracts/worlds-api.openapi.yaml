@@ -157,11 +157,17 @@ paths:
     put:
       tags: [worlds]
       summary: Replace the navigation graph
+      parameters:
+        - in: header
+          name: If-Match
+          required: false
+          schema: { type: string }
+          description: Proposal sourceRevision; rejects acceptance if the graph, mesh or alignment changed.
       description: |
         Written by the web viewer when stops are tagged. Replaces
         `navigationGraph` wholesale (validate node ids are unique and every
         edge references a node) and bumps `updatedAt`. Routing uses this graph
-        immediately; no cache.
+        immediately; no cache. An optional If-Match header must match the proposal sourceRevision; otherwise returns 412.
       requestBody:
         required: true
         content:
@@ -173,6 +179,8 @@ paths:
           content:
             application/json:
               schema: { $ref: "world.schema.json" }
+        "412":
+          description: The proposal is stale; generate again before accepting
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -212,7 +220,7 @@ paths:
                   graph: { $ref: "world.schema.json#/properties/navigationGraph" }
                   floorY: { type: number }
                   checkedAt: { type: string, format: date-time }
-        "409": { description: World has no mesh asset }
+        "409": { description: World has no mesh asset or generation inputs changed }
         "422": { description: Bad parameters or no floor found }
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -235,10 +243,13 @@ paths:
       summary: Propose a navigation graph from the mesh
       description: |
         Occupancy grid over `assets.mesh` (floor detection, agent-radius
-        erosion, largest connected component) → waypoint lattice → simplified
-        corridor graph. Deterministic for a given mesh and `params`. Writes
+        erosion, largest connected component) → sparse walking graph. Named places
+        retain their IDs and are connected only through verified free floor. Disconnected
+        places and excluded floor area are reported. Multiple floors, vertical links
+        and restricted paths require a manually authored graph. Deterministic for a
+        given mesh, graph and `params`. Writes
         `worlds/<id>/navmesh.json` and returns it; `navigationGraph` is NOT
-        touched — a reviewer accepts the proposal with `PUT /graph`.
+        touched — a reviewer accepts with `PUT /graph` and `If-Match: sourceRevision`.
       requestBody:
         content:
           application/json:
@@ -253,8 +264,8 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/NavmeshProposal" }
-        "409": { description: World has no mesh asset }
-        "422": { description: Bad parameters or no walkable floor found }
+        "409": { description: World has no mesh asset or generation inputs changed }
+        "422": { description: Bad parameters, no walkable floor, or unsupported multi-floor or restricted graph }
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
@@ -710,7 +721,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [node-off-floor, node-edge-of-floor, node-in-obstacle, node-height, edge-through-wall, edge-off-floor]
+          enum: [node-off-floor, node-edge-of-floor, node-in-obstacle, node-height, node-clearance, edge-through-wall, edge-off-floor, edge-clearance]
         node: { type: string, description: Node issues }
         from: { type: string, description: Edge issues }
         to: { type: string }
@@ -744,7 +755,22 @@ components:
             rows: { type: array, items: { type: string } }
             walkableCells: { type: integer }
             floorCells: { type: integer }
+            excludedWalkableCells: { type: integer, description: Separate walkable cells outside the main connected floor }
         graph: { $ref: "world.schema.json#/properties/navigationGraph" }
+        sourceRevision: { type: string, description: Opaque quoted revision for If-Match on acceptance }
+        proposalIssues:
+          type: array
+          items: { $ref: "#/components/schemas/GraphIssue" }
+        places:
+          type: array
+          items:
+            type: object
+            required: [id, name, connected, movedMetres]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              connected: { type: boolean }
+              movedMetres: { type: number }
         currentGraphIssues:
           type: array
           description: The stored `navigationGraph` checked against the same grid

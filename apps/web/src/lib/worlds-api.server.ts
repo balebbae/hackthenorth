@@ -196,12 +196,12 @@ export async function openAsset(segments: string[]): Promise<Response | null> {
 }
 
 /** Replace the world's navigation graph (stops + edges tagged in the viewer). Returns the updated manifest. */
-export async function saveGraph(id: string, graph: NavigationGraph): Promise<WorldManifest | null> {
+export async function saveGraph(id: string, graph: NavigationGraph, sourceRevision?: string | null): Promise<WorldManifest | null> {
   if (!isSafeSegment(id)) return null;
   if (API_URL) {
     const res = await fetch(`${API_URL}/worlds/${encodeURIComponent(id)}/graph`, {
       method: "PUT",
-      headers: { ...apiHeaders(), "content-type": "application/json" },
+      headers: { ...apiHeaders(), "content-type": "application/json", ...(sourceRevision ? { "if-match": sourceRevision } : {}) },
       body: JSON.stringify(graph),
       cache: "no-store",
     });
