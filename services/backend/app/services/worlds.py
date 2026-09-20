@@ -135,7 +135,86 @@ def vertical_phrase(kind, from_floor, to_floor):
     return f'Take {name} ahead.'
 
 
-def compute_route(world, request):
+# Reviewed landmarks this close to a turn node are named in the cue; this close to a leg are "passed".
+LANDMARK_AT_METRES = 3.0
+LANDMARK_BESIDE_METRES = 2.5
+
+
+def side_of(position, a, b):
+    """'left' or 'right' of the directed segment ab, viewed from above."""
+    angle = math.radians(heading(a, b))
+    right = (position[0]-a[0])*math.cos(angle) + (position[2]-a[2])*math.sin(angle)
+    return 'right' if right > 0 else 'left'
+
+
+def leg_landmarks(landmarks, a, b, exclude, first):
+    """Landmark refs for the leg a→b: one 'at' the turn node (not on the first leg, where the
+    traveller is only near it), then anything the leg passes close by, in walking order."""
+    refs, passed = [], []
+    for mark in landmarks:
+        if mark['id'] in exclude:
+            continue
+        if not first and horizontal(mark['position'], a['position']) <= LANDMARK_AT_METRES:
+            if not any(r['relation'] == 'at' for r in refs):
+                refs.append({'id': mark['id'], 'name': mark['name'], 'relation': 'at'})
+            continue
+        distance, _, fraction = projection(mark['position'], a['position'], b['position'])
+        if distance <= LANDMARK_BESIDE_METRES and 0.15 <= fraction <= 0.85:
+            passed.append((fraction, {'id': mark['id'], 'name': mark['name'],
+                                      'relation': side_of(mark['position'], a['position'], b['position'])}))
+    refs.extend(ref for _, ref in sorted(passed, key=lambda item: item[0])[:2])
+    return refs
+
+
+def spoken(kind, metres, refs=()):
+    """`phrase` with reviewed landmarks woven in: 'Left at Reception desk, then continue 12 metres,
+    passing Bottle filler on your right.'"""
+    text = phrase(kind, metres)
+    at = next((r for r in refs if r['relation'] == 'at'), None)
+    if at is not None:
+        text = text.replace(', then continue', f" at {at['name']}, then continue", 1) if ', then continue' in text \
+            else text.replace('Continue straight', f"Continue straight past {at['name']}", 1)
+    passing = [f"{r['name']} on your {r['relation']}" for r in refs if r['relation'] != 'at']
+    if passing:
+        text = text[:-1] + ', passing ' + ' and '.join(passing) + '.'
+    return text
+
+
+def arrival(node, landmarks):
+    text = f"You have arrived at {node['name']}." if node.get('name') else 'You have arrived.'
+    refs = []
+    for mark in landmarks:
+        if mark['id'] != node['id'] and horizontal(mark['position'], node['position']) <= LANDMARK_AT_METRES:
+            refs.append({'id': mark['id'], 'name': mark['name'], 'relation': 'at'})
+            text += f" {mark['name']} is right here."
+            break
+    return text, refs
+
+
+def reviewed_landmarks(store, world):
+    """Published, human-reviewed annotations with a world position: approved destinations sit on the
+    graph as nodes; noted context carries its own point. Hazards and temporary observations are
+    never spoken as landmarks (they are recorded evidence, not live state)."""
+    world_id = world['id']
+    nodes = {n['id']: n for n in world_graph(world)['nodes']}
+    marks = []
+    if store.path('worlds', world_id, 'annotations.json').exists():
+        for record in store.read('worlds', world_id, 'annotations.json'):
+            evidence = record.get('annotation') or {}
+            node = nodes.get(record['id'])
+            if node is None or evidence.get('permanence') == 'temporary' \
+                    or evidence.get('navigation_role') in ('potential_hazard', 'context'):
+                continue
+            marks.append({'id': record['id'], 'name': record['name'], 'position': node['position']})
+    if store.path('worlds', world_id, 'context-notes.json').exists():
+        for note in store.read('worlds', world_id, 'context-notes.json'):
+            if note.get('navigation_role') != 'landmark' or note.get('permanence') == 'temporary':
+                continue
+            marks.append({'id': note['id'], 'name': note['name'], 'position': [note['x'], note['y'], note['z']]})
+    return marks
+
+
+def compute_route(world, request, landmarks=()):
     check(request, 'navigation.schema.json', '#/$defs/routeRequest')
     graph = world_graph(world)
     nodes = {n['id']: node_ref(n) for n in graph['nodes']}
@@ -208,18 +287,25 @@ def compute_route(world, request):
             leg['headingDeg'] = legs[i-1]['headingDeg'] if i else (request.get('headingDeg') or 0)
     instructions = []
     facing = request.get('headingDeg')
+    on_path = set(path)
     for i, leg in enumerate(legs):
         # The first turn is relative to the traveller's heading when known, not to a phantom previous leg.
         reference = legs[i-1]['headingDeg'] if i else facing
+        refs = []
         if leg.get('kind'):
             kind, text = leg['kind'], vertical_phrase(leg['kind'], floors.get(leg['from']), floors.get(leg['to']))
         else:
             angle = relative(leg['headingDeg'], reference) if reference is not None else 0
-            kind, text = turn(angle), phrase(turn(angle), leg['distanceMetres'])
-        instructions.append({'atNode': leg['from'], 'turn': kind, 'text': text,
-                             'distanceMetres': legs[i-1]['distanceMetres'] if i else 0})
-    instructions.append({'atNode': destination, 'turn': 'arrive', 'text': 'You have arrived.',
-                         'distanceMetres': legs[-1]['distanceMetres'] if legs else 0})
+            refs = leg_landmarks(landmarks, nodes[leg['from']], nodes[leg['to']], on_path, i == 0)
+            kind, text = turn(angle), spoken(turn(angle), leg['distanceMetres'], refs)
+        instruction = {'atNode': leg['from'], 'turn': kind, 'text': text,
+                       'distanceMetres': legs[i-1]['distanceMetres'] if i else 0}
+        if refs:
+            instruction['landmarks'] = refs
+        instructions.append(instruction)
+    text, refs = arrival(nodes[destination], landmarks)
+    instructions.append({'atNode': destination, 'turn': 'arrive', 'text': text,
+                         'distanceMetres': legs[-1]['distanceMetres'] if legs else 0, **({'landmarks': refs} if refs else {})})
     return {'nodes': [nodes[key] for key in path], 'legs': legs,
             'totalMetres': costs[destination], 'instructions': instructions}
 
@@ -308,6 +394,9 @@ class WorldNavigation:
     def __init__(self, store):
         self.store = store
 
+    def route(self, world, request):
+        return compute_route(world, request, reviewed_landmarks(self.store, world))
+
     def metadata(self, session_id):
         try:
             return self.store.read('sessions', session_id + '-state.json')
@@ -333,15 +422,20 @@ class WorldNavigation:
         if session['state'] == 'ended':
             raise HTTPException(409, 'Session ended')
 
-    async def destination(self, session_id, destination):
+    async def destination(self, session_id, destination, accessible_only=None):
         async with self.store.lock('session:' + session_id):
             session = self.store.session(session_id)
             self.ensure_active(session)
             world = self.store.world(session['worldId'])
             if destination not in {n['id'] for n in world_graph(world)['nodes']}:
                 raise HTTPException(404, 'Destination node not found')
+            if accessible_only is not None:
+                if accessible_only:
+                    session['accessibleOnly'] = True
+                else:
+                    session.pop('accessibleOnly', None)
             if 'lastPose' in session and session['state'] != 'lost':
-                session['route'] = compute_route(world, self.route_request(session, session['lastPose'], destination))
+                session['route'] = self.route(world, self.route_request(session, session['lastPose'], destination))
                 session['state'] = 'navigating'
             else:
                 session.pop('route', None)
@@ -388,7 +482,12 @@ class WorldNavigation:
         ahead = horizontal(position, target)
         angle = relative(heading(position, target), facing) if facing is not None and ahead > 0.3 else 0
         kind = turn(angle)
-        return {'atNode': nodes[index]['id'], 'turn': kind, 'text': phrase(kind, ahead), 'distanceMetres': ahead}, angle
+        # Only what is still ahead: the turn-node landmark was for the turn already made.
+        refs = [r for r in route['instructions'][index].get('landmarks', []) if r['relation'] != 'at']
+        cue = {'atNode': nodes[index]['id'], 'turn': kind, 'text': spoken(kind, ahead, refs), 'distanceMetres': ahead}
+        if refs:
+            cue['landmarks'] = refs
+        return cue, angle
 
     async def pose(self, session_id, body, allow_no_destination=False):
         check(body, 'navigation.schema.json', '#/$defs/poseUpdate')
@@ -421,7 +520,7 @@ class WorldNavigation:
             else:
                 changed = meta.get('graph_hash') != self.graph_hash(world)
                 if changed or 'route' not in session or session['state'] == 'lost':
-                    session['route'] = compute_route(world, self.route_request(session, body['pose'], session['destination']))
+                    session['route'] = self.route(world, self.route_request(session, body['pose'], session['destination']))
                     meta.update(leg=0, off_since=None, graph_hash=self.graph_hash(world))
                     rerouted = True
                 route = session['route']
@@ -446,7 +545,7 @@ class WorldNavigation:
                 if state == 'off-route':
                     meta['off_since'] = meta.get('off_since') or timestamp
                     if timestamp-meta['off_since'] >= 5:
-                        session['route'] = compute_route(world, self.route_request(session, body['pose'], session['destination']))
+                        session['route'] = self.route(world, self.route_request(session, body['pose'], session['destination']))
                         meta.update(leg=0, off_since=timestamp)
                         rerouted = True
                         route = session['route']

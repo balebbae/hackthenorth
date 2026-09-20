@@ -2,9 +2,9 @@
 from fastapi import HTTPException
 from ..models import Pose, Localization
 from ..integrations.openai.tools import REGISTRY
-from ..routing.heading import horizontal, legacy_heading, yaw
+from ..routing.heading import bearing, horizontal, legacy_heading, relative, yaw
 from .sessions import Session
-from .worlds import world_graph, compute_route
+from .worlds import world_graph, reviewed_landmarks
 
 
 class WorldAgentTools:
@@ -53,7 +53,22 @@ class WorldAgentTools:
         if name == 'get_current_location':
             nearest = min(nodes.values(), key=lambda n: horizontal(n['position'], data['lastPose']['position'])) if localized and nodes else None
             result = {'pose': data.get('lastPose') if localized else None, 'localized': localized,
-                      'frame': 'world', 'nearestNode': nearest}
+                      'frame': 'world', 'nearestNode': nearest, 'nearby_landmarks': []}
+            if localized:
+                # Human-reviewed annotations only, described relative to the traveller's heading so the
+                # assistant never has to convert image-relative or map-relative directions itself.
+                pose = data['lastPose']
+                facing = yaw(pose['rotation'])
+                for mark in reviewed_landmarks(self.worlds, world):
+                    metres = horizontal(pose['position'], mark['position'])
+                    if metres > 10:
+                        continue
+                    entry = {'id': mark['id'], 'name': mark['name'], 'distance_m': round(metres, 1)}
+                    if facing is not None and metres > 0.3:
+                        entry['relative_bearing_deg'] = round(relative(bearing(pose['position'], mark['position']), facing))
+                    result['nearby_landmarks'].append(entry)
+                    sources.append({'type': 'map_entity', 'id': mark['id']})
+                result['nearby_landmarks'].sort(key=lambda entry: entry['distance_m'])
         elif name == 'get_navigation_state':
             result = {'state': data['state'], 'destination': data.get('destination'),
                       'route': data.get('route'), 'progress': data.get('lastProgress'),
@@ -72,7 +87,7 @@ class WorldAgentTools:
                 record = {**node, 'route_distance_m': None}
                 if localized:
                     try:
-                        route = compute_route(world, self.navigation.route_request(data['lastPose'], node['id']))
+                        route = self.navigation.route(world, self.navigation.route_request(data, data['lastPose'], node['id']))
                         record['route_distance_m'] = route['totalMetres']
                     except HTTPException:
                         record['unreachable'] = True
@@ -84,11 +99,10 @@ class WorldAgentTools:
         elif name == 'set_destination':
             if not localized:
                 raise ValueError('A fresh localized pose is required before navigation')
-            if args.accessible_only:
-                raise ValueError('This world contract has no edge accessibility metadata; cannot verify a step-free route. Ask before using an unverified route.')
-            result = await self.navigation.destination(session.session_id, args.destination_id)
+            result = await self.navigation.destination(session.session_id, args.destination_id, args.accessible_only)
             self.refresh(session.session_id)
-            actions.append({'type': 'set_destination', 'destination_id': args.destination_id, 'accessible_only': False})
+            actions.append({'type': 'set_destination', 'destination_id': args.destination_id,
+                            'accessible_only': args.accessible_only})
             sources.append({'type': 'map_entity', 'id': args.destination_id})
         else:
             return await self.fallback.execute(session, name, arguments)

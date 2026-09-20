@@ -117,8 +117,22 @@
       "properties": {
         "atNode": { "type": "string" },
         "turn": { "type": "string", "enum": ["straight", "slight-left", "left", "sharp-left", "slight-right", "right", "sharp-right", "u-turn", "stairs", "escalator", "elevator", "ramp", "arrive"], "description": "Turn bucket, or the vertical transition to take (stairs / escalator / elevator / ramp) when the next leg changes floors." },
-        "text": { "type": "string", "description": "Short spoken cue, e.g. 'Left in 3 metres' or 'Take the elevator to floor 2'." },
-        "distanceMetres": { "type": "number", "description": "Distance from the previous instruction." }
+        "text": { "type": "string", "description": "Short spoken cue, e.g. 'Left at Reception desk, then continue 12 metres, passing Bottle filler on your right.' or 'Take the elevator to floor 2'." },
+        "distanceMetres": { "type": "number", "description": "Distance from the previous instruction." },
+        "landmarks": {
+          "type": "array",
+          "description": "Human-reviewed annotations woven into `text`: `at` sits within 3 m of the turn node; `left`/`right` is passed beside the leg. Positions come from the published graph/notes, never from the language model.",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "relation"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "relation": { "type": "string", "enum": ["at", "left", "right"] }
+            }
+          }
+        }
       }
     },
 
