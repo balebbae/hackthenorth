@@ -10,6 +10,8 @@ final class SidePipeline: ObservableObject {
     @Published private(set) var zones: ObstacleZones = .empty
     @Published private(set) var lastCommand: HapticCommand = .none
     @Published private(set) var reportsSent = 0
+    /// One-off buzzes relayed from the backend's public /haptics endpoints.
+    @Published private(set) var pulsesReceived = 0
     /// What the structure estimator saw on the last frame (non-LiDAR phones).
     @Published private(set) var structureStats = StructureObstacleEstimator.Stats()
     private var wantsSensing = false
@@ -90,6 +92,12 @@ final class SidePipeline: ObservableObject {
     }
 
     private func handle(_ message: PeerMessage) {
+        if case .pulse(let pulse) = message {
+            guard pulse.role == role else { return }
+            pulsesReceived += 1
+            haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
+            return
+        }
         guard case .haptic(let command) = message else { return }
         lastCommand = command
         if let range = role == .back ? command.backRange : command.sideRange {

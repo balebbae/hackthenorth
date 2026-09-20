@@ -53,6 +53,11 @@ final class FrontPipeline: ObservableObject {
     private var staticMap: StaticMap?
     private var mapWorldId: String?
     private var mapTask: Task<Void, Never>?
+    /// Polls the backend for externally triggered buzzes and relays them.
+    private var pulseTask: Task<Void, Never>?
+    private var lastPulseId = 0
+    @Published private(set) var pulsesRelayed = 0
+    var pulsePollInterval: TimeInterval = 0.4
     private var policy = ObstacleCuePolicy()
     private var lastDetection: TimeInterval = 0
     private let detectionInterval: TimeInterval = 1.0 / 15
@@ -208,6 +213,7 @@ final class FrontPipeline: ObservableObject {
     private func startLocalization(settings: CameraSettings, deviceId: String) {
         reporter.configure(settings: settings, deviceId: deviceId, role: .front)
         loadStaticMap(settings: settings)
+        pollPulses(settings: settings)
         usingNSDK = settings.canLocalizeWithNSDK && NianticLocalizer.isAvailable && arSession.state == .running
         if usingNSDK {
             // The SDK submits frames itself at the configured rate; the REST loop stays off.
@@ -255,7 +261,38 @@ final class FrontPipeline: ObservableObject {
         }
     }
 
+    /// Every `pulsePollInterval`, fetch buzzes queued through the backend's public
+    /// /haptics endpoints: buzz this phone for `front`, relay the rest over the link.
+    private func pollPulses(settings: CameraSettings) {
+        pulseTask?.cancel()
+        guard let base = settings.backendBaseURL, !settings.backendAPIKey.isEmpty else { return }
+        let client = WanderBackendClient(baseURL: base, apiKey: settings.backendAPIKey)
+        pulseTask = Task { [weak self] in
+            while !Task.isCancelled {
+                if let self, let feed = try? await client.pendingPulses(since: self.lastPulseId) {
+                    for pulse in feed.pulses {
+                        self.lastPulseId = max(self.lastPulseId, pulse.id)
+                        guard let role = pulse.role == "chest" ? .front : DeviceRole(rawValue: pulse.role) else { continue }
+                        self.relay(PulseCommand(id: pulse.id, role: role, ms: pulse.ms))
+                    }
+                    if feed.last > self.lastPulseId { self.lastPulseId = feed.last }
+                }
+                try? await Task.sleep(for: .seconds(self?.pulsePollInterval ?? 0.4))
+            }
+        }
+    }
+
+    func relay(_ pulse: PulseCommand) {
+        pulsesRelayed += 1
+        if pulse.role == .front {
+            haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
+        } else {
+            link.send(.pulse(pulse), to: [pulse.role])
+        }
+    }
+
     private func stopLocalization() {
+        pulseTask?.cancel()
         mapTask?.cancel()
         queryLoop.stop()
         localizer.stop()

@@ -70,6 +70,12 @@ final class SideHapticTests: XCTestCase {
         XCTAssertEqual(merged[.left]?.nearest, 1.0)
     }
 
+    func testPulseMessageRoundTrips() throws {
+        let message = PeerMessage.pulse(PulseCommand(id: 7, role: .back, ms: 300))
+        let data = try JSONEncoder().encode(message)
+        XCTAssertEqual(try JSONDecoder().decode(PeerMessage.self, from: data), message)
+    }
+
     func testCommandRoundTripsWithPerSideDistances() throws {
         let command = HapticCommand(front: false, left: true, right: true, back: false, distance: 0.3,
                                     leftDistance: 0.3, rightDistance: 0.35, backDistance: nil, sideRange: 0.4, backRange: 0.3)
