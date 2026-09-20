@@ -9,6 +9,7 @@ import type {
   LocalizationMarker,
   MeshStatus,
   SplatViewerEngine,
+  ViewerLayer,
   ViewerMode,
   ViewerSelection,
   ViewerTool,
@@ -24,16 +25,17 @@ export type ViewerState = {
   mode: ViewerMode;
   tool: ViewerTool;
   showGraph: boolean;
-  /** Collision-mesh layer (`assets.mesh`): load state and whether it is drawn. */
+  /** Collision-mesh layer (`assets.mesh`): load state, independent of whether it is the drawn layer. */
   mesh: { status: MeshStatus; triangles: number | null; error: string | null };
-  showMesh: boolean;
+  /** Which scan the canvas draws — the splat or the mesh. */
+  layer: ViewerLayer;
 };
 
 export type ViewerApi = {
   setMode: (mode: ViewerMode) => void;
   setTool: (tool: ViewerTool) => void;
   setShowGraph: (visible: boolean) => void;
-  setShowMesh: (visible: boolean) => void;
+  setLayer: (layer: ViewerLayer) => void;
   resetView: () => void;
   focusNode: (id: string) => void;
   focusNote: (id: string) => void;
@@ -84,7 +86,7 @@ const INITIAL: ViewerState = {
   tool: "navigate",
   showGraph: true,
   mesh: { status: "none", triangles: null, error: null },
-  showMesh: false,
+  layer: "splat",
 };
 
 /**
@@ -113,7 +115,9 @@ export function useSplatViewer({
 }: Options) {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<SplatViewerEngine | null>(null);
-  const [state, setState] = useState<ViewerState>(INITIAL);
+  // A world with a mesh but no splat has only one layer worth showing; start on it.
+  const initialLayer: ViewerLayer = splatUrl ? "splat" : "mesh";
+  const [state, setState] = useState<ViewerState>(() => ({ ...INITIAL, layer: initialLayer }));
   const [attempt, setAttempt] = useState(0);
   const [engineReady, setEngineReady] = useState(0);
 
@@ -125,7 +129,7 @@ export function useSplatViewer({
     mode: INITIAL.mode,
     tool: INITIAL.tool,
     showGraph: INITIAL.showGraph,
-    showMesh: INITIAL.showMesh,
+    layer: initialLayer,
     onPick,
     onFollowModeChange,
   });
@@ -181,7 +185,7 @@ export function useSplatViewer({
         engine.setMode(latest.current.mode);
         engine.setTool(latest.current.tool);
         engine.setShowGraph(latest.current.showGraph);
-        engine.setShowMesh(latest.current.showMesh);
+        engine.setLayer(latest.current.layer);
         engineRef.current = engine;
         setEngineReady((n) => n + 1); // re-run the data sync effects below
       })
@@ -246,10 +250,10 @@ export function useSplatViewer({
         engineRef.current?.setShowGraph(visible);
         setState((s) => ({ ...s, showGraph: visible }));
       },
-      setShowMesh: (visible) => {
-        latest.current.showMesh = visible;
-        engineRef.current?.setShowMesh(visible);
-        setState((s) => ({ ...s, showMesh: visible }));
+      setLayer: (layer) => {
+        latest.current.layer = layer;
+        engineRef.current?.setLayer(layer);
+        setState((s) => ({ ...s, layer }));
       },
       resetView: () => {
         latest.current.mode = "orbit";
