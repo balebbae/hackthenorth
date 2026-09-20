@@ -32,6 +32,11 @@ final class SidePipeline: ObservableObject {
     private let reportInterval: TimeInterval = 0.2
     private var forwarding = Set<AnyCancellable>()
     private var statusTask: Task<Void, Never>?
+    /// Fallback for externally triggered pulses when the front phone is not linked:
+    /// poll the backend directly for this mount's role.
+    private var pollTask: Task<Void, Never>?
+    private var lastPulseId = 0
+    @Published private(set) var pollingBackend = false
 
     /// Side phones never run the camera. Their buzzes come from the front phone's
     /// localisation against the world map (walls and annotated hazards beside the wearer).
@@ -51,6 +56,7 @@ final class SidePipeline: ObservableObject {
 
     func start(settings: CameraSettings) {
         link.start()
+        pollPulses(settings: settings)
         detector.maxRange = Float(settings.obstacleRangeMeters)
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         wantsSensing = canSense && settings.sidePhonesSenseObstacles
@@ -68,12 +74,38 @@ final class SidePipeline: ObservableObject {
         }
     }
 
+    private func pollPulses(settings: CameraSettings) {
+        pollTask?.cancel()
+        pollingBackend = false
+        guard let base = settings.backendBaseURL, !settings.backendAPIKey.isEmpty else { return }
+        let client = WanderBackendClient(baseURL: base, apiKey: settings.backendAPIKey)
+        pollingBackend = true
+        pollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self else { break }
+                guard let feed = try? await client.pendingPulses(since: self.lastPulseId) else { continue }
+                if feed.last < self.lastPulseId { self.lastPulseId = feed.last }
+                // Linked: the front relays pulses over the link, so only advance the cursor.
+                let linked = self.link.connectedRoles.contains(.front)
+                for pulse in feed.pulses {
+                    self.lastPulseId = max(self.lastPulseId, pulse.id)
+                    guard !linked, pulse.role == self.role.rawValue else { continue }
+                    self.pulsesReceived += 1
+                    print("[pulse] received #\(pulse.id) \(pulse.ms) ms via backend")
+                    self.haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
+                }
+            }
+        }
+    }
+
     func stop() {
         link.stop()
         arSession.stop()
         haptics.stopPulsing()
         wantsSensing = false
         statusTask?.cancel()
+        pollTask?.cancel()
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
