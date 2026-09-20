@@ -38,9 +38,16 @@ class Params:
         for field, default in asdict(cls()).items():
             if field in body:
                 value = body[field]
-                if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or value <= 0:
-                    raise ValueError(f'{field} must be a positive number')
-                values[field] = int(value) if field == 'seed' else float(value)
+                if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+                    raise ValueError(f'{field} must be a number')
+                if field == 'seed':
+                    if value < 0 or value != int(value):
+                        raise ValueError('seed must be a non-negative integer')
+                    values[field] = int(value)
+                else:
+                    if value <= 0:
+                        raise ValueError(f'{field} must be a positive number')
+                    values[field] = float(value)
         params = cls(**values)
         if not 0.05 <= params.cell <= 1:
             raise ValueError('cell must be between 0.05 and 1 metre')
