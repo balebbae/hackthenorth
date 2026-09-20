@@ -26,6 +26,7 @@ import {
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { InspectorPanel, type PanelTab } from "./InspectorPanel";
+import { LayerToggle } from "./LayerToggle";
 import type { FollowMode, LocalizationMarker, ViewerMode, ViewerSelection, ViewerTool } from "./SplatViewerEngine";
 import { PHONE_ONLINE_MS, useLocalizationFeed, useNow } from "./useLocalizationFeed";
 import { useMeshTools } from "./useMeshTools";
@@ -92,7 +93,7 @@ export function WorldViewer({
   source,
 }: Props) {
   /* ------------------------------------------------------------ edit state */
-  // A graph written from the Mesh tab shows immediately; the server copy takes over on the next refresh.
+  // A graph written from the Waypoints tab shows immediately; the server copy takes over on the next refresh.
   const [saved, setSaved] = useState<{ graph: NavigationGraph; over: WorldManifest | null } | null>(null);
   const graph = useMemo<NavigationGraph>(
     () => (saved && saved.over === manifest ? saved.graph : manifest?.navigationGraph ?? EMPTY_GRAPH),
@@ -390,6 +391,19 @@ export function WorldViewer({
               </button>
             ))}
           </div>
+          {meshUrl && (
+            <LayerToggle
+              layer={state.layer}
+              onLayer={(next) => {
+                api.setLayer(next);
+                focusViewer();
+              }}
+              hasSplat={!!splatUrl}
+              meshReady={state.mesh.status === "ready"}
+              disabled={!interactive}
+              compact
+            />
+          )}
           <div className="flex items-center gap-0.5 rounded-lg border border-hairline bg-pure-white p-0.5">
             {connectInfo && (
               <ToolButton icon="phone" label="Connect a phone (QR code)" onClick={() => setConnectOpen(true)} />
@@ -402,15 +416,6 @@ export function WorldViewer({
                 pressed={state.showGraph}
                 disabled={!interactive}
                 onClick={() => api.setShowGraph(!state.showGraph)}
-              />
-            )}
-            {meshUrl && (
-              <ToolButton
-                icon="layers"
-                label={state.showMesh ? "Hide mesh" : "Show mesh"}
-                pressed={state.showMesh}
-                disabled={state.mesh.status !== "ready"}
-                onClick={() => api.setShowMesh(!state.showMesh)}
               />
             )}
             <ToolButton
@@ -451,12 +456,9 @@ export function WorldViewer({
                 connectInfo,
                 onConnectPhone: () => setConnectOpen(true),
               }}
-              mesh={{
+              waypoints={{
                 manifest,
                 graph,
-                mesh: state.mesh,
-                showMesh: state.showMesh,
-                onShowMesh: api.setShowMesh,
                 tools: meshTools,
                 selection,
                 onSelect: setSelection,
@@ -469,10 +471,7 @@ export function WorldViewer({
                   setNotice({ tone: "ok", text });
                   router.refresh();
                 },
-                onMeshUploaded: () => {
-                  setNotice({ tone: "ok", text: "Mesh uploaded — loading the layer" });
-                  router.refresh();
-                },
+                onUploadMesh: manifest ? () => setUploadOpen(true) : undefined,
                 source,
               }}
               name={name}
@@ -591,8 +590,8 @@ export function WorldViewer({
           mode={{ kind: "existing", manifest }}
           onClose={() => setUploadOpen(false)}
           onDone={() => {
-            setNotice({ tone: "ok", text: "Splat uploaded — reloading the scene" });
-            router.refresh(); // re-reads the manifest; the new splatUrl remounts the engine
+            setNotice({ tone: "ok", text: "Upload saved — reloading the scene" });
+            router.refresh(); // re-reads the manifest; a new splat / mesh path remounts the engine
           }}
         />
       )}

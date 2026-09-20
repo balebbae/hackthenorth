@@ -81,12 +81,12 @@ export function useMeshTools(worldId: string, manifest: WorldManifest | null, gr
 
   /** Replace the world's graph (with the snapped copy or the accepted proposal); returns the new manifest. */
   const saveGraph = useCallback(
-    async (next: NavigationGraph): Promise<WorldManifest | null> => {
+    async (next: NavigationGraph, sourceRevision?: string): Promise<WorldManifest | null> => {
       setSaving({ running: true, error: null });
       try {
         const res = await fetch(`${base}/graph`, {
           method: "PUT",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", ...(sourceRevision ? { "if-match": sourceRevision } : {}) },
           body: JSON.stringify(next),
         });
         if (!res.ok) throw new Error(await readError(res, "Could not save the graph"));
@@ -102,7 +102,7 @@ export function useMeshTools(worldId: string, manifest: WorldManifest | null, gr
 
   /** Nodes / edges the validator rejected in the graph currently drawn (live or proposal). */
   const flags = useMemo(() => {
-    const issues: GraphIssue[] = preview && proposal ? [] : validation?.issues ?? [];
+    const issues: GraphIssue[] = preview && proposal ? proposal.proposalIssues ?? [] : validation?.issues ?? [];
     if (issues.length === 0) return undefined;
     const nodes = new Set<string>();
     for (const issue of issues) if ("node" in issue) nodes.add(issue.node);

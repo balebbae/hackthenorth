@@ -43,12 +43,13 @@ export type NavmeshGrid = {
   rows: string[];
   walkableCells: number;
   floorCells: number;
+  excludedWalkableCells?: number;
 };
 
 export type GraphIssue =
-  | { kind: "node-off-floor" | "node-edge-of-floor" | "node-in-obstacle"; node: string; message: string }
+  | { kind: "node-off-floor" | "node-edge-of-floor" | "node-in-obstacle" | "node-clearance"; node: string; message: string }
   | { kind: "node-height"; node: string; offsetMetres: number; message: string }
-  | { kind: "edge-through-wall" | "edge-off-floor"; from: string; to: string; at?: Vec3; message: string };
+  | { kind: "edge-through-wall" | "edge-off-floor" | "edge-clearance"; from: string; to: string; at?: Vec3; message: string };
 
 export type NavmeshProposal = {
   schema: "wander.navmesh/v1";
@@ -60,6 +61,10 @@ export type NavmeshProposal = {
   graph: NavigationGraph;
   /** Problems the grid found in the world's *current* graph, for comparison. */
   currentGraphIssues: GraphIssue[];
+  /** Optional for proposals cached before the generator upgrade. */
+  proposalIssues?: GraphIssue[];
+  sourceRevision?: string;
+  places?: { id: string; name: string; connected: boolean; movedMetres: number }[];
   createdAt: string;
 };
 
@@ -83,6 +88,9 @@ export function issueLabel(issue: GraphIssue): string {
       return "Edge of floor";
     case "node-in-obstacle":
       return "Inside an obstacle";
+    case "node-clearance":
+    case "edge-clearance":
+      return "Needs more clearance";
     case "node-height":
       return "Wrong height";
   }

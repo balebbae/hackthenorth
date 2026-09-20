@@ -4,14 +4,15 @@ Deterministic geometry only. The mesh (a Scaniverse `.glb`, single floor, world 
 splat frame + `alignment`) is sampled onto an XZ grid; a cell is *floor* when an up-facing
 surface sits near the floor height and *blocked* when anything solid occupies the band a
 person walks through. The walkable set is eroded by the agent radius, its largest connected
-component keeps only reachable space, and a waypoint lattice snapped to the highest-clearance
-cell in each block is linked by line-of-sight and simplified into a corridor skeleton. The
+component keeps only reachable space (discarded area is reported), and clearance-centred
+waypoints are joined by a sparse visibility graph with redundant detours removed. The
 same grid validates hand-authored graphs (edges through walls, nodes off the floor) and snaps
 node heights onto the floor. Nothing here is authoritative until a human accepts it into
 `navigationGraph`.
 """
 from __future__ import annotations
 
+import heapq
 import math
 from collections import deque
 from dataclasses import asdict, dataclass
@@ -108,6 +109,8 @@ class Occupancy:
         np.maximum.at(heights, flat[floorish], points[floorish, 1])
         self.heights = np.where(counts > 0, heights, np.nan).reshape(self.height, self.width)
 
+        self.fill_floor_triangles(mesh)
+
         solid = (rel > params.stepHeight) & (rel < params.agentHeight)
         self.blocked = (np.bincount(flat[solid], minlength=size) > 0).reshape(self.height, self.width)
 
@@ -117,7 +120,37 @@ class Occupancy:
         for _ in range(radius_cells):
             obstacle = dilate(obstacle)
         self.walkable = largest_component(~obstacle)
+        self.excluded_cells = int((~obstacle & ~self.walkable).sum())
         self.clearance = distance_to(~self.walkable)
+
+    def fill_floor_triangles(self, mesh):
+        """Fill observed floor triangles at cell centres; random sampling must not punch holes in slabs.
+
+        Small scan triangles already contribute samples/vertices. Rasterize larger, entirely
+        floor-band triangles, without bridging missing geometry or extrapolating a floor plane.
+        """
+        p = self.params
+        triangles = mesh.triangles
+        up = mesh.face_normals[:, 1] > math.cos(math.radians(p.floorSlopeDeg))
+        band = ((triangles[:, :, 1] > self.floor_y - .3) &
+                (triangles[:, :, 1] < self.floor_y + p.stepHeight)).all(axis=1)
+        for triangle in triangles[up & band & (mesh.area_faces >= p.cell ** 2)]:
+            lo, hi = triangle.min(axis=0), triangle.max(axis=0)
+            x0, z0 = self.index(lo[0], lo[2])
+            x1, z1 = self.index(hi[0], hi[2])
+            zs, xs = np.mgrid[max(0, z0):min(self.height, z1 + 1), max(0, x0):min(self.width, x1 + 1)]
+            x, z = self.centre(xs, zs)
+            a, b, c = triangle
+            denominator = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2])
+            if abs(denominator) < 1e-12:
+                continue
+            u = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / denominator
+            v = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / denominator
+            inside = (u >= -1e-9) & (v >= -1e-9) & (u + v <= 1 + 1e-9)
+            ys = u * a[1] + v * b[1] + (1 - u - v) * c[1]
+            zi, xi = zs[inside], xs[inside]
+            self.floor[zi, xi] = True
+            self.heights[zi, xi] = np.fmax(self.heights[zi, xi], ys[inside])
 
     @staticmethod
     def sample(mesh, params):
@@ -195,6 +228,7 @@ class Occupancy:
                      for wr, fr, br in zip(self.walkable, self.floor, self.blocked)],
             'walkableCells': int(self.walkable.sum()),
             'floorCells': int(self.floor.sum()),
+            'excludedWalkableCells': self.excluded_cells,
         }
 
 
@@ -220,6 +254,8 @@ def build_graph(occupancy: Occupancy):
     adjacency = {key: set() for key in keys}
 
     def link(a, b):
+        if a == b:
+            return
         adjacency.setdefault(a, set()).add(b)
         adjacency.setdefault(b, set()).add(a)
 
@@ -234,10 +270,13 @@ def build_graph(occupancy: Occupancy):
             # Blocked directly (a wall between the blocks): look for a doorway cell both can see.
             portal = find_portal(occupancy, a, b, block)
             if portal is not None:
-                portal_key = ('portal', key, other)
+                # A doorway cell is one junction even when several block pairs discover it.
+                portal_key = next((k for k, cell in cells.items() if cell == portal), ('portal', *portal))
                 cells[portal_key] = portal
                 link(key, portal_key)
                 link(portal_key, other)
+
+    cells, adjacency = sparsify(occupancy, cells, adjacency)
 
     # Corridor simplification: drop a pass-through node when its neighbours see each other nearly in line.
     changed = True
@@ -253,7 +292,7 @@ def build_graph(occupancy: Occupancy):
             u = (ck[0] - ca[0], ck[1] - ca[1])
             v = (cb[0] - ck[0], cb[1] - ck[1])
             cosine = (u[0] * v[0] + u[1] * v[1]) / (math.hypot(*u) * math.hypot(*v) or 1)
-            if cosine > math.cos(math.radians(20)) and clear(occupancy, ca, cb):
+            if cosine > math.cos(math.radians(35)) and clear(occupancy, ca, cb):
                 adjacency[a].discard(key)
                 adjacency[b].discard(key)
                 adjacency[a].add(b)
@@ -281,6 +320,131 @@ def build_graph(occupancy: Occupancy):
     return {'frame': 'world', 'nodes': out_nodes, 'edges': out_edges}
 
 
+def sparsify(occupancy, cells, adjacency):
+    """Merge nearby junctions, then build a 1.5-spanner of the visible connections.
+
+    Short edges are considered first. Keep an edge only if the existing route is over
+    50% longer: this removes triangle clutter while retaining useful loops around obstacles.
+    Every replacement segment is checked against the radius-eroded floor.
+    """
+    order = sorted(adjacency, key=lambda k: (-occupancy.clearance[cells[k][1], cells[k][0]], cells[k]))
+    separation = occupancy.params.spacing / occupancy.params.cell * .6
+    for keep in order:
+        if keep not in adjacency:
+            continue
+        for remove in sorted(adjacency[keep], key=lambda k: cells[k]):
+            if math.dist(cells[keep], cells[remove]) >= separation:
+                continue
+            neighbours = adjacency[remove] - {keep}
+            if not all(clear(occupancy, cells[keep], cells[n]) for n in neighbours):
+                continue
+            for neighbour in neighbours:
+                adjacency[neighbour].discard(remove)
+                adjacency[neighbour].add(keep)
+            adjacency[keep].discard(remove)
+            adjacency[keep].update(neighbours)
+            del adjacency[remove]
+    ranks = {key: i for i, key in enumerate(adjacency)}
+    edges = sorted((math.dist(cells[a], cells[b]), ranks[a], ranks[b], a, b)
+                   for a in adjacency for b in adjacency[a] if ranks[a] < ranks[b])
+    sparse = {key: set() for key in adjacency}
+    for distance, _, _, a, b in edges:
+        limit = distance * 1.5
+        queue = [(0., ranks[a], a)]
+        best = {a: 0.}
+        while queue:
+            cost, _, key = heapq.heappop(queue)
+            if cost > best[key] or cost > limit:
+                continue
+            if key == b:
+                break
+            for other in sparse[key]:
+                total = cost + math.dist(cells[key], cells[other])
+                if total <= limit and total < best.get(other, math.inf):
+                    best[other] = total
+                    heapq.heappush(queue, (total, ranks[other], other))
+        if best.get(b, math.inf) > limit:
+            sparse[a].add(b)
+            sparse[b].add(a)
+    return cells, sparse
+
+
+def preserve_places(occupancy, generated, original):
+    """Retain named places and their IDs; attach only along verified free-floor segments.
+
+    A misplaced or disconnected place stays visible and blocks acceptance. Single-floor
+    generation cannot infer restrictions or replace a building's vertical connections.
+    """
+    floors = {n['floor'] for n in original['nodes'] if n.get('floor') is not None}
+    if len(floors) > 1 or any(e.get('kind', 'walk') != 'walk' or e.get('accessible') is False
+                              or e.get('bidirectional') is False for e in original['edges']):
+        raise ValueError('This generator handles one floor with unrestricted walking paths. '
+                         'Keep the existing floor transitions and restricted paths; generate in a single-floor world.')
+    places = [n for n in original['nodes'] if n.get('name') or n.get('kind') in ('entrance', 'destination')]
+    # Never reuse a destination ID, including names that resemble generated IDs.
+    reserved = {n['id'] for n in places}
+    rename = {}
+    for n in generated['nodes']:
+        identifier = n['id']
+        while identifier in reserved:
+            identifier = 'gen-' + identifier
+        reserved.add(identifier)
+        rename[n['id']] = identifier
+        n['id'] = identifier
+        if floors:
+            n['floor'] = next(iter(floors))
+    for edge in generated['edges']:
+        edge['from'], edge['to'] = rename[edge['from']], rename[edge['to']]
+    network = list(generated['nodes'])
+    reports = []
+    for place in places:
+        position = place['position']
+        cell = occupancy.cell_of(position)
+        target = None
+        if cell is not None and abs(position[1] - occupancy.floor_y) <= .5:
+            # Allow a small adjustment from the boundary to the walking centre, never through solids.
+            reach = math.ceil(.75 / occupancy.params.cell)
+            candidates = []
+            for z in range(max(0, cell[1] - reach), min(occupancy.height, cell[1] + reach + 1)):
+                for x in range(max(0, cell[0] - reach), min(occupancy.width, cell[0] + reach + 1)):
+                    if not occupancy.walkable[z, x]:
+                        continue
+                    cx, cz = occupancy.centre(x, z)
+                    distance = math.hypot(cx - position[0], cz - position[2])
+                    if distance <= .75 and all(occupancy.floor[zz, xx] and not occupancy.blocked[zz, xx]
+                                               for xx, zz in supercover(cell, (x, z))):
+                        candidates.append((distance, x, z))
+            if candidates:
+                _, x, z = min(candidates)
+                target = (x, z)
+        connected = [] if target is None else [n for n in network if clear(occupancy, target, occupancy.cell_of(n['position']))]
+        if connected:
+            nearest = min(connected, key=lambda n: math.dist(target, occupancy.cell_of(n['position'])))
+            x, z = occupancy.centre(*target)
+            updated = {**place, 'position': [round(x, 3), round(float(occupancy.heights[target[1], target[0]]), 3), round(z, 3)]}
+            if target == occupancy.cell_of(nearest['position']) and nearest['id'] not in {n['id'] for n in places}:
+                # Replace a coincident generated waypoint with the place instead of drawing two dots.
+                for edge in generated['edges']:
+                    for end in ('from', 'to'):
+                        if edge[end] == nearest['id']:
+                            edge[end] = place['id']
+                generated['nodes'].remove(nearest)
+                network.remove(nearest)
+                generated['nodes'].append(updated)
+                network.append(updated)
+            else:
+                generated['nodes'].append(updated)
+                distance = math.dist(updated['position'], nearest['position'])
+                generated['edges'].append({'from': place['id'], 'to': nearest['id'], 'bidirectional': True, 'distance': round(distance, 3)})
+            reports.append({'id': place['id'], 'name': place.get('name', place['id']), 'connected': True,
+                            'movedMetres': round(math.dist(position, updated['position']), 3)})
+        else:
+            generated['nodes'].append(dict(place))
+            reports.append({'id': place['id'], 'name': place.get('name', place['id']), 'connected': False,
+                            'movedMetres': 0})
+    return reports
+
+
 def validate(occupancy: Occupancy, graph, snap=True):
     """Check a world-frame graph against the grid; returns issues and a floor-snapped copy."""
     issues = []
@@ -302,6 +466,9 @@ def validate(occupancy: Occupancy, graph, snap=True):
             floor_y = float(occupancy.heights[cell[1], cell[0]])
         else:
             floor_y = float(occupancy.heights[cell[1], cell[0]])
+            if not occupancy.walkable[cell[1], cell[0]]:
+                issues.append({'kind': 'node-clearance', 'node': node['id'],
+                               'message': 'Node lacks walking clearance or is disconnected from the main floor'})
         if floor_y is not None:
             offset = position[1] - floor_y
             if abs(offset) > 0.3:
@@ -332,6 +499,9 @@ def validate(occupancy: Occupancy, graph, snap=True):
             issues.append({'kind': 'edge-off-floor', 'from': edge['from'], 'to': edge['to'],
                            'at': [round(x, 3), round(occupancy.floor_y, 3), round(z, 3)],
                            'message': f'Edge crosses {len(void)} cell(s) with no floor'})
+        elif any(not occupancy.walkable[z, x] for x, z in cells):
+            issues.append({'kind': 'edge-clearance', 'from': edge['from'], 'to': edge['to'],
+                           'message': 'Edge lacks walking clearance or leaves the reachable floor'})
     snapped = {**graph, 'nodes': [nodes[n['id']] for n in graph['nodes']]}
     return issues, snapped
 
@@ -360,6 +530,8 @@ def distance_to(mask):
         step += 1
         grown = dilate(frontier) & ~frontier
         distance[grown] = np.minimum(distance[grown], step)
+        if not grown.any():
+            break
         frontier |= grown
     return distance
 
@@ -385,7 +557,7 @@ def largest_component(mask):
                     queue.append((nz, nx))
         if size > best_size:
             best, best_size = label, size
-    return labels == best
+    return (labels == best) if best else np.zeros_like(mask, dtype=bool)
 
 
 def largest_component_keys(adjacency):
@@ -409,24 +581,25 @@ def largest_component_keys(adjacency):
 
 def supercover(a, b):
     """All cells a segment between two cell centres touches (no corner-cutting)."""
-    (x0, z0), (x1, z1) = a, b
-    dx, dz = abs(x1 - x0), abs(z1 - z0)
-    sx, sz = (1 if x1 > x0 else -1), (1 if z1 > z0 else -1)
-    cells = [(x0, z0)]
-    x, z = x0, z0
-    error = dx - dz
-    while (x, z) != (x1, z1):
-        doubled = 2 * error
-        if doubled > -dz and doubled < dx:
-            # Diagonal step: visit both orthogonal neighbours so thin walls cannot be skipped.
-            cells.append((x + sx, z))
-            cells.append((x, z + sz))
-        if doubled > -dz:
-            error -= dz
+    (x, z), (x1, z1) = a, b
+    dx, dz = abs(x1 - x), abs(z1 - z)
+    sx, sz = (1 if x1 > x else -1), (1 if z1 > z else -1)
+    cells = [(x, z)]
+    ix = iz = 0
+    # Compare the next boundary-crossing times as integers. Unlike Bresenham's
+    # nearest-pixel approximation this visits the same cells in either direction.
+    while ix < dx or iz < dz:
+        tx, tz = (1 + 2 * ix) * dz, (1 + 2 * iz) * dx
+        if tx == tz:
+            cells.extend(((x + sx, z), (x, z + sz)))
+            x, z = x + sx, z + sz
+            ix, iz = ix + 1, iz + 1
+        elif tx < tz:
             x += sx
-        if doubled < dx:
-            error += dx
+            ix += 1
+        else:
             z += sz
+            iz += 1
         cells.append((x, z))
     return cells
 

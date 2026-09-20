@@ -119,9 +119,17 @@ async def graph(world_id: str, request: Request):
     store = request.app.state.worlds
     async with store.lock('world:' + world_id):
         world = store.world(world_id)
+        revision = request.headers.get('if-match')
+        if revision and revision != navmesh_revision(world):
+            raise HTTPException(412, 'The graph or mesh changed. Generate again before accepting.')
         world.update(navigationGraph=data, updatedAt=now())
         await store.write(world, 'worlds', world_id, 'world.json')
     return world
+
+
+def navmesh_revision(world):
+    inputs = {key: world.get(key) for key in ('navigationGraph', 'assets', 'alignment', 'meshFrame')}
+    return '"' + hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest() + '"'
 
 
 def mesh_path(store, world):
@@ -158,13 +166,23 @@ async def build_navmesh(world_id: str, request: Request):
     graph = await asyncio.to_thread(navmesh.build_graph, occupancy)
     if not graph['nodes']:
         raise HTTPException(422, 'No walkable floor found; check the mesh frame and cell size')
-    issues, _ = navmesh.validate(occupancy, world_graph(world), snap=False)
+    original = world_graph(world)
+    try:
+        places = await asyncio.to_thread(navmesh.preserve_places, occupancy, graph, original)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+    validate_graph(graph)
+    issues, _ = navmesh.validate(occupancy, original, snap=False)
+    proposal_issues, _ = navmesh.validate(occupancy, graph, snap=False)
+    revision = navmesh_revision(world)
     proposal = {'schema': 'wander.navmesh/v1', 'worldId': world_id, 'mesh': world['assets']['mesh'],
                 'status': 'proposed', 'params': {**params.__dict__, 'frame': data.get('frame', world.get('meshFrame', 'world'))},
                 'grid': occupancy.summary(), 'graph': graph,
-                'currentGraphIssues': issues, 'createdAt': now()}
+                'currentGraphIssues': issues, 'proposalIssues': proposal_issues,
+                'places': places, 'sourceRevision': revision, 'createdAt': now()}
     async with store.lock('world:' + world_id):
-        store.world(world_id)
+        if navmesh_revision(store.world(world_id)) != revision:
+            raise HTTPException(409, 'The graph or mesh changed during generation. Generate again.')
         await store.write(proposal, 'worlds', world_id, 'navmesh.json')
     return proposal
 

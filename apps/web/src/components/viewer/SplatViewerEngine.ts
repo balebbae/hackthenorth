@@ -7,6 +7,8 @@ import { CameraKeyControls } from "./CameraKeyControls";
 
 export type ViewerMode = "orbit" | "walk";
 export type ViewerTool = "navigate" | "measure" | "note";
+/** Which scan the canvas draws: the Gaussian splat or the collision mesh. Never both. */
+export type ViewerLayer = "splat" | "mesh";
 export type LoadStatus = "empty" | "loading" | "ready" | "error";
 export type MeshStatus = "none" | "loading" | "ready" | "error";
 /**
@@ -56,7 +58,7 @@ export type EngineOptions = {
   /** Fills this element with the canvas; it is also the keyboard focus target for walk mode. */
   container: HTMLElement;
   splatUrl: string | null;
-  /** Aligned collision mesh (.glb). Drawn as a toggleable layer and preferred over the splat for picking. */
+  /** Aligned collision mesh (.glb). Drawn in place of the splat when its layer is picked, and preferred over it for picking. */
   meshUrl?: string | null;
   /** Frame the mesh vertices are in: "world" (default) or "splat" (goes through `alignment` like the splat). */
   meshFrame?: "world" | "splat";
@@ -72,16 +74,17 @@ const SKY = 0x60baf4;
 const WHITE = 0xffffff;
 const SLATE = 0x475569;
 
-const NODE_RADIUS = 0.14;
-const EDGE_RADIUS = 0.035;
+const NODE_RADIUS = 0.045;
+/** Waypoint click radius in pixels: the dots are drawn small, so they are picked in screen space. */
+const NODE_PICK_PX = 14;
 const MESH_COLOR = 0x94a3b8;
-const MEASURE_RADIUS = 0.05;
+const MEASURE_RADIUS = 0.03;
 /** Note pins are screen-space: fixed 28 px, coloured by distance instead of shrinking with it. */
 const PIN_SIZE = 28;
 const PIN_NEAR_COLOR = new THREE.Color(PINK);
 const PIN_FAR_COLOR = new THREE.Color(SKY);
 const PIN_NEAR_M = 1.5;
-const MEASURE_LINE_RADIUS = 0.012;
+const MEASURE_LINE_RADIUS = 0.006;
 const EYE_HEIGHT = 1.6;
 /** Walking pace in metres per second; orbit mode scales this with distance to the pivot. */
 const WALK_SPEED = 1.6;
@@ -168,10 +171,11 @@ export class SplatViewerEngine {
     entrance: overlayMaterial(SKY),
     destination: overlayMaterial(PINK),
   };
-  private readonly edgeMaterial = overlayMaterial(BLUE);
+  private readonly edgeMaterial = graphLineMaterial(BLUE);
+  private readonly flaggedEdgeMaterial = graphLineMaterial(PINK);
   /** Vertical transitions: step-free (elevator / ramp) in Sky, stairs / escalators in White. */
-  private readonly accessibleTransitionMaterial = overlayMaterial(SKY);
-  private readonly steppedTransitionMaterial = overlayMaterial(WHITE);
+  private readonly accessibleTransitionMaterial = graphLineMaterial(SKY);
+  private readonly steppedTransitionMaterial = graphLineMaterial(WHITE);
   private readonly flagMaterial = overlayMaterial(PINK);
   private readonly measureMaterial = overlayMaterial(SKY);
   private readonly pendingMaterial = overlayMaterial(WHITE);
@@ -205,11 +209,12 @@ export class SplatViewerEngine {
   private readonly meshGroup = new THREE.Group();
   private collision: THREE.Object3D | null = null;
   private readonly collisionMeshes: THREE.Mesh[] = [];
-  private meshVisible = false;
-  private nodeMeshes = new Map<string, THREE.Mesh>();
+  private layer: ViewerLayer = "splat";
+  private graphMarkerMeshes = new Map<string, THREE.Mesh>();
   private nodePositions = new Map<string, THREE.Vector3>();
   private notePositions = new Map<string, THREE.Vector3>();
   private selectedNoteId: string | null = null;
+  private selectedNodeId: string | null = null;
   /** Distance (m) at which pins reach the "far" colour; derived from the scene size. */
   private pinFarM = 15;
   private graphFrame: "world" | "splat" = "world";
@@ -258,7 +263,7 @@ export class SplatViewerEngine {
     this.scene.add(this.grid);
 
     this.selectionRing = new THREE.Mesh(
-      new THREE.TorusGeometry(NODE_RADIUS * 1.7, 0.02, 10, 40),
+      new THREE.TorusGeometry(NODE_RADIUS * 2.4, 0.008, 10, 40),
       overlayMaterial(WHITE),
     );
     this.selectionRing.rotation.x = Math.PI / 2;
@@ -375,10 +380,10 @@ export class SplatViewerEngine {
     for (const l of this.labels) if (l.el.dataset.kind === "node") l.el.hidden = !visible;
   }
 
-  /** Show or hide the collision-mesh layer. Hidden meshes still catch picks (they are the cleaner surface). */
-  setShowMesh(visible: boolean) {
-    this.meshVisible = visible;
-    this.meshGroup.visible = visible && this.collision !== null;
+  /** Draw the splat or the collision mesh. The hidden one still catches picks (the mesh is the cleaner surface). */
+  setLayer(layer: ViewerLayer) {
+    this.layer = layer;
+    this.applyLayer();
   }
 
   /**
@@ -394,7 +399,7 @@ export class SplatViewerEngine {
     }
     this.clearGroup(this.graphGroup);
     this.removeLabels("node");
-    this.nodeMeshes = new Map();
+    this.graphMarkerMeshes = new Map();
     this.nodePositions = new Map();
 
     for (const node of graph.nodes) {
@@ -407,10 +412,11 @@ export class SplatViewerEngine {
       m.scale.setScalar(NODE_RADIUS);
       m.position.copy(p);
       m.renderOrder = 1001;
-      m.userData.nodeId = node.id;
+      m.userData.markerPixels = node.name || node.kind === "destination" || node.kind === "entrance" ? 5 : 3;
       this.graphGroup.add(m);
-      this.nodeMeshes.set(node.id, m);
+      this.graphMarkerMeshes.set(node.id, m);
       this.addLabel("node", node.name ?? node.id, this.graphGroup.localToWorld(p.clone()), NODE_RADIUS * 2.2, node.id);
+      this.labels[this.labels.length - 1].el.dataset.quiet = String(!node.name && (node.kind ?? "waypoint") === "waypoint");
     }
     for (const edge of graph.edges) {
       const a = this.nodePositions.get(edge.from);
@@ -419,11 +425,13 @@ export class SplatViewerEngine {
       const flagged = flags?.edges.has(`${edge.from}|${edge.to}`) ?? false;
       const vertical = (edge.kind ?? "walk") !== "walk";
       const material = flagged
-        ? this.flagMaterial
+        ? this.flaggedEdgeMaterial
         : vertical
           ? edgeAccessible(edge) ? this.accessibleTransitionMaterial : this.steppedTransitionMaterial
           : this.edgeMaterial;
-      this.graphGroup.add(this.tube(a, b, flagged ? EDGE_RADIUS * 1.6 : EDGE_RADIUS, material, 1000));
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), material);
+      line.renderOrder = 1000;
+      this.graphGroup.add(line);
     }
     if (this.mesh === null && graph.nodes.length) {
       this.grid.position.y = new THREE.Box3().setFromPoints([...this.nodePositions.values()]).min.y - 0.01;
@@ -432,6 +440,7 @@ export class SplatViewerEngine {
 
   /** Highlight one waypoint or note pin (or nothing). */
   setSelection(sel: ViewerSelection | null) {
+    this.selectedNodeId = sel?.kind === "node" ? sel.id : null;
     let p: THREE.Vector3 | undefined;
     if (sel?.kind === "node" && this.graphGroup.visible) {
       const local = this.nodePositions.get(sel.id);
@@ -741,7 +750,7 @@ export class SplatViewerEngine {
     this.clearGroup(this.graphGroup);
     this.clearGroup(this.measureGroup);
     this.clearGroup(this.trailGroup);
-    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.accessibleTransitionMaterial, this.steppedTransitionMaterial,
+    for (const m of [...Object.values(this.nodeMaterials), this.edgeMaterial, this.flaggedEdgeMaterial, this.accessibleTransitionMaterial, this.steppedTransitionMaterial,
       this.flagMaterial, this.measureMaterial, this.pendingMaterial, this.trailMaterial])
       m.dispose();
     this.imageTexture?.dispose();
@@ -806,10 +815,8 @@ export class SplatViewerEngine {
     this.setRayFromEvent(e);
 
     // Note pins are DOM elements and handle their own clicks; waypoints are picked here.
-    if (this.graphGroup.visible && this.nodeMeshes.size) {
-      const hit = this.raycaster.intersectObjects([...this.nodeMeshes.values()], false)[0];
-      if (hit) return onEvent({ type: "pick-node", tool: this.tool, id: hit.object.userData.nodeId as string });
-    }
+    const node = this.pickNode(e);
+    if (node) return onEvent({ type: "pick-node", tool: this.tool, id: node });
     if (this.tool === "navigate") return;
 
     const hit = this.intersectScene();
@@ -823,6 +830,31 @@ export class SplatViewerEngine {
       graphPoint: graphPoint.toArray() as Vec3,
       surface: hit.surface,
     });
+  }
+
+  /**
+   * Nearest waypoint within `NODE_PICK_PX` of the pointer, or null. Screen space
+   * rather than a raycast against the dots: they are drawn small on purpose, and
+   * a fixed pixel target keeps distant waypoints clickable. Like the dots
+   * themselves, this ignores occlusion — a waypoint behind a wall still picks.
+   */
+  private pickNode(e: PointerEvent): string | null {
+    if (!this.graphGroup.visible || !this.nodePositions.size) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.graphGroup.updateMatrixWorld(true);
+    const v = new THREE.Vector3();
+    let best: { id: string; d2: number } | null = null;
+    for (const [id, local] of this.nodePositions) {
+      v.copy(local);
+      this.graphGroup.localToWorld(v);
+      v.project(this.camera);
+      if (v.z > 1) continue; // behind the camera
+      const dx = rect.left + ((v.x + 1) / 2) * rect.width - e.clientX;
+      const dy = rect.top + ((1 - v.y) / 2) * rect.height - e.clientY;
+      const d2 = dx * dx + dy * dy;
+      if (d2 <= NODE_PICK_PX * NODE_PICK_PX && (!best || d2 < best.d2)) best = { id, d2 };
+    }
+    return best?.id ?? null;
   }
 
   private setRayFromEvent(e: PointerEvent) {
@@ -883,6 +915,7 @@ export class SplatViewerEngine {
     });
     this.mesh = mesh;
     this.root.add(mesh);
+    this.applyLayer();
 
     mesh.initialized
       .then((m) => {
@@ -924,7 +957,7 @@ export class SplatViewerEngine {
         });
         this.collision = object;
         this.meshGroup.add(object);
-        this.meshGroup.visible = this.meshVisible;
+        this.applyLayer();
         if (!this.mesh) {
           this.localBounds = new THREE.Box3().setFromObject(object);
           this.resetView();
@@ -951,7 +984,18 @@ export class SplatViewerEngine {
     }
     this.collisionMeshes.length = 0;
     this.collision = null;
-    this.meshGroup.visible = false;
+    this.applyLayer();
+  }
+
+  /**
+   * Show exactly one scan. The mesh only draws once it has actually loaded, so
+   * choosing it mid-download leaves the splat up rather than blanking the
+   * canvas; a world with no splat falls back to the mesh for the same reason.
+   */
+  private applyLayer() {
+    const mesh = this.collision !== null && (this.layer === "mesh" || !this.mesh);
+    this.meshGroup.visible = mesh;
+    if (this.mesh) this.mesh.visible = !mesh;
   }
 
   private applyAlignment(a: Alignment | undefined) {
@@ -1026,6 +1070,7 @@ export class SplatViewerEngine {
     const v = new THREE.Vector3();
     const tint = new THREE.Color();
     for (const l of this.labels) {
+      if (l.nodeId) l.el.hidden = !this.graphGroup.visible || (l.el.dataset.quiet === "true" && l.nodeId !== this.selectedNodeId);
       if (l.el.hidden) continue;
       v.copy(l.position).addScaledVector(UP, l.offsetY).project(this.camera);
       const visible = v.z > -1 && v.z < 1 && Math.abs(v.x) < 1.2 && Math.abs(v.y) < 1.2;
@@ -1094,6 +1139,23 @@ export class SplatViewerEngine {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Keep close-up waypoints small enough to inspect the floor beneath them. */
+  private updateGraphMarkerSizes() {
+    const focal = this.opts.container.clientHeight / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
+    if (!focal) return;
+    this.camera.updateMatrixWorld();
+    const point = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    this.graphGroup.getWorldScale(scale);
+    for (const [id, marker] of this.graphMarkerMeshes) {
+      marker.getWorldPosition(point);
+      point.applyMatrix4(this.camera.matrixWorldInverse);
+      const radius = Math.max(this.camera.near, -point.z) * marker.userData.markerPixels / focal;
+      marker.scale.setScalar(radius / scale.x);
+      if (id === this.selectedNodeId) this.selectionRing.scale.setScalar(radius / NODE_RADIUS * 1.4);
+    }
+  }
+
   private tick(time: number) {
     const dt = this.lastTime ? (time - this.lastTime) / 1000 : 0;
     this.lastTime = time;
@@ -1103,6 +1165,7 @@ export class SplatViewerEngine {
     }
     if (this.follow !== "off" && this.marker) this.updateFollow(dt);
     else if (this.mode === "orbit") this.orbit.update();
+    this.updateGraphMarkerSizes();
     this.renderer.render(this.scene, this.camera);
     this.updateLabels();
   }
@@ -1258,4 +1321,9 @@ function describeError(err: unknown): string {
   if (/404|not found/i.test(msg)) return "The splat file was not found on the volume.";
   if (/network|fetch|failed to load/i.test(msg)) return "Could not download the splat. Check the worlds API and try again.";
   return msg || "Failed to load the splat.";
+}
+
+/** Pixel-width lines avoid metre-sized tubes obscuring a close-up scan. */
+function graphLineMaterial(color: number) {
+  return new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, depthTest: false, depthWrite: false });
 }

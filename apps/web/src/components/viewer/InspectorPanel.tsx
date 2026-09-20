@@ -16,11 +16,11 @@ import {
 } from "@/lib/world-manifest";
 import { STATUS_META, type WorldStatus } from "@/lib/worlds";
 import { LiveTab, type LiveTabProps } from "./LiveTab";
-import { MeshTab, type MeshTabProps } from "./MeshTab";
+import { WaypointsTab, type WaypointsTabProps } from "./WaypointsTab";
 import { formatMetres, type ViewerSelection } from "./SplatViewerEngine";
 import { PHONE_ONLINE_MS, useNow } from "./useLocalizationFeed";
 
-export type PanelTab = "live" | "ask" | "notes" | "measure" | "mesh" | "details";
+export type PanelTab = "live" | "ask" | "notes" | "measure" | "waypoints" | "details";
 
 export const NODE_TONE: Record<NavNodeKind, string> = {
   waypoint: "bg-wander-blue",
@@ -33,7 +33,7 @@ const TABS: { id: PanelTab; label: string }[] = [
   { id: "ask", label: "Ask" },
   { id: "notes", label: "Notes" },
   { id: "measure", label: "Measure" },
-  { id: "mesh", label: "Mesh" },
+  { id: "waypoints", label: "Waypoints" },
   { id: "details", label: "Details" },
 ];
 
@@ -44,8 +44,8 @@ type Props = {
   worldId: string;
   /** Phone localization feed shown in the Live tab. */
   live: LiveTabProps;
-  /** Mesh layer, graph validator and generated-graph review shown in the Mesh tab. */
-  mesh: MeshTabProps;
+  /** Graph validator and generated-graph review shown in the Waypoints tab. */
+  waypoints: WaypointsTabProps;
   name: string;
   status: WorldStatus;
   manifest: WorldManifest | null;
@@ -128,7 +128,7 @@ export function InspectorPanel(p: Props) {
         )}
         {p.tab === "notes" && <NotesTab {...p} />}
         {p.tab === "measure" && <MeasureTab {...p} />}
-        {p.tab === "mesh" && <MeshTab {...p.mesh} />}
+        {p.tab === "waypoints" && <WaypointsTab {...p.waypoints} />}
         {p.tab === "details" && <DetailsTab {...p} />}
       </div>
     </aside>
@@ -368,6 +368,7 @@ function DetailsTab({
 }: Props) {
   const meta = STATUS_META[status];
   const splatFile = manifest?.assets.splat.split("/").pop();
+  const meshFile = manifest?.assets.mesh?.split("/").pop();
   const selectedNode = selection?.kind === "node" ? selection.id : null;
   return (
     <div>
@@ -377,9 +378,6 @@ function DetailsTab({
         {manifest?.description && <p className="mt-1 text-body-sm text-slate">{manifest.description}</p>}
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-b border-hairline p-4 text-body-sm">
-        <Row label="Niantic site">
-          {manifest?.nianticSiteId ?? <span className="text-void-black/40">Not published</span>}
-        </Row>
         <Row label="Version">{manifest?.version ?? "—"}</Row>
         <Row label="Splat">
           {splatFile ? (
@@ -391,6 +389,15 @@ function DetailsTab({
           )}
         </Row>
         <Row label="Splats">{formatSplatCount(numSplats ?? manifest?.stats?.splatCount)}</Row>
+        <Row label="Mesh">
+          {meshFile ? (
+            <span title={manifest?.assets.mesh} className="break-all">
+              {meshFile}
+            </span>
+          ) : (
+            <span className="text-void-black/40">None</span>
+          )}
+        </Row>
         <Row label="Frame">
           {manifest?.alignment?.frame ?? <span className="text-void-black/40">Unaligned</span>}
         </Row>
