@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from ..routing import navmesh
-from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, compute_route, horizontal
+from ..services.worlds import check, now, segment, validate_graph, world_graph, snap, node_ref, horizontal
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -217,7 +217,62 @@ async def put_measurements(world_id: str, request: Request):
 
 @router.post('/worlds/{world_id}/route')
 async def route(world_id: str, request: Request):
-    return compute_route(request.app.state.worlds.world(world_id), await body(request))
+    return request.app.state.world_navigation.route(request.app.state.worlds.world(world_id), await body(request))
+
+
+@router.post('/worlds/{world_id}/annotations/propose', status_code=201)
+async def propose_annotations(world_id: str, request: Request):
+    """Astra as annotator: describe the stored, localized VPS query frames and place each finding
+    from its camera pose onto the mesh (or floor). Writes annotation-proposals.json for review;
+    the live graph only changes through PUT /annotations with a signed-off review file."""
+    from ..services.annotations import posed, propose_from_queries
+    data = await body(request)
+    if not set(data) <= {'queryIds', 'limit', 'floor'}:
+        raise HTTPException(400, 'Expected optional queryIds, limit and floor')
+    limit, floor = data.get('limit', 20), data.get('floor', 0)
+    if not isinstance(limit, int) or not 1 <= limit <= LOCALIZATIONS_KEPT or not isinstance(floor, int):
+        raise HTTPException(400, f'limit must be 1..{LOCALIZATIONS_KEPT} and floor an integer')
+    store = request.app.state.worlds
+    world = store.world(world_id)
+    queries = localizations_index(store, world_id)['queries']
+    if 'queryIds' in data:
+        wanted = data['queryIds']
+        if not isinstance(wanted, list) or not all(isinstance(q, str) for q in wanted):
+            raise HTTPException(400, 'queryIds must be a list of query IDs')
+        missing = set(wanted) - {q['id'] for q in queries}
+        if missing:
+            raise HTTPException(404, 'Unknown query IDs: ' + ', '.join(sorted(missing)))
+        queries = [q for q in queries if q['id'] in set(wanted)]
+    images = store.path('worlds', world_id, 'localizations')
+    queries = [q for q in queries if posed(q, images)][:limit]
+    if not queries:
+        raise HTTPException(409, 'No stored localized query frames with a pose and field of view to annotate')
+    mesh = None
+    if world['assets'].get('mesh'):
+        try:
+            mesh = await asyncio.to_thread(navmesh.load_mesh, mesh_path(store, world), world.get('alignment'),
+                                           world.get('meshFrame', 'world'))
+        except (HTTPException, ValueError) as error:
+            logger.warning('Placing annotations on the floor plane; mesh unavailable (%s)', error)
+    try:
+        batch, unplaced = await propose_from_queries(world, queries, images, store.path('worlds', world_id, 'annotation-cache'), request.app.state.settings,
+            client=request.app.state.annotation_client, mesh=mesh, floor=floor)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+    proposal = {'schema': 'wander.annotation-proposals/v1', 'worldId': world_id, 'status': 'proposed',
+                'model': batch.model, 'queryIds': [q['id'] for q in queries], 'placedWith': 'mesh' if mesh is not None else 'floor',
+                'unplaced': unplaced, 'batch': batch.model_dump(), 'createdAt': now()}
+    async with store.lock('world:' + world_id):
+        store.world(world_id)
+        await store.write(proposal, 'worlds', world_id, 'annotation-proposals.json')
+    return proposal
+
+
+@router.get('/worlds/{world_id}/annotations/proposals')
+async def annotation_proposals(world_id: str, request: Request):
+    store = request.app.state.worlds
+    store.world(world_id)
+    return store.read('worlds', world_id, 'annotation-proposals.json')
 
 
 @router.put('/worlds/{world_id}/annotations')
@@ -303,9 +358,10 @@ async def end_session(session_id: str, request: Request):
 @router.put('/sessions/{session_id}/destination')
 async def destination(session_id: str, request: Request):
     data = await body(request)
-    if set(data) != {'destination'} or not isinstance(data['destination'], str):
-        raise HTTPException(400, 'Expected destination node ID')
-    return await request.app.state.world_navigation.destination(session_id, data['destination'])
+    if not {'destination'} <= set(data) <= {'destination', 'accessibleOnly'} or not isinstance(data['destination'], str) \
+            or not isinstance(data.get('accessibleOnly', False), bool):
+        raise HTTPException(400, 'Expected destination node ID and optional accessibleOnly boolean')
+    return await request.app.state.world_navigation.destination(session_id, data['destination'], data.get('accessibleOnly'))
 
 
 @router.post('/sessions/{session_id}/pose')
