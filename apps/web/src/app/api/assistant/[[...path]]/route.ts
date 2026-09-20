@@ -3,8 +3,8 @@ import { AssistantApiError, createSession, queryAssistant } from "@/lib/assistan
 /**
  * Same-origin proxy for the building assistant.
  *
- *   POST /api/assistant/sessions  { worldId, deviceId } -> AssistantSession
- *   POST /api/assistant/query     { sessionId, text }   -> AssistantResponse
+ *   POST /api/assistant/sessions  { worldId, deviceId }               -> AssistantSession
+ *   POST /api/assistant/query     { sessionId, text, uiContext? }    -> AssistantResponse
  *
  * The browser only ever talks to this route; `WANDER_API_URL` and the API key
  * stay on the server, exactly like /api/worlds.
@@ -29,7 +29,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/assistant/[[...
     if (path.length === 1 && path[0] === "query") {
       if (typeof body.sessionId !== "string" || typeof body.text !== "string")
         return Response.json({ error: "Body needs sessionId and text" }, { status: 400 });
-      const answer = await queryAssistant(body.sessionId, body.text);
+      const uiContext = typeof body.uiContext === "string" ? body.uiContext : undefined;
+      const answer = await queryAssistant(body.sessionId, body.text, uiContext);
       return Response.json(answer, { headers: NO_STORE });
     }
 

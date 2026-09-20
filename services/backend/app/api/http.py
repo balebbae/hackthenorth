@@ -65,7 +65,7 @@ async def destination(session_id: str, body: DestinationRequest, request: Reques
 
 @router.post('/assistant/query')
 async def query(body: Query, request: Request):
-    return await request.app.state.agent.query(body.session_id, body.text)
+    return await request.app.state.agent.query(body.session_id, body.text, body.ui_context)
 
 
 @router.post('/knowledge/documents', status_code=201)

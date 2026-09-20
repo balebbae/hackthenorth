@@ -108,7 +108,16 @@ export function InspectorPanel(p: Props) {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {p.tab === "live" && <LiveTab {...p.live} />}
-        {p.tab === "ask" && <AssistantPanel worldId={p.worldId} />}
+        {p.tab === "ask" && (
+          <AssistantPanel
+            worldId={p.worldId}
+            name={p.name}
+            status={p.status}
+            graph={p.graph}
+            notes={p.notes}
+            selection={p.selection}
+          />
+        )}
         {p.tab === "notes" && <NotesTab {...p} />}
         {p.tab === "measure" && <MeasureTab {...p} />}
         {p.tab === "details" && <DetailsTab {...p} />}
