@@ -187,6 +187,15 @@ body {
   @apply mx-auto w-full max-w-[var(--page-max-width)] px-6 md:px-10 xl:px-16;
 }
 
+/* Overflow rows that scroll without showing a scrollbar (still wheel/keyboard scrollable) */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Editorial serif — reserved for intros and pull-quotes only */
 @utility editorial {
   @apply font-serif text-editorial text-graphite;
