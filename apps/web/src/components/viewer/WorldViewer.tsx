@@ -484,6 +484,7 @@ export function WorldViewer({
               notes={notes}
               measurements={measurements}
               selection={selection}
+              getCameraPosition={api.getCameraPosition}
               onSelect={setSelection}
               onFocusNode={(id) => {
                 api.focusNode(id);

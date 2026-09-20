@@ -40,6 +40,9 @@ export type ViewerApi = {
   /** Orbit the camera around the phone marker. */
   focusPhone: () => void;
   retry: () => void;
+  /** Current camera position (world frame), or null before the engine has mounted —
+   * for describing what's in view, independent of any phone/localization pose. */
+  getCameraPosition: () => Vec3 | null;
 };
 
 /** Interaction events forwarded from the engine to whoever owns the data. */
@@ -264,6 +267,7 @@ export function useSplatViewer({
         setState((s) => ({ ...s, mode: "orbit" }));
       },
       retry: () => setAttempt((n) => n + 1),
+      getCameraPosition: () => engineRef.current?.getCameraPosition() ?? null,
     }),
     [],
   );

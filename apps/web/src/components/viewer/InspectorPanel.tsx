@@ -10,6 +10,7 @@ import {
   type Measurement,
   type NavigationGraph,
   type NavNodeKind,
+  type Vec3,
   type WorldManifest,
   type WorldNote,
 } from "@/lib/world-manifest";
@@ -54,6 +55,8 @@ type Props = {
   notes: WorldNote[];
   measurements: Measurement[];
   selection: ViewerSelection | null;
+  /** Current camera position (world frame), for the Ask tab's "what's in view" context. */
+  getCameraPosition: () => Vec3 | null;
   onSelect: (sel: ViewerSelection | null) => void;
   onFocusNode: (id: string) => void;
   onFocusNote: (id: string) => void;
@@ -120,6 +123,7 @@ export function InspectorPanel(p: Props) {
             graph={p.graph}
             notes={p.notes}
             selection={p.selection}
+            getCameraPosition={p.getCameraPosition}
           />
         )}
         {p.tab === "notes" && <NotesTab {...p} />}

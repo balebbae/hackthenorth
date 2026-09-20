@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import type { NavigationGraph, WorldNote } from "@/lib/world-manifest";
+import type { NavigationGraph, Vec3, WorldNote } from "@/lib/world-manifest";
 import type { WorldStatus } from "@/lib/worlds";
 import { AssistantCallView } from "./AssistantCallView";
 import type { ViewerSelection } from "./SplatViewerEngine";
@@ -16,6 +16,10 @@ type Props = {
   graph: NavigationGraph;
   notes: WorldNote[];
   selection: ViewerSelection | null;
+  /** Current camera position (world frame) in the 3D reconstruction viewer — this is a
+   * standalone, Next.js-only notion of "what's in view" and has nothing to do with the
+   * iOS app's live phone localization/pose. */
+  getCameraPosition: () => Vec3 | null;
 };
 
 const DEVICE_ID_KEY = "wander-device-id";
@@ -46,10 +50,45 @@ function describeSelection(graph: NavigationGraph, notes: WorldNote[], selection
   return `Selected note "${note.title}"${location}${description}`;
 }
 
-function buildUiContext(name: string, status: WorldStatus, graph: NavigationGraph, notes: WorldNote[], selection: ViewerSelection | null): string {
-  const parts = [`Viewing world "${name}" (status: ${status}) in the web dashboard.`];
+function distance(a: Vec3, b: Vec3): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+/** Nearest mapped waypoints/notes to the current camera position, for questions like
+ * "what can you see" that aren't about one specific selected pin. Graph nodes only count
+ * when the graph is in the world frame (the default) — a `"splat"`-frame graph would need
+ * the alignment transform this Vec3 doesn't carry, so it's left out rather than guessed. */
+function describeNearby(position: Vec3, graph: NavigationGraph, notes: WorldNote[]): string | null {
+  const RADIUS_M = 8;
+  const LIMIT = 3;
+  const candidates: { label: string; distanceM: number }[] = [];
+  if ((graph.frame ?? "world") === "world") {
+    for (const node of graph.nodes) candidates.push({ label: node.name ?? node.id, distanceM: distance(position, node.position) });
+  }
+  for (const note of notes) candidates.push({ label: note.title || "Untitled note", distanceM: distance(position, note.position) });
+  const nearby = candidates
+    .filter((c) => c.distanceM <= RADIUS_M)
+    .sort((a, b) => a.distanceM - b.distanceM)
+    .slice(0, LIMIT);
+  if (!nearby.length) return null;
+  return `Nearby in the current 3D view: ${nearby.map((c) => `${c.label} (~${c.distanceM.toFixed(1)} m)`).join(", ")}.`;
+}
+
+function buildUiContext(
+  name: string,
+  status: WorldStatus,
+  graph: NavigationGraph,
+  notes: WorldNote[],
+  selection: ViewerSelection | null,
+  cameraPosition: Vec3 | null,
+): string {
+  const parts = [`Viewing world "${name}" (status: ${status}) in the web dashboard's 3D reconstruction viewer.`];
   const selected = describeSelection(graph, notes, selection);
   if (selected) parts.push(selected);
+  else if (cameraPosition) {
+    const nearby = describeNearby(cameraPosition, graph, notes);
+    if (nearby) parts.push(nearby);
+  }
   return parts.join(" ");
 }
 
@@ -119,8 +158,8 @@ export function useAssistantSession(worldId: string) {
  * Desktop shows a normal chat; a narrow viewport (`lg:hidden`) swaps in a hands-free
  * call-style view instead — both are always mounted, so switching costs nothing and
  * neither activates the mic without an explicit tap. */
-export function AssistantPanel({ worldId, name, status, graph, notes, selection }: Props) {
-  const uiContext = buildUiContext(name, status, graph, notes, selection);
+export function AssistantPanel({ worldId, name, status, graph, notes, selection, getCameraPosition }: Props) {
+  const getUiContext = () => buildUiContext(name, status, graph, notes, selection, getCameraPosition());
   const { ask } = useAssistantSession(worldId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -144,7 +183,7 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection 
     setMessages((m) => [...m, { role: "user", text: trimmed }]);
     setSending(true);
     try {
-      const answer = await ask(trimmed, uiContext);
+      const answer = await ask(trimmed, getUiContext());
       setMessages((m) => [...m, { role: "assistant", text: answer }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -246,7 +285,7 @@ export function AssistantPanel({ worldId, name, status, graph, notes, selection 
         </form>
       </div>
       <div className="h-full lg:hidden">
-        <AssistantCallView ask={ask} uiContext={uiContext} />
+        <AssistantCallView ask={ask} getUiContext={getUiContext} />
       </div>
     </>
   );

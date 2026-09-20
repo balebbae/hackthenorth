@@ -9,7 +9,8 @@ type CallState = "idle" | "listening" | "thinking" | "speaking";
 
 type Props = {
   ask: (text: string, uiContext: string) => Promise<string>;
-  uiContext: string;
+  /** Built fresh per utterance, since the camera can move between turns of the call. */
+  getUiContext: () => string;
 };
 
 const STATE_LABEL: Record<CallState, string> = {
@@ -23,7 +24,7 @@ const STATE_LABEL: Record<CallState, string> = {
  * Continuous SpeechRecognition -> the same /api/assistant/query call the desktop
  * chat uses -> speechSynthesis for the reply. The mic only ever restarts after
  * playback ends, so it never picks up the assistant's own voice. */
-export function AssistantCallView({ ask, uiContext }: Props) {
+export function AssistantCallView({ ask, getUiContext }: Props) {
   const [state, setState] = useState<CallState>("idle");
   const [messages, setMessages] = useState<CallMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +77,7 @@ export function AssistantCallView({ ask, uiContext }: Props) {
     setError(null);
     setMessages((m) => [...m, { role: "user", text }]);
     try {
-      const answer = await ask(text, uiContext);
+      const answer = await ask(text, getUiContext());
       setMessages((m) => [...m, { role: "assistant", text: answer }]);
       speak(answer);
     } catch (err) {
