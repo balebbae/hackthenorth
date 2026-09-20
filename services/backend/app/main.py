@@ -69,6 +69,7 @@ def create_app(settings=None, model=None, elastic=None, search=None, events=None
         return JSONResponse(status_code=422, content={'detail': str(error)})
 
     async def unavailable(request: Request, error):
+        logging.getLogger(__name__).warning('%s %s -> Elasticsearch unavailable: %s', request.method, request.url.path, error)
         return JSONResponse(status_code=503, content={'detail': 'External service unavailable; check backend configuration'})
 
     for error_type in (IntegrationUnavailable, ApiError, TransportError):
