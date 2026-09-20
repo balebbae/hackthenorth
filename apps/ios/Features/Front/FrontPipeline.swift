@@ -313,6 +313,7 @@ final class FrontPipeline: ObservableObject {
 
     func relay(_ pulse: PulseCommand) {
         pulsesRelayed += 1
+        print("[pulse] #\(pulse.id) \(pulse.role.rawValue) \(pulse.ms) ms; linked=\(link.connectedRoles.map(\.rawValue))")
         if pulse.role == .front {
             haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
         } else {

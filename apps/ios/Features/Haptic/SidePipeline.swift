@@ -63,7 +63,7 @@ final class SidePipeline: ObservableObject {
                 guard let self else { break }
                 let z = self.zones
                 let fmt: (Float?) -> String = { $0.map { String(format: "%.2f", $0) } ?? "-" }
-                print("[side \(self.role.rawValue)] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) depth=\(self.arSession.depthAvailable) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) touching=\(z.touching) pts=\(self.estimator.stats.rawPoints)/\(self.estimator.stats.inFan) planes=\(self.estimator.stats.planes) tilted=\(self.estimator.stats.tilted) link=\(self.link.connectedRoles.map(\.rawValue)) sent=\(self.link.messagesSent) recv=\(self.link.messagesReceived) cmd=\(self.lastCommand.shouldBuzz(self.role) ? "buzz" : "quiet") err=\(self.link.lastError ?? "-")")
+                print("[side \(self.role.rawValue)] ar=\(self.arSession.state) frames=\(self.arSession.frameCount) depth=\(self.arSession.depthAvailable) L=\(fmt(z.left)) C=\(fmt(z.center)) R=\(fmt(z.right)) touching=\(z.touching) pulses=\(self.pulsesReceived) pts=\(self.estimator.stats.rawPoints)/\(self.estimator.stats.inFan) planes=\(self.estimator.stats.planes) tilted=\(self.estimator.stats.tilted) link=\(self.link.connectedRoles.map(\.rawValue)) sent=\(self.link.messagesSent) recv=\(self.link.messagesReceived) cmd=\(self.lastCommand.shouldBuzz(self.role) ? "buzz" : "quiet") err=\(self.link.lastError ?? "-")")
             }
         }
     }
@@ -95,6 +95,7 @@ final class SidePipeline: ObservableObject {
         if case .pulse(let pulse) = message {
             guard pulse.role == role else { return }
             pulsesReceived += 1
+            print("[pulse] received #\(pulse.id) \(pulse.ms) ms")
             haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
             return
         }
