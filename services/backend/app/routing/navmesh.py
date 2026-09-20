@@ -306,7 +306,7 @@ def validate(occupancy: Occupancy, graph, snap=True):
 
     for edge in graph['edges']:
         a, b = nodes.get(edge['from']), nodes.get(edge['to'])
-        if not a or not b:
+        if not a or not b or edge.get('kind', 'walk') != 'walk':
             continue
         cells = occupancy.line_cells(a['position'], b['position'])
         if cells is None:

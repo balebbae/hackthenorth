@@ -340,3 +340,81 @@ def test_mesh_upload_registers_and_navmesh_proposal_stays_unpublished(client, wo
     assert result.json()['graph']['nodes'][0]['position'][1] == pytest.approx(0, abs=.03)
     assert client.get(url).json()['navigationGraph']['nodes'][0]['id'] != 'w'
     assert client.post(url+'/graph/validate', json={'params': {'cell': -1}}).status_code == 422
+
+
+def two_floor_graph():
+    """Ground floor a-b-c; stairs at b and an elevator at c both reach floor 2, which leads to the goal."""
+    return {'nodes': [
+        {'id': 'a', 'position': [0, 0, 0], 'floor': '1'},
+        {'id': 'b', 'position': [0, 0, -10], 'floor': '1'},
+        {'id': 'c', 'position': [10, 0, -10], 'floor': '1'},
+        {'id': 'b2', 'position': [0, 4, -10], 'floor': '2'},
+        {'id': 'c2', 'position': [10, 4, -10], 'floor': '2'},
+        {'id': 'goal', 'position': [0, 4, -20], 'floor': '2', 'kind': 'destination'}],
+        'edges': [
+        {'from': 'a', 'to': 'b'}, {'from': 'b', 'to': 'c'},
+        {'from': 'b', 'to': 'b2', 'kind': 'stairs'},
+        {'from': 'c', 'to': 'c2', 'kind': 'elevator'},
+        {'from': 'c2', 'to': 'b2'}, {'from': 'b2', 'to': 'goal'}]}
+
+
+def test_accessible_only_skips_stairs_and_takes_the_elevator(world):
+    world['navigationGraph'] = two_floor_graph()
+    stairs = compute_route(world, {'from': 'a', 'to': 'goal'})
+    assert [n['id'] for n in stairs['nodes']] == ['a', 'b', 'b2', 'goal']
+    assert stairs['legs'][1]['kind'] == 'stairs' and 'kind' not in stairs['legs'][0]
+    assert stairs['instructions'][1] == {'atNode': 'b', 'turn': 'stairs', 'text': 'Take the stairs to floor 2.',
+                                         'distanceMetres': 10}
+    check(stairs, 'navigation.schema.json', '#/$defs/routeResponse')
+    lift = compute_route(world, {'from': 'a', 'to': 'goal', 'accessibleOnly': True})
+    assert [n['id'] for n in lift['nodes']] == ['a', 'b', 'c', 'c2', 'b2', 'goal']
+    assert lift['instructions'][2]['turn'] == 'elevator'
+    # Coming out of the elevator, the turn is measured from the way in (east), so b2 is behind: u-turn.
+    assert lift['instructions'][3]['turn'] == 'u-turn'
+    # A free start next to the stairwell snaps to the corridor, never onto the stairs edge.
+    assert [n['id'] for n in compute_route(world, {'from': [0, 2, -10], 'to': 'goal'})['nodes']][:2] == ['b', 'b2']
+    # Explicit `accessible` beats the kind default: a stepped corridor is excluded, a stair-lift allowed.
+    world['navigationGraph']['edges'][4]['accessible'] = False
+    world['navigationGraph']['edges'][2]['accessible'] = True
+    assert [n['id'] for n in compute_route(world, {'from': 'a', 'to': 'goal', 'accessibleOnly': True})['nodes']] == \
+        ['a', 'b', 'b2', 'goal']
+    world['navigationGraph']['edges'][2]['accessible'] = False
+    with pytest.raises(Exception) as error:
+        compute_route(world, {'from': 'a', 'to': 'goal', 'accessibleOnly': True})
+    assert error.value.status_code == 422 and 'without stairs' in error.value.detail
+
+
+def test_cross_floor_walk_edges_are_rejected(client):
+    graph = two_floor_graph()
+    graph['edges'][2] = {'from': 'b', 'to': 'b2'}
+    result = client.put('/worlds/demo-building/graph', json=graph)
+    assert result.status_code == 400 and 'joins floors 1 and 2' in result.json()['detail']
+    assert client.put('/worlds/demo-building/graph', json=two_floor_graph()).status_code == 200
+
+
+def test_session_accessible_only_persists_and_vertical_legs_wait_for_the_storey(client):
+    client.put('/worlds/demo-building/graph', json=two_floor_graph())
+    assert client.post('/sessions', json={'worldId': 'demo-building', 'deviceId': 'p', 'accessibleOnly': 'yes'}).status_code == 400
+    session = client.post('/sessions', json={'worldId': 'demo-building', 'deviceId': 'phone', 'destination': 'goal',
+                                            'accessibleOnly': True}).json()
+    check(session, 'navigation.schema.json', '#/$defs/session')
+    assert session['accessibleOnly'] is True
+    sid = session['sessionId']
+    start = datetime.now(timezone.utc)-timedelta(seconds=10)
+    def update(seconds, point):
+        result = client.post(f'/sessions/{sid}/pose', json={'timestamp': (start+timedelta(seconds=seconds)).isoformat(),
+            'trackingState': 'localized', 'pose': {'position': point, 'rotation': [0, 0, 0, 1]}})
+        assert result.status_code == 200, result.text
+        return result.json()
+    first = update(0, [0, 1.3, 0])
+    assert [n['id'] for n in client.get(f'/sessions/{sid}').json()['route']['nodes']] == ['a', 'b', 'c', 'c2', 'b2', 'goal']
+    assert first['nextNode']['id'] == 'b'
+    assert update(1, [0, 1.3, -10])['nextNode']['id'] == 'c'
+    # Standing at the ground-floor elevator door: told to take it, and the leg does not advance until floor 2.
+    at_c = update(2, [10, 1.3, -10])
+    assert at_c['instruction']['turn'] == 'elevator' and at_c['speak'] == 'Take the elevator to floor 2.'
+    assert update(3, [10, 1.3, -10])['nextNode']['id'] == 'c2'
+    upstairs = update(8, [10, 5.3, -10])
+    assert upstairs['nextNode']['id'] == 'b2' and upstairs['instruction']['turn'] != 'elevator'
+    assert update(10, [0, 5.3, -10])['nextNode']['id'] == 'goal'
+    assert update(12, [0, 5.3, -20])['state'] == 'arrived'

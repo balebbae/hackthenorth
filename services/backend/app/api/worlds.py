@@ -273,11 +273,15 @@ async def index_world(world_id: str, request: Request):
 @router.post('/sessions', status_code=201)
 async def create_session(request: Request):
     data = await body(request)
-    if not {'worldId', 'deviceId'} <= data.keys() or data.keys()-{'worldId', 'deviceId', 'destination'}:
-        raise HTTPException(400, 'Expected worldId, deviceId and optional destination')
+    if not {'worldId', 'deviceId'} <= data.keys() or data.keys()-{'worldId', 'deviceId', 'destination', 'accessibleOnly'}:
+        raise HTTPException(400, 'Expected worldId, deviceId, optional destination and accessibleOnly')
+    accessible_only = data.pop('accessibleOnly', False)
+    if not isinstance(accessible_only, bool):
+        raise HTTPException(400, 'accessibleOnly must be a boolean')
     if not all(isinstance(v, str) and v for v in data.values()):
         raise HTTPException(400, 'Session fields must be nonempty strings')
-    return await request.app.state.world_navigation.create(data['worldId'], data['deviceId'], data.get('destination'))
+    return await request.app.state.world_navigation.create(data['worldId'], data['deviceId'], data.get('destination'),
+                                                           accessible_only)
 
 
 @router.get('/sessions/{session_id}')

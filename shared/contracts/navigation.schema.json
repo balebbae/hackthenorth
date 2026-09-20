@@ -78,7 +78,8 @@
         },
         "to": { "type": "string", "description": "Destination node id (usually kind = destination)." },
         "avoid": { "type": "array", "items": { "type": "string" }, "description": "Node ids to route around (e.g. closed doors)." },
-        "headingDeg": { "type": "number", "minimum": 0, "exclusiveMaximum": 360, "description": "Traveller's heading at `from` (world convention: clockwise from above, 0 = -Z, 90 = +X). The first instruction turns relative to it; without it the first turn is 'straight'." }
+        "headingDeg": { "type": "number", "minimum": 0, "exclusiveMaximum": 360, "description": "Traveller's heading at `from` (world convention: clockwise from above, 0 = -Z, 90 = +X). The first instruction turns relative to it; without it the first turn is 'straight'." },
+        "accessibleOnly": { "type": "boolean", "default": false, "description": "Skip edges whose `accessible` is false (stairs, escalators, stepped paths); floor changes then go by elevator or ramp." }
       }
     },
 
@@ -99,7 +100,8 @@
               "from": { "type": "string" },
               "to": { "type": "string" },
               "distanceMetres": { "type": "number" },
-              "headingDeg": { "type": "number", "description": "Compass-style heading in the world frame, 0 = -Z, clockwise." }
+              "headingDeg": { "type": "number", "description": "Compass-style heading in the world frame, 0 = -Z, clockwise." },
+              "kind": { "type": "string", "enum": ["walk", "stairs", "escalator", "elevator", "ramp"], "description": "Edge kind; omitted means walk." }
             }
           }
         },
@@ -114,8 +116,8 @@
       "additionalProperties": false,
       "properties": {
         "atNode": { "type": "string" },
-        "turn": { "type": "string", "enum": ["straight", "slight-left", "left", "sharp-left", "slight-right", "right", "sharp-right", "u-turn", "arrive"] },
-        "text": { "type": "string", "description": "Short spoken cue, e.g. 'Left in 3 metres'." },
+        "turn": { "type": "string", "enum": ["straight", "slight-left", "left", "sharp-left", "slight-right", "right", "sharp-right", "u-turn", "stairs", "escalator", "elevator", "ramp", "arrive"], "description": "Turn bucket, or the vertical transition to take (stairs / escalator / elevator / ramp) when the next leg changes floors." },
+        "text": { "type": "string", "description": "Short spoken cue, e.g. 'Left in 3 metres' or 'Take the elevator to floor 2'." },
         "distanceMetres": { "type": "number", "description": "Distance from the previous instruction." }
       }
     },
@@ -130,6 +132,7 @@
         "worldId": { "type": "string" },
         "deviceId": { "type": "string" },
         "destination": { "type": "string", "description": "Destination node id." },
+        "accessibleOnly": { "type": "boolean", "description": "Every route and reroute in this session is computed with `accessibleOnly`." },
         "route": { "$ref": "#/$defs/routeResponse" },
         "state": { "type": "string", "enum": ["localizing", "navigating", "off-route", "arrived", "lost", "ended"] },
         "lastPose": { "$ref": "#/$defs/pose" },

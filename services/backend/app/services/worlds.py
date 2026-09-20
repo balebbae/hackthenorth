@@ -72,6 +72,14 @@ def world_graph(world):
     return graph
 
 
+def edge_kind(edge):
+    return edge.get('kind', 'walk')
+
+
+def edge_accessible(edge):
+    return edge.get('accessible', edge_kind(edge) not in ('stairs', 'escalator'))
+
+
 def validate_graph(graph):
     check(graph, 'world.schema.json', '#/properties/navigationGraph')
     ids = [node['id'] for node in graph['nodes']]
@@ -79,6 +87,11 @@ def validate_graph(graph):
         raise HTTPException(400, 'Duplicate node IDs')
     if any(e['from'] not in ids or e['to'] not in ids or e['from'] == e['to'] for e in graph['edges']):
         raise HTTPException(400, 'Invalid graph edge')
+    floors = {n['id']: n.get('floor') for n in graph['nodes']}
+    for e in graph['edges']:
+        a, b = floors[e['from']], floors[e['to']]
+        if a is not None and b is not None and a != b and edge_kind(e) == 'walk':
+            raise HTTPException(400, f"Edge {e['from']}-{e['to']} joins floors {a} and {b}; mark it stairs, escalator, elevator or ramp")
 
 
 def projection(point, a, b):
@@ -90,13 +103,16 @@ def projection(point, a, b):
     return horizontal(point, projected), projected, t
 
 
-def snap(graph, position, avoid=()):
+def snap(graph, position, avoid=(), accessible_only=False):
+    """Nearest node and nearest walkable edge; a start is never snapped into a stairwell or shaft."""
     nodes = {n['id']: n for n in graph['nodes'] if n['id'] not in avoid}
     if not nodes:
         raise HTTPException(409, 'World has no usable navigation nodes')
     nearest = min(nodes.values(), key=lambda n: horizontal(position, n['position']))
     options = []
     for edge in graph['edges']:
+        if edge_kind(edge) != 'walk' or (accessible_only and not edge_accessible(edge)):
+            continue
         if edge['from'] in nodes and edge['to'] in nodes:
             d, p, t = projection(position, nodes[edge['from']]['position'], nodes[edge['to']]['position'])
             options.append((d, p, t, edge))
@@ -112,6 +128,13 @@ def node_ref(node):
     return {k: v for k, v in node.items() if k in ('id', 'name', 'kind', 'position')}
 
 
+def vertical_phrase(kind, from_floor, to_floor):
+    name = 'the ' + kind
+    if to_floor is not None and to_floor != from_floor:
+        return f'Take {name} to floor {to_floor}.'
+    return f'Take {name} ahead.'
+
+
 def compute_route(world, request):
     check(request, 'navigation.schema.json', '#/$defs/routeRequest')
     graph = world_graph(world)
@@ -124,17 +147,18 @@ def compute_route(world, request):
     avoid = set(request.get('avoid', []))
     if destination in avoid:
         raise HTTPException(422, 'Destination is avoided')
+    accessible_only = request.get('accessibleOnly', False)
     adjacency = {key: [] for key in nodes}
     for edge in graph['edges']:
         a, b = edge['from'], edge['to']
-        if a in avoid or b in avoid:
+        if a in avoid or b in avoid or (accessible_only and not edge_accessible(edge)):
             continue
         weight = edge.get('distance', math.dist(nodes[a]['position'], nodes[b]['position']))
-        adjacency[a].append((b, weight))
+        adjacency[a].append((b, weight, edge_kind(edge)))
         if edge.get('bidirectional', True):
-            adjacency[b].append((a, weight))
+            adjacency[b].append((a, weight, edge_kind(edge)))
     if isinstance(start, list):
-        nearest, (_, point, t, edge) = snap(graph, start, avoid)
+        nearest, (_, point, t, edge) = snap(graph, start, avoid, accessible_only)
         if edge is None:
             start = nearest['id']
         elif t <= 1e-9:
@@ -145,9 +169,9 @@ def compute_route(world, request):
             start = 'start-' + uuid4().hex
             nodes[start] = {'id': start, 'position': point, 'kind': 'waypoint'}
             weight = edge.get('distance', math.dist(nodes[edge['from']]['position'], nodes[edge['to']]['position']))
-            adjacency[start] = [(edge['to'], weight*(1-t))]
+            adjacency[start] = [(edge['to'], weight*(1-t), edge_kind(edge))]
             if edge.get('bidirectional', True):
-                adjacency[start].append((edge['from'], weight*t))
+                adjacency[start].append((edge['from'], weight*t, edge_kind(edge)))
     if start not in nodes:
         raise HTTPException(404, 'Start node not found')
     if start in avoid:
@@ -159,30 +183,40 @@ def compute_route(world, request):
             continue
         if current == destination:
             break
-        for target, weight in adjacency[current]:
+        for target, weight, kind in adjacency[current]:
             if cost+weight < costs.get(target, float('inf')):
                 costs[target] = cost+weight
-                previous[target] = (current, weight)
+                previous[target] = (current, weight, kind)
                 heapq.heappush(queue, (cost+weight, target))
     if destination not in costs:
-        raise HTTPException(422, 'Destination unreachable')
+        raise HTTPException(422, 'Destination unreachable' + (' without stairs' if accessible_only else ''))
     path = [destination]
     while path[-1] != start:
         path.append(previous[path[-1]][0])
     path.reverse()
-    legs = [{'from': a, 'to': b, 'distanceMetres': previous[b][1],
-             'headingDeg': heading(nodes[a]['position'], nodes[b]['position'])} for a, b in zip(path, path[1:])]
+    legs = []
+    for a, b in zip(path, path[1:]):
+        leg = {'from': a, 'to': b, 'distanceMetres': previous[b][1],
+               'headingDeg': heading(nodes[a]['position'], nodes[b]['position'])}
+        if previous[b][2] != 'walk':
+            leg['kind'] = previous[b][2]
+        legs.append(leg)
+    floors = {n['id']: n.get('floor') for n in graph['nodes']}
     for i, leg in enumerate(legs):
-        if math.dist(nodes[leg['from']]['position'], nodes[leg['to']]['position']) < 1e-9:
-            leg['headingDeg'] = legs[i-1]['headingDeg'] if i else 0
+        # Vertical legs keep the previous heading so the turn after them is measured from the way in.
+        if leg.get('kind') or horizontal(nodes[leg['from']]['position'], nodes[leg['to']]['position']) < 1e-9:
+            leg['headingDeg'] = legs[i-1]['headingDeg'] if i else (request.get('headingDeg') or 0)
     instructions = []
     facing = request.get('headingDeg')
     for i, leg in enumerate(legs):
         # The first turn is relative to the traveller's heading when known, not to a phantom previous leg.
         reference = legs[i-1]['headingDeg'] if i else facing
-        angle = relative(leg['headingDeg'], reference) if reference is not None else 0
-        kind = turn(angle)
-        instructions.append({'atNode': leg['from'], 'turn': kind, 'text': phrase(kind, leg['distanceMetres']),
+        if leg.get('kind'):
+            kind, text = leg['kind'], vertical_phrase(leg['kind'], floors.get(leg['from']), floors.get(leg['to']))
+        else:
+            angle = relative(leg['headingDeg'], reference) if reference is not None else 0
+            kind, text = turn(angle), phrase(turn(angle), leg['distanceMetres'])
+        instructions.append({'atNode': leg['from'], 'turn': kind, 'text': text,
                              'distanceMetres': legs[i-1]['distanceMetres'] if i else 0})
     instructions.append({'atNode': destination, 'turn': 'arrive', 'text': 'You have arrived.',
                          'distanceMetres': legs[-1]['distanceMetres'] if legs else 0})
@@ -282,7 +316,7 @@ class WorldNavigation:
                 raise
             return {}
 
-    async def create(self, world_id, device_id, destination=None):
+    async def create(self, world_id, device_id, destination=None, accessible_only=False):
         world = self.store.world(world_id)
         if destination is not None and destination not in {n['id'] for n in world_graph(world)['nodes']}:
             raise HTTPException(404, 'Destination node not found')
@@ -290,6 +324,8 @@ class WorldNavigation:
                    'state': 'localizing', 'createdAt': now(), 'updatedAt': now()}
         if destination is not None:
             session['destination'] = destination
+        if accessible_only:
+            session['accessibleOnly'] = True
         await self.store.save_session(session)
         return session
 
@@ -305,7 +341,7 @@ class WorldNavigation:
             if destination not in {n['id'] for n in world_graph(world)['nodes']}:
                 raise HTTPException(404, 'Destination node not found')
             if 'lastPose' in session and session['state'] != 'lost':
-                session['route'] = compute_route(world, self.route_request(session['lastPose'], destination))
+                session['route'] = compute_route(world, self.route_request(session, session['lastPose'], destination))
                 session['state'] = 'navigating'
             else:
                 session.pop('route', None)
@@ -324,12 +360,21 @@ class WorldNavigation:
         return hashlib.sha256(json.dumps(world_graph(world), sort_keys=True).encode()).hexdigest()
 
     @staticmethod
-    def route_request(pose, destination):
+    def route_request(session, pose, destination):
         request = {'from': pose['position'], 'to': destination}
         facing = yaw(pose['rotation'])
         if facing is not None:
             request['headingDeg'] = facing
+        if session.get('accessibleOnly'):
+            request['accessibleOnly'] = True
         return request
+
+    @staticmethod
+    def reached(position, target, leg):
+        """Within 1.5 m horizontally; a vertical leg also needs the traveller on the target storey."""
+        if horizontal(position, target) >= 1.5:
+            return False
+        return not leg.get('kind') or abs(position[1]-target[1]) < 2.5
 
     @staticmethod
     def live_instruction(route, index, position, facing, arrived):
@@ -337,6 +382,8 @@ class WorldNavigation:
         if arrived or not route['legs']:
             return route['instructions'][-1], 0
         nodes = route['nodes']
+        if route['legs'][index].get('kind'):
+            return route['instructions'][index], 0
         target = nodes[index+1]['position']
         ahead = horizontal(position, target)
         angle = relative(heading(position, target), facing) if facing is not None and ahead > 0.3 else 0
@@ -374,7 +421,7 @@ class WorldNavigation:
             else:
                 changed = meta.get('graph_hash') != self.graph_hash(world)
                 if changed or 'route' not in session or session['state'] == 'lost':
-                    session['route'] = compute_route(world, self.route_request(body['pose'], session['destination']))
+                    session['route'] = compute_route(world, self.route_request(session, body['pose'], session['destination']))
                     meta.update(leg=0, off_since=None, graph_hash=self.graph_hash(world))
                     rerouted = True
                 route = session['route']
@@ -383,7 +430,7 @@ class WorldNavigation:
                 legs, nodes = route['legs'], route['nodes']
                 index = min(meta.get('leg', 0), max(0, len(legs)-1))
                 # Advance only along adjacent legs; do not jump across a looping path.
-                while index < len(legs)-1 and horizontal(position, nodes[index+1]['position']) < 1.5:
+                while index < len(legs)-1 and self.reached(position, nodes[index+1]['position'], legs[index]):
                     index += 1
                 meta['leg'] = index
                 if legs:
@@ -394,12 +441,12 @@ class WorldNavigation:
                 else:
                     off = off_all = horizontal(position, nodes[-1]['position'])
                     remaining = off
-                arrived = horizontal(position, nodes[-1]['position']) < 1.5 and index == max(0, len(legs)-1)
+                arrived = self.reached(position, nodes[-1]['position'], legs[-1] if legs else {}) and index == max(0, len(legs)-1)
                 state = 'arrived' if arrived else 'off-route' if off_all > 3 else 'navigating'
                 if state == 'off-route':
                     meta['off_since'] = meta.get('off_since') or timestamp
                     if timestamp-meta['off_since'] >= 5:
-                        session['route'] = compute_route(world, self.route_request(body['pose'], session['destination']))
+                        session['route'] = compute_route(world, self.route_request(session, body['pose'], session['destination']))
                         meta.update(leg=0, off_since=timestamp)
                         rerouted = True
                         route = session['route']
