@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 352" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="wander-layers-title wander-layers-desc" font-family="'Inter', system-ui, sans-serif">
+      <title id="wander-layers-title">Wander guidance layers</title>
+      <desc id="wander-layers-desc">Three stacked layers ordered by urgency. L1 local obstacle guidance runs on the phone in milliseconds and interrupts everything below. L2 localization and routing spans phone and backend in seconds. L3 AI explanation runs asynchronously from the backend to OpenAI. Geometry is authoritative; the language model only explains.</desc>
+      <defs>
+        <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');</style>
+        <marker id="wander-layers-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+        </marker>
+        <marker id="wander-layers-arrow-link" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2e4885"/>
+        </marker>
+        <marker id="wander-layers-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d85598"/>
+        </marker>
+        <marker id="wander-layers-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#475569" stroke-width="1.2"/>
+        </marker>
+      </defs>
+      <rect width="960" height="352" fill="#f8fafc"/>
+      <rect x="120" y="48" width="760" height="72" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <text x="140" y="88" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="500" letter-spacing="0.18em" fill="#64748b">L1</text>
+      <text x="192" y="89" font-size="15" font-weight="600" fill="#0f172a">Local obstacle guidance</text>
+      <text x="860" y="88" text-anchor="end" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">ON PHONE · MS</text>
+      <rect x="120" y="120" width="760" height="72" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="140" y="160" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="500" letter-spacing="0.18em" fill="#64748b">L2</text>
+      <text x="192" y="161" font-size="15" font-weight="600" fill="#0f172a">Localization + routing</text>
+      <text x="860" y="160" text-anchor="end" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">PHONE + BACKEND · S</text>
+      <rect x="120" y="192" width="760" height="72" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="140" y="232" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="500" letter-spacing="0.18em" fill="#64748b">L3</text>
+      <text x="192" y="233" font-size="15" font-weight="600" fill="#0f172a">AI explanation</text>
+      <text x="860" y="232" text-anchor="end" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">BACKEND → OPENAI · ASYNC</text>
+      <line x1="72" y1="240" x2="72" y2="80" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-layers-arrow)"/>
+      <text x="60" y="164" text-anchor="middle" transform="rotate(-90 60 164)" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.18em" fill="#64748b">URGENCY</text>
+      <line x1="912" y1="80" x2="912" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-layers-arrow)"/>
+      <text x="928" y="164" text-anchor="middle" transform="rotate(90 928 164)" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.18em" fill="#64748b">LATENCY</text>
+      <line x1="120" y1="304" x2="936" y2="304" stroke="#0f172a" stroke-opacity="0.08" stroke-width="1"/>
+      <rect x="120" y="320" width="12" height="12" rx="2" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <text x="140" y="329" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">INTERRUPTS EVERYTHING BELOW</text>
+      <rect x="316" y="320" width="12" height="12" rx="2" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="336" y="329" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">GEOMETRY IS AUTHORITATIVE · LLM EXPLAINS</text>
+    </svg>

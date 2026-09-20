@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wander map products</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz@0,8..60;1,8..60&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f8fafc; /* Stellar White */
+      --color-ink:    #0f172a; /* Void Black */
+      --color-muted:  #475569; /* Graphite */
+      --color-accent: #d85598; /* Wander Pink */
+      --font-sans:  'Inter', system-ui, sans-serif;
+      --font-serif: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+      --font-mono:  'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+           min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1040px; width: 100%; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+               text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+         letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 720px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Maps · Wander</p>
+    <h1>One scan, three maps, one frame</h1>
+    <svg viewBox="0 0 960 392" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="wander-maps-title wander-maps-desc" font-family="'Inter', system-ui, sans-serif">
+      <title id="wander-maps-title">Wander map products</title>
+      <desc id="wander-maps-desc">A LiDAR and photo scan produces three aligned map products: a Gaussian splat for viewing, a Niantic VPS map for locating, and a navigation graph for routing. All three are aligned into one coordinate frame recorded in world.json. Only the navigation graph is authoritative for where a person can walk.</desc>
+      <defs>
+        <marker id="wander-maps-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+        </marker>
+        <marker id="wander-maps-arrow-link" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2e4885"/>
+        </marker>
+        <marker id="wander-maps-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d85598"/>
+        </marker>
+        <marker id="wander-maps-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#475569" stroke-width="1.2"/>
+        </marker>
+      </defs>
+      <rect width="960" height="392" fill="#f8fafc"/>
+      <rect x="40" y="168" width="160" height="72" rx="4" fill="rgba(71,85,105,0.10)" stroke="#64748b" stroke-width="1"/>
+      <rect x="48" y="174" width="28" height="12" rx="2" fill="#0f172a"/>
+      <text x="62" y="183" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">IN</text>
+      <text x="120" y="202" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Scan</text>
+      <text x="120" y="217" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">LiDAR + photos</text>
+      <rect x="320" y="48" width="200" height="72" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <rect x="328" y="54" width="44" height="12" rx="2" fill="#0f172a"/>
+      <text x="350" y="63" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">SEE</text>
+      <text x="420" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Splat</text>
+      <text x="420" y="97" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">scene.spz</text>
+      <rect x="320" y="144" width="200" height="72" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <rect x="328" y="150" width="44" height="12" rx="2" fill="#0f172a"/>
+      <text x="350" y="159" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">LOCATE</text>
+      <text x="420" y="178" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">VPS map</text>
+      <text x="420" y="193" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">Niantic site</text>
+      <rect x="320" y="240" width="200" height="72" rx="4" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <rect x="328" y="246" width="44" height="12" rx="2" fill="#d85598"/>
+      <text x="350" y="255" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">ROUTE</text>
+      <text x="420" y="274" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">Nav graph</text>
+      <text x="420" y="289" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">nodes · edges</text>
+      <rect x="680" y="168" width="200" height="72" rx="4" fill="rgba(15,23,42,0.05)" stroke="#475569" stroke-width="1"/>
+      <rect x="688" y="174" width="28" height="12" rx="2" fill="#0f172a"/>
+      <text x="702" y="183" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7" font-weight="500" letter-spacing="0.18em" fill="#f8fafc">VOL</text>
+      <text x="780" y="202" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">world.json</text>
+      <text x="780" y="217" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#475569">one frame · one origin</text>
+      <path d="M 200 204 L 260 204" fill="none" stroke="#475569" stroke-width="1.5"/>
+      <path d="M 260 204 L 260 84 L 318 84" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-maps-arrow)"/>
+      <path d="M 260 204 L 260 180 L 318 180" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-maps-arrow)"/>
+      <path d="M 260 204 L 260 276 L 318 276" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#wander-maps-arrow)"/>
+      <path d="M 520 84 L 600 84 L 600 204" fill="none" stroke="#2e4885" stroke-width="1.5"/>
+      <path d="M 520 180 L 600 180 L 600 204" fill="none" stroke="#2e4885" stroke-width="1.5"/>
+      <path d="M 520 276 L 600 276 L 600 204 L 678 204" fill="none" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-maps-arrow-link)"/>
+      <rect x="622" y="184" width="36" height="12" fill="#f8fafc"/>
+      <text x="640" y="193" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">ALIGN</text>
+      <line x1="20" y1="344" x2="936" y2="344" stroke="rgba(15,23,42,0.08)" stroke-width="1"/>
+      <rect x="20" y="360" width="12" height="12" rx="2" fill="#fbe4f0" stroke="#d85598" stroke-width="1.5"/>
+      <text x="40" y="369" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">AUTHORITATIVE FOR WALKING</text>
+      <rect x="208" y="360" width="12" height="12" rx="2" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+      <text x="228" y="369" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">VIEW / LOCATE ONLY</text>
+      <line x1="356" y1="366" x2="384" y2="366" stroke="#2e4885" stroke-width="1.5" marker-end="url(#wander-maps-arrow-link)"/>
+      <text x="392" y="369" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#475569">SAME COORDINATE FRAME</text>
+    </svg>
+  </div>
+</body>
+</html>

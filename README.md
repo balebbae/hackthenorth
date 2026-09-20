@@ -1,8 +1,32 @@
 # hackthenorth
 
-HTN Navigation Assistant
+**Wander** — a wearable indoor navigation assistant for blind and low-vision users. Four LiDAR iPhones on the body, one FastAPI backend on Modal, one companion web app.
 
-The web app is scaffolded with Next.js, TypeScript, Tailwind CSS, and ESLint. The remaining directories are placeholders; application features have not been implemented.
+## Architecture
+
+![System: front phone, side phones, FastAPI backend on Modal, Volume, GPU workers, companion web, Niantic VPS, OpenAI](docs/architecture/01-system.png)
+
+### Guidance layers
+
+![Three layers ordered by urgency: local obstacle guidance, localization + routing, AI explanation](docs/architecture/02-layers.png)
+
+### Asking for a destination
+
+![Sequence: wearer asks, phone sends audio, backend calls OpenAI with tools, routes, returns cue](docs/architecture/03-sequence.png)
+
+### Phone roles
+
+![Top-down view: chest phone coordinates, left/right/back phones buzz](docs/architecture/04-roles.png)
+
+### Map products
+
+![One scan produces a splat, a VPS map and a nav graph aligned into world.json](docs/architecture/05-maps.png)
+
+### Obstacle cue flow
+
+![Flowchart: obstacle ahead → stop cue on device, interrupts route narration](docs/architecture/06-cue-flow.png)
+
+Sources: [`docs/architecture/`](docs/architecture/) (`.html` source, `.svg`, `.png`).
 
 ## Layout
 
@@ -51,5 +75,4 @@ The iOS and localization developers share one native app. Agree on the camera/AR
 - Niantic localization runs through the phone SDK. Modal hosts the custom backend.
 - Exported map assets belong in `maps/assets/`; navigation metadata belongs in `maps/navigation/`.
 - Worlds are stored on a Modal Volume as `worlds/<id>/world.json` + `worlds/<id>/<version>/scene.spz` (contract in `shared/contracts/`). The web app renders them with Spark/Three.js at `/worlds/<id>` (measure distances, tag stops, save the graph back), reading through FastAPI when `WANDER_API_URL` is set or from `maps/assets/worlds/` locally (`npm run world:add` in `apps/web` registers an export).
-- Empty folders contain `.gitkeep` placeholders so they can be tracked by Git.
-- No Xcode project, backend implementation, or deployment code has been added yet; the FastAPI endpoints the web app expects are listed in `shared/contracts/README.md`.
+- Per-area docs: `apps/ios/README.md`, `apps/web/README.md`, `services/backend/WORLDS_MIGRATION.md`, `shared/contracts/README.md`, `shared/contracts/service-handoffs.md`.
