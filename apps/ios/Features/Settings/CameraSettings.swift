@@ -12,8 +12,12 @@ struct CameraSettings: Codable, Equatable, Sendable {
     var smoothedDepth: Bool = false
     /// Farthest obstacle distance the detector reports, in metres. LiDAR is reliable to about 5 m.
     var obstacleRangeMeters: Double = 5.0
+    /// A scanned wall or hazard closer than this beside the wearer pulses that shoulder phone.
+    var sideBuzzRangeMeters: Double = 0.8
     /// Left and right phones run LiDAR and report clearance to the front phone.
-    var sidePhonesSenseObstacles: Bool = true
+    /// Kept for stored-settings compatibility; side phones no longer sense. Their
+    /// buzzes come from the front phone's localisation against the world map.
+    var sidePhonesSenseObstacles: Bool = false
     /// How often the front phone snapshots a frame for Niantic, in milliseconds.
     var captureIntervalMs: Int = 200
     /// JPEG quality for uploaded frames, 0...1.
@@ -50,6 +54,7 @@ struct CameraSettings: Codable, Equatable, Sendable {
         sceneDepthEnabled = try c.decodeIfPresent(Bool.self, forKey: .sceneDepthEnabled) ?? d.sceneDepthEnabled
         smoothedDepth = try c.decodeIfPresent(Bool.self, forKey: .smoothedDepth) ?? d.smoothedDepth
         obstacleRangeMeters = try c.decodeIfPresent(Double.self, forKey: .obstacleRangeMeters) ?? d.obstacleRangeMeters
+        sideBuzzRangeMeters = try c.decodeIfPresent(Double.self, forKey: .sideBuzzRangeMeters) ?? d.sideBuzzRangeMeters
         sidePhonesSenseObstacles = try c.decodeIfPresent(Bool.self, forKey: .sidePhonesSenseObstacles) ?? d.sidePhonesSenseObstacles
         captureIntervalMs = try c.decodeIfPresent(Int.self, forKey: .captureIntervalMs) ?? d.captureIntervalMs
         jpegQuality = try c.decodeIfPresent(Double.self, forKey: .jpegQuality) ?? d.jpegQuality
@@ -135,6 +140,10 @@ struct CameraSettings: Codable, Equatable, Sendable {
             config.videoFormat = match
         } else if let first = formats.first {
             config.videoFormat = first
+        }
+        if config.frameSemantics.isDisjoint(with: [.sceneDepth, .smoothedSceneDepth]) {
+            // No LiDAR: detected walls feed the structure-based obstacle estimate.
+            config.planeDetection = [.vertical]
         }
         return config
     }

@@ -8,6 +8,7 @@ struct FrontRoleView: View {
     @StateObject private var pipeline: FrontPipeline
     @State private var showSettings = false
     @State private var showScanner = false
+    @State private var showNotes = false
 
     init() {
         // The store is read again in onAppear; this seeds the pipeline with defaults.
@@ -21,6 +22,7 @@ struct FrontRoleView: View {
                 cameraCard
                 navigationCard
                 nianticCard
+                notesCard
                 imageQueryCard
                 localizationCard
                 obstacleCard
@@ -32,6 +34,12 @@ struct FrontRoleView: View {
         .background(AppTheme.canvas.ignoresSafeArea())
         .sheet(isPresented: $showSettings) { CameraSettingsView() }
         .sheet(isPresented: $showScanner) { ConnectWorldSheet() }
+        .sheet(isPresented: $showNotes) {
+            WorldNotesView(store: pipeline.notes,
+                           localized: pipeline.notesLocalized,
+                           worldId: settingsStore.settings.worldId,
+                           onReload: { pipeline.loadNotes() })
+        }
         .onChange(of: settingsStore.settings) { _, new in pipeline.applySettings(new) }
         .onDisappear { pipeline.stop() }
     }
@@ -86,6 +94,10 @@ struct FrontRoleView: View {
             }
             .frame(height: 260)
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.radiusCard, style: .continuous))
+            .overlay(
+                NoteOverlay(pins: pipeline.notePins, onSize: { pipeline.overlaySize = $0 })
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.radiusCard, style: .continuous))
+            )
 
             PillTag(text: sessionLabel, fill: sessionColor, foreground: .white, identifier: "front.sessionState")
                 .padding(AppTheme.s12)
@@ -96,7 +108,7 @@ struct FrontRoleView: View {
         switch pipeline.arSession.state {
         case .idle: "Idle"
         case .unsupported: "No ARKit"
-        case .running: pipeline.arSession.depthAvailable ? "Running · LiDAR" : "Running · no depth"
+        case .running: pipeline.arSession.depthAvailable ? "Running · LiDAR" : "Running · camera estimate"
         case .failed: "Failed"
         }
     }
@@ -219,6 +231,39 @@ struct FrontRoleView: View {
         .card()
     }
 
+    /// Notes pinned to this world in the web viewer. The list always works; the
+    /// labels over the camera need a precise fix, so the card says which you have.
+    private var notesCard: some View {
+        VStack(alignment: .leading, spacing: AppTheme.s12) {
+            HStack {
+                Text("Notes")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.24)
+                Spacer()
+                PillTag(text: pipeline.notesLocalized ? "On camera" : "List only",
+                        fill: pipeline.notesLocalized ? AppTheme.marigold : AppTheme.skyTint,
+                        identifier: "front.notesMode")
+            }
+            StatRow(label: "Pinned", value: "\(pipeline.notes.notes.count)", identifier: "front.notes.count")
+            StatRow(label: "Source", value: pipeline.notes.state.label)
+            if let nearest = pipeline.notes.bearings.first {
+                StatRow(label: "Nearest", value: String(format: "%@ · %.1f m %@", nearest.note.title,
+                                                        nearest.distance, nearest.side.rawValue))
+            } else if !pipeline.notes.isEmpty {
+                StatRow(label: "Nearest", value: "needs a precise fix")
+            }
+            Button {
+                showNotes = true
+            } label: {
+                Label(pipeline.notes.isEmpty ? "Open notes" : "Open \(pipeline.notes.notes.count) notes",
+                      systemImage: "note.text")
+            }
+            .buttonStyle(GhostButtonStyle())
+            .accessibilityIdentifier("front.openNotes")
+        }
+        .card()
+    }
+
     /// The camera frames the SDK actually sent to VPS, and how each one did.
     private var imageQueryCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.s12) {
@@ -302,6 +347,14 @@ struct FrontRoleView: View {
             StatRow(label: "Open side", value: pipeline.lastDecision.openSide?.rawValue ?? "–")
             StatRow(label: "Last cue", value: pipeline.speech.lastSpoken ?? "–")
             Divider()
+            StatRow(label: "Map", value: pipeline.mapStatus)
+            if let m = pipeline.mapReading {
+                let fmt: (Float?) -> String = { $0.map { String(format: "%.1f", $0) } ?? "–" }
+                StatRow(label: "Map around", value: "L \(fmt(m.left)) · ahead \(fmt(m.zones.center)) · R \(fmt(m.right)) · back \(fmt(m.back))")
+                if let hazard = m.nearestHazard, let d = m.nearestHazardDistance {
+                    StatRow(label: "Hazard", value: String(format: "%@ · %.1f m", hazard.name, d))
+                }
+            }
             StatRow(label: "Linked phones", value: pipeline.link.connectedRoles.isEmpty ? "none" : pipeline.link.connectedRoles.map(\.rawValue).joined(separator: ", "),
                     identifier: "front.link")
             StatRow(label: "Left phone sees", value: sideReading(.left))

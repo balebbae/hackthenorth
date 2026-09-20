@@ -22,7 +22,8 @@ __all__ = ['heading', 'horizontal', 'rotate', 'yaw']
 logger = logging.getLogger(__name__)
 BASE = 'https://wander.app/contracts/'
 SCHEMAS = {name: json.loads((ROOT / 'shared/contracts' / name).read_text(encoding='utf-8'))
-           for name in ('world.schema.json', 'navigation.schema.json', 'measurements.schema.json')}
+           for name in ('world.schema.json', 'navigation.schema.json', 'measurements.schema.json',
+                        'notes.schema.json')}
 REGISTRY = Registry().with_resources([(BASE + name, Resource.from_contents(schema))
                                       for name, schema in SCHEMAS.items()])
 
@@ -36,6 +37,8 @@ def check(value, schema, pointer=''):
                                      format_checker=FormatChecker())
     errors = list(validator.iter_errors(value))
     if errors:
+        logging.getLogger(__name__).warning('Validation failed for %s%s: %s (at %s)', schema, pointer,
+                                            errors[0].message, '/'.join(str(p) for p in errors[0].absolute_path))
         raise HTTPException(400, errors[0].message)
     def finite(item):
         if isinstance(item, float) and not math.isfinite(item):
@@ -45,6 +48,7 @@ def check(value, schema, pointer=''):
                 finite(child)
                 if key == 'rotation' and isinstance(child, list):
                     if abs(sum(x*x for x in child) - 1) > 0.001:
+                        logging.getLogger(__name__).warning('Rejected rotation %s (norm² %.4f)', child, sum(x*x for x in child))
                         raise HTTPException(400, 'Rotation must be a unit quaternion [x,y,z,w]')
         elif isinstance(item, list):
             for child in item:
@@ -311,9 +315,14 @@ def compute_route(world, request, landmarks=()):
 
 
 class WorldStore:
-    def __init__(self, root: Path, commit=None):
+    def __init__(self, root: Path, commit=None, commit_delay=1.0):
         self.root = root.resolve()
         self.commit = commit
+        # Volume commits take seconds; coalesce a burst of writes into one
+        # background commit instead of blocking every request on its own.
+        self.commit_delay = commit_delay
+        self._dirty = False
+        self._committer = None
         self.locks = {}
         self.sockets = {}
 
@@ -359,8 +368,22 @@ class WorldStore:
             temporary.unlink(missing_ok=True)
 
     async def flush(self):
-        if self.commit:
-            await asyncio.to_thread(self.commit)
+        if not self.commit:
+            return
+        self._dirty = True
+        if self._committer is None or self._committer.done():
+            self._committer = asyncio.create_task(self._commit_soon())
+
+    async def _commit_soon(self):
+        await asyncio.sleep(self.commit_delay)
+        while self._dirty:
+            self._dirty = False
+            try:
+                await asyncio.to_thread(self.commit)
+            except Exception as error:  # noqa: BLE001 - keep serving; the next write retries
+                self._dirty = True
+                print(f'[worlds] volume commit failed: {error!r}')
+                await asyncio.sleep(self.commit_delay)
 
     def world(self, world_id):
         world = check(self.read('worlds', world_id, 'world.json'), 'world.schema.json')
