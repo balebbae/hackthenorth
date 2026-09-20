@@ -11,6 +11,12 @@ def test_public_paths_exclude_the_phone_feed():
     assert not is_public_path('/worlds/x/localize')
 
 
+def test_ids_keep_increasing_across_restarts():
+    first = PulseQueue().add('left', 300)['id']
+    second = PulseQueue().add('left', 300)['id']  # a "restarted" queue
+    assert second >= first
+
+
 def test_queue_prunes_and_cursors():
     q = PulseQueue(ttl=10)
     a = q.add('left', 300, now=100)

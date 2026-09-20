@@ -177,6 +177,8 @@ final class FrontPipeline: ObservableObject {
         pulseTask = Task { [weak self] in
             while !Task.isCancelled {
                 if let self, let feed = try? await client.pendingPulses(since: self.lastPulseId) {
+                    // A backend restart would hand out smaller ids; follow it instead of ignoring them.
+                    if feed.last < self.lastPulseId { self.lastPulseId = feed.last }
                     for pulse in feed.pulses {
                         self.lastPulseId = max(self.lastPulseId, pulse.id)
                         guard let role = pulse.role == "chest" ? .front : DeviceRole(rawValue: pulse.role) else { continue }
@@ -191,6 +193,7 @@ final class FrontPipeline: ObservableObject {
 
     func relay(_ pulse: PulseCommand) {
         pulsesRelayed += 1
+        print("[pulse] #\(pulse.id) \(pulse.role.rawValue) \(pulse.ms) ms; linked=\(link.connectedRoles.map(\.rawValue))")
         if pulse.role == .front {
             haptics.buzz(duration: Double(pulse.ms) / 1000, intensity: 1, sharpness: 0.4)
         } else {

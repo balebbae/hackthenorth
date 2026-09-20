@@ -83,6 +83,7 @@ struct HapticRoleView: View {
                     StatRow(label: "This side", value: pipeline.lastCommand.distance(for: role).map { String(format: "%.2f m", $0) } ?? "clear",
                             identifier: "haptic.nearest")
                     StatRow(label: "Commands received", value: "\(pipeline.link.messagesReceived)")
+                    StatRow(label: "Pulses", value: "\(pipeline.pulsesReceived)" + (pipeline.pollingBackend ? " · backend fallback on" : ""))
                 }
                 .card()
             }

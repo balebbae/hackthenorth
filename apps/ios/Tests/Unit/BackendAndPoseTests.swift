@@ -75,3 +75,12 @@ final class BackendAndPoseTests: XCTestCase {
         XCTAssertTrue(s.canLocalizeWithNSDK)
     }
 }
+
+final class BackendClientURLTests: XCTestCase {
+    func testQueryStringsSurviveRequestBuilding() {
+        let client = WanderBackendClient(baseURL: URL(string: "https://example.com")!, apiKey: "k")
+        let request = client.request("GET", "haptics/pending?since=7", data: nil)
+        XCTAssertEqual(request.url?.absoluteString, "https://example.com/haptics/pending?since=7")
+        XCTAssertEqual(client.request("GET", "worlds", data: nil).url?.absoluteString, "https://example.com/worlds")
+    }
+}
