@@ -72,6 +72,7 @@ def world_graph(world):
         for node in graph['nodes']:
             rotated = rotate([v * alignment['scale'] for v in node['position']], alignment['rotation'])
             node['position'] = [a+b for a, b in zip(rotated, alignment['position'])]
+        graph['frame'] = 'world'
         # Explicit distances are already specified in metres by the contract.
     return graph
 

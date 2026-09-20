@@ -435,3 +435,38 @@ def test_session_accessible_only_persists_and_vertical_legs_wait_for_the_storey(
     assert upstairs['nextNode']['id'] == 'b2' and upstairs['instruction']['turn'] != 'elevator'
     assert update(10, [0, 5.3, -10])['nextNode']['id'] == 'goal'
     assert update(12, [0, 5.3, -20])['state'] == 'arrived'
+
+
+def test_splat_graph_validation_result_is_not_transformed_twice(world):
+    world['alignment'] = {'frame': 'niantic-vps', 'position': [10, 0, 0], 'rotation': [0, 0, 0, 1], 'scale': 1}
+    world['navigationGraph'] = {'frame': 'splat', 'nodes': [{'id': 'a', 'position': [1, 0, 0]}], 'edges': []}
+    converted = world_graph(world)
+    assert converted['frame'] == 'world'
+    assert converted['nodes'][0]['position'] == [11, 0, 0]
+    assert world_graph({**world, 'navigationGraph': converted}) == converted
+
+
+def test_proposal_preserves_places_and_rejects_stale_acceptance(client):
+    url = '/worlds/demo-building'
+    graph = {'nodes': [
+        {'id': 'entrance', 'name': 'Entrance', 'kind': 'entrance', 'position': [-2, 0, 0]},
+        {'id': 'desk', 'name': 'Desk', 'kind': 'destination', 'position': [2, 0, 0]},
+    ], 'edges': [{'from': 'entrance', 'to': 'desk'}]}
+    assert client.put(url + '/graph', json=graph).status_code == 200
+    mesh = trimesh.creation.box(extents=(8, .1, 6))
+    mesh.apply_translation((0, -.05, 0))
+    assert client.put(url + '/v1/mesh.glb', content=mesh.export(file_type='glb')).status_code == 201
+    response = client.post(url + '/navmesh', json={})
+    assert response.status_code == 201, response.text
+    proposal = response.json()
+    assert proposal['proposalIssues'] == []
+    assert {p['id'] for p in proposal['places'] if p['connected']} == {'entrance', 'desk'}
+    assert client.get(url).json()['navigationGraph'] == graph
+    assert client.put(url + '/graph', json=proposal['graph'], headers={'If-Match': proposal['sourceRevision']}).status_code == 200
+    # Replaying the old preview cannot overwrite a graph changed since generation.
+    response = client.put(url + '/graph', json=proposal['graph'], headers={'If-Match': proposal['sourceRevision']})
+    assert response.status_code == 412
+    # A new mesh alignment also invalidates an otherwise-current preview.
+    proposal = client.post(url + '/navmesh', json={}).json()
+    assert client.patch(url, json={'meshFrame': 'splat'}).status_code == 200
+    assert client.put(url + '/graph', json=proposal['graph'], headers={'If-Match': proposal['sourceRevision']}).status_code == 412
