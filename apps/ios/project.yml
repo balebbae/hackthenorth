@@ -41,6 +41,8 @@ targets:
         NSCameraUsageDescription: The chest phone uses the camera and LiDAR to detect obstacles and localize against the mapped building.
         NSLocationWhenInUseUsageDescription: Location helps Niantic localization pick the correct mapped site.
         NSLocalNetworkUsageDescription: The four phones on the wearer talk to each other directly to share obstacle readings and buzz commands.
+        NSMicrophoneUsageDescription: The chest phone listens for the wearer's voice requests and answers through its speaker.
+        NSSpeechRecognitionUsageDescription: Spoken requests are transcribed so the assistant can act on them.
         NSBonjourServices: [_htn-navaid._tcp, _htn-navaid._udp]
         ITSAppUsesNonExemptEncryption: false
         # Lets Settings point the backend at a dev machine over plain http on the LAN.

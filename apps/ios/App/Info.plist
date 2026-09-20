@@ -49,6 +49,10 @@
 	<string>The four phones on the wearer talk to each other directly to share obstacle readings and buzz commands.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location helps Niantic localization pick the correct mapped site.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The chest phone listens for the wearer's voice requests and answers through its speaker.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Spoken requests are transcribed so the assistant can act on them.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

@@ -20,13 +20,33 @@ final class SpeechCoordinator: NSObject, ObservableObject {
         configureAudioSession()
     }
 
+    /// Microphone in, loudspeaker out: the front phone both listens and talks. Falls
+    /// back to playback-only if the record category is refused (e.g. no microphone access yet).
     private func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setCategory(.playAndRecord, mode: .default,
+                                    options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers])
             try session.setActive(true)
         } catch {
-            print("[Speech] audio session error: \(error)")
+            print("[Speech] play-and-record session refused (\(error)); using playback only")
+            try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try? session.setActive(true)
+        }
+    }
+
+    /// Ask for microphone access once; the result is published for the UI.
+    @Published private(set) var microphoneGranted: Bool?
+
+    func requestMicrophone() {
+        let current = AVAudioApplication.shared.recordPermission
+        if current == .granted { microphoneGranted = true; return }
+        if current == .denied { microphoneGranted = false; return }
+        AVAudioApplication.requestRecordPermission { granted in
+            Task { @MainActor in
+                self.microphoneGranted = granted
+                self.configureAudioSession()
+            }
         }
     }
 

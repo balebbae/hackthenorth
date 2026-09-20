@@ -347,6 +347,7 @@ struct FrontRoleView: View {
             StatRow(label: "Open side", value: pipeline.lastDecision.openSide?.rawValue ?? "–")
             Divider()
             StatRow(label: "Map", value: pipeline.mapStatus)
+            StatRow(label: "Microphone", value: pipeline.speech.microphoneGranted.map { $0 ? "allowed" : "denied in Settings" } ?? "not asked yet")
             if let m = pipeline.mapReading {
                 let fmt: (Float?) -> String = { $0.map { String(format: "%.1f", $0) } ?? "–" }
                 StatRow(label: "Map around", value: "L \(fmt(m.left)) · ahead \(fmt(m.zones.center)) · R \(fmt(m.right)) · back \(fmt(m.back))")

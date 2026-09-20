@@ -214,6 +214,7 @@ final class FrontPipeline: ObservableObject {
         reporter.configure(settings: settings, deviceId: deviceId, role: .front)
         loadStaticMap(settings: settings)
         pollPulses(settings: settings)
+        speech.requestMicrophone()
         usingNSDK = settings.canLocalizeWithNSDK && NianticLocalizer.isAvailable && arSession.state == .running
         if usingNSDK {
             // The SDK submits frames itself at the configured rate; the REST loop stays off.
