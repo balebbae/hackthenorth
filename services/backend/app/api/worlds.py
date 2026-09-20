@@ -461,12 +461,14 @@ async def localizations(world_id: str, request: Request, limit: int = 20):
 async def occupancy(world_id: str, request: Request, rebuild: bool = False):
     """Static obstacle grid voxelised from the world's splat, cached per asset version.
     Phones ray-cast against it from their localised pose to find walls and furniture."""
-    from ..services.occupancy import build_occupancy
+    from ..services.occupancy import BUILDER, build_occupancy
     store = request.app.state.worlds
     world = store.world(world_id)
     cached = store.path('worlds', world_id, world['version'], 'occupancy.json')
     if cached.exists() and not rebuild:
-        return store.read('worlds', world_id, world['version'], 'occupancy.json')
+        grid = store.read('worlds', world_id, world['version'], 'occupancy.json')
+        if grid.get('builder') == BUILDER:
+            return grid
     splat = store.path(*world['assets']['splat'].split('/'))
     if not splat.exists():
         raise HTTPException(404, 'World has no splat asset')

@@ -51,6 +51,15 @@ final class MapObstacleSensorTests: XCTestCase {
         XCTAssertEqual(reading.nearestHazard, bags)
     }
 
+    func testLoneWispCellIsIgnoredButAThickPatchCounts() {
+        // One stray cell ahead at camera height, and a 2-cell-deep patch further on.
+        var cells = [index(simd_float3(0, 0, -1.0))]
+        for z in [Float(-1.6), -1.7] { for y in [Float(-0.05), 0.05] { cells.append(index(simd_float3(0, y, z))) } }
+        let map = StaticMap(cellSize: cell, origin: origin, size: size, cells: cells)
+        let reading = MapObstacleSensor().read(map: map, deviceTransform: matrix_identity_float4x4)!
+        XCTAssertEqual(reading.zones.center ?? -1, 1.6, accuracy: 0.16, "the wisp at 1.0 m is skipped")
+    }
+
     func testTiltedDeviceHasNoReading() {
         var down = matrix_identity_float4x4
         down.columns.2 = simd_float4(0, 1, 0, 0)

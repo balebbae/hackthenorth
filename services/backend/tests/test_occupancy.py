@@ -6,18 +6,22 @@ import numpy as np
 from services.backend.app.services.occupancy import build_occupancy, decode_cells, ray_distance, read_spz_positions
 
 
-def make_spz(points, alphas=None, fractional_bits=12):
+def make_spz(points, alphas=None, fractional_bits=12, scales_m=None):
     points = np.asarray(points, dtype=np.float64)
     n = len(points)
     alphas = np.full(n, 255, dtype=np.uint8) if alphas is None else np.asarray(alphas, dtype=np.uint8)
+    scales_m = np.full(n, 0.01) if scales_m is None else np.asarray(scales_m, dtype=np.float64)
+    packed_scales = np.clip(np.round((np.log(scales_m) + 10.0) * 16.0), 0, 255).astype(np.uint8)
+    packed_scales = np.repeat(packed_scales[:, None], 3, axis=1)
     fixed = np.round(points * (1 << fractional_bits)).astype(np.int64) & 0xFFFFFF
     packed = np.stack([fixed & 0xFF, (fixed >> 8) & 0xFF, (fixed >> 16) & 0xFF], axis=-1).astype(np.uint8)
     header = struct.pack('<IIIBBBB', 0x5053474E, 3, n, 0, fractional_bits, 0, 0)
-    tail = bytes(n * 3 + n * 3 + n * 4)  # colours, scales, rotations: unread
-    return gzip.compress(header + packed.tobytes() + alphas.tobytes() + tail)
+    colours = bytes(n * 3)
+    rotations = bytes(n * 4)
+    return gzip.compress(header + packed.tobytes() + alphas.tobytes() + colours + packed_scales.tobytes() + rotations)
 
 
-def wall(x0, x1, y0, y1, z, per_cell=10, cell=0.15):
+def wall(x0, x1, y0, y1, z, per_cell=12, cell=0.15):
     xs = np.arange(x0, x1, cell / 3)
     ys = np.arange(y0, y1, cell / 3)
     grid = np.array([(x, y, z) for x in xs for y in ys])
@@ -64,3 +68,24 @@ def test_cells_decode_to_int32():
 def pytest_approx(value, tolerance):
     import pytest
     return pytest.approx(value, abs=tolerance)
+
+
+def test_smeared_floaters_and_small_clusters_are_dropped():
+    world = {'id': 'w', 'version': 'v1', 'alignment': None}
+    solid_wall = wall(-2, 2, -1.2, 1.2, z=-2.0)
+    # A dense mid-air blob made of huge gaussians: a smear hanging in the room.
+    smear = np.repeat([[0.0, 0.2, -1.0]], 40, axis=0) + np.random.default_rng(1).normal(0, 0.02, (40, 3))
+    # A tiny but dense isolated blob of small gaussians: noise.
+    speck = np.repeat([[0.5, 0.0, -0.8]], 40, axis=0) + np.random.default_rng(2).normal(0, 0.02, (40, 3))
+    points = np.vstack([solid_wall, smear, speck])
+    scales = np.concatenate([np.full(len(solid_wall), 0.01), np.full(40, 0.8), np.full(40, 0.01)])
+    grid = build_occupancy(make_spz(points, scales_m=scales), world)
+    assert ray_distance(grid, [0, 0, 0], [0, 0, -1], 4.0) == pytest_approx(2.0, 0.16), 'the wall survives'
+    assert ray_distance(grid, [0, 0.2, 0], [0, 0, -1], 1.5) is None, 'the smear is gone'
+    assert ray_distance(grid, [0.5, 0, 0], [0, 0, -1], 1.5) is None, 'the speck is gone'
+
+
+def test_cached_grid_reports_builder_version():
+    from services.backend.app.services.occupancy import BUILDER
+    grid = build_occupancy(make_spz(wall(-1, 1, -1, 1, z=-1.0)), {'id': 'w', 'version': 'v1'})
+    assert grid['builder'] == BUILDER

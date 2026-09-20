@@ -47,7 +47,7 @@ final class FrontPipeline: ObservableObject {
     private var staticMap: StaticMap?
     private var mapWorldId: String?
     private var mapTask: Task<Void, Never>?
-    private let policy = ObstacleCuePolicy()
+    private var policy = ObstacleCuePolicy()
     private var lastDetection: TimeInterval = 0
     private let detectionInterval: TimeInterval = 1.0 / 15
     private var placeholderFrame: FrameSnapshot?
@@ -122,6 +122,8 @@ final class FrontPipeline: ObservableObject {
         detector.maxRange = Float(settings.obstacleRangeMeters)
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
+        policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
+        policy.backWarnDistance = min(0.6, Float(settings.sideBuzzRangeMeters))
         self.settings = settings
         arSession.start(settings: settings)
         activeSettings = settings
@@ -165,6 +167,8 @@ final class FrontPipeline: ObservableObject {
         detector.maxRange = Float(settings.obstacleRangeMeters)
         estimator.maxRange = Float(settings.obstacleRangeMeters)
         mapSensor.maxRange = Float(settings.obstacleRangeMeters)
+        policy.sideWarnDistance = Float(settings.sideBuzzRangeMeters)
+        policy.backWarnDistance = min(0.6, Float(settings.sideBuzzRangeMeters))
         queryLoop.reconfigure(settings: settings)
         let previous = activeSettings
         activeSettings = settings

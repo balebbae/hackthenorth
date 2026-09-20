@@ -65,8 +65,8 @@ struct ObstacleCuePolicy {
     /// A wall or obstacle within this distance beside the wearer pulses that side's
     /// phone, graded by distance, without speech. Fed by the side phones' own sensing
     /// and by the static map once the front phone is localised.
-    var sideWarnDistance: Float = 1.2
-    var backWarnDistance: Float = 0.8
+    var sideWarnDistance: Float = 0.8
+    var backWarnDistance: Float = 0.6
     /// Side readings older than this are ignored.
     var maxClearanceAge: TimeInterval = 1.0
     /// Assumed distance when a phone reports nothing in range.

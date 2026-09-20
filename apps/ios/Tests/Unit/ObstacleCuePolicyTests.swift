@@ -146,9 +146,9 @@ final class ObstacleCuePolicyTests: XCTestCase {
     func testFarObstaclesAreIgnored() {
         let d = policy.decide(ObstacleZones(left: 2.0, center: 3.0, right: 2.5))
         XCTAssertEqual(d, .clear)
-        // A side phone at 0.8 m alone is not "way too close": no speech, but that phone pulses.
+        // A side phone at 0.7 m alone is not "way too close": no speech, but that phone pulses.
         let now: TimeInterval = 1000
-        let sides: [DeviceRole: SideClearance] = [.left: SideClearance(role: .left, nearest: 0.8, timestamp: now)]
+        let sides: [DeviceRole: SideClearance] = [.left: SideClearance(role: .left, nearest: 0.7, timestamp: now)]
         let near = policy.decide(.empty, sides: sides, now: now)
         XCTAssertNil(near.cue)
         XCTAssertTrue(near.haptics.left && !near.haptics.front && !near.haptics.right)
